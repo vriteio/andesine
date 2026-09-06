@@ -17,6 +17,7 @@ import clsx from "clsx";
 
 interface VersionHistoryVersion {
   active?: boolean;
+  contributorIDs: string[];
   createdAt: string;
   entryName?: string;
   id: string;
@@ -29,6 +30,7 @@ interface VersionHistoryItemProps {
   assignedChannels?: string[];
   canManage: boolean;
   canManagePublishing?: boolean;
+  contributorNames: string[];
   onAssign?(channel: string): void;
   onCompare(): void;
   onOpen(): void;
@@ -176,6 +178,28 @@ const VersionHistoryItem: Component<VersionHistoryItemProps> = (props) => {
               >
                 <span class="truncate">{relativeTime()}</span>
               </Tooltip>
+              <Show when={props.version.contributorIDs.length > 0}>
+                <span class="h-3 w-px shrink-0 bg-gray-400 opacity-20" />
+                <Tooltip
+                  content={
+                    <div class="flex flex-col items-start gap-px">
+                      <span class="font-mono text-[80%] opacity-50 mb-0.5">Contributors</span>
+                      <For each={props.contributorNames}>
+                        {(name) => <span class="text-xs">{name}</span>}
+                      </For>
+                    </div>
+                  }
+                  enabled={!menuOpened()}
+                  offset={{ mainAxis: 8 }}
+                  placement="bottom-start"
+                  fixed
+                >
+                  <span class="flex shrink-0 items-center gap-0.5">
+                    <span>{props.version.contributorIDs.length}</span>
+                    <span class="i-lucide:users h-3 w-3" />
+                  </span>
+                </Tooltip>
+              </Show>
               <Show when={assignedChannels().length > 0}>
                 <span class="h-3 w-px shrink-0 bg-gray-400 opacity-20" />
                 <Tooltip

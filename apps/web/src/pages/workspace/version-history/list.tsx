@@ -10,6 +10,8 @@ import { TREE_ROOT_ID, Tree, type TreeMap } from "#web/components/tree";
 import { VersionHistoryItem, type VersionHistoryVersion } from "./item";
 import { VERSION_ITEM_HEIGHT, VersionHistorySkeleton } from "./skeleton";
 import clsx from "clsx";
+import { createAsync } from "@solidjs/router";
+import { membershipsQuery } from "#web/lib/data";
 
 interface VersionHistoryListProps {
   activeVersionID: string;
@@ -36,6 +38,27 @@ interface VersionHistoryListProps {
 }
 
 const VersionHistoryList: Component<VersionHistoryListProps> = (props) => {
+  const hasContributors = createMemo(() => {
+    return props.versions.some((version) => version.contributorIDs.length > 0);
+  });
+  const memberships = createAsync(async () => {
+    if (!hasContributors()) return null;
+
+    try {
+      return await membershipsQuery();
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
+  });
+  const contributorNamesByID = createMemo(() => {
+    return new Map(
+      (memberships.latest || []).map((member) => [
+        member.id,
+        member.profile.name || member.profile.email
+      ])
+    );
+  });
   const options = () => props.options || [];
   const versionsByID = createMemo(() => {
     return new Map(props.versions.map((version) => [version.id, version]));
@@ -133,6 +156,9 @@ const VersionHistoryList: Component<VersionHistoryListProps> = (props) => {
                       fallbackLabel={props.fallbackLabel?.(version)}
                       active={props.activeVersionID === version.id}
                       assignedChannels={props.assignedChannels?.(version)}
+                      contributorNames={version.contributorIDs.map((id) => {
+                        return contributorNamesByID().get(id) || "Name unavailable";
+                      })}
                       canManage={props.canManage}
                       canManagePublishing={props.canManagePublishing}
                       onAssign={
