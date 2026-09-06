@@ -1,3 +1,5 @@
+import { assertRoleDelegation } from "#backend/lib/policy/delegation";
+import type { SessionData } from "#backend/lib/policy/session";
 import { toUUID, toUserID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { memberships, roles, users, workspaces } from "#backend/db";
@@ -10,7 +12,7 @@ interface RemoveMemberInput {
 }
 
 const removeMemberOperation = async (
-  input: RemoveMemberInput & { workspaceID: string }
+  input: RemoveMemberInput & { workspaceID: string; auth: SessionData }
 ): Promise<{ userID: string }> => {
   const workspaceID = toUUID(input.workspaceID);
   const memberID = toUUID(input.id);
@@ -36,6 +38,8 @@ const removeMemberOperation = async (
       .where(and(eq(roles.id, membership.roleID), eq(roles.workspaceID, workspaceID)));
 
     if (!role) throw new ORPCError("NOT_FOUND", { message: "Role not found" });
+
+    assertRoleDelegation(input.auth, role);
 
     if (role.baseRole === "admin") {
       const [result] = await tx
@@ -70,8 +74,8 @@ const removeMemberOperation = async (
   return { userID: toUserID(userID) };
 };
 const removeMember = withAuthorization<RemoveMemberInput, undefined, { userID: string }>(
-  { permissions: { session: ["workspace"], key: ["memberships"] } },
-  async ({ input, workspaceID }) => removeMemberOperation({ ...input, workspaceID })
+  { permissions: { session: ["memberships"], key: ["memberships"] } },
+  async ({ auth, input, workspaceID }) => removeMemberOperation({ ...input, auth, workspaceID })
 );
 
 export { removeMember };

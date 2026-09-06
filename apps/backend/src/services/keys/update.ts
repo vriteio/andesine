@@ -1,3 +1,4 @@
+import { assertKeyDelegation } from "#backend/lib/policy/delegation";
 import { toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { apiKeys, type KeyPermission } from "#backend/db";
@@ -28,7 +29,10 @@ const updateKeyOperation = async (
 };
 const updateKey = withAuthorization<UpdateKeyInput>(
   { permissions: { session: ["api_keys"] } },
-  async ({ input, workspaceID }) => updateKeyOperation({ ...input, workspaceID })
+  async ({ auth, input, workspaceID }) => {
+    if (input.permissions !== undefined) assertKeyDelegation(auth, input.permissions);
+    return updateKeyOperation({ ...input, workspaceID });
+  }
 );
 
 export { updateKey };

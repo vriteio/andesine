@@ -1,6 +1,7 @@
+import { assertRoleDelegation } from "#backend/lib/policy/delegation";
 import { toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
-import { invitations, workspaces } from "#backend/db";
+import { invitations, workspaces, roles } from "#backend/db";
 import { deliverInvite, type InviteDelivery } from "#backend/lib/messaging";
 import { withAuthorization } from "#backend/lib/policy";
 import { and, eq } from "drizzle-orm";
@@ -46,8 +47,17 @@ const resendInvite = withAuthorization<
   undefined,
   { emailDelivery: InviteDelivery }
 >(
-  { permissions: { session: ["workspace"], key: ["memberships"] }, plan: "pro" },
-  async ({ input, workspaceID }) => resendInviteOperation({ ...input, workspaceID })
+  { permissions: { session: ["memberships"], key: ["memberships"] }, plan: "pro" },
+  async ({ auth, input, workspaceID, database }) => {
+    const [role] = await database
+      .select({ baseRole: roles.baseRole, permissions: roles.permissions })
+      .from(invitations)
+      .innerJoin(roles, eq(roles.id, invitations.roleID))
+      .where(and(eq(invitations.id, toUUID(input.id)), eq(invitations.workspaceID, workspaceID)));
+    if (!role) throw new ORPCError("NOT_FOUND", { message: "Invitation not found" });
+    assertRoleDelegation(auth, role);
+    return resendInviteOperation({ ...input, workspaceID });
+  }
 );
 
 export { resendInvite };

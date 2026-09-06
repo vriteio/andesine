@@ -20,7 +20,7 @@ const listRolesOperation = async (input: { workspaceID: string }): Promise<{ rol
   };
 };
 const listRoles = withAuthorization<Record<never, never>, undefined, { roles: Role[] }>(
-  { permissions: { session: ["workspace"], key: ["read:roles"] } },
+  { permissions: { session: true, key: ["read:roles"] } },
   async ({ workspaceID }) => listRolesOperation({ workspaceID })
 );
 

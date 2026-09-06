@@ -1,3 +1,4 @@
+import { useDelegationPermissions } from "#web/lib/policy/delegation";
 import {
   Button,
   Fragment,
@@ -21,6 +22,7 @@ import { rolesQuery } from "#web/lib/data";
 
 const InviteSettingsPage: Component = () => {
   const notify = useNotify();
+  const { canGrantRole } = useDelegationPermissions();
   const navigate = useNavigate();
   const params = useParams<{ workspaceID?: string }>();
   const navigateToPeople = () => navigate(`/${params.workspaceID || ""}/settings/people`);
@@ -30,12 +32,16 @@ const InviteSettingsPage: Component = () => {
   const [inviteLink, setInviteLink] = createSignal("");
   const [delivery, setDelivery] = createSignal<"sent" | "manual" | "failed">("sent");
   const roleOptions = () => {
-    return (roles() || []).map((role) => ({ label: role.name, value: role.id }));
+    return (roles() || [])
+      .filter(canGrantRole)
+      .map((role) => ({ label: role.name, value: role.id }));
   };
   const fillError = () => {
     if (!email().trim()) return "Email address is required";
     if (!/^\S+@\S+\.\S+$/.test(email().trim())) return "Enter a valid email address";
     if (!selectedRoleID()) return "Select a role";
+    if (!roles()?.some((role) => role.id === selectedRoleID() && canGrantRole(role)))
+      return "Select a role within your permissions";
 
     return "";
   };

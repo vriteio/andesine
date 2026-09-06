@@ -56,7 +56,7 @@ const MembersSection: Component = () => {
   const navigate = useNavigate();
   const params = useParams<{ workspaceID?: string }>();
   const members = createAsync(() => membershipsQuery());
-  const canManage = () => hasPermission("workspace");
+  const canManage = () => hasPermission("memberships");
   const canManageProFeatures = () => {
     return canManage() && currentWorkspace()?.subscriptionPlan === "pro";
   };

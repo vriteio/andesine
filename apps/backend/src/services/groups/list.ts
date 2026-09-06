@@ -58,7 +58,7 @@ const listGroupsOperation = async (input: {
   };
 };
 const listGroups = withAuthorization<Record<never, never>, undefined, { groups: GroupDetails[] }>(
-  { permissions: { session: ["workspace"] }, plan: "pro" },
+  { permissions: { session: true }, plan: "pro" },
   async ({ workspaceID }) => listGroupsOperation({ workspaceID })
 );
 export { listGroups };

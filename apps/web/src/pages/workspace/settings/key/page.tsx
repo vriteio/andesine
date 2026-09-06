@@ -1,3 +1,4 @@
+import { useDelegationPermissions } from "#web/lib/policy/delegation";
 import {
   Button,
   Fragment,
@@ -54,6 +55,7 @@ const { accessToPermissions, permissionsToAccess } = createPermissionAccessMappe
 
 const KeySettingsPage: Component = () => {
   const notify = useNotify();
+  const { canGrantKeyPermission } = useDelegationPermissions();
   const { hasPermission } = useWorkspace();
   const navigate = useNavigate();
   const params = useParams<{ workspaceID?: string; keyID?: string }>();
@@ -79,12 +81,24 @@ const KeySettingsPage: Component = () => {
     navigateToAPI,
     onCreated: setRevealedKey
   });
+  const permissionsChanged = createMemo(() => {
+    const currentKey = key();
+    const currentAccess = permissionsToAccess(currentKey?.permissions || []);
+    const selectedAccess = resourceAccess();
+
+    return !currentKey || resources.some(({ id }) => currentAccess[id] !== selectedAccess[id]);
+  });
   const fillError = createMemo((): string => {
+    const permissions = accessToPermissions(resourceAccess());
+
     if (!keyName().trim()) {
       return "Key name is required";
     }
 
-    const permissions = accessToPermissions(resourceAccess());
+    if (!permissionsChanged()) return "";
+
+    if (permissions.some((permission) => !canGrantKeyPermission(permission)))
+      return "You cannot grant permissions beyond your own role";
 
     if (permissions.length === 0) {
       return "Grant at least one permission";
@@ -152,10 +166,15 @@ const KeySettingsPage: Component = () => {
                       [resource.id]: value as AccessLevel
                     }));
                   }}
-                  options={accessLevels.map((option) => ({
-                    value: option.value,
-                    label: option.label
-                  }))}
+                  options={accessLevels.filter(
+                    (option) =>
+                      option.value === "default" ||
+                      canGrantKeyPermission(
+                        (option.value === "write"
+                          ? resource.id
+                          : `read:${resource.id}`) as KeyPermission
+                      )
+                  )}
                 />
               </Setting>
             )}
@@ -190,7 +209,9 @@ const KeySettingsPage: Component = () => {
                     updateKeyMutation.mutate({
                       id: keyID()!,
                       name: keyName(),
-                      permissions: accessToPermissions(resourceAccess())
+                      ...(permissionsChanged() && {
+                        permissions: accessToPermissions(resourceAccess())
+                      })
                     });
                   } else {
                     createKeyMutation.mutate({

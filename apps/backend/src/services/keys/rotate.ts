@@ -1,4 +1,6 @@
-import { toKeyID, toMembershipID, toUUID } from "#backend/lib/primitives";
+import { assertKeyDelegation } from "#backend/lib/policy/delegation";
+import type { SessionData } from "#backend/lib/policy/session";
+import { toKeyID, toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { apiKeys, type Key } from "#backend/db";
 import { withAuthorization } from "#backend/lib/policy";
@@ -18,7 +20,7 @@ const getExpiresAt = (option: ExpirationOption): Date => {
   return new Date(Date.now() + durations[option]);
 };
 const rotateKeyOperation = async (
-  input: RotateKeyInput & { workspaceID: string; memberID: string }
+  input: RotateKeyInput & { workspaceID: string; auth: SessionData }
 ): Promise<Key & { rawKey: string }> => {
   const workspaceID = toUUID(input.workspaceID);
   const { raw, prefix } = generateKeyValue();
@@ -33,6 +35,8 @@ const rotateKeyOperation = async (
 
     if (!oldKey) throw new ORPCError("NOT_FOUND", { message: "Key not found" });
 
+    assertKeyDelegation(input.auth, oldKey.permissions);
+
     await tx
       .update(apiKeys)
       .set({ expiresAt: getExpiresAt(input.expiresIn), updatedAt: now })
@@ -43,7 +47,6 @@ const rotateKeyOperation = async (
         name: oldKey.name,
         permissions: oldKey.permissions,
         prefix,
-        memberID: toUUID(input.memberID),
         workspaceID,
         hash: hashKey(raw, salt),
         salt,
@@ -56,7 +59,6 @@ const rotateKeyOperation = async (
   });
   return {
     id: toKeyID(newKey.id),
-    memberID: toMembershipID(newKey.memberID),
     name: newKey.name,
     permissions: newKey.permissions,
     prefix,
@@ -69,7 +71,7 @@ const rotateKeyOperation = async (
 const rotateKey = withAuthorization<RotateKeyInput, undefined, Key & { rawKey: string }>(
   { permissions: { session: ["api_keys"] } },
   async ({ auth, input, workspaceID }) => {
-    return rotateKeyOperation({ ...input, memberID: auth.session!.memberID, workspaceID });
+    return rotateKeyOperation({ ...input, auth, workspaceID });
   }
 );
 

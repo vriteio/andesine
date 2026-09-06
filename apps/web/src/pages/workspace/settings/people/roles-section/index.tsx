@@ -186,13 +186,15 @@ const RolesSection: Component = () => {
   const navigate = useNavigate();
   const params = useParams<{ workspaceID?: string }>();
   const invites = createAsync(async () => {
-    return currentWorkspace()?.subscriptionPlan === "pro" ? invitesQuery() : [];
+    return currentWorkspace()?.subscriptionPlan === "pro" && hasPermission("memberships")
+      ? invitesQuery()
+      : [];
   });
   const members = createAsync(() => membershipsQuery());
   const roles = createAsync(() => rolesQuery());
   const [refreshing, startRefresh] = useTransition();
   const canManage = () => {
-    return hasPermission("workspace") && currentWorkspace()?.subscriptionPlan === "pro";
+    return hasPermission("roles") && currentWorkspace()?.subscriptionPlan === "pro";
   };
   const refresh = (onRevalidated = () => {}) => {
     void startRefresh(() => {

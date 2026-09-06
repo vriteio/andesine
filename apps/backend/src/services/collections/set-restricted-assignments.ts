@@ -1,3 +1,4 @@
+import { assertCollectionRoleDelegation } from "#backend/lib/policy/delegation-collections";
 import {
   collectionGroupRoles,
   collectionMemberRoles,
@@ -39,7 +40,7 @@ const setRestrictedAssignments = withAuthorization<
     plan: "pro",
     transaction: "locked-workspace"
   },
-  async ({ database, input, workspaceID }) => {
+  async ({ auth, database, input, workspaceID }) => {
     const collectionID = toUUID(input.collectionID);
     const groupAssignments = new Map(
       input.groups.map((assignment) => [toUUID(assignment.groupID), toUUID(assignment.roleID)])
@@ -75,7 +76,7 @@ const setRestrictedAssignments = withAuthorization<
         await Promise.all([
           roleIDs.length > 0
             ? database
-                .select({ id: roles.id, baseRole: roles.baseRole })
+                .select({ id: roles.id, baseRole: roles.baseRole, permissions: roles.permissions })
                 .from(roles)
                 .where(and(eq(roles.workspaceID, workspaceID), inArray(roles.id, roleIDs)))
             : [],
@@ -124,6 +125,10 @@ const setRestrictedAssignments = withAuthorization<
         throw new ORPCError("BAD_REQUEST", {
           message: "The Admin role cannot be assigned to restricted collections"
         });
+      }
+
+      for (const role of roleRows) {
+        await assertCollectionRoleDelegation(auth, role.permissions, collectionID, database);
       }
 
       if (groupRows.length !== groupIDs.length) {

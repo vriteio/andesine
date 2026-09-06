@@ -1,4 +1,5 @@
-import { toKeyID, toMembershipID, toUUID } from "#backend/lib/primitives";
+import { assertKeyDelegation } from "#backend/lib/policy/delegation";
+import { toKeyID, toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { apiKeys, type Key } from "#backend/db";
 import { withAuthorization } from "#backend/lib/policy";
@@ -7,7 +8,7 @@ import { generateKeyValue, generateSalt, hashKey } from "#backend/lib/security";
 type CreateKeyInput = Pick<Key, "name" | "permissions">;
 
 const createKeyOperation = async (
-  input: Pick<Key, "name" | "permissions"> & { workspaceID: string; memberID: string }
+  input: Pick<Key, "name" | "permissions"> & { workspaceID: string }
 ): Promise<Key & { rawKey: string }> => {
   const { raw, prefix } = generateKeyValue();
   const salt = generateSalt();
@@ -18,7 +19,6 @@ const createKeyOperation = async (
       name: input.name,
       permissions: input.permissions,
       prefix,
-      memberID: toUUID(input.memberID),
       workspaceID: toUUID(input.workspaceID),
       hash: hashKey(raw, salt),
       salt,
@@ -29,7 +29,6 @@ const createKeyOperation = async (
 
   return {
     id: toKeyID(key.id),
-    memberID: toMembershipID(key.memberID),
     name: key.name,
     permissions: key.permissions,
     prefix,
@@ -42,7 +41,8 @@ const createKeyOperation = async (
 const createKey = withAuthorization<CreateKeyInput, undefined, Key & { rawKey: string }>(
   { permissions: { session: ["api_keys"] } },
   async ({ auth, input, workspaceID }) => {
-    return createKeyOperation({ ...input, memberID: auth.session!.memberID, workspaceID });
+    assertKeyDelegation(auth, input.permissions);
+    return createKeyOperation({ ...input, workspaceID });
   }
 );
 

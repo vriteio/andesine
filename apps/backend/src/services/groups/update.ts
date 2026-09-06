@@ -1,3 +1,5 @@
+import { assertGroupDelegation } from "#backend/lib/policy/delegation-collections";
+import type { SessionData } from "#backend/lib/policy/session";
 import {
   groupInvitations,
   groupMembers,
@@ -42,7 +44,9 @@ interface SaveGroupResult {
 
 type UpdateGroupInput = Omit<SaveGroupInput, "workspaceID"> & { id: string };
 
-const saveGroup = async (input: SaveGroupInput): Promise<SaveGroupResult> => {
+const saveGroup = async (
+  input: SaveGroupInput & { auth: SessionData }
+): Promise<SaveGroupResult> => {
   const invitationIDs = [...new Set(input.invitationIDs)].map(toUUID);
   const memberIDs = [...new Set(input.memberIDs)].map(toUUID);
   const workspaceID = toUUID(input.workspaceID);
@@ -64,6 +68,7 @@ const saveGroup = async (input: SaveGroupInput): Promise<SaveGroupResult> => {
       let existingMembers: Array<{ userID: string }> = [];
 
       if (groupID) {
+        await assertGroupDelegation(input.auth, groupID, tx);
         const updated = await tx
           .update(groups)
           .set({ name, updatedAt: new Date() })
@@ -165,14 +170,14 @@ const saveGroup = async (input: SaveGroupInput): Promise<SaveGroupResult> => {
 };
 
 const updateGroupOperation = async (
-  input: SaveGroupInput & { id: string }
+  input: SaveGroupInput & { id: string; auth: SessionData }
 ): Promise<SaveGroupResult> => {
   return saveGroup(input);
 };
 const updateGroup = withAuthorization<UpdateGroupInput, undefined, SaveGroupResult>(
-  { permissions: { session: ["workspace"] }, plan: "pro" },
-  async ({ input, workspaceID }) => {
-    return updateGroupOperation({ ...input, workspaceID: toWorkspaceID(workspaceID) });
+  { permissions: { session: ["memberships"] }, plan: "pro" },
+  async ({ auth, input, workspaceID }) => {
+    return updateGroupOperation({ ...input, auth, workspaceID: toWorkspaceID(workspaceID) });
   }
 );
 

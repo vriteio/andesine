@@ -26,13 +26,15 @@ const GroupsSection: Component = () => {
     return currentWorkspace()?.subscriptionPlan === "pro" ? groupsQuery() : [];
   });
   const invitations = createAsync(async () => {
-    return currentWorkspace()?.subscriptionPlan === "pro" ? invitesQuery() : [];
+    return currentWorkspace()?.subscriptionPlan === "pro" && hasPermission("memberships")
+      ? invitesQuery()
+      : [];
   });
   const members = createAsync(() => membershipsQuery());
   const [, startRefresh] = useTransition();
   const [pendingDeleteIDs, setPendingDeleteIDs] = createSignal<string[]>([]);
   const canManage = () => {
-    return hasPermission("workspace") && currentWorkspace()?.subscriptionPlan === "pro";
+    return hasPermission("memberships") && currentWorkspace()?.subscriptionPlan === "pro";
   };
   const groupList = () => groups() || [];
   const memberList = () => (members() || []) as WorkspaceMember[];

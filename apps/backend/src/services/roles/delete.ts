@@ -1,3 +1,6 @@
+import { assertRoleAssignmentsDelegation } from "#backend/lib/policy/delegation-collections";
+import { assertRoleDelegation } from "#backend/lib/policy/delegation";
+import type { SessionData } from "#backend/lib/policy/session";
 import { toUUID, toUserID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import {
@@ -18,7 +21,7 @@ interface DeleteRoleInput {
 }
 
 const deleteRoleOperation = async (
-  input: DeleteRoleInput & { workspaceID: string }
+  input: DeleteRoleInput & { workspaceID: string; auth: SessionData }
 ): Promise<{ affectedUserIDs: string[] }> => {
   const roleID = toUUID(input.id);
   const workspaceID = toUUID(input.workspaceID);
@@ -38,6 +41,9 @@ const deleteRoleOperation = async (
     if (role.baseRole) {
       throw new ORPCError("BAD_REQUEST", { message: "Base roles cannot be deleted" });
     }
+
+    assertRoleDelegation(input.auth, role);
+    await assertRoleAssignmentsDelegation(input.auth, role.id, role.permissions, tx);
 
     const [viewerRole] = await tx
       .select({ id: roles.id })
@@ -110,8 +116,8 @@ const deleteRoleOperation = async (
   return { affectedUserIDs: affectedUserIDs.map(toUserID) };
 };
 const deleteRole = withAuthorization<DeleteRoleInput, undefined, { affectedUserIDs: string[] }>(
-  { permissions: { session: ["workspace"], key: ["roles"] }, plan: "pro" },
-  async ({ input, workspaceID }) => deleteRoleOperation({ ...input, workspaceID })
+  { permissions: { session: ["roles"], key: ["roles"] }, plan: "pro" },
+  async ({ auth, input, workspaceID }) => deleteRoleOperation({ ...input, auth, workspaceID })
 );
 
 export { deleteRole };

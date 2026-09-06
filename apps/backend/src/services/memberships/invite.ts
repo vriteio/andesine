@@ -1,3 +1,5 @@
+import { assertRoleDelegation } from "#backend/lib/policy/delegation";
+import type { SessionData } from "#backend/lib/policy/session";
 import { toInviteID, toMembershipID, toRoleID, toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { invitations, memberships, roles, users, workspaces } from "#backend/db";
@@ -12,7 +14,9 @@ interface InviteMemberInput {
   inviterID?: string;
 }
 
-const inviteMemberOperation = async (input: InviteMemberInput & { workspaceID: string }) => {
+const inviteMemberOperation = async (
+  input: InviteMemberInput & { workspaceID: string; auth: SessionData }
+) => {
   const workspaceID = toUUID(input.workspaceID);
   const roleID = toUUID(input.roleID);
   const normalizedEmail = input.email.trim().toLowerCase();
@@ -29,7 +33,7 @@ const inviteMemberOperation = async (input: InviteMemberInput & { workspaceID: s
         )
       );
     const [role] = await tx
-      .select({ id: roles.id })
+      .select()
       .from(roles)
       .where(and(eq(roles.id, roleID), eq(roles.workspaceID, workspaceID)));
     const [workspace] = await tx
@@ -38,6 +42,7 @@ const inviteMemberOperation = async (input: InviteMemberInput & { workspaceID: s
       .where(eq(workspaces.id, workspaceID));
 
     if (!role) throw new ORPCError("BAD_REQUEST", { message: "Role not found" });
+    assertRoleDelegation(input.auth, role);
     if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
 
     const [existingUser] = await tx
@@ -117,9 +122,14 @@ const inviteMember = withAuthorization<
   undefined,
   Awaited<ReturnType<typeof inviteMemberOperation>>
 >(
-  { permissions: { session: ["workspace"], key: ["memberships"] }, plan: "pro" },
+  { permissions: { session: ["memberships"], key: ["memberships"] }, plan: "pro" },
   async ({ auth, input, workspaceID }) => {
-    return inviteMemberOperation({ ...input, inviterID: auth.session?.memberID, workspaceID });
+    return inviteMemberOperation({
+      ...input,
+      auth,
+      inviterID: auth.session?.memberID,
+      workspaceID
+    });
   }
 );
 

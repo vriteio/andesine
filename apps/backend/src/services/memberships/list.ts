@@ -49,7 +49,7 @@ const listMembers = withAuthorization<
   Record<never, never>,
   undefined,
   { members: MemberDetails[] }
->({ permissions: { session: ["workspace"], key: ["read:memberships"] } }, async ({ workspaceID }) =>
+>({ permissions: { session: true, key: ["read:memberships"] } }, async ({ workspaceID }) =>
   listMembersOperation({ workspaceID })
 );
 

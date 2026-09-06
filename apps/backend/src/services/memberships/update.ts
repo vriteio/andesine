@@ -1,3 +1,5 @@
+import { assertRoleDelegation } from "#backend/lib/policy/delegation";
+import type { SessionData } from "#backend/lib/policy/session";
 import { toUUID, toUserID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { memberships, roles, workspaces } from "#backend/db";
@@ -11,7 +13,7 @@ interface UpdateMemberInput {
 }
 
 const updateMemberOperation = async (
-  input: UpdateMemberInput & { workspaceID: string }
+  input: UpdateMemberInput & { workspaceID: string; auth: SessionData }
 ): Promise<{ userID: string }> => {
   const workspaceID = toUUID(input.workspaceID);
   const memberID = toUUID(input.id);
@@ -42,6 +44,9 @@ const updateMemberOperation = async (
       .where(and(eq(roles.id, newRoleID), eq(roles.workspaceID, workspaceID)));
 
     if (!newRole) throw new ORPCError("BAD_REQUEST", { message: "Role not found" });
+
+    if (existingRole) assertRoleDelegation(input.auth, existingRole);
+    assertRoleDelegation(input.auth, newRole);
 
     if (existingRole?.baseRole === "admin" && newRole.baseRole !== "admin") {
       const [adminRole] = await tx
@@ -76,8 +81,8 @@ const updateMemberOperation = async (
   return { userID: toUserID(userID) };
 };
 const updateMember = withAuthorization<UpdateMemberInput, undefined, { userID: string }>(
-  { permissions: { session: ["workspace"], key: ["memberships"] }, plan: "pro" },
-  async ({ input, workspaceID }) => updateMemberOperation({ ...input, workspaceID })
+  { permissions: { session: ["memberships"], key: ["memberships"] }, plan: "pro" },
+  async ({ auth, input, workspaceID }) => updateMemberOperation({ ...input, auth, workspaceID })
 );
 
 export { updateMember };

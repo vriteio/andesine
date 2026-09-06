@@ -104,7 +104,15 @@ const CollectionPage: Component = () => {
     return Boolean(data());
   };
   const roles = createMemo(() => {
-    return (data()?.roles || []).filter((role) => role.baseRole !== "admin");
+    return (data()?.roles || []).filter((role) => {
+      return (
+        role.baseRole !== "admin" &&
+        (!role.permissions.includes("content") ||
+          content.canEntry(collectionID(), "entry:update")) &&
+        (!role.permissions.includes("publishing") ||
+          content.canCollection(collectionID(), "collection:set-publishing"))
+      );
+    });
   });
   const members = createMemo(() => {
     return ((data()?.members || []) as WorkspaceMember[]).filter((member) => !member.admin);

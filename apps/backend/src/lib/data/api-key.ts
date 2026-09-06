@@ -1,5 +1,5 @@
 import { apiKeys, type Key } from "#backend/db";
-import { toKeyID, toMembershipID } from "#backend/lib/primitives";
+import { toKeyID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { hashKey } from "#backend/lib/security";
 import { eq } from "drizzle-orm";
@@ -21,7 +21,6 @@ const verifyAPIKey = async (rawKey: string): Promise<typeof apiKeys.$inferSelect
 };
 const mapAPIKey = (key: typeof apiKeys.$inferSelect): Key => ({
   id: toKeyID(key.id),
-  memberID: toMembershipID(key.memberID),
   name: key.name,
   permissions: key.permissions,
   prefix: key.prefix,

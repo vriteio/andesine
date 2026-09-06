@@ -34,10 +34,13 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
     if (!currentWorkspace()) return false;
     if (route === "workspace") return true;
     if (route === "group" || route === "invite" || route === "role") {
-      return currentWorkspace()?.subscriptionPlan === "pro" && hasPermission("workspace");
+      return (
+        currentWorkspace()?.subscriptionPlan === "pro" &&
+        hasPermission(route === "role" ? "roles" : "memberships")
+      );
     }
     if (route === "people") {
-      return hasPermission("workspace");
+      return true;
     }
     if (route === "publishing") return true;
     if (route === "billing") return hasPermission("read:billing");
@@ -135,16 +138,12 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
 
     if (!currentWorkspace()) return;
 
-    if (route === "people" && !hasPermission("workspace")) {
-      navigate(`/${params.workspaceID || ""}/settings/personal`, { replace: true });
-      return;
-    }
-
     if (
       (route === "group" || route === "invite" || route === "role") &&
-      (currentWorkspace()?.subscriptionPlan !== "pro" || !hasPermission("workspace"))
+      (currentWorkspace()?.subscriptionPlan !== "pro" ||
+        !hasPermission(route === "role" ? "roles" : "memberships"))
     ) {
-      const fallbackRoute = hasPermission("workspace") ? "people" : "personal";
+      const fallbackRoute = "people";
 
       navigate(`/${params.workspaceID || ""}/settings/${fallbackRoute}`, { replace: true });
     }

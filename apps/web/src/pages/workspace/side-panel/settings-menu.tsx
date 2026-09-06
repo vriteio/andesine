@@ -112,14 +112,14 @@ const SettingsMenu: Component = () => {
                   label: "People",
                   href: `${settingsPath()}/people`,
                   active: isRoute("/people"),
-                  visible: hasPermission("workspace"),
+                  visible: true,
                   subItems: [
                     {
                       icon: "i-lucide:user-plus",
                       label: "Invite member",
                       href: `${settingsPath()}/invite`,
                       active: isRoute("/invite"),
-                      visible: hasPermission("workspace") && isPro
+                      visible: hasPermission("memberships") && isPro
                     },
                     {
                       icon: editingRole ? "i-lucide:pencil" : "i-lucide:circle-plus",
@@ -128,7 +128,7 @@ const SettingsMenu: Component = () => {
                         ? `${settingsPath()}/role/${encodeURIComponent(params.roleID!)}`
                         : `${settingsPath()}/role`,
                       active: roleActive,
-                      visible: hasPermission("workspace") && isPro
+                      visible: hasPermission("roles") && isPro
                     },
                     {
                       icon: editingGroup ? "i-lucide:pencil" : "i-lucide:circle-plus",
@@ -137,7 +137,7 @@ const SettingsMenu: Component = () => {
                         ? `${settingsPath()}/group/${encodeURIComponent(params.groupID!)}`
                         : `${settingsPath()}/group`,
                       active: groupActive,
-                      visible: hasPermission("workspace") && isPro
+                      visible: hasPermission("memberships") && isPro
                     }
                   ]
                 },

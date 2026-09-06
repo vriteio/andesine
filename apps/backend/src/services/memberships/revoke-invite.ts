@@ -1,6 +1,7 @@
+import { assertRoleDelegation } from "#backend/lib/policy/delegation";
 import { toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
-import { groupInvitations, invitations } from "#backend/db";
+import { groupInvitations, invitations, roles } from "#backend/db";
 import { withAuthorization } from "#backend/lib/policy";
 import { loadGroupMembersUpdates, type GroupMembersUpdate } from "#backend/lib/data";
 import { and, eq } from "drizzle-orm";
@@ -54,8 +55,17 @@ const revokeInvite = withAuthorization<
   undefined,
   { updatedGroups: GroupMembersUpdate[] }
 >(
-  { permissions: { session: ["workspace"], key: ["memberships"] }, plan: "pro" },
-  async ({ input, workspaceID }) => revokeInviteOperation({ ...input, workspaceID })
+  { permissions: { session: ["memberships"], key: ["memberships"] }, plan: "pro" },
+  async ({ auth, input, workspaceID, database }) => {
+    const [role] = await database
+      .select({ baseRole: roles.baseRole, permissions: roles.permissions })
+      .from(invitations)
+      .innerJoin(roles, eq(roles.id, invitations.roleID))
+      .where(and(eq(invitations.id, toUUID(input.id)), eq(invitations.workspaceID, workspaceID)));
+    if (!role) throw new ORPCError("NOT_FOUND", { message: "Invitation not found" });
+    assertRoleDelegation(auth, role);
+    return revokeInviteOperation({ ...input, workspaceID });
+  }
 );
 
 export { revokeInvite };

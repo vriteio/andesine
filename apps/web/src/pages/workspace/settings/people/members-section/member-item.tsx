@@ -1,3 +1,4 @@
+import { useDelegationPermissions } from "#web/lib/policy/delegation";
 import { type Membership, type Role, type UserProfile } from "#backend/db";
 import { useTree, TreeItem } from "#web/components/tree";
 import { type Card, DropdownArea, DropdownMenu, IconButton } from "@andesine/components";
@@ -23,6 +24,12 @@ const MemberItem: Component<{
   onUpdateRole(roleID: string, ids: string[]): void;
   roles: Role[];
 }> = (props) => {
+  const { canGrantRole } = useDelegationPermissions();
+  const canManageMember = (id: string) => {
+    const member = props.members.find((member) => member.id === id);
+    const role = props.roles.find((role) => role.id === member?.roleID);
+    return Boolean(role && canGrantRole(role));
+  };
   const [{ selection }, { setSelection }] = useTree();
   const [menuOpened, setMenuOpened] = createSignal(false);
   const memberName = () => props.member.profile.name || props.member.profile.email;
@@ -56,9 +63,11 @@ const MemberItem: Component<{
                 items: props.roles.map((role) => ({
                   label: role.name,
                   disabled:
-                    role.baseRole !== "admin" && affectsEveryAdmin(targetIDs)
-                      ? "At least one workspace admin is required"
-                      : undefined,
+                    !canGrantRole(role) || !targetIDs.every(canManageMember)
+                      ? "You cannot assign roles beyond your own permissions"
+                      : role.baseRole !== "admin" && affectsEveryAdmin(targetIDs)
+                        ? "At least one workspace admin is required"
+                        : undefined,
                   selected: !isMulti && props.member.roleID === role.id,
                   onClick: () => props.onUpdateRole(role.id, targetIDs)
                 }))
@@ -72,9 +81,11 @@ const MemberItem: Component<{
           icon: "i-lucide:trash",
           color: "danger" as const,
           shortcut: "$mod+backspace",
-          disabled: affectsEveryAdmin(targetIDs)
-            ? "At least one workspace admin is required"
-            : undefined,
+          disabled: !targetIDs.every(canManageMember)
+            ? "You cannot manage members beyond your own permissions"
+            : affectsEveryAdmin(targetIDs)
+              ? "At least one workspace admin is required"
+              : undefined,
           onClick: () => {
             props.onRemove(targetIDs);
             setSelection([]);
@@ -95,15 +106,20 @@ const MemberItem: Component<{
   return (
     <DropdownArea>
       <TreeItem
-        keyboardMenu={props.canManage && !props.loading ? dropdownOptions().flat() : []}
+        keyboardMenu={
+          props.canManage && canManageMember(props.member.id) && !props.loading
+            ? dropdownOptions().flat()
+            : []
+        }
         onOpenMenu={() => {
-          if (props.canManage && !props.loading) setMenuOpened(true);
+          if (props.canManage && canManageMember(props.member.id) && !props.loading)
+            setMenuOpened(true);
         }}
         id={props.member.id}
         label={memberName()}
         topLevel
-        checkbox={props.canManage && !props.loading}
-        selectable={props.canManage && !props.loading}
+        checkbox={props.canManage && canManageMember(props.member.id) && !props.loading}
+        selectable={props.canManage && canManageMember(props.member.id) && !props.loading}
         class={clsx("px-1 py-0.5", props.loading && "animate-pulse")}
         icon={<div class="i-lucide:id-card h-5 w-5 text-gray-400" />}
         renderLabel={(label) => (
@@ -135,7 +151,7 @@ const MemberItem: Component<{
           </div>
         )}
         actions={
-          <Show when={props.canManage}>
+          <Show when={props.canManage && canManageMember(props.member.id)}>
             <div onClick={(event: MouseEvent) => event.stopPropagation()}>
               <DropdownMenu
                 title={memberName()}

@@ -1,3 +1,4 @@
+import { useDelegationPermissions } from "#web/lib/policy/delegation";
 import {
   Button,
   Fragment,
@@ -19,7 +20,14 @@ import { rolesQuery, useRoleMutations } from "#web/lib/data";
 import { type AccessLevel, createPermissionAccessMapper } from "#web/lib/permissions";
 
 type Resource =
-  "api_keys" | "billing" | "content" | "publishing" | "restricted_collections" | "workspace";
+  | "api_keys"
+  | "billing"
+  | "content"
+  | "publishing"
+  | "restricted_collections"
+  | "memberships"
+  | "roles"
+  | "workspace";
 type ResourceAccess = Record<Resource, AccessLevel>;
 
 const resources: Array<{
@@ -56,9 +64,21 @@ const resources: Array<{
     description: "View or manage subscriptions and payments"
   },
   {
+    id: "memberships",
+    label: "Members",
+    description: "Invite and remove members, manage groups, and assign permitted roles",
+    defaultView: true
+  },
+  {
+    id: "roles",
+    label: "Roles",
+    description: "Manage custom roles within your own permissions",
+    defaultView: true
+  },
+  {
     id: "workspace",
     label: "Workspace",
-    description: "Manage workspace settings, roles, and members",
+    description: "Manage workspace settings",
     defaultView: true
   }
 ];
@@ -76,12 +96,15 @@ const { accessToPermissions, emptyAccess, permissionsToAccess } = createPermissi
       read: "read:restricted_collections",
       write: "restricted_collections"
     },
+    { id: "memberships", write: "memberships" },
+    { id: "roles", write: "roles" },
     { id: "workspace", write: "workspace" }
   ]
 });
 
 const RoleSettingsPage: Component = () => {
   const notify = useNotify();
+  const { canGrantRole, canGrantRolePermission } = useDelegationPermissions();
   const navigate = useNavigate();
   const params = useParams<{ workspaceID?: string; roleID?: string }>();
   const roleID = () => params.roleID || null;
@@ -108,7 +131,7 @@ const RoleSettingsPage: Component = () => {
   const formUnavailable = () => {
     const role = currentRole();
 
-    return Boolean(roleID() && roles() && (!role || role.baseRole));
+    return Boolean(roleID() && roles() && (!role || role.baseRole || !canGrantRole(role)));
   };
   const roleNameError = () => {
     if (!roleName().trim()) return "Role name is required";
@@ -125,6 +148,8 @@ const RoleSettingsPage: Component = () => {
   const fillError = () => {
     if (roleID() && roles() && !currentRole()) return "Role could not be found";
     if (currentRole()?.baseRole) return "System roles cannot be edited";
+    if (!canGrantRole({ permissions: accessToPermissions(resourceAccess()) }))
+      return "You cannot grant permissions beyond your own role";
     if (roleNameError()) return roleNameError();
 
     return "";
@@ -135,13 +160,19 @@ const RoleSettingsPage: Component = () => {
     const availableRoles = roles();
     const role = currentRole();
 
-    if (roleID() && availableRoles !== undefined && (!role || role.baseRole)) {
+    if (
+      roleID() &&
+      availableRoles !== undefined &&
+      (!role || role.baseRole || !canGrantRole(role))
+    ) {
       const text =
         availableRoles === null
           ? "Role is unavailable"
           : role?.baseRole
             ? "System roles cannot be edited"
-            : "Role not found";
+            : role
+              ? "You cannot manage a role with permissions beyond your own"
+              : "Role not found";
 
       notify({ type: "error", text });
       navigate(`/${params.workspaceID || ""}/settings/people`, { replace: true });
@@ -210,18 +241,25 @@ const RoleSettingsPage: Component = () => {
                       [resource.id]: value as AccessLevel
                     }));
                   }}
-                  options={
-                    resource.defaultView === true
-                      ? [
-                          { value: "default", label: "View" },
-                          { value: "write", label: "Manage" }
-                        ]
-                      : [
-                          { value: "default", label: "None" },
-                          { value: "read", label: "View" },
-                          { value: "write", label: "Manage" }
-                        ]
-                  }
+                  options={(resource.defaultView === true
+                    ? [
+                        { value: "default", label: "View" },
+                        { value: "write", label: "Manage" }
+                      ]
+                    : [
+                        { value: "default", label: "None" },
+                        { value: "read", label: "View" },
+                        { value: "write", label: "Manage" }
+                      ]
+                  ).filter(
+                    (option) =>
+                      option.value === "default" ||
+                      canGrantRolePermission(
+                        (option.value === "write"
+                          ? resource.id
+                          : `read:${resource.id}`) as Permission
+                      )
+                  )}
                 />
               </Setting>
             )}

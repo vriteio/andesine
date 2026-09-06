@@ -1,5 +1,8 @@
+import { assertRoleAssignmentsDelegation } from "#backend/lib/policy/delegation-collections";
+import { assertRoleDelegation } from "#backend/lib/policy/delegation";
+import type { SessionData } from "#backend/lib/policy/session";
 import { toUUID, toUserID } from "#backend/lib/primitives";
-import { db } from "#backend/lib/adapters";
+import type { Database } from "#backend/lib/policy/service";
 import {
   collectionGroupRoles,
   collectionMemberRoles,
@@ -24,17 +27,25 @@ interface UpdateRoleInput {
 }
 
 const updateRoleOperation = async (
-  input: UpdateRoleInput & { workspaceID: string }
+  input: UpdateRoleInput & { workspaceID: string; auth: SessionData; database: Database }
 ): Promise<{ affectedUserIDs: string[] }> => {
   const roleID = toUUID(input.id);
   const workspaceID = toUUID(input.workspaceID);
-  const role = await db.query.roles.findFirst({
+  const role = await input.database.query.roles.findFirst({
     where: and(eq(roles.id, roleID), eq(roles.workspaceID, workspaceID))
   });
 
   if (!role) throw new ORPCError("NOT_FOUND", { message: "Role not found" });
   if (role.baseRole)
     throw new ORPCError("BAD_REQUEST", { message: "Base roles cannot be modified" });
+  assertRoleDelegation(input.auth, role);
+  await assertRoleAssignmentsDelegation(
+    input.auth,
+    role.id,
+    input.permissions ?? role.permissions,
+    input.database
+  );
+  if (input.permissions) assertRoleDelegation(input.auth, { permissions: input.permissions });
   if (input.name === undefined && input.permissions === undefined) {
     return { affectedUserIDs: [] };
   }
@@ -48,7 +59,7 @@ const updateRoleOperation = async (
         });
 
   try {
-    await db
+    await input.database
       .update(roles)
       .set({
         ...(name !== undefined && { name }),
@@ -64,11 +75,11 @@ const updateRoleOperation = async (
 
   if (input.permissions !== undefined) {
     const [baseAffected, directAffected, groupAffected] = await Promise.all([
-      db
+      input.database
         .select({ userID: memberships.userID })
         .from(memberships)
         .where(and(eq(memberships.roleID, roleID), eq(memberships.workspaceID, workspaceID))),
-      db
+      input.database
         .select({ userID: memberships.userID })
         .from(collectionMemberRoles)
         .innerJoin(memberships, eq(memberships.id, collectionMemberRoles.membershipID))
@@ -78,7 +89,7 @@ const updateRoleOperation = async (
             eq(collectionMemberRoles.roleID, roleID)
           )
         ),
-      db
+      input.database
         .select({ userID: memberships.userID })
         .from(collectionGroupRoles)
         .innerJoin(groupMembers, eq(groupMembers.groupID, collectionGroupRoles.groupID))
@@ -102,8 +113,13 @@ const updateRoleOperation = async (
   return { affectedUserIDs: [] };
 };
 const updateRole = withAuthorization<UpdateRoleInput, undefined, { affectedUserIDs: string[] }>(
-  { permissions: { session: ["workspace"], key: ["roles"] }, plan: "pro" },
-  async ({ input, workspaceID }) => updateRoleOperation({ ...input, workspaceID })
+  {
+    permissions: { session: ["roles"], key: ["roles"] },
+    plan: "pro",
+    transaction: "locked-workspace"
+  },
+  async ({ auth, database, input, workspaceID }) =>
+    updateRoleOperation({ ...input, auth, database, workspaceID })
 );
 
 export { updateRole };

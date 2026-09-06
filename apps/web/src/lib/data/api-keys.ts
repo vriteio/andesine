@@ -30,7 +30,7 @@ const useKeyMutations = (input: KeyMutationsInput) => {
     }
   }));
   const updateKeyMutation = createMutation(() => ({
-    mutationFn: (variables: { id: string; name: string; permissions: KeyPermission[] }) =>
+    mutationFn: (variables: { id: string; name: string; permissions?: KeyPermission[] }) =>
       client.keys.update(variables),
     onSuccess: () => {
       const keyID = input.keyID();

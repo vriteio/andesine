@@ -1,3 +1,4 @@
+import { useDelegationPermissions } from "#web/lib/policy/delegation";
 import { type Role } from "#backend/db";
 import { useTree, TreeItem } from "#web/components/tree";
 import { type Card, DropdownArea, DropdownMenu, IconButton, Tooltip } from "@andesine/components";
@@ -19,14 +20,16 @@ const RoleItem: Component<{
   onDelete(ids: string[]): void;
   onEdit(): void;
 }> = (props) => {
+  const { canGrantRole } = useDelegationPermissions();
   const [{ selection }, { setSelection }] = useTree();
   const [menuOpened, setMenuOpened] = createSignal(false);
-  const editable = () => props.canManage && !props.role.baseRole;
+  const editable = () => props.canManage && !props.role.baseRole && canGrantRole(props.role);
   const dropdownOptions = createMemo(() => {
     const selectedIDs = selection();
     const isMulti = selectedIDs.length > 1;
     const deletableIDs = (isMulti ? selectedIDs : [props.role.id]).filter((id) => {
-      return !props.roles.find((role) => role.id === id)?.baseRole;
+      const role = props.roles.find((role) => role.id === id);
+      return Boolean(role && !role.baseRole && canGrantRole(role));
     });
 
     return [

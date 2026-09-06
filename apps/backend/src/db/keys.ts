@@ -1,17 +1,7 @@
 import { id } from "#backend/lib/primitives";
 import { sql } from "drizzle-orm";
-import {
-  foreignKey,
-  index,
-  pgEnum,
-  pgTable,
-  text,
-  timestamp,
-  uuid,
-  varchar
-} from "drizzle-orm/pg-core";
+import { index, pgEnum, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 import * as z from "zod";
-import { memberships } from "./memberships";
 import { workspaces } from "./workspaces";
 
 const keyPermissionEnum = pgEnum("key_permission", [
@@ -47,7 +37,6 @@ const keyType = z.object({
   name: z.string().describe("The name for the API key"),
   permissions: z.array(keyPermissionType).describe("The permissions of the API key"),
   prefix: z.string().describe("The first characters of the raw key"),
-  memberID: id().describe("The member who created the API key"),
   createdAt: z.iso.datetime().describe("The creation date"),
   updatedAt: z.iso.datetime().describe("The last update date"),
   expiresAt: z.iso.datetime().nullable().describe("The expiration date")
@@ -60,7 +49,6 @@ const apiKeys = pgTable(
     workspaceID: uuid("workspace_id")
       .notNull()
       .references(() => workspaces.id, { onDelete: "cascade" }),
-    memberID: uuid("member_id").notNull(),
     name: text("name").notNull(),
     permissions: keyPermissionEnum("permissions")
       .array()
@@ -74,11 +62,6 @@ const apiKeys = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true })
   },
   (table) => [
-    foreignKey({
-      name: "api_keys_workspace_member_fk",
-      columns: [table.workspaceID, table.memberID],
-      foreignColumns: [memberships.workspaceID, memberships.id]
-    }).onDelete("cascade"),
     index("api_keys_prefix_idx").on(table.prefix),
     index("api_keys_workspace_id_idx").on(table.workspaceID),
     index("api_keys_expires_at_idx").on(table.expiresAt)

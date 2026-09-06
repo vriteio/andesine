@@ -52,27 +52,27 @@ const isWorkspaceEventVisible = (
 
   if (event.action.startsWith("membership:")) {
     return hasAuthorizationRequirements(auth, {
-      session: ["workspace"],
+      session: true,
       key: ["read:memberships"]
     });
   }
 
   if (event.action.startsWith("invite:")) {
     return hasAuthorizationRequirements(auth, {
-      session: ["workspace"],
+      session: ["memberships"],
       key: ["memberships"]
     });
   }
 
   if (event.action.startsWith("role:")) {
     return hasAuthorizationRequirements(auth, {
-      session: ["workspace"],
+      session: true,
       key: ["read:roles"]
     });
   }
 
   if (event.action.startsWith("group:")) {
-    return hasAuthorizationRequirements(auth, { session: ["workspace"] });
+    return hasAuthorizationRequirements(auth, { session: true });
   }
 
   if (event.action === "restricted-assignments:update") {

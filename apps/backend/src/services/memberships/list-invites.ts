@@ -65,7 +65,7 @@ const listInvites = withAuthorization<
   undefined,
   { invites: InviteDetails[] }
 >(
-  { permissions: { session: ["workspace"], key: ["memberships"] }, plan: "pro" },
+  { permissions: { session: ["memberships"], key: ["memberships"] }, plan: "pro" },
   async ({ workspaceID }) => listInvitesOperation({ workspaceID })
 );
 

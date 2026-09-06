@@ -11,6 +11,7 @@ import clsx from "clsx";
 import { TreeItem, useTree } from "#web/components/tree";
 import type { KeyPermission } from "#web/lib/api";
 import { format, formatDistanceToNow } from "date-fns";
+import { useDelegationPermissions } from "#web/lib/policy/delegation";
 
 interface APIKeyItemProps {
   canManage: boolean;
@@ -29,6 +30,7 @@ interface APIKeyItemProps {
 const APIKeyItem: Component<APIKeyItemProps> = (props) => {
   const [{ selection }, { setSelection }] = useTree();
   const [menuOpened, setMenuOpened] = createSignal(false);
+  const { canGrantKeyPermission } = useDelegationPermissions();
   const dropdownOptions = createMemo(() => {
     const selectedIDs = selection();
     const isMulti = selectedIDs.length > 1;
@@ -40,6 +42,7 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
               { label: "Edit", shortcut: "f2", icon: "i-lucide:pencil", onClick: props.onEdit },
               {
                 label: "Rotate key",
+                disabled: !props.permissions.every(canGrantKeyPermission),
                 icon: "i-lucide:rotate-ccw-key",
                 onClick: props.onRotate
               }

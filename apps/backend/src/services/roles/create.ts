@@ -1,3 +1,5 @@
+import { assertRoleDelegation } from "#backend/lib/policy/delegation";
+import type { SessionData } from "#backend/lib/policy/session";
 import { toRoleID, toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { type Permission, roles, type Role } from "#backend/db";
@@ -16,8 +18,10 @@ interface CreateRoleInput {
 const createRoleOperation = async (
   input: CreateRoleInput & {
     workspaceID: string;
+    auth: SessionData;
   }
 ): Promise<Role> => {
+  assertRoleDelegation(input.auth, { permissions: input.permissions });
   const name = await validateRoleName(input);
 
   try {
@@ -38,8 +42,8 @@ const createRoleOperation = async (
   }
 };
 const createRole = withAuthorization<CreateRoleInput, undefined, Role>(
-  { permissions: { session: ["workspace"], key: ["roles"] }, plan: "pro" },
-  async ({ input, workspaceID }) => createRoleOperation({ ...input, workspaceID })
+  { permissions: { session: ["roles"], key: ["roles"] }, plan: "pro" },
+  async ({ auth, input, workspaceID }) => createRoleOperation({ ...input, auth, workspaceID })
 );
 
 export { createRole };
