@@ -27,12 +27,15 @@ const GroupItem: Component<GroupItemProps> = (props) => {
     const targetIDs = isMulti ? selectedIDs : [props.group.id];
 
     return [
-      ...(!isMulti ? [[{ label: "Edit", icon: "i-lucide:pencil", onClick: props.onEdit }]] : []),
+      ...(!isMulti
+        ? [[{ label: "Edit", shortcut: "f2", icon: "i-lucide:pencil", onClick: props.onEdit }]]
+        : []),
       [
         {
           label: targetIDs.length > 1 ? `Delete ${targetIDs.length} groups` : "Delete",
           icon: "i-lucide:trash",
           color: "danger" as const,
+          shortcut: "$mod+backspace",
           onClick: () => {
             props.onDelete(targetIDs);
             setSelection([]);
@@ -53,6 +56,10 @@ const GroupItem: Component<GroupItemProps> = (props) => {
   return (
     <DropdownArea>
       <TreeItem
+        keyboardMenu={props.canManage ? dropdownOptions().flat() : []}
+        onOpenMenu={() => {
+          if (props.canManage) setMenuOpened(true);
+        }}
         id={props.group.id}
         label={props.group.name}
         topLevel

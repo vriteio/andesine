@@ -205,6 +205,7 @@ const GroupsSection: Component = () => {
               }
             >
               <Tree
+                keyboard
                 tree={groupsTree}
                 itemHeight="2rem"
                 renderItem={(itemID) => {

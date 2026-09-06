@@ -37,6 +37,7 @@ const ChannelItem: Component<ChannelItemProps> = (props) => {
         : [
             {
               label: "Copy channel code",
+              shortcut: "$mod+alt+c",
               icon: "i-lucide:copy",
               onClick: () => {
                 void copyText(props.channel.code, {
@@ -50,6 +51,7 @@ const ChannelItem: Component<ChannelItemProps> = (props) => {
         label: isMulti ? `Delete ${selectedIDs.length} channels` : "Delete",
         icon: "i-lucide:trash",
         color: "danger" as const,
+        shortcut: "$mod+backspace",
         onClick: () => {
           props.onDelete(isMulti ? selectedIDs : [props.channel.code]);
           setSelection([]);
@@ -69,6 +71,10 @@ const ChannelItem: Component<ChannelItemProps> = (props) => {
   return (
     <DropdownArea>
       <TreeItem
+        keyboardMenu={editable() ? dropdownOptions().flat() : []}
+        onOpenMenu={() => {
+          if (editable()) setMenuOpened(true);
+        }}
         id={props.channel.code}
         label={props.channel.name}
         topLevel

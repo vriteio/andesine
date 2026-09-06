@@ -186,8 +186,12 @@ const GroupSettingsPage: Component = () => {
         <Suspense
           fallback={
             <>
-              <Skeleton class="h-14 w-full rounded-lg" />
-              <Skeleton class="h-14 w-full rounded-lg" />
+              <div class="w-full py-1">
+                <Skeleton class="h-11 w-full rounded-lg" />
+              </div>
+              <div class="w-full py-1">
+                <Skeleton class="h-11 w-full rounded-lg" />
+              </div>
             </>
           }
         >
@@ -235,35 +239,37 @@ const GroupSettingsPage: Component = () => {
           </For>
         </Suspense>
       </SettingsSection>
-      <SettingsSection label="Pending invitations">
-        <Suspense fallback={<Skeleton class="h-14 w-full rounded-lg" />}>
-          <For each={invitationList()}>
-            {(invitation) => (
-              <Setting
-                label={
-                  <span class="flex min-w-0 items-center gap-1.5">
-                    <span class="min-w-0 truncate">{invitation.email}</span>
-                    <span class="shrink-0 rounded-md bg-gray-100 border border-gray-200 px-1 py-px text-xs text-gray-500">
-                      {roleName(invitation.roleID)}
+      <Suspense fallback={<></>}>
+        <Show when={invitationList().length > 0}>
+          <SettingsSection label="Pending invitations">
+            <For each={invitationList()}>
+              {(invitation) => (
+                <Setting
+                  label={
+                    <span class="flex min-w-0 items-center gap-1.5">
+                      <span class="min-w-0 truncate">{invitation.email}</span>
+                      <span class="shrink-0 rounded-md bg-gray-100 border border-gray-200 px-1 py-px text-xs text-gray-500">
+                        {roleName(invitation.roleID)}
+                      </span>
                     </span>
-                  </span>
-                }
-                description="Will join this group when the invitation is accepted"
-                fade={false}
-                hover
-              >
-                <Checkbox
-                  checked={selectedInvitationIDs().includes(invitation.id)}
-                  disabled={saveMutation.isPending}
-                  setChecked={(selected) => {
-                    setSelectedInvitationIDs((ids) => toggleID(ids, invitation.id, selected));
-                  }}
-                />
-              </Setting>
-            )}
-          </For>
-        </Suspense>
-      </SettingsSection>
+                  }
+                  description="Will join this group when the invitation is accepted"
+                  fade={false}
+                  hover
+                >
+                  <Checkbox
+                    checked={selectedInvitationIDs().includes(invitation.id)}
+                    disabled={saveMutation.isPending}
+                    setChecked={(selected) => {
+                      setSelectedInvitationIDs((ids) => toggleID(ids, invitation.id, selected));
+                    }}
+                  />
+                </Setting>
+              )}
+            </For>
+          </SettingsSection>
+        </Show>
+      </Suspense>
       <div class="flex h-4 w-full items-center justify-center">
         <div class="h-px flex-1 bg-gray-200" />
       </div>

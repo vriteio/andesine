@@ -1,6 +1,6 @@
 import { type Role } from "#backend/db";
 import { useTree, TreeItem } from "#web/components/tree";
-import { Card, DropdownArea, DropdownMenu, IconButton, Tooltip } from "@andesine/components";
+import { type Card, DropdownArea, DropdownMenu, IconButton, Tooltip } from "@andesine/components";
 import clsx from "clsx";
 import {
   type Component,
@@ -9,7 +9,7 @@ import {
   createEffect,
   Match,
   Switch,
-  ComponentProps
+  type ComponentProps
 } from "solid-js";
 
 const RoleItem: Component<{
@@ -30,7 +30,9 @@ const RoleItem: Component<{
     });
 
     return [
-      ...(!isMulti ? [[{ label: "Edit", icon: "i-lucide:pencil", onClick: props.onEdit }]] : []),
+      ...(!isMulti
+        ? [[{ label: "Edit", shortcut: "f2", icon: "i-lucide:pencil", onClick: props.onEdit }]]
+        : []),
       ...(deletableIDs.length
         ? [
             [
@@ -38,6 +40,7 @@ const RoleItem: Component<{
                 label: deletableIDs.length > 1 ? `Delete ${deletableIDs.length} roles` : "Delete",
                 icon: "i-lucide:trash",
                 color: "danger" as const,
+                shortcut: "$mod+backspace",
                 onClick: () => {
                   props.onDelete(deletableIDs);
                   setSelection([]);
@@ -60,6 +63,10 @@ const RoleItem: Component<{
   return (
     <DropdownArea>
       <TreeItem
+        keyboardMenu={editable() ? dropdownOptions().flat() : []}
+        onOpenMenu={() => {
+          if (editable()) setMenuOpened(true);
+        }}
         id={props.role.id}
         label={props.role.name}
         topLevel

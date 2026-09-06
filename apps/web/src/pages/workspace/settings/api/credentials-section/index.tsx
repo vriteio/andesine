@@ -152,6 +152,7 @@ const APIKeyList: Component<APIKeyListProps> = (props) => {
         }
       >
         <Tree
+          keyboard
           tree={keysTree}
           itemHeight="2rem"
           renderItem={(itemID) => {

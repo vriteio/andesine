@@ -71,6 +71,7 @@ const MemberItem: Component<{
           label: isMulti ? `Remove ${selectedIDs.length} members` : "Remove",
           icon: "i-lucide:trash",
           color: "danger" as const,
+          shortcut: "$mod+backspace",
           disabled: affectsEveryAdmin(targetIDs)
             ? "At least one workspace admin is required"
             : undefined,
@@ -94,6 +95,10 @@ const MemberItem: Component<{
   return (
     <DropdownArea>
       <TreeItem
+        keyboardMenu={props.canManage && !props.loading ? dropdownOptions().flat() : []}
+        onOpenMenu={() => {
+          if (props.canManage && !props.loading) setMenuOpened(true);
+        }}
         id={props.member.id}
         label={memberName()}
         topLevel

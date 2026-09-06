@@ -138,7 +138,7 @@ const InviteSettingsPage: Component = () => {
         <div class="flex h-4 w-full items-center justify-center">
           <div class="h-px flex-1 bg-gray-200" />
         </div>
-        <Suspense fallback={<Skeleton class="h-9 w-full rounded-lg" />}>
+        <Suspense fallback={<Skeleton class="h-7 w-full rounded-lg" />}>
           <div class="flex items-center justify-end gap-2">
             <Tooltip content="Go back">
               <IconButton

@@ -133,6 +133,7 @@ const RoleList: Component<RoleListProps> = (props) => {
         }
       >
         <Tree
+          keyboard
           tree={rolesTree}
           itemHeight="2rem"
           renderItem={(itemID) => {

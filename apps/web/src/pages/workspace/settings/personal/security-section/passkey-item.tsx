@@ -1,6 +1,12 @@
 import { TreeItem, useTree } from "#web/components/tree";
-import { Card, DropdownArea, DropdownMenu, IconButton } from "@andesine/components";
-import { type Component, ComponentProps, createEffect, createMemo, createSignal } from "solid-js";
+import { type Card, DropdownArea, DropdownMenu, IconButton } from "@andesine/components";
+import {
+  type Component,
+  type ComponentProps,
+  createEffect,
+  createMemo,
+  createSignal
+} from "solid-js";
 import clsx from "clsx";
 import { format } from "date-fns";
 
@@ -24,6 +30,7 @@ const PasskeyItem: Component<{
             [
               {
                 label: "Rename",
+                shortcut: "f2",
                 icon: "i-lucide:pencil",
                 onClick: () => setRenaming(props.id)
               }
@@ -35,6 +42,7 @@ const PasskeyItem: Component<{
           label: isMulti ? `Delete ${selectedIDs.length} passkeys` : "Delete",
           icon: "i-lucide:trash",
           color: "danger" as const,
+          shortcut: "$mod+backspace",
           onClick: () => {
             props.onDelete(isMulti ? selectedIDs : [props.id]);
             setSelection([]);
@@ -53,6 +61,10 @@ const PasskeyItem: Component<{
   return (
     <DropdownArea>
       <TreeItem
+        keyboardMenu={!props.loading ? dropdownOptions().flat() : []}
+        onOpenMenu={() => {
+          if (!props.loading) setMenuOpened(true);
+        }}
         id={props.id}
         label={props.name}
         topLevel

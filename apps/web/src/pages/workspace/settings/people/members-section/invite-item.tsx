@@ -1,9 +1,15 @@
 import { type Invite, type Role } from "#backend/db";
 import { useTree, TreeItem } from "#web/components/tree";
-import { Card, DropdownArea, DropdownMenu, IconButton } from "@andesine/components";
+import { type Card, DropdownArea, DropdownMenu, IconButton } from "@andesine/components";
 import clsx from "clsx";
 import { format } from "date-fns";
-import { type Component, createSignal, createMemo, createEffect, ComponentProps } from "solid-js";
+import {
+  type Component,
+  createSignal,
+  createMemo,
+  createEffect,
+  type ComponentProps
+} from "solid-js";
 
 const InviteItem: Component<{
   invite: Invite & { inviteLink: string };
@@ -30,6 +36,7 @@ const InviteItem: Component<{
             [
               {
                 label: "Copy invite link",
+                shortcut: "$mod+alt+c",
                 icon: "i-lucide:link",
                 onClick: () => props.onCopyLink(props.invite.inviteLink)
               }
@@ -46,6 +53,7 @@ const InviteItem: Component<{
           label: isMulti ? `Revoke ${selectedIDs.length} invitations` : "Revoke invitation",
           icon: "i-lucide:x",
           color: "danger" as const,
+          shortcut: "$mod+backspace",
           onClick: () => {
             props.onRevoke(targetIDs);
             setSelection([]);
@@ -66,6 +74,10 @@ const InviteItem: Component<{
   return (
     <DropdownArea>
       <TreeItem
+        keyboardMenu={!props.loading ? dropdownOptions().flat() : []}
+        onOpenMenu={() => {
+          if (!props.loading) setMenuOpened(true);
+        }}
         id={props.invite.id}
         label={props.invite.email}
         topLevel

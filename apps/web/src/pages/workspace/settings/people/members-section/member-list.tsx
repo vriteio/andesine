@@ -157,6 +157,7 @@ const WorkspaceMemberList: Component<WorkspaceMemberListProps> = (props) => {
         }
       >
         <Tree
+          keyboard
           tree={membersTree}
           itemHeight="2rem"
           renderItem={(itemID) => {

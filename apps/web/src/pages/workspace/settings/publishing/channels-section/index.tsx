@@ -287,6 +287,7 @@ const ChannelsSection: Component = () => {
                 }
               >
                 <Tree
+                  keyboard
                   tree={tree}
                   itemHeight="2rem"
                   renderItem={(channelCode) => {

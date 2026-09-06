@@ -25,7 +25,7 @@ const Setting: ParentComponent<SettingProps> = (props) => (
         <span class="text-sm leading-tight text-gray-400">{props.description}</span>
       </div>
       <div class="flex w-full min-w-0 lg:flex-1 lg:justify-end">
-        <Suspense fallback={<Skeleton class="h-9 w-full max-w-md rounded-lg" />}>
+        <Suspense fallback={<Skeleton class="h-7 w-full max-w-md rounded-lg" />}>
           {props.children}
         </Suspense>
       </div>

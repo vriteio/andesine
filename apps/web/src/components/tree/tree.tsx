@@ -3,8 +3,12 @@ import { TREE_ROOT_ID, TreeProvider, type TreeMap, type TreeSize } from "./tree-
 import { TreeSelection } from "./tree-selection";
 import { TreeLevel } from "./tree-level";
 import { TreeRoot } from "./tree-root";
+import { TreeKeyboard } from "./tree-keyboard";
+import { Dynamic } from "solid-js/web";
+import { Fragment } from "@andesine/components";
 
 interface TreeProps {
+  keyboard?: boolean;
   tree: Accessor<TreeMap>;
   levelIDs?: Accessor<Record<string, unknown>>;
   renderLevel?(levelID: string): JSX.Element;
@@ -22,15 +26,17 @@ const Tree: ParentComponent<TreeProps> = (props) => (
     gap={props.gap}
   >
     <TreeRoot>
-      <TreeSelection />
-      <TreeLevel
-        levelID={TREE_ROOT_ID}
-        tree={props.tree}
-        renderLevel={props.renderLevel}
-        renderItem={props.renderItem}
-        emptyMessage={props.emptyMessage}
-      />
-      {props.children}
+      <Dynamic component={props.keyboard ? TreeKeyboard : Fragment}>
+        <TreeSelection />
+        <TreeLevel
+          levelID={TREE_ROOT_ID}
+          tree={props.tree}
+          renderLevel={props.renderLevel}
+          renderItem={props.renderItem}
+          emptyMessage={props.emptyMessage}
+        />
+        {props.children}
+      </Dynamic>
     </TreeRoot>
   </TreeProvider>
 );

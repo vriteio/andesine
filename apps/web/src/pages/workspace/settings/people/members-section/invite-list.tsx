@@ -151,6 +151,7 @@ const InviteList: Component<InviteListProps> = (props) => {
         }
       >
         <Tree
+          keyboard
           tree={invitesTree}
           itemHeight="2rem"
           renderItem={(itemID) => {

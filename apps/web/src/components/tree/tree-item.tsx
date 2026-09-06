@@ -1,9 +1,20 @@
-import { Checkbox, createRef } from "@andesine/components";
+import { Checkbox, createRef, type MenuItem } from "@andesine/components";
 import clsx from "clsx";
-import { type Component, createEffect, createSignal, type JSX, Show } from "solid-js";
+import {
+  type Component,
+  createEffect,
+  createSignal,
+  type JSX,
+  Show,
+  onMount,
+  onCleanup
+} from "solid-js";
 import { useTree } from "./tree-context";
+import { useTreeKeyboardItems } from "./tree-keyboard";
 
 interface TreeItemProps {
+  keyboardMenu?: MenuItem[];
+  onOpenMenu?(): void;
   id: string;
   label: string;
   children?: JSX.Element;
@@ -24,6 +35,8 @@ interface TreeItemProps {
 }
 
 const TreeItem: Component<TreeItemProps> = (props) => {
+  const keyboardItems = useTreeKeyboardItems();
+  let element: HTMLElement | undefined;
   const [
     { focusedSource, isFocused, isRenaming, isSelected, flattenedOrder, itemHeight },
     { setFocusedItem, setSelection, setRenaming }
@@ -40,8 +53,16 @@ const TreeItem: Component<TreeItemProps> = (props) => {
   };
   const handleClick = (event: MouseEvent) => {
     const selected = isSelected(props.id);
+    const selectionTarget =
+      event.target instanceof Element && event.target.closest("[data-tree-selectable]");
 
     event.stopPropagation();
+
+    if (keyboardItems && selectionTarget) {
+      queueMicrotask(() => {
+        if (element?.isConnected) element.focus({ preventScroll: true });
+      });
+    }
 
     if (
       props.selectable &&
@@ -105,11 +126,38 @@ const TreeItem: Component<TreeItemProps> = (props) => {
     setRenaming("");
   };
 
+  onMount(() => {
+    const id = props.id;
+
+    keyboardItems?.set(id, {
+      element: () => element,
+      label: () => props.label,
+      selectable: () => Boolean(props.selectable),
+      menuItems: () => props.keyboardMenu || [],
+      openMenu: () => props.onOpenMenu?.(),
+      activate: () => {
+        if (props.onClick) element?.click();
+        else props.onOpenMenu?.();
+      }
+    });
+    onCleanup(() => {
+      const root = element?.closest<HTMLElement>("[data-tree-keyboard]");
+      const wasFocused = document.activeElement === element;
+
+      keyboardItems?.delete(id);
+      if (wasFocused && root) {
+        queueMicrotask(() => {
+          if (root.isConnected && document.activeElement === document.body) root.focus();
+        });
+      }
+    });
+  });
+
   return (
     <div
       class={clsx(
         ":base: relative flex min-w-0 flex-1 gap-1 font-medium items-center pl-0.5 rounded-r-lg group @hover:cursor-pointer w-full overflow-hidden select-none",
-        props.selectable &&
+        (props.selectable || (keyboardItems && focusedSource() === "keyboard")) &&
           isFocused(props.id) &&
           !isSelected(props.id) &&
           !props.highlighted &&
@@ -118,7 +166,14 @@ const TreeItem: Component<TreeItemProps> = (props) => {
         props.class
       )}
       style={{ "min-height": itemHeight }}
-      ref={props.ref}
+      ref={(el) => {
+        element = el;
+        props.ref?.(el);
+      }}
+      tabindex={keyboardItems ? -1 : undefined}
+      onFocus={(event) => {
+        if (keyboardItems && event.target === element) setFocusedItem(props.id, "keyboard");
+      }}
       onClick={handleClick}
       onPointerEnter={focusItem}
       onPointerLeave={clearHoverFocus}
@@ -198,6 +253,7 @@ const TreeItem: Component<TreeItemProps> = (props) => {
                     e.stopPropagation();
                     setCancelledRef(true);
                     submitRename();
+                    if (keyboardItems) element?.focus({ preventScroll: true });
                   }
 
                   if (e.key === "Escape") {
@@ -205,6 +261,7 @@ const TreeItem: Component<TreeItemProps> = (props) => {
                     e.stopPropagation();
                     setRenaming("");
                     setCancelledRef(true);
+                    if (keyboardItems) element?.focus({ preventScroll: true });
                   }
                 }}
               />

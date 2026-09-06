@@ -1,7 +1,7 @@
-import { Card, DropdownArea, DropdownMenu, IconButton, Tooltip } from "@andesine/components";
+import { type Card, DropdownArea, DropdownMenu, IconButton, Tooltip } from "@andesine/components";
 import {
   type Component,
-  ComponentProps,
+  type ComponentProps,
   createEffect,
   createMemo,
   createSignal,
@@ -37,7 +37,7 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
       ...(!isMulti && !props.expiresAt
         ? [
             [
-              { label: "Edit", icon: "i-lucide:pencil", onClick: props.onEdit },
+              { label: "Edit", shortcut: "f2", icon: "i-lucide:pencil", onClick: props.onEdit },
               {
                 label: "Rotate key",
                 icon: "i-lucide:rotate-ccw-key",
@@ -51,6 +51,7 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
           label: isMulti ? `Delete ${selectedIDs.length} keys` : "Delete",
           icon: "i-lucide:trash",
           color: "danger" as const,
+          shortcut: "$mod+backspace",
           onClick: () => {
             props.onDelete(isMulti ? selectedIDs : [props.id]);
             setSelection([]);
@@ -69,6 +70,10 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
   return (
     <DropdownArea>
       <TreeItem
+        keyboardMenu={props.canManage && !props.loading ? dropdownOptions().flat() : []}
+        onOpenMenu={() => {
+          if (props.canManage && !props.loading) setMenuOpened(true);
+        }}
         id={props.id}
         label={props.name}
         topLevel

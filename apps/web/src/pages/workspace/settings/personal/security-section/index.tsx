@@ -76,6 +76,7 @@ const PasskeyList: Component<PasskeyListProps> = (props) => {
       }
     >
       <Tree
+        keyboard
         tree={passkeysTree}
         itemHeight="2rem"
         renderItem={(itemID) => {
