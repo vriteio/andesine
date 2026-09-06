@@ -108,7 +108,7 @@ const TreeItem: Component<TreeItemProps> = (props) => {
   return (
     <div
       class={clsx(
-        ":base: relative flex flex-1 gap-1 font-medium items-center pl-0.5 rounded-r-lg group @hover:cursor-pointer w-full overflow-hidden select-none",
+        ":base: relative flex min-w-0 flex-1 gap-1 font-medium items-center pl-0.5 rounded-r-lg group @hover:cursor-pointer w-full overflow-hidden select-none",
         props.selectable &&
           isFocused(props.id) &&
           !isSelected(props.id) &&
@@ -175,14 +175,14 @@ const TreeItem: Component<TreeItemProps> = (props) => {
                 ref={(el) => {
                   setCurrentName(props.label);
                   queueMicrotask(() => {
-                    el.focus();
+                    el.focus({ preventScroll: true });
                     el.select();
                   });
                 }}
                 type="text"
                 value={currentName()}
                 maxLength={props.labelMaxLength}
-                class="min-w-4 flex-1 cursor-text select-text overflow-hidden whitespace-nowrap bg-transparent outline-none"
+                class="min-w-0 w-0 flex-1 cursor-text select-text overflow-hidden whitespace-nowrap bg-transparent outline-none"
                 style={{ "-webkit-touch-callout": "default" }}
                 onInput={(e) => {
                   setCurrentName(e.currentTarget.value);

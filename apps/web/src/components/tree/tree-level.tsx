@@ -42,7 +42,7 @@ const TreeLevel: Component<TreeLevelProps> = (props) => {
               )}
             />
           </div>
-          <div class="flex flex-col flex-1">
+          <div class="flex min-w-0 flex-col flex-1">
             <Show when={!childLevelIDs().length && !childItemIDs().length}>
               <div
                 class="flex items-center pl-2 rounded-r-lg relative"
