@@ -63,7 +63,7 @@ const SubscriptionInfo: Component<SubscriptionInfoProps> = (props) => {
 
     if (status === "past_due" || status === "unpaid") {
       return {
-        icon: "i-lucide:triangle-alert",
+        icon: "i-lucide:triangle-alert text-red-500",
         text: "Your latest payment failed. Update your payment method to prevent interruption."
       } as const;
     }
@@ -93,7 +93,7 @@ const SubscriptionInfo: Component<SubscriptionInfoProps> = (props) => {
 
     if (status === "incomplete_expired") {
       return {
-        icon: "i-lucide:clock-arrow-right",
+        icon: "i-lucide:clock-arrow-right text-amber-500",
         text: "The previous Checkout expired. Start a new Checkout to activate Pro."
       } as const;
     }
@@ -244,11 +244,13 @@ const SubscriptionAction: Component = () => {
                 </Show>
               </div>
             </Button>
-            <SubscriptionInfo
-              subscription={subscriptionData()}
-              canManageBilling={canManageBilling()}
-              isPro={isPro()}
-            />
+            <div class="min-h-12">
+              <SubscriptionInfo
+                subscription={subscriptionData()}
+                canManageBilling={canManageBilling()}
+                isPro={isPro()}
+              />
+            </div>
           </div>
         );
       }}

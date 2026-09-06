@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Elastic-2.0
+import { getEffectivePlan } from "#backend/lib/billing";
+import { config } from "#backend/lib/config";
 import { memberships, workspaces } from "#backend/db";
 import { toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
@@ -5,6 +8,7 @@ import { ORPCError } from "@orpc/server";
 import { count, eq } from "drizzle-orm";
 
 interface SubscriptionInfo {
+  billingEnabled: boolean;
   plan: string;
   status: string;
   seats: number;
@@ -35,8 +39,24 @@ const getSubscription = async (input: { workspaceID: string }): Promise<Subscrip
     .from(memberships)
     .where(eq(memberships.workspaceID, workspaceID));
 
+  if (!config.BILLING_ENABLED) {
+    return {
+      billingEnabled: false,
+      plan: "pro",
+      status: "active",
+      seats,
+      expiresAt: null,
+      customerID: null,
+      cancelAt: null,
+      cancelAtPeriodEnd: false,
+      canceledAt: null,
+      endedAt: null
+    };
+  }
+
   return {
-    plan: workspace.subscriptionPlan || "free",
+    billingEnabled: true,
+    plan: getEffectivePlan(workspace.subscriptionPlan),
     status: workspace.subscriptionStatus || "active",
     seats,
     expiresAt: workspace.subscriptionExpiresAt

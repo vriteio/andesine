@@ -24,7 +24,7 @@ const ExplorerSyncStatusIndicator: Component<ExplorerSyncStatusIndicatorProps> =
             </Show>
           }
         >
-          <div class="i-lucide:cloud-off h-3.5 w-3.5 bg-gradient-to-tr" />
+          <div class="i-lucide:cloud-off h-3.5 w-3.5 text-amber-500" />
         </Show>
         <span class="max-w-28 truncate text-gray-500">{label()}</span>
       </div>

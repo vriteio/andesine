@@ -1,26 +1,34 @@
 import { Skeleton } from "@andesine/components";
+import clsx from "clsx";
 import { createAsync } from "@solidjs/router";
-import { type Component, For, Suspense } from "solid-js";
+import { type Component, createEffect, createSignal, For, Suspense } from "solid-js";
+import { useWorkspace } from "#web/context/workspace";
 import { config } from "#web/lib/api";
 import { subscriptionQuery, usageQuery } from "#web/lib/data";
 import { formatNumber, formatUSD } from "#web/lib/primitives";
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
 import { SubscriptionAction } from "./subscription-action";
-import clsx from "clsx";
 
 const SubscriptionSection: Component = () => {
+  const { currentWorkspace } = useWorkspace();
   const subscription = createAsync(() => subscriptionQuery());
   const usage = createAsync(() => usageQuery());
-  const isPro = () => subscription.latest?.plan === "pro";
+  const [subscriptionDetails, setSubscriptionDetails] =
+    createSignal<Awaited<ReturnType<typeof subscriptionQuery>>>();
+  const [usageDetails, setUsageDetails] = createSignal<Awaited<ReturnType<typeof usageQuery>>>();
+  const isPro = () => {
+    return (subscriptionDetails()?.plan ?? currentWorkspace()?.subscriptionPlan) === "pro";
+  };
   const descriptionItems = () => {
-    const subscriptionData = subscription.latest;
+    const details = subscriptionDetails();
+    const currentUsage = usageDetails();
 
-    if (subscriptionData?.plan === "pro") {
+    if (isPro()) {
       return [
         <>
           <span class="font-medium text-gray-700">
-            {formatUSD(subscriptionData.seats * config.PRICE_PER_SEAT_USD)}
+            {details ? formatUSD(details.seats * config.PRICE_PER_SEAT_USD) : "—"}
             <span class="opacity-50 mx-0.5">/</span>
             mo.
           </span>{" "}
@@ -28,13 +36,13 @@ const SubscriptionSection: Component = () => {
         </>,
         <>
           <span class="font-medium text-gray-700">
-            {subscriptionData.seats} member {subscriptionData.seats === 1 ? "seat" : "seats"}
+            {details?.seats ?? "—"} member {details?.seats === 1 ? "seat" : "seats"}
           </span>{" "}
           active
         </>,
         <>
           <span class="font-medium text-gray-700">
-            {formatNumber(usage.latest?.totalUsage ?? 0)} API calls
+            {currentUsage ? formatNumber(currentUsage.totalUsage) : "—"} API calls
           </span>{" "}
           this month
         </>
@@ -52,6 +60,10 @@ const SubscriptionSection: Component = () => {
       </>
     ];
   };
+
+  // Keep asynchronous reads out of the immediately rendered description.
+  createEffect(() => setSubscriptionDetails(subscription()));
+  createEffect(() => setUsageDetails(usage()));
 
   return (
     <SettingsSection label="Subscription">
@@ -85,7 +97,14 @@ const SubscriptionSection: Component = () => {
         }
         fade={false}
       >
-        <Suspense fallback={<Skeleton class="h-14 w-full md:max-w-64 rounded-xl" />}>
+        <Suspense
+          fallback={
+            <div class="flex w-full flex-col gap-2 md:max-w-64">
+              <Skeleton class="h-14 w-full rounded-xl" />
+              <div class="min-h-12" />
+            </div>
+          }
+        >
           <SubscriptionAction />
         </Suspense>
       </Setting>

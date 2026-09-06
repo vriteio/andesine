@@ -10,6 +10,7 @@ import {
   type Component,
   createEffect,
   createSignal,
+  on,
   onCleanup,
   onMount,
   Show,
@@ -161,6 +162,14 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
       setMobilePanelOpened(false);
     }
   });
+
+  createEffect(
+    on(
+      () => location.pathname,
+      () => setMobilePanelOpened(false),
+      { defer: true }
+    )
+  );
 
   onMount(() => {
     const closeOnNavigation = (event: MouseEvent) => {

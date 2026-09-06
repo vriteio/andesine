@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Elastic-2.0
 import { workspaces } from "#backend/db";
 import { toUUID } from "#backend/lib/primitives";
 import { db, stripe } from "#backend/lib/adapters";
@@ -8,7 +9,9 @@ const createPortal = async (input: {
   workspaceID: string;
   returnURL: string;
 }): Promise<{ url: string }> => {
-  if (!stripe) throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Stripe not configured" });
+  if (!stripe) {
+    throw new ORPCError("FORBIDDEN", { message: "Billing is disabled for this installation" });
+  }
 
   const [workspace] = await db
     .select()

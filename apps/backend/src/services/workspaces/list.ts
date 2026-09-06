@@ -1,3 +1,5 @@
+import { config } from "#backend/lib/config";
+import { getEffectivePlan } from "#backend/lib/billing";
 import {
   entries,
   memberships,
@@ -25,6 +27,7 @@ interface WorkspaceListItem extends Pick<Workspace, "id" | "name"> {
   permissions: Permission[];
   admin: boolean;
   subscriptionPlan: string;
+  billingEnabled: boolean;
 }
 
 const listWorkspaces = async (input: {
@@ -62,7 +65,7 @@ const listWorkspaces = async (input: {
     .where(inArray(memberships.userID, userIDs));
 
   const availableRows = rows.filter((row) => {
-    return row.baseRole === "admin" || row.subscriptionPlan === "pro";
+    return row.baseRole === "admin" || getEffectivePlan(row.subscriptionPlan) === "pro";
   });
   const items = await Promise.all(
     availableRows.map(async (row): Promise<WorkspaceListItem> => {
@@ -70,7 +73,7 @@ const listWorkspaces = async (input: {
         id: `workspace-list:${row.membershipID}`,
         type: "session",
         workspaceID: toWorkspaceID(row.id),
-        subscriptionPlan: row.subscriptionPlan,
+        subscriptionPlan: getEffectivePlan(row.subscriptionPlan),
         session: {
           admin: row.baseRole === "admin",
           memberID: toMembershipID(row.membershipID),
@@ -99,7 +102,8 @@ const listWorkspaces = async (input: {
         currentEntryID,
         permissions: row.permissions,
         admin: row.baseRole === "admin",
-        subscriptionPlan: row.subscriptionPlan
+        subscriptionPlan: getEffectivePlan(row.subscriptionPlan),
+        billingEnabled: config.BILLING_ENABLED
       };
     })
   );

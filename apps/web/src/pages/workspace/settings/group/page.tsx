@@ -9,15 +9,7 @@ import {
 } from "@andesine/components";
 import { createAsync, revalidate, useNavigate, useParams } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
-import {
-  type Component,
-  createEffect,
-  createMemo,
-  createSignal,
-  For,
-  Show,
-  Suspense
-} from "solid-js";
+import { type Component, createEffect, createSignal, For, Show, Suspense } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import { useNotify } from "#web/context/notifications";
 import { client } from "#web/lib/api";
@@ -51,29 +43,26 @@ const GroupSettingsPage: Component = () => {
   const params = useParams<{ groupID?: string; workspaceID?: string }>();
   const groupID = () => params.groupID || null;
   const navigateToPeople = () => navigate(`/${params.workspaceID || ""}/settings/people`);
-  const groups = createAsync(
-    async () => {
-      try {
-        return await groupsQuery();
-      } catch (error) {
-        console.error(error);
+  const groups = createAsync(async () => {
+    try {
+      return await groupsQuery();
+    } catch (error) {
+      console.error(error);
 
-        return null;
-      }
-    },
-    { deferStream: true }
-  );
-  const members = createAsync(() => membershipsQuery(), { deferStream: true });
-  const invitations = createAsync(() => invitesQuery(), { deferStream: true });
-  const roles = createAsync(() => rolesQuery(), { deferStream: true });
-  const currentGroup = createMemo(() => {
-    return groupID() ? groups()?.find((group) => group.id === groupID()) : null;
+      return null;
+    }
   });
+  const members = createAsync(() => membershipsQuery());
+  const invitations = createAsync(() => invitesQuery());
+  const roles = createAsync(() => rolesQuery());
+  const currentGroup = () => {
+    return groupID() ? groups()?.find((group) => group.id === groupID()) : null;
+  };
   const [groupName, setGroupName] = createSignal("");
   const [groupNameServerError, setGroupNameServerError] = createSignal("");
   const [selectedInvitationIDs, setSelectedInvitationIDs] = createSignal<string[]>([]);
   const [selectedMemberIDs, setSelectedMemberIDs] = createSignal<string[]>([]);
-  const groupNameError = createMemo(() => {
+  const groupNameError = () => {
     const name = groupName().trim();
 
     if (!name) return "Group name is required";
@@ -87,13 +76,13 @@ const GroupSettingsPage: Component = () => {
     }
 
     return groupNameServerError();
-  });
-  const fillError = createMemo(() => {
+  };
+  const fillError = () => {
     if (groupID() && groups() && !currentGroup()) return "Group could not be found";
     if (groupNameError()) return groupNameError();
 
     return "";
-  });
+  };
   const saveMutation = createMutation(() => ({
     mutationFn: async (input: SaveGroupInput) => {
       if (input.id) {
@@ -246,8 +235,8 @@ const GroupSettingsPage: Component = () => {
           </For>
         </Suspense>
       </SettingsSection>
-      <Show when={invitationList().length > 0}>
-        <SettingsSection label="Pending invitations">
+      <SettingsSection label="Pending invitations">
+        <Suspense fallback={<Skeleton class="h-14 w-full rounded-lg" />}>
           <For each={invitationList()}>
             {(invitation) => (
               <Setting
@@ -273,48 +262,50 @@ const GroupSettingsPage: Component = () => {
               </Setting>
             )}
           </For>
-        </SettingsSection>
-      </Show>
+        </Suspense>
+      </SettingsSection>
       <div class="flex h-4 w-full items-center justify-center">
         <div class="h-px flex-1 bg-gray-200" />
       </div>
-      <div class="flex items-center justify-end gap-2">
-        <Tooltip content="Go back">
-          <IconButton
-            variant="outlined"
-            color="contrast"
-            text="soft"
-            size="small"
-            icon="i-lucide:chevron-left"
-            onClick={navigateToPeople}
-            disabled={saveMutation.isPending}
-          />
-        </Tooltip>
-        <Dynamic
-          component={fillError() ? Tooltip : Fragment}
-          content={fillError()}
-          wrapperClass="flex-1"
-        >
-          <Button
-            color="primary"
-            variant="outlined"
-            size="small"
-            class="flex w-full items-center justify-center gap-1"
-            disabled={Boolean(fillError())}
-            loading={saveMutation.isPending}
-            onClick={() => {
-              saveMutation.mutate({
-                id: groupID() || undefined,
-                invitationIDs: selectedInvitationIDs(),
-                memberIDs: selectedMemberIDs(),
-                name: groupName().trim()
-              });
-            }}
+      <Suspense fallback={<Skeleton class="h-9 w-full rounded-lg" />}>
+        <div class="flex items-center justify-end gap-2">
+          <Tooltip content="Go back">
+            <IconButton
+              variant="outlined"
+              color="contrast"
+              text="soft"
+              size="small"
+              icon="i-lucide:chevron-left"
+              onClick={navigateToPeople}
+              disabled={saveMutation.isPending}
+            />
+          </Tooltip>
+          <Dynamic
+            component={fillError() ? Tooltip : Fragment}
+            content={fillError()}
+            wrapperClass="flex-1"
           >
-            {groupID() ? "Save changes" : "Create group"}
-          </Button>
-        </Dynamic>
-      </div>
+            <Button
+              color="primary"
+              variant="outlined"
+              size="small"
+              class="flex w-full items-center justify-center gap-1"
+              disabled={Boolean(fillError())}
+              loading={saveMutation.isPending}
+              onClick={() => {
+                saveMutation.mutate({
+                  id: groupID() || undefined,
+                  invitationIDs: selectedInvitationIDs(),
+                  memberIDs: selectedMemberIDs(),
+                  name: groupName().trim()
+                });
+              }}
+            >
+              {groupID() ? "Save changes" : "Create group"}
+            </Button>
+          </Dynamic>
+        </div>
+      </Suspense>
     </div>
   );
 };

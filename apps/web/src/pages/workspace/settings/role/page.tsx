@@ -1,6 +1,14 @@
-import { Button, Fragment, IconButton, Input, ToggleGroup, Tooltip } from "@andesine/components";
+import {
+  Button,
+  Fragment,
+  IconButton,
+  Input,
+  Skeleton,
+  ToggleGroup,
+  Tooltip
+} from "@andesine/components";
 import { createAsync, useNavigate, useParams } from "@solidjs/router";
-import { type Component, createEffect, createMemo, createSignal, For, Show } from "solid-js";
+import { type Component, createEffect, createSignal, Suspense, For, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
 import { useNotify } from "#web/context/notifications";
@@ -78,21 +86,18 @@ const RoleSettingsPage: Component = () => {
   const params = useParams<{ workspaceID?: string; roleID?: string }>();
   const roleID = () => params.roleID || null;
   const navigateToPeople = () => navigate(`/${params.workspaceID || ""}/settings/people`);
-  const roles = createAsync(
-    async () => {
-      try {
-        return await rolesQuery();
-      } catch (error) {
-        console.error(error);
+  const roles = createAsync(async () => {
+    try {
+      return await rolesQuery();
+    } catch (error) {
+      console.error(error);
 
-        return null;
-      }
-    },
-    { deferStream: true }
-  );
-  const currentRole = createMemo(() => {
-    return roleID() ? roles()?.find((role) => role.id === roleID()) : null;
+      return null;
+    }
   });
+  const currentRole = () => {
+    return roleID() ? roles()?.find((role) => role.id === roleID()) : null;
+  };
   const [roleName, setRoleName] = createSignal("");
   const [roleNameServerError, setRoleNameServerError] = createSignal("");
   const { createRoleMutation, updateRoleMutation } = useRoleMutations({
@@ -100,12 +105,12 @@ const RoleSettingsPage: Component = () => {
     setDuplicateNameError: setRoleNameServerError
   });
   const [resourceAccess, setResourceAccess] = createSignal<ResourceAccess>(emptyAccess());
-  const formUnavailable = createMemo(() => {
+  const formUnavailable = () => {
     const role = currentRole();
 
     return Boolean(roleID() && roles() && (!role || role.baseRole));
-  });
-  const roleNameError = createMemo(() => {
+  };
+  const roleNameError = () => {
     if (!roleName().trim()) return "Role name is required";
     if (roleName().trim().length > 50) return "Role name must be 50 characters or fewer";
     const normalizedName = roleName().trim().toLowerCase();
@@ -116,14 +121,14 @@ const RoleSettingsPage: Component = () => {
     if (duplicate) return "A role with this name already exists";
 
     return roleNameServerError();
-  });
-  const fillError = createMemo(() => {
+  };
+  const fillError = () => {
     if (roleID() && roles() && !currentRole()) return "Role could not be found";
     if (currentRole()?.baseRole) return "System roles cannot be edited";
     if (roleNameError()) return roleNameError();
 
     return "";
-  });
+  };
   const mutationPending = () => createRoleMutation.isPending || updateRoleMutation.isPending;
 
   createEffect(() => {
@@ -225,47 +230,49 @@ const RoleSettingsPage: Component = () => {
         <div class="flex h-4 w-full items-center justify-center">
           <div class="h-px flex-1 bg-gray-200" />
         </div>
-        <div class="flex items-center justify-end gap-2">
-          <Tooltip content="Go back">
-            <IconButton
-              variant="outlined"
-              color="contrast"
-              text="soft"
-              size="small"
-              icon="i-lucide:chevron-left"
-              onClick={navigateToPeople}
-              disabled={mutationPending()}
-            />
-          </Tooltip>
-          <Dynamic
-            component={fillError() ? Tooltip : Fragment}
-            content={fillError()}
-            wrapperClass="flex-1"
-          >
-            <Button
-              color="primary"
-              variant="outlined"
-              size="small"
-              class="flex w-full items-center justify-center gap-1"
-              disabled={Boolean(fillError())}
-              loading={mutationPending()}
-              onClick={() => {
-                const input = {
-                  name: roleName().trim(),
-                  permissions: accessToPermissions(resourceAccess())
-                };
-
-                if (roleID()) {
-                  updateRoleMutation.mutate({ id: roleID()!, ...input });
-                } else {
-                  createRoleMutation.mutate(input);
-                }
-              }}
+        <Suspense fallback={<Skeleton class="h-9 w-full rounded-lg" />}>
+          <div class="flex items-center justify-end gap-2">
+            <Tooltip content="Go back">
+              <IconButton
+                variant="outlined"
+                color="contrast"
+                text="soft"
+                size="small"
+                icon="i-lucide:chevron-left"
+                onClick={navigateToPeople}
+                disabled={mutationPending()}
+              />
+            </Tooltip>
+            <Dynamic
+              component={fillError() ? Tooltip : Fragment}
+              content={fillError()}
+              wrapperClass="flex-1"
             >
-              {roleID() ? "Save changes" : "Create role"}
-            </Button>
-          </Dynamic>
-        </div>
+              <Button
+                color="primary"
+                variant="outlined"
+                size="small"
+                class="flex w-full items-center justify-center gap-1"
+                disabled={Boolean(fillError())}
+                loading={mutationPending()}
+                onClick={() => {
+                  const input = {
+                    name: roleName().trim(),
+                    permissions: accessToPermissions(resourceAccess())
+                  };
+
+                  if (roleID()) {
+                    updateRoleMutation.mutate({ id: roleID()!, ...input });
+                  } else {
+                    createRoleMutation.mutate(input);
+                  }
+                }}
+              >
+                {roleID() ? "Save changes" : "Create role"}
+              </Button>
+            </Dynamic>
+          </div>
+        </Suspense>
       </div>
     </>
   );

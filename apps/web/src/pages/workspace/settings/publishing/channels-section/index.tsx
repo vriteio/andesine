@@ -2,7 +2,7 @@ import { Card, IconButton, Skeleton } from "@andesine/components";
 import { createAsync, revalidate } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
 import { normalizeResourceName } from "@andesine/editor/normalize-resource-name";
-import { type Component, createMemo, createSignal, Show, Suspense, useTransition } from "solid-js";
+import { type Component, createSignal, Show, Suspense, useTransition } from "solid-js";
 import { ActionConfirmationDialog } from "#web/components/action-confirmation-dialog";
 import { Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
 import { useNotify } from "#web/context/notifications";
@@ -118,7 +118,7 @@ const ChannelsSection: Component = () => {
 
     return newChannelServerError();
   };
-  const visibleChannels = createMemo(() => {
+  const visibleChannels = () => {
     let currentChannels = channels();
 
     if ((deleteChannelMutation.isPending || refreshing()) && deleteChannelMutation.variables) {
@@ -151,13 +151,13 @@ const ChannelsSection: Component = () => {
     return [...currentChannels].sort((a, b) => {
       return Number(a.builtIn) - Number(b.builtIn) || a.name.localeCompare(b.name);
     });
-  });
-  const tree = createMemo<TreeMap>(() => ({
+  };
+  const tree = (): TreeMap => ({
     [TREE_ROOT_ID]: {
       items: visibleChannels().map((channel) => channel.code),
       levels: []
     }
-  }));
+  });
   const mutationPending = () => {
     return createChannelMutation.isPending || deleteChannelMutation.isPending;
   };
@@ -262,7 +262,7 @@ const ChannelsSection: Component = () => {
                   class="flex h-20 flex-col items-center justify-center gap-1 rounded-lg bg-white px-2 text-sm text-gray-400"
                   shade
                 >
-                  <div class="i-lucide:triangle-alert h-5.5 w-5.5 text-gray-300" />
+                  <div class="i-lucide:triangle-alert h-5.5 w-5.5 text-red-500" />
                   Publishing channels could not be loaded
                   <IconButton
                     label={() => <span class="px-1">Try again</span>}

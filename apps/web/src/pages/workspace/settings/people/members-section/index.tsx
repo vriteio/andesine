@@ -1,6 +1,6 @@
 import { IconButton, Skeleton } from "@andesine/components";
 import { createAsync, revalidate, useNavigate, useParams } from "@solidjs/router";
-import { type Component, createMemo, Show, Suspense, useTransition } from "solid-js";
+import { type Component, Show, Suspense, useTransition } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
@@ -22,7 +22,6 @@ const ListSkeleton: Component = () => (
 
 const InvitationsSubsection: Component<InvitationSubsectionProps> = (props) => {
   const [invitesRefreshing, startInvitesRefresh] = useTransition();
-  const showInvites = createMemo((visible) => visible || props.invites?.length || 0 > 0, false);
   const refreshInvites = (onRevalidated = () => {}) => {
     void startInvitesRefresh(() => {
       void (async () => {
@@ -32,7 +31,7 @@ const InvitationsSubsection: Component<InvitationSubsectionProps> = (props) => {
     });
   };
   return (
-    <Show when={showInvites()}>
+    <Show when={props.invites.length > 0}>
       <Setting
         label="Invitations"
         description="Invitations remain here until they are accepted or revoked"
@@ -110,8 +109,7 @@ const MembersSection: Component = () => {
           </Suspense>
         </div>
         <Show when={canManageProFeatures()}>
-          {/* No fallback to only render invites sections if there are actual invites */}
-          <Suspense fallback={<></>}>
+          <Suspense>
             <InvitationsSubsection invites={invites() || []} roles={roles() || []} />
           </Suspense>
         </Show>

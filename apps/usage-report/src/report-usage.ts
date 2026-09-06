@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Elastic-2.0
 import { config } from "@andesine/backend/lib/config";
 // Import specific adapters to avoid eager evaluation of other adapters like Redis
 import { pool } from "@andesine/backend/lib/adapters/postgres";
@@ -66,6 +67,8 @@ const claimUsage = async (): Promise<UsageLedgerRow | null> => {
 };
 
 const reportUsage = async (): Promise<number> => {
+  if (!config.BILLING_ENABLED) return 0;
+
   let reportedCount = 0;
   const failures: unknown[] = [];
 

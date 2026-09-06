@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Elastic-2.0
 import { invitations, stripeWebhookEvents, workspaces } from "#backend/db";
 import { db } from "#backend/lib/adapters";
 import { and, eq, ne, sql } from "drizzle-orm";

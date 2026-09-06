@@ -131,8 +131,6 @@ const processActivity = async (candidate: ActivityCandidate): Promise<void> => {
   }
 };
 const deleteExpiredAutomaticVersions = async (): Promise<void> => {
-  const billingConfigured = Boolean(config.STRIPE_SECRET_KEY);
-
   const deleted = await db.execute<{ entryID: string; id: string; workspaceID: string }>(sql`
     delete from ${entryVersions}
     using ${workspaces}
@@ -145,7 +143,7 @@ const deleteExpiredAutomaticVersions = async (): Promise<void> => {
       )
       and ${entryVersions.createdAt} < now() - (
         case
-          when ${billingConfigured} and ${workspaces.subscriptionPlan} = 'pro'
+          when ${!config.BILLING_ENABLED} or ${workspaces.subscriptionPlan} = 'pro'
             then ${config.PRO_VERSION_RETENTION_DAYS}::integer
           else ${config.VERSION_RETENTION_DAYS}::integer
         end * interval '1 day'

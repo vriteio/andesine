@@ -15,7 +15,7 @@ type FragmentBlockType = (typeof FRAGMENT_BLOCK_TYPES)[number];
 
 const Fragment = Node.create({
   name: "fragment",
-  content: "block+",
+  content: `(${FRAGMENT_BLOCK_TYPES.join(" | ")})+`,
   selectable: false,
   addAttributes() {
     return {

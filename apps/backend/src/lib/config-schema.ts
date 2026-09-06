@@ -1,3 +1,4 @@
+import { billingConfigSchema } from "#backend/lib/billing/config-schema";
 import * as z from "zod";
 
 const url = z.preprocess((value) => {
@@ -89,17 +90,7 @@ const configSchema = z.object({
   // Passkeys (WebAuthn)
   PASSKEY_RP_ID: z.string().optional().describe("WebAuthn Relying Party ID"),
   PASSKEY_ORIGIN: z.string().optional().describe("WebAuthn expected origin"),
-  // Stripe & billing
-  INCLUDED_API_CALLS: z.coerce
-    .number()
-    .int()
-    .min(0)
-    .describe("Number of API calls included in the Free plan"),
-  PRO_INCLUDED_API_CALLS: z.coerce
-    .number()
-    .int()
-    .min(0)
-    .describe("Number of API calls included in the Pro plan"),
+  // Version retention
   VERSION_RETENTION_DAYS: z.coerce
     .number()
     .int()
@@ -112,20 +103,7 @@ const configSchema = z.object({
     .min(1)
     .default(30)
     .describe("Number of days to keep automatic versions on the Pro plan"),
-  STRIPE_SECRET_KEY: z.string().optional().describe("Stripe secret API key"),
-  STRIPE_WEBHOOK_SECRET: z.string().optional().describe("Stripe webhook signing secret"),
-  STRIPE_PRO_SEAT_PRICE_ID: z
-    .string()
-    .optional()
-    .describe("Stripe Price ID for Pro per-seat charge"),
-  STRIPE_PRO_API_CALL_PRICE_ID: z
-    .string()
-    .optional()
-    .describe("Stripe Price ID for tiered Pro API call metering"),
-  STRIPE_PRO_API_CALL_METER_EVENT_NAME: z
-    .string()
-    .optional()
-    .describe("Stripe Meter event name for tracking API usage")
+  ...billingConfigSchema.shape
 });
 
 export { configSchema };

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Elastic-2.0
 // Import specific adapter to avoid eager evaluation of other adapters like Redis
 import { pool } from "@andesine/backend/lib/adapters/postgres";
 import { reportUsage } from "./report-usage";

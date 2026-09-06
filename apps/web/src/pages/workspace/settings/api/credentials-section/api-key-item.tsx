@@ -82,6 +82,7 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
           >
             <Tooltip
               content={`Expires ${formatDistanceToNow(new Date(props.expiresAt!), { addSuffix: true })}`}
+              fixed
             >
               <div class="h-5 w-5 i-lucide:clock bg-gradient-to-tr from-primary to-secondary" />
             </Tooltip>

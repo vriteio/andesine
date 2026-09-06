@@ -1,6 +1,6 @@
 // Reusable checkbox control
 @mixin checkbox {
-  @apply h-6 w-6 shrink-0 cursor-pointer appearance-none rounded-lg bg-transparent outline outline-2 -outline-offset-2 outline-gray-400 disabled:pointer-events-none disabled:opacity-70;
+  @apply h-5 w-5 shrink-0 cursor-pointer appearance-none rounded-md bg-transparent outline outline-2 -outline-offset-2 outline-gray-400 disabled:pointer-events-none disabled:opacity-70;
 
   &:checked {
     background-image:
@@ -8,7 +8,7 @@
       linear-gradient(to top right, var(--un-gradient-stops));
     @apply bg-center bg-no-repeat outline-transparent;
     background-size:
-      1.25rem 1.25rem,
+      1rem 1rem,
       100% 100%;
   }
 }
@@ -36,6 +36,13 @@ header[data-type="title"] {
   // Block selection
   .block-selection-marker {
     @apply select-none;
+  }
+}
+
+[data-marquee-selecting] [data-property-value] {
+  &,
+  * {
+    @apply pointer-events-none;
   }
 }
 

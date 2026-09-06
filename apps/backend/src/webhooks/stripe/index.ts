@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Elastic-2.0
 import { config } from "#backend/lib/config";
 import { emitMembershipEvent, emitWorkspaceStateEvent } from "#backend/events";
 import { toInviteID, toUUID } from "#backend/lib/primitives";

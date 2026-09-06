@@ -1,6 +1,14 @@
-import { Button, Fragment, IconButton, Input, ToggleGroup, Tooltip } from "@andesine/components";
+import {
+  Button,
+  Fragment,
+  IconButton,
+  Input,
+  Skeleton,
+  ToggleGroup,
+  Tooltip
+} from "@andesine/components";
 import { createAsync, useNavigate, useParams } from "@solidjs/router";
-import { type Component, createEffect, createMemo, createSignal, For } from "solid-js";
+import { type Component, createEffect, createMemo, createSignal, Suspense, For } from "solid-js";
 
 import { useNotify } from "#web/context/notifications";
 import { type KeyPermission } from "#web/lib/api";
@@ -51,25 +59,20 @@ const KeySettingsPage: Component = () => {
   const params = useParams<{ workspaceID?: string; keyID?: string }>();
   const keyID = () => params.keyID || null;
   const navigateToAPI = () => navigate(`/${params.workspaceID || ""}/settings/api`);
-  const keyResult = createAsync(
-    async () => {
-      if (!keyID()) return { key: null };
+  const keyResult = createAsync(async () => {
+    if (!keyID()) return { key: null };
 
-      try {
-        return { key: await apiKeyQuery({ keyID: keyID()! }) };
-      } catch (error) {
-        console.error(error);
+    try {
+      return { key: await apiKeyQuery({ keyID: keyID()! }) };
+    } catch (error) {
+      console.error(error);
 
-        return { key: null, error: true };
-      }
-    },
-    { deferStream: true }
-  );
+      return { key: null, error: true };
+    }
+  });
   const key = () => keyResult()?.key ?? null;
-  const [keyName, setKeyName] = createSignal(key()?.name ?? "");
-  const [resourceAccess, setResourceAccess] = createSignal<ResourceAccess>(
-    permissionsToAccess(key()?.permissions ?? [])
-  );
+  const [keyName, setKeyName] = createSignal("");
+  const [resourceAccess, setResourceAccess] = createSignal<ResourceAccess>(permissionsToAccess([]));
   const [revealedKey, setRevealedKey] = createSignal("");
   const { createKeyMutation, updateKeyMutation } = useKeyMutations({
     keyID,
@@ -126,7 +129,7 @@ const KeySettingsPage: Component = () => {
               size="small"
               value={keyName()}
               setValue={setKeyName}
-              disabled={!hasPermission("api_keys")}
+              disabled={!hasPermission("api_keys") || (Boolean(keyID()) && !keyResult())}
               class="w-full max-w-md"
             />
           </Setting>
@@ -138,6 +141,7 @@ const KeySettingsPage: Component = () => {
                 <ToggleGroup
                   disabled={
                     !hasPermission("api_keys") ||
+                    (Boolean(keyID()) && !keyResult()) ||
                     createKeyMutation.isPending ||
                     updateKeyMutation.isPending
                   }
@@ -160,48 +164,50 @@ const KeySettingsPage: Component = () => {
         <div class="w-full h-4 flex justify-center items-center">
           <div class="flex-1 h-px bg-gray-200" />
         </div>
-        <div class="flex items-center justify-end gap-2">
-          <Tooltip content="Go back">
-            <IconButton
-              variant="outlined"
-              color="contrast"
-              text="soft"
-              size="small"
-              icon="i-lucide:chevron-left"
-              onClick={navigateToAPI}
-            />
-          </Tooltip>
-          <Dynamic
-            component={fillError() ? Tooltip : Fragment}
-            content={fillError()}
-            wrapperClass="flex-1"
-          >
-            <Button
-              color="primary"
-              variant="outlined"
-              size="small"
-              onClick={() => {
-                if (Boolean(keyID())) {
-                  updateKeyMutation.mutate({
-                    id: keyID()!,
-                    name: keyName(),
-                    permissions: accessToPermissions(resourceAccess())
-                  });
-                } else {
-                  createKeyMutation.mutate({
-                    name: keyName(),
-                    permissions: accessToPermissions(resourceAccess())
-                  });
-                }
-              }}
-              class="flex items-center gap-1 w-full justify-center"
-              disabled={!hasPermission("api_keys") || Boolean(fillError())}
-              loading={createKeyMutation.isPending || updateKeyMutation.isPending}
+        <Suspense fallback={<Skeleton class="h-9 w-full rounded-lg" />}>
+          <div class="flex items-center justify-end gap-2">
+            <Tooltip content="Go back">
+              <IconButton
+                variant="outlined"
+                color="contrast"
+                text="soft"
+                size="small"
+                icon="i-lucide:chevron-left"
+                onClick={navigateToAPI}
+              />
+            </Tooltip>
+            <Dynamic
+              component={fillError() ? Tooltip : Fragment}
+              content={fillError()}
+              wrapperClass="flex-1"
             >
-              {Boolean(keyID()) ? "Save changes" : "Create key"}
-            </Button>
-          </Dynamic>
-        </div>
+              <Button
+                color="primary"
+                variant="outlined"
+                size="small"
+                onClick={() => {
+                  if (Boolean(keyID())) {
+                    updateKeyMutation.mutate({
+                      id: keyID()!,
+                      name: keyName(),
+                      permissions: accessToPermissions(resourceAccess())
+                    });
+                  } else {
+                    createKeyMutation.mutate({
+                      name: keyName(),
+                      permissions: accessToPermissions(resourceAccess())
+                    });
+                  }
+                }}
+                class="flex items-center gap-1 w-full justify-center"
+                disabled={!hasPermission("api_keys") || Boolean(fillError())}
+                loading={createKeyMutation.isPending || updateKeyMutation.isPending}
+              >
+                {Boolean(keyID()) ? "Save changes" : "Create key"}
+              </Button>
+            </Dynamic>
+          </div>
+        </Suspense>
       </div>
     </>
   );

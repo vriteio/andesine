@@ -1,3 +1,4 @@
+import { getEffectivePlan } from "#backend/lib/billing";
 import {
   keyPermissionType,
   permissionType,
@@ -64,7 +65,11 @@ const parseSessionData = (serialized: string): SessionData | null => {
 const isSessionAuthorizationEvent = (auth: SessionData, event: WorkspaceEvent): boolean => {
   if (auth.type !== "session" || !auth.session) return false;
 
-  if (event.action === "workspace:update" && event.data.subscriptionPlan === "free") {
+  if (
+    event.action === "workspace:update" &&
+    event.data.subscriptionPlan === "free" &&
+    getEffectivePlan(event.data.subscriptionPlan) === "free"
+  ) {
     return !auth.session.admin;
   }
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Elastic-2.0
 import { memberships, workspaces } from "#backend/db";
 import { toUUID, toWorkspaceID } from "#backend/lib/primitives";
 import { db, stripe } from "#backend/lib/adapters";
@@ -15,7 +16,9 @@ const createCheckout = async (input: {
   successURL: string;
   cancelURL: string;
 }): Promise<{ url: string }> => {
-  if (!stripe) throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Stripe not configured" });
+  if (!stripe) {
+    throw new ORPCError("FORBIDDEN", { message: "Billing is disabled for this installation" });
+  }
 
   if (!config.STRIPE_PRO_SEAT_PRICE_ID || !config.STRIPE_PRO_API_CALL_PRICE_ID) {
     throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Stripe price IDs not configured" });

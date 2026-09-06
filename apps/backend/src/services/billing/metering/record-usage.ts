@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Elastic-2.0
+import { config } from "#backend/lib/config";
 import { dailyUsage, workspaces } from "#backend/db";
 import { toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
@@ -5,6 +7,8 @@ import { eq, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
 const recordUsage = async (input: { workspaceID: string }): Promise<void> => {
+  if (!config.BILLING_ENABLED) return;
+
   const workspaceUUID = toUUID(input.workspaceID);
   const usageDate = new Date().toISOString().slice(0, 10);
 

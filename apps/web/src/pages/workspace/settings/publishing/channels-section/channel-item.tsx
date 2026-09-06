@@ -131,7 +131,14 @@ const ChannelItem: Component<ChannelItemProps> = (props) => {
               </div>
             </Match>
             <Match when={props.channel.builtIn}>
-              <Tooltip content="The default channel cannot be deleted" placement="left">
+              <Tooltip
+                content={
+                  <div class="max-w-32 leading-tight whitespace-pre-wrap">
+                    The default channel cannot be deleted
+                  </div>
+                }
+                fixed
+              >
                 <div class="opacity-20 media-mouse:group-hover:opacity-100">
                   <IconButton
                     icon="i-lucide:lock"

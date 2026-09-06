@@ -25,6 +25,7 @@ interface WorkspaceInfo {
   permissions: Permission[];
   admin: boolean;
   subscriptionPlan: string;
+  billingEnabled: boolean;
 }
 
 interface SessionInfo {

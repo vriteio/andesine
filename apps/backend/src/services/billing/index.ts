@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Elastic-2.0
 import { createCheckout } from "./create-checkout";
 import { createPortal } from "./create-portal";
 import { endSubscription } from "./end-subscription";

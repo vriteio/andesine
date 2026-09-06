@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Elastic-2.0
 import { config } from "#backend/lib/config";
 import { isTerminalSubscription } from "#backend/lib/policy";
 import type { workspaces } from "#backend/db";

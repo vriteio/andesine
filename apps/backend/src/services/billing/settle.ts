@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Elastic-2.0
 import { usageLedger, workspaces } from "#backend/db";
 import { db, endStripeSubscription, stripe } from "#backend/lib/adapters";
 import { config } from "#backend/lib/config";
@@ -110,6 +111,8 @@ const reportOutstandingUsage = async (input: {
 };
 
 const settle = async (input: { workspaceID: string }): Promise<void> => {
+  if (!config.BILLING_ENABLED) return;
+
   const [workspace] = await db
     .select({
       customerID: workspaces.customerID,

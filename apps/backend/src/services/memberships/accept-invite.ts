@@ -1,3 +1,4 @@
+import { getEffectivePlan } from "#backend/lib/billing";
 import { toMembershipID, toRoleID, toUUID, toUserID, toWorkspaceID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import {
@@ -63,7 +64,7 @@ const acceptInvite = async (input: {
     }
 
     if (!user) throw new ORPCError("UNAUTHORIZED", { message: "User not found" });
-    if (workspace.subscriptionPlan !== "pro") {
+    if (getEffectivePlan(workspace.subscriptionPlan) !== "pro") {
       throw new ORPCError("FORBIDDEN", {
         message: "This workspace must upgrade to Andesine Pro before you can accept the invite"
       });

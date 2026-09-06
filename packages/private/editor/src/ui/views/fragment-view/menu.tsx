@@ -101,7 +101,7 @@ const FragmentMenu = (props: FragmentMenuProps): JSX.Element => {
                           <span class="max-w-48 whitespace-pre-wrap leading-tight">{warning}</span>
                         }
                       >
-                        <div class="i-lucide:triangle-alert h-4 w-4 bg-gradient-to-tr leading-tight" />
+                        <div class="i-lucide:triangle-alert h-4 w-4 text-amber-500 leading-tight" />
                       </Tooltip>
                     </div>
                   )}

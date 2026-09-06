@@ -63,7 +63,7 @@ const CollaborationStatusIndicator: Component<CollaborationStatusIndicatorProps>
         >
           <div
             class={clsx("h-3.5 w-3.5", {
-              "i-lucide:cloud-off bg-gradient-to-tr": props.status === "offline-changes",
+              "i-lucide:cloud-off text-amber-500": props.status === "offline-changes",
               "i-lucide:shield-alert text-red-500": props.status === "unauthorized",
               "i-lucide:cloud-alert text-red-500": props.status === "failed"
             })}

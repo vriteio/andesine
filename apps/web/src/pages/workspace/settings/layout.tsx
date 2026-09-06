@@ -7,7 +7,7 @@ import {
   useNavigate,
   useParams
 } from "@solidjs/router";
-import { type Component, createEffect, onCleanup, Show } from "solid-js";
+import { type Component, createEffect, onCleanup, Show, Suspense } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
 import { useRouteData } from "#web/lib/navigation";
 import { SettingsProvider } from "./settings-context";
@@ -182,7 +182,9 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
             </div>
           </div>
         </div>
-        <VerificationDialog />
+        <Suspense>
+          <VerificationDialog />
+        </Suspense>
       </Show>
     </SettingsProvider>
   );

@@ -1,3 +1,4 @@
+import { getEffectivePlan } from "#backend/lib/billing";
 import { workspaces } from "#backend/db";
 import { db } from "#backend/lib/adapters";
 import { toUUID } from "#backend/lib/primitives";
@@ -121,7 +122,7 @@ const assertPlan = <Input>(
 ): void => {
   const plan = typeof requiredPlan === "function" ? requiredPlan(input) : requiredPlan;
 
-  if (!plan || auth.subscriptionPlan === plan) return;
+  if (!plan || getEffectivePlan(auth.subscriptionPlan) === plan) return;
 
   throw new ORPCError("FORBIDDEN", {
     message: "This action requires an Andesine Pro subscription"

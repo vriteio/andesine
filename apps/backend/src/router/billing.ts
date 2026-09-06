@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Elastic-2.0
+// License terms: apps/backend/src/services/billing/LICENSE
 import { authorized, base } from "#backend/lib/transport";
 import { Billing } from "#backend/services/billing";
 import { config } from "#backend/lib/config";
@@ -7,6 +9,7 @@ const billingUrlType = z.object({
   url: z.string().url().describe("Billing URL to redirect the user to")
 });
 const subscriptionInfoType = z.object({
+  billingEnabled: z.boolean().describe("Whether cloud billing is configured"),
   plan: z.string().describe("Current billing plan identifier"),
   status: z.string().describe("Current billing subscription status"),
   seats: z.number().int().min(0).describe("Number of billable seats in the workspace"),

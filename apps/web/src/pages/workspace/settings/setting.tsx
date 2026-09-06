@@ -1,5 +1,6 @@
 import clsx from "clsx";
-import { type JSX, type ParentComponent, Show } from "solid-js";
+import { Skeleton } from "@andesine/components";
+import { type JSX, type ParentComponent, Show, Suspense } from "solid-js";
 
 interface SettingProps {
   label: JSX.Element;
@@ -23,7 +24,11 @@ const Setting: ParentComponent<SettingProps> = (props) => (
         <span class="flex-1 font-medium leading-tight">{props.label}</span>
         <span class="text-sm leading-tight text-gray-400">{props.description}</span>
       </div>
-      <div class="flex w-full min-w-0 lg:flex-1 lg:justify-end">{props.children}</div>
+      <div class="flex w-full min-w-0 lg:flex-1 lg:justify-end">
+        <Suspense fallback={<Skeleton class="h-9 w-full max-w-md rounded-lg" />}>
+          {props.children}
+        </Suspense>
+      </div>
     </div>
   </div>
 );

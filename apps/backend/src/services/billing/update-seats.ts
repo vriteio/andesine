@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Elastic-2.0
+import { config } from "#backend/lib/config";
 import { memberships, workspaces } from "#backend/db";
 import { toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
@@ -6,6 +8,8 @@ import { ORPCError } from "@orpc/server";
 import { count, eq } from "drizzle-orm";
 
 const updateSeats = async (input: { workspaceID: string }): Promise<void> => {
+  if (!config.BILLING_ENABLED) return;
+
   const workspaceID = toUUID(input.workspaceID);
 
   await db.transaction(async (tx) => {

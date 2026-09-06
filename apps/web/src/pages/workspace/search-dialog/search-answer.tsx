@@ -45,7 +45,7 @@ const linkAnswerReferences = (answer: SearchAnswerProps["answer"]): string => {
 };
 const SearchError: Component<SearchErrorProps> = (props) => (
   <div class="flex min-h-24 flex-col items-center justify-center gap-2 text-center">
-    <div class="h-6 w-6 text-red-400 i-lucide:triangle-alert" />
+    <div class="h-6 w-6 text-red-500 i-lucide:triangle-alert" />
     <div class="flex flex-col gap-0.5">
       <p class="text-sm font-medium">{props.title}</p>
       <p class="max-w-sm text-xs text-gray-400">{props.message}</p>

@@ -117,6 +117,7 @@ const RoleItem: Component<{
             </Match>
             <Match when={props.role.baseRole}>
               <Tooltip
+                fixed
                 content={
                   <div class="max-w-32 leading-tight whitespace-pre-wrap">
                     {props.role.baseRole === "admin"

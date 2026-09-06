@@ -77,7 +77,7 @@ const TagInput: Component<TagInputProps> = (props) => {
                 <Tooltip
                   content={<span class="max-w-48 whitespace-pre-wrap leading-tight">{error}</span>}
                 >
-                  <div class="h-4 w-4 bg-gradient-to-tr i-lucide:triangle-alert" />
+                  <div class="h-4 w-4 text-red-500 i-lucide:triangle-alert" />
                 </Tooltip>
               </div>
             )}

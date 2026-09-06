@@ -1,7 +1,7 @@
 import { Card, IconButton, Skeleton } from "@andesine/components";
 import { createAsync, revalidate, useNavigate, useParams } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
-import { type Component, createMemo, createSignal, Show, Suspense, useTransition } from "solid-js";
+import { type Component, createSignal, Show, Suspense, useTransition } from "solid-js";
 import { Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
 import {
   ActionConfirmationDialog,
@@ -83,22 +83,22 @@ const GroupsSection: Component = () => {
       notify({ type: "error", text: "Failed to delete group" });
     }
   }));
-  const visibleGroups = createMemo(() => {
+  const visibleGroups = () => {
     const deletedIDs =
       deleteMutation.isPending && deleteMutation.variables ? deleteMutation.variables.ids : [];
 
     return groupList().filter((group) => !deletedIDs.includes(group.id));
-  });
-  const groupsTree = createMemo<TreeMap>(() => ({
+  };
+  const groupsTree = (): TreeMap => ({
     [TREE_ROOT_ID]: {
       items: visibleGroups().map((group) => group.id),
       levels: []
     }
-  }));
-  const deletionTargets = createMemo(() => {
-    return groupList().filter((group) => pendingDeleteIDs().includes(group.id));
   });
-  const affectedItems = createMemo<AffectedItem[]>(() => {
+  const deletionTargets = () => {
+    return groupList().filter((group) => pendingDeleteIDs().includes(group.id));
+  };
+  const affectedItems = (): AffectedItem[] => {
     const targets = deletionTargets();
 
     if (targets.length === 0) return [];
@@ -123,29 +123,31 @@ const GroupsSection: Component = () => {
       }));
 
     return [...affectedMembers, ...affectedInvitations];
-  });
+  };
 
   return (
     <SettingsSection label="Groups">
-      <ActionConfirmationDialog
-        opened={pendingDeleteIDs().length > 0}
-        title={`Delete ${deletionTargets().length === 1 ? deletionTargets()[0].name : `${deletionTargets().length} groups`}?`}
-        description="The group’s restricted collection assignments will be removed. Workspace memberships are kept."
-        affected={affectedItems()}
-        action={{
-          color: "danger",
-          label: "Delete group",
-          loading: deleteMutation.isPending,
-          onClick: () => {
-            const ids = pendingDeleteIDs();
+      <Suspense>
+        <ActionConfirmationDialog
+          opened={pendingDeleteIDs().length > 0}
+          title={`Delete ${deletionTargets().length === 1 ? deletionTargets()[0].name : `${deletionTargets().length} groups`}?`}
+          description="The group’s restricted collection assignments will be removed. Workspace memberships are kept."
+          affected={affectedItems()}
+          action={{
+            color: "danger",
+            label: "Delete group",
+            loading: deleteMutation.isPending,
+            onClick: () => {
+              const ids = pendingDeleteIDs();
 
-            if (ids.length > 0) deleteMutation.mutate({ ids });
-          }
-        }}
-        onClose={() => {
-          if (!deleteMutation.isPending) setPendingDeleteIDs([]);
-        }}
-      />
+              if (ids.length > 0) deleteMutation.mutate({ ids });
+            }
+          }}
+          onClose={() => {
+            if (!deleteMutation.isPending) setPendingDeleteIDs([]);
+          }}
+        />
+      </Suspense>
       <Setting
         label="Workspace groups"
         description="Group members and assign roles at restricted collection boundaries"

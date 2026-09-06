@@ -1,4 +1,4 @@
-import { type Component, createEffect, createSignal } from "solid-js";
+import { type Component, createEffect, createSignal, Show } from "solid-js";
 
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
@@ -9,7 +9,7 @@ import { BillingProcessingDialog } from "./processing-dialog";
 
 const BillingSettingsPage: Component = () => {
   const notify = useNotify();
-  const { workspaceID } = useWorkspace();
+  const { currentWorkspace, workspaceID } = useWorkspace();
   const [searchParams, setSearchParams] = useSearchParams();
   const [processingCheckout, setProcessingCheckout] = createSignal(false);
 
@@ -17,7 +17,7 @@ const BillingSettingsPage: Component = () => {
     const result = searchParams.billing;
     const currentWorkspaceID = workspaceID();
 
-    if (!result || !currentWorkspaceID) return;
+    if (!result || !currentWorkspaceID || !currentWorkspace()?.billingEnabled) return;
 
     if (result === "success") {
       setProcessingCheckout(true);
@@ -34,7 +34,14 @@ const BillingSettingsPage: Component = () => {
   });
 
   return (
-    <>
+    <Show
+      when={currentWorkspace()?.billingEnabled}
+      fallback={
+        <p class="text-sm text-gray-500">
+          All Pro features are included in this installation. No subscription is required.
+        </p>
+      }
+    >
       <SubscriptionSection />
       <UsageSection />
       <BillingProcessingDialog
@@ -49,7 +56,7 @@ const BillingSettingsPage: Component = () => {
           notify({ type: "success", text: "Your Pro subscription is ready." });
         }}
       />
-    </>
+    </Show>
   );
 };
 

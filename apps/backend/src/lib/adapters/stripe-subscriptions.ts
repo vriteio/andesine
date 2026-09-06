@@ -1,4 +1,5 @@
-import { ORPCError } from "@orpc/server";
+// SPDX-License-Identifier: Elastic-2.0
+// License terms: apps/backend/src/services/billing/LICENSE
 import { isTerminalSubscription } from "#backend/lib/policy/subscription";
 import { stripe } from "./stripe";
 
@@ -6,11 +7,7 @@ const endStripeSubscription = async (input: {
   idempotencyKey: string;
   subscriptionID: string;
 }): Promise<void> => {
-  if (!stripe) {
-    throw new ORPCError("INTERNAL_SERVER_ERROR", {
-      message: "Stripe must be configured before ending a subscription"
-    });
-  }
+  if (!stripe) return;
 
   const subscription = await stripe.subscriptions.retrieve(input.subscriptionID);
 

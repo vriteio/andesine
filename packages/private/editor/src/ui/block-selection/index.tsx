@@ -384,6 +384,7 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
   createEffect(() => {
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", onPointerEnd);
+    window.addEventListener("pointercancel", onPointerEnd);
     window.addEventListener("pointerleave", onPointerEnd);
     window.addEventListener("contextmenu", onPointerEnd);
 
@@ -393,13 +394,18 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
       document.documentElement.classList.remove("select-none", "cursor-crosshair");
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerEnd);
+      window.removeEventListener("pointercancel", onPointerEnd);
       window.removeEventListener("pointerleave", onPointerEnd);
       window.removeEventListener("contextmenu", onPointerEnd);
     });
   });
 
   return (
-    <div class={"contents"} onPointerDown={onPointerDown}>
+    <div
+      class="contents"
+      data-marquee-selecting={boxSelection().active ? "" : undefined}
+      onPointerDown={onPointerDown}
+    >
       {props.children}
       <Show when={boxSelection().active && props.scrollableContainerRef()}>
         <Portal mount={props.scrollableContainerRef()!}>

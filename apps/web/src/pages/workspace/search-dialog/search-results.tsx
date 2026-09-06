@@ -193,7 +193,7 @@ const SearchResultNotice: Component<SearchResultNoticeProps> = (props) => (
   >
     <SearchResultContent
       icon={props.icon}
-      iconClass={props.color === "danger" ? "text-red-400" : "text-gray-400"}
+      iconClass={props.color === "danger" ? "text-red-500" : "text-gray-400"}
       label={props.label}
       sublabel={props.sublabel}
     />

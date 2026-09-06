@@ -1,3 +1,4 @@
+import { getEffectivePlan } from "#backend/lib/billing";
 import { toUUID, toWorkspaceID } from "#backend/lib/primitives";
 import { auth, db } from "#backend/lib/adapters";
 import { memberships, roles, workspaces } from "#backend/db";
@@ -22,7 +23,7 @@ const switchWorkspace = async (input: {
     throw new ORPCError("FORBIDDEN", { message: "You are not a member of this workspace" });
   }
 
-  if (membership.baseRole !== "admin" && membership.subscriptionPlan !== "pro") {
+  if (membership.baseRole !== "admin" && getEffectivePlan(membership.subscriptionPlan) !== "pro") {
     throw new ORPCError("FORBIDDEN", {
       message: "This workspace is only available to admins while it is on the Free plan"
     });

@@ -153,7 +153,7 @@ const SettingsMenu: Component = () => {
                   label: "Billing",
                   href: `${settingsPath()}/billing`,
                   active: isRoute("/billing"),
-                  visible: hasPermission("read:billing")
+                  visible: hasPermission("read:billing") && currentWorkspace()?.billingEnabled
                 },
                 {
                   icon: "i-lucide:code-xml",

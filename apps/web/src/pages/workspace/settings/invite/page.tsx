@@ -9,7 +9,7 @@ import {
 } from "@andesine/components";
 import { createAsync, revalidate, useNavigate, useParams } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
-import { type Component, createEffect, createMemo, createSignal, Suspense } from "solid-js";
+import { type Component, createEffect, createSignal, Suspense } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
 import { useNotify } from "#web/context/notifications";
@@ -24,21 +24,21 @@ const InviteSettingsPage: Component = () => {
   const navigate = useNavigate();
   const params = useParams<{ workspaceID?: string }>();
   const navigateToPeople = () => navigate(`/${params.workspaceID || ""}/settings/people`);
-  const roles = createAsync(() => rolesQuery(), { deferStream: true });
+  const roles = createAsync(() => rolesQuery());
   const [email, setEmail] = createSignal("");
   const [selectedRoleID, setSelectedRoleID] = createSignal("");
   const [inviteLink, setInviteLink] = createSignal("");
   const [delivery, setDelivery] = createSignal<"sent" | "manual" | "failed">("sent");
-  const roleOptions = createMemo(() => {
+  const roleOptions = () => {
     return (roles() || []).map((role) => ({ label: role.name, value: role.id }));
-  });
-  const fillError = createMemo(() => {
+  };
+  const fillError = () => {
     if (!email().trim()) return "Email address is required";
     if (!/^\S+@\S+\.\S+$/.test(email().trim())) return "Enter a valid email address";
     if (!selectedRoleID()) return "Select a role";
 
     return "";
-  });
+  };
   const inviteMutation = createMutation(() => ({
     mutationFn: (input: { email: string; roleID: string }) => client.memberships.invite(input),
     onSuccess: async (data) => {
@@ -120,68 +120,58 @@ const InviteSettingsPage: Component = () => {
               }}
             />
           </Setting>
-          <Suspense
-            fallback={
-              <Setting
-                label="Role"
-                description="Role assigned when the invitation is accepted"
-                fade={false}
-              >
-                <Skeleton class="h-7 w-full max-w-md rounded-lg" />
-              </Setting>
-            }
+          <Setting
+            label="Role"
+            description="Role assigned when the invitation is accepted"
+            fade={false}
           >
-            <Setting
-              label="Role"
-              description="Role assigned when the invitation is accepted"
-              fade={false}
-            >
-              <Select
-                class="w-full max-w-md"
-                disabled={inviteMutation.isPending || roleOptions().length === 0}
-                options={roleOptions()}
-                placeholder="Select a role"
-                value={selectedRoleID()}
-                setValue={setSelectedRoleID}
-              />
-            </Setting>
-          </Suspense>
+            <Select
+              class="w-full max-w-md"
+              disabled={inviteMutation.isPending || roleOptions().length === 0}
+              options={roleOptions()}
+              placeholder="Select a role"
+              value={selectedRoleID()}
+              setValue={setSelectedRoleID}
+            />
+          </Setting>
         </SettingsSection>
         <div class="flex h-4 w-full items-center justify-center">
           <div class="h-px flex-1 bg-gray-200" />
         </div>
-        <div class="flex items-center justify-end gap-2">
-          <Tooltip content="Go back">
-            <IconButton
-              variant="outlined"
-              color="contrast"
-              text="soft"
-              size="small"
-              icon="i-lucide:chevron-left"
-              onClick={navigateToPeople}
-              disabled={inviteMutation.isPending}
-            />
-          </Tooltip>
-          <Dynamic
-            component={fillError() ? Tooltip : Fragment}
-            content={fillError()}
-            wrapperClass="flex-1"
-          >
-            <Button
-              color="primary"
-              variant="outlined"
-              size="small"
-              class="flex w-full items-center justify-center gap-1"
-              disabled={Boolean(fillError())}
-              loading={inviteMutation.isPending}
-              onClick={() => {
-                inviteMutation.mutate({ email: email().trim(), roleID: selectedRoleID() });
-              }}
+        <Suspense fallback={<Skeleton class="h-9 w-full rounded-lg" />}>
+          <div class="flex items-center justify-end gap-2">
+            <Tooltip content="Go back">
+              <IconButton
+                variant="outlined"
+                color="contrast"
+                text="soft"
+                size="small"
+                icon="i-lucide:chevron-left"
+                onClick={navigateToPeople}
+                disabled={inviteMutation.isPending}
+              />
+            </Tooltip>
+            <Dynamic
+              component={fillError() ? Tooltip : Fragment}
+              content={fillError()}
+              wrapperClass="flex-1"
             >
-              Send invitation
-            </Button>
-          </Dynamic>
-        </div>
+              <Button
+                color="primary"
+                variant="outlined"
+                size="small"
+                class="flex w-full items-center justify-center gap-1"
+                disabled={Boolean(fillError())}
+                loading={inviteMutation.isPending}
+                onClick={() => {
+                  inviteMutation.mutate({ email: email().trim(), roleID: selectedRoleID() });
+                }}
+              >
+                Send invitation
+              </Button>
+            </Dynamic>
+          </div>
+        </Suspense>
       </div>
     </>
   );

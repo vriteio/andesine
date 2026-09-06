@@ -99,6 +99,7 @@ const PropertyView: Component<PropertyViewProps> = (props) => {
             "py-1": isInput(),
             "py-0.5": !isInput() && !isMultiSelect()
           })}
+          data-property-value
           onFocusIn={selectOnFocus}
         >
           <PropertyValue

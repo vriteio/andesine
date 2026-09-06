@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Elastic-2.0
+import { getEffectivePlan } from "#backend/lib/billing";
 import { dailyUsage } from "#backend/db";
 import { config } from "#backend/lib/config";
 import { toUUID } from "#backend/lib/primitives";
@@ -44,7 +46,10 @@ const getUsage = async (input: {
   const isCurrentMonth =
     targetDate.getUTCFullYear() === now.getUTCFullYear() &&
     targetDate.getUTCMonth() === now.getUTCMonth();
-  const limit = input.plan === "pro" ? config.PRO_INCLUDED_API_CALLS : config.INCLUDED_API_CALLS;
+  const limit =
+    getEffectivePlan(input.plan) === "pro"
+      ? config.PRO_INCLUDED_API_CALLS
+      : config.INCLUDED_API_CALLS;
   const rows = await db
     .select()
     .from(dailyUsage)

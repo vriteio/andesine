@@ -22,7 +22,8 @@ const workspaceListItemType = workspaceSummaryType.extend({
   currentEntryID: id().optional().describe("ID of the member's latest active entry"),
   permissions: z.array(permissionType).describe("Permissions granted to the current member"),
   admin: z.boolean().describe("Whether the current member has the system admin role"),
-  subscriptionPlan: z.string().describe("Current billing plan identifier")
+  subscriptionPlan: z.string().describe("Effective feature plan identifier"),
+  billingEnabled: z.boolean().describe("Whether cloud billing is configured")
 });
 
 const workspacesRouter = base.router({

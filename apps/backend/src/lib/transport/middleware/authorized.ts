@@ -1,3 +1,4 @@
+import { getEffectivePlan } from "#backend/lib/billing";
 import { Auth } from "#backend/services/auth";
 import { assertAuthorizationRequirements, type SessionData } from "#backend/lib/policy";
 import { ORPCError } from "@orpc/server";
@@ -5,17 +6,20 @@ import { base } from "../orpc";
 import { config } from "#backend/lib/config";
 import { Billing } from "#backend/services/billing";
 const shouldTrackUsage = (sessionData: SessionData, trackUsage?: boolean): boolean => {
-  return (sessionData.type === "key" && trackUsage !== false) || trackUsage === true;
+  return (
+    config.BILLING_ENABLED &&
+    ((sessionData.type === "key" && trackUsage !== false) || trackUsage === true)
+  );
 };
 const checkPlanAccess = (sessionData: SessionData, requireProPlan?: boolean): void => {
-  if (!requireProPlan || sessionData.subscriptionPlan === "pro") return;
+  if (!requireProPlan || getEffectivePlan(sessionData.subscriptionPlan) === "pro") return;
 
   throw new ORPCError("FORBIDDEN", {
     message: "This action requires an Andesine Pro subscription"
   });
 };
 const getUsageAllowance = async (sessionData: SessionData) => {
-  const plan = sessionData.subscriptionPlan || "free";
+  const plan = getEffectivePlan(sessionData.subscriptionPlan);
 
   return Billing.Metering.getUsage({
     workspaceID: sessionData.workspaceID,
@@ -27,7 +31,8 @@ const checkUsageAllowance = (
   usage: Awaited<ReturnType<typeof getUsageAllowance>>,
   headers?: Headers
 ): void => {
-  const limit = sessionData.subscriptionPlan === "pro" ? Infinity : config.INCLUDED_API_CALLS;
+  const limit =
+    getEffectivePlan(sessionData.subscriptionPlan) === "pro" ? Infinity : config.INCLUDED_API_CALLS;
 
   if (limit !== Infinity && usage.totalUsage >= limit) {
     const retryAfter = Math.max(Math.ceil((usage.resetDate.getTime() - Date.now()) / 1000), 1);

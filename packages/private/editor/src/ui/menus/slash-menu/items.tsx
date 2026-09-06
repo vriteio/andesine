@@ -132,6 +132,8 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
         schemaKind: "structure",
         ref: createRef<HTMLElement | null>(null),
         command({ editor, range }) {
+          if (editor.state.doc.resolve(range.from).depth > 1) return false;
+
           return editor
             .chain()
             .focus()
@@ -152,9 +154,8 @@ const getAvailableSlashMenuItems = (
   editor: Editor,
   mode: EditorMode
 ): SlashMenuItem[] => {
-  if (mode === "entry") return items;
-
   const { $from } = editor.state.selection;
+
   let fragmentDepth = -1;
 
   for (let depth = $from.depth; depth > 0; depth -= 1) {
@@ -165,7 +166,15 @@ const getAvailableSlashMenuItems = (
   }
 
   if (fragmentDepth === -1) {
+    if (mode === "entry") {
+      return items.filter((item) => item.schemaKind === "block" || $from.depth <= 1);
+    }
+
     return items.filter((item) => item.schemaKind === "structure");
+  }
+
+  if (mode === "entry") {
+    return items.filter((item) => item.schemaKind === "block");
   }
 
   const fragment = $from.node(fragmentDepth);

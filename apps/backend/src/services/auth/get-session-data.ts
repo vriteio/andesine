@@ -12,6 +12,7 @@ import { auth, db, redis } from "#backend/lib/adapters";
 import { getUserSessionCacheKey, parseSessionData, type SessionData } from "#backend/lib/policy";
 import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
+import { getEffectivePlan } from "#backend/lib/billing";
 
 const SESSION_TTL = 300;
 interface GetSessionDataInput {
@@ -30,11 +31,18 @@ const tryResolveUUID = (id: string | undefined | null) => {
 const getSessionData = async (input: GetSessionDataInput): Promise<SessionData> => {
   const { headers } = input;
 
-  if (headers.get("authorization")?.startsWith("Bearer ")) {
-    return getKeySessionData(headers);
+  const data = headers.get("authorization")?.startsWith("Bearer ")
+    ? await getKeySessionData(headers)
+    : await getUserSessionData(headers, input);
+  const subscriptionPlan = getEffectivePlan(data.subscriptionPlan);
+
+  if (data.workspaceID && data.session && !data.session.admin && subscriptionPlan !== "pro") {
+    throw new ORPCError("FORBIDDEN", {
+      message: "This workspace is only available to admins while it is on the Free plan"
+    });
   }
 
-  return getUserSessionData(headers, input);
+  return { ...data, subscriptionPlan };
 };
 const getUserSessionData = async (
   headers: Headers,
@@ -98,11 +106,6 @@ const getUserSessionData = async (
     .where(and(eq(memberships.userID, userID), eq(memberships.workspaceID, workspaceID)));
 
   if (!row) throw new ORPCError("UNAUTHORIZED");
-  if (row.subscriptionPlan !== "pro" && row.baseRole !== "admin") {
-    throw new ORPCError("FORBIDDEN", {
-      message: "This workspace is only available to admins while it is on the Free plan"
-    });
-  }
 
   const data: SessionData = {
     id: cacheKey,

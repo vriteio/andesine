@@ -1,4 +1,4 @@
-import { type MenuItem } from "@andesine/components";
+import { useDropdown, type MenuItem } from "@andesine/components";
 import { useNavigate, useParams } from "@solidjs/router";
 import { createEffect, createMemo, createSignal, type JSX, on } from "solid-js";
 import { useClipboard } from "#web/context/clipboard";
@@ -12,6 +12,7 @@ import { ExplorerSchemaMigrationMenu } from "./explorer-schema-migration";
 const useCollectionMenu = (collectionID: string) => {
   const { copyText } = useClipboard();
   const notify = useNotify();
+  const { closeMobileDropdowns } = useDropdown();
   const { content, currentWorkspace } = useWorkspace();
   const navigate = useNavigate();
   const params = useParams<{ workspaceID?: string }>();
@@ -231,6 +232,8 @@ const useCollectionMenu = (collectionID: string) => {
               icon: "i-lucide:shield",
               disabled: migrationDisabled,
               onClick: () => {
+                setMenuOpened(false);
+                closeMobileDropdowns();
                 navigate(`/${params.workspaceID || ""}/${encodeURIComponent(collection.id)}`);
               }
             });

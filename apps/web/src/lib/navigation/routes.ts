@@ -8,6 +8,18 @@ import {
 } from "@solidjs/router";
 import { type Accessor, createMemo, lazy } from "solid-js";
 
+import SettingsLayout from "../../pages/workspace/settings/layout";
+import PersonalSettingsPage from "../../pages/workspace/settings/personal/page";
+import WorkspaceSettingsPage from "../../pages/workspace/settings/workspace/page";
+import PublishingSettingsPage from "../../pages/workspace/settings/publishing/page";
+import PeopleSettingsPage from "../../pages/workspace/settings/people/page";
+import InviteSettingsPage from "../../pages/workspace/settings/invite/page";
+import RoleSettingsPage from "../../pages/workspace/settings/role/page";
+import GroupSettingsPage from "../../pages/workspace/settings/group/page";
+import BillingSettingsPage from "../../pages/workspace/settings/billing/page";
+import APISettingsPage from "../../pages/workspace/settings/api/page";
+import KeySettingsPage from "../../pages/workspace/settings/key/page";
+
 const AuthLayout = lazy(() => import("../../pages/auth/layout"));
 const EmailPage = lazy(() => import("../../pages/auth/email/page"));
 const SignInPage = lazy(() => import("../../pages/auth/sign-in/page"));
@@ -18,17 +30,6 @@ const WorkspaceLayout = lazy(() => import("../../pages/workspace/layout"));
 const EntryPage = lazy(() => import("../../pages/workspace/entry/page"));
 const CollectionPage = lazy(() => import("../../pages/workspace/collection/page"));
 const SchemaPage = lazy(() => import("../../pages/workspace/schema/page"));
-const SettingsLayout = lazy(() => import("../../pages/workspace/settings/layout"));
-const PersonalSettingsPage = lazy(() => import("../../pages/workspace/settings/personal/page"));
-const WorkspaceSettingsPage = lazy(() => import("../../pages/workspace/settings/workspace/page"));
-const PublishingSettingsPage = lazy(() => import("../../pages/workspace/settings/publishing/page"));
-const PeopleSettingsPage = lazy(() => import("../../pages/workspace/settings/people/page"));
-const InviteSettingsPage = lazy(() => import("../../pages/workspace/settings/invite/page"));
-const RoleSettingsPage = lazy(() => import("../../pages/workspace/settings/role/page"));
-const GroupSettingsPage = lazy(() => import("../../pages/workspace/settings/group/page"));
-const BillingSettingsPage = lazy(() => import("../../pages/workspace/settings/billing/page"));
-const APISettingsPage = lazy(() => import("../../pages/workspace/settings/api/page"));
-const KeySettingsPage = lazy(() => import("../../pages/workspace/settings/key/page"));
 
 interface RouteData {
   title: string;
