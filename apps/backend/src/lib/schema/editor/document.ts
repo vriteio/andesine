@@ -56,9 +56,11 @@ const createFragmentDefinition = (node: ContentNode): SchemaFragment => {
   const configuredBlocks = normalizeStringArray(node.attrs?.allowedBlocks).filter((block) => {
     return SCHEMA_BLOCK_TYPES.includes(block as SchemaBlockType);
   }) as SchemaBlockType[];
-  const allowedBlocks = configuredBlocks.length > 0 ? configuredBlocks : [...SCHEMA_BLOCK_TYPES];
+  const allowedBlocks = Array.isArray(node.attrs?.allowedBlocks)
+    ? configuredBlocks
+    : [...SCHEMA_BLOCK_TYPES];
   const defaultContent = (node.content || []).filter((block) => {
-    return allowedBlocks.includes(block.type as SchemaBlockType);
+    return block.type === "paragraph" || allowedBlocks.includes(block.type as SchemaBlockType);
   });
 
   return {
@@ -66,10 +68,7 @@ const createFragmentDefinition = (node: ContentNode): SchemaFragment => {
     kind: "fragment",
     label: typeof node.attrs?.name === "string" ? node.attrs.name : "",
     allowedBlocks,
-    defaultContent:
-      defaultContent.length > 0
-        ? defaultContent
-        : [{ type: allowedBlocks.includes("paragraph") ? "paragraph" : allowedBlocks[0] }]
+    defaultContent: defaultContent.length > 0 ? defaultContent : [{ type: "paragraph" }]
   };
 };
 

@@ -1,4 +1,11 @@
-import { DropdownMenu, Input, Tooltip, type MenuItem } from "@andesine/components";
+import {
+  Combobox,
+  DropdownMenu,
+  Input,
+  TagList,
+  Tooltip,
+  type MenuItem
+} from "@andesine/components";
 import type { Editor } from "@tiptap/core";
 import clsx from "clsx";
 import { createEffect, createSignal, onCleanup, onMount, Show, type JSX } from "solid-js";
@@ -25,13 +32,15 @@ interface FragmentMenuProps {
 }
 
 const blockTypeDetails: Record<FragmentBlockType, { icon: string; label: string }> = {
-  paragraph: { icon: "i-lucide:pilcrow", label: "Paragraph" },
   heading: { icon: "i-lucide:heading", label: "Heading" },
   blockquote: { icon: "i-lucide:text-quote", label: "Blockquote" },
   bulletList: { icon: "i-lucide:list", label: "Bullet list" },
   orderedList: { icon: "i-lucide:list-ordered", label: "Ordered list" },
   taskList: { icon: "i-lucide:list-checks", label: "Task list" },
   horizontalRule: { icon: "i-lucide:minus", label: "Horizontal rule" }
+};
+const isFragmentBlockType = (value: string): value is FragmentBlockType => {
+  return FRAGMENT_BLOCK_TYPES.includes(value as FragmentBlockType);
 };
 
 const FragmentMenu = (props: FragmentMenuProps): JSX.Element => {
@@ -45,28 +54,16 @@ const FragmentMenu = (props: FragmentMenuProps): JSX.Element => {
     const target = event.target;
     const fragmentMenuInput =
       target instanceof HTMLInputElement && target.closest("[data-fragment-menu-input]");
+    const comboboxInput = target instanceof Element && target.closest('[data-scope="combobox"]');
 
-    if (event.key !== "Escape" || !fragmentMenuInput) return;
+    if (event.key !== "Escape" || !fragmentMenuInput || comboboxInput) return;
 
     event.preventDefault();
     event.stopImmediatePropagation();
     target.blur();
   };
   const commitName = () => props.updateAttributes({ name: name() });
-  const toggleBlockType = (blockType: FragmentBlockType) => {
-    const allowedBlocks = props.attrs.allowedBlocks || [...FRAGMENT_BLOCK_TYPES];
-    const enabled = allowedBlocks.includes(blockType);
-
-    if (enabled && allowedBlocks.length === 1) return;
-
-    props.updateAttributes({
-      allowedBlocks: enabled
-        ? allowedBlocks.filter((currentBlockType) => currentBlockType !== blockType)
-        : FRAGMENT_BLOCK_TYPES.filter((currentBlockType) => {
-            return currentBlockType === blockType || allowedBlocks.includes(currentBlockType);
-          })
-    });
-  };
+  const allowedBlocks = () => props.attrs.allowedBlocks || [...FRAGMENT_BLOCK_TYPES];
   const usedBlockTypes = () => {
     const position = props.getPos();
     const fragment = typeof position === "number" ? props.editor.state.doc.nodeAt(position) : null;
@@ -75,6 +72,35 @@ const FragmentMenu = (props: FragmentMenuProps): JSX.Element => {
     fragment?.forEach((node) => blockTypes.add(node.type.name));
 
     return blockTypes;
+  };
+  const availableBlockOptions = () => {
+    return FRAGMENT_BLOCK_TYPES.filter((blockType) => !allowedBlocks().includes(blockType)).map(
+      (blockType) => ({
+        ...blockTypeDetails[blockType],
+        value: blockType
+      })
+    );
+  };
+  const addAllowedBlock = (value: string) => {
+    if (!isFragmentBlockType(value) || allowedBlocks().includes(value)) return;
+
+    props.updateAttributes({
+      allowedBlocks: FRAGMENT_BLOCK_TYPES.filter((blockType) => {
+        return blockType === value || allowedBlocks().includes(blockType);
+      })
+    });
+  };
+  const setAllowedBlocks = (values: string[]) => {
+    const blockTypes = values.filter(isFragmentBlockType);
+    const usedBlocksRemoved = FRAGMENT_BLOCK_TYPES.some((blockType) => {
+      return usedBlockTypes().has(blockType) && !blockTypes.includes(blockType);
+    });
+
+    if (usedBlocksRemoved) return;
+
+    props.updateAttributes({
+      allowedBlocks: FRAGMENT_BLOCK_TYPES.filter((blockType) => blockTypes.includes(blockType))
+    });
   };
   const menuItems = (): Array<Array<MenuItem | (() => JSX.Element)>> => {
     const items: Array<Array<MenuItem | (() => JSX.Element)>> = [
@@ -126,20 +152,33 @@ const FragmentMenu = (props: FragmentMenuProps): JSX.Element => {
 
     if (props.schemaMode) {
       items.push([
-        {
-          label: "Allowed blocks",
-          icon: "i-lucide:blocks",
-          items: FRAGMENT_BLOCK_TYPES.map((blockType) => ({
-            ...blockTypeDetails[blockType],
-            selected: props.attrs.allowedBlocks?.includes(blockType) ?? true,
-            disabled:
-              props.attrs.allowedBlocks?.includes(blockType) && usedBlockTypes().has(blockType)
-                ? "Remove the default content that uses this block type first"
-                : false,
-            closeOnSelect: false,
-            onClick: () => toggleBlockType(blockType)
-          }))
-        }
+        () => (
+          <div class="flex w-full min-w-0 flex-col gap-1 p-1 md:max-w-60" data-fragment-menu-input>
+            <Combobox
+              class="w-full min-w-0"
+              closeOnSelect
+              label="Allowed blocks"
+              options={availableBlockOptions()}
+              placeholder="Add block type"
+              surfaceClass="!bg-gray-50"
+              setValue={addAllowedBlock}
+            />
+            <Show when={allowedBlocks().length > 0}>
+              <TagList
+                values={allowedBlocks()}
+                getIcon={(value) => {
+                  return isFragmentBlockType(value) ? blockTypeDetails[value].icon : undefined;
+                }}
+                getLabel={(value) => {
+                  return isFragmentBlockType(value) ? blockTypeDetails[value].label : value;
+                }}
+                isValueDisabled={(value) => usedBlockTypes().has(value)}
+                setValues={setAllowedBlocks}
+              />
+            </Show>
+            <p class="text-xs text-gray-400">Paragraph is included by default</p>
+          </div>
+        )
       ]);
     }
 

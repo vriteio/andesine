@@ -2,7 +2,6 @@ import { mergeAttributes, Node } from "@tiptap/core";
 
 const MAX_FRAGMENT_NAME_LENGTH = 50;
 const FRAGMENT_BLOCK_TYPES = [
-  "paragraph",
   "heading",
   "blockquote",
   "bulletList",
@@ -15,7 +14,7 @@ type FragmentBlockType = (typeof FRAGMENT_BLOCK_TYPES)[number];
 
 const Fragment = Node.create({
   name: "fragment",
-  content: `(${FRAGMENT_BLOCK_TYPES.join(" | ")})+`,
+  content: `(paragraph | ${FRAGMENT_BLOCK_TYPES.join(" | ")})+`,
   selectable: false,
   addAttributes() {
     return {

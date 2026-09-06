@@ -28,7 +28,6 @@ type SchemaPropertyValue = boolean | string | string[];
 const MAX_SCHEMA_FIELD_LABEL_LENGTH = 50;
 const SCHEMA_FIELD_ID_ATTRIBUTE = "schemaFieldID";
 const SCHEMA_BLOCK_TYPES = [
-  "paragraph",
   "heading",
   "blockquote",
   "bulletList",
@@ -103,14 +102,14 @@ const schemaFragmentType: z.ZodType<SchemaFragment> = z
     id: z.string().min(1),
     kind: z.literal("fragment"),
     label: z.string().max(MAX_SCHEMA_FIELD_LABEL_LENGTH),
-    allowedBlocks: z.array(schemaBlockType).min(1),
+    allowedBlocks: z.array(schemaBlockType),
     defaultContent: z.array(contentNodeType).min(1)
   })
   .superRefine((fragment, context) => {
     const allowedBlocks = new Set(fragment.allowedBlocks);
 
     fragment.defaultContent.forEach((node, index) => {
-      if (!allowedBlocks.has(node.type as SchemaBlockType)) {
+      if (node.type !== "paragraph" && !allowedBlocks.has(node.type as SchemaBlockType)) {
         context.addIssue({
           code: "custom",
           message: `Default content uses unsupported block type "${node.type}"`,

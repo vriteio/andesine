@@ -315,6 +315,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
     >
       <div
         class={clsx(":base: relative flex items-center focus:outline-none", props.class)}
+        contentEditable={false}
         style={props.style}
         tabindex="0"
       >

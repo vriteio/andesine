@@ -26,12 +26,12 @@ const FragmentView: Component<FragmentViewProps> = (props) => {
         when={editable()}
         fallback={
           <div
-            class="flex h-9 w-full items-center gap-2 text-sm font-medium"
+            class="flex h-9 w-full items-center gap-1 text-sm font-medium"
             data-fragment-header
             contentEditable={false}
           >
             <span class="i-lucide:letter-text h-4.5 w-4.5 shrink-0 text-gray-300" />
-            <span class="min-w-0 truncate text-gray-500">{attrs().name || "Content"}</span>
+            <span class="min-w-0 truncate text-gray-500 mr-1">{attrs().name || "Content"}</span>
             <span class="h-px flex-1 rounded-full bg-gray-200" />
           </div>
         }

@@ -7,12 +7,14 @@ import { Fragment } from "./fragment";
 import { createRef } from "../ref";
 
 interface ComboboxOption {
+  icon?: string | (() => JSX.Element);
   label: string;
   value: string;
 }
 
 interface ComboboxProps<O extends ComboboxOption> {
   class?: string;
+  closeOnSelect?: boolean;
   disabled?: boolean;
   inlineOptions?: boolean;
   label?: string;
@@ -62,6 +64,16 @@ const Combobox = <O extends ComboboxOption>(props: ComboboxProps<O>): JSX.Elemen
     });
   });
   const collection = createMemo(() => createListCollection({ items: filteredOptions() }));
+  const handleKeyDown = (event: KeyboardEvent) => {
+    event.stopPropagation();
+
+    if (event.key !== "Escape") return;
+
+    event.preventDefault();
+    setOpened(false);
+
+    if (event.target instanceof HTMLInputElement) event.target.blur();
+  };
 
   return (
     <ArkCombobox.Root
@@ -70,10 +82,11 @@ const Combobox = <O extends ComboboxOption>(props: ComboboxProps<O>): JSX.Elemen
         props.portal === false && "relative",
         props.class
       )}
-      closeOnSelect={false}
+      closeOnSelect={props.closeOnSelect ?? false}
       collection={collection()}
       disabled={props.disabled}
       inputBehavior="autohighlight"
+      selectionBehavior="clear"
       inputValue={inputValue()}
       open={opened()}
       openOnClick
@@ -111,7 +124,7 @@ const Combobox = <O extends ComboboxOption>(props: ComboboxProps<O>): JSX.Elemen
         props.setValue?.(value);
         setInputValue("");
       }}
-      onKeyDown={(event) => event.stopPropagation()}
+      onKeyDown={handleKeyDown}
       lazyMount
       unmountOnExit
     >
@@ -180,6 +193,21 @@ const Combobox = <O extends ComboboxOption>(props: ComboboxProps<O>): JSX.Elemen
                       >
                         <Show when={selected()}>
                           <div class=":base: absolute inset-0 -z-1 rounded-md bg-gradient-to-tr opacity-10 media-mouse:group-data-[highlighted]/combobox-item:opacity-100 pointer-events-none" />
+                        </Show>
+                        <Show when={option.icon} keyed>
+                          {(icon) => (
+                            <div
+                              class={clsx(
+                                ":base: h-4.5 w-4.5 shrink-0",
+                                typeof icon === "string" && icon,
+                                selected()
+                                  ? ":base: bg-gradient-to-tr media-mouse:group-data-[highlighted]/combobox-item:text-white media-mouse:group-data-[highlighted]/combobox-item:from-white media-mouse:group-data-[highlighted]/combobox-item:to-white"
+                                  : ":base: text-gray-500"
+                              )}
+                            >
+                              {typeof icon === "function" && <Dynamic component={icon} />}
+                            </div>
+                          )}
                         </Show>
                         <ArkCombobox.ItemText
                           title={option.label}

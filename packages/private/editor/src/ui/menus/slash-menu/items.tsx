@@ -185,7 +185,8 @@ const getAvailableSlashMenuItems = (
   return items.filter((item) => {
     return (
       item.schemaKind === "block" &&
-      allowedBlocks.includes(item.schemaBlockType as FragmentBlockType)
+      (item.schemaBlockType === "paragraph" ||
+        allowedBlocks.includes(item.schemaBlockType as FragmentBlockType))
     );
   });
 };

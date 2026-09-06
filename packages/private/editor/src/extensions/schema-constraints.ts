@@ -72,7 +72,12 @@ const hasValidFragmentBlocks = (document: ProseMirrorNode): boolean => {
     for (let childIndex = 0; childIndex < node.childCount; childIndex += 1) {
       const child = node.child(childIndex);
 
-      if (!allowedBlocks.includes(child.type.name as FragmentBlockType)) return false;
+      if (
+        child.type.name !== "paragraph" &&
+        !allowedBlocks.includes(child.type.name as FragmentBlockType)
+      ) {
+        return false;
+      }
     }
   }
 

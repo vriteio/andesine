@@ -1,4 +1,4 @@
-import { Button } from "@andesine/components";
+import { IconButton } from "@andesine/components";
 import { createMutation } from "@tanstack/solid-query";
 import { type Component, createSignal } from "solid-js";
 import { ActionConfirmationDialog } from "#web/components/action-confirmation-dialog";
@@ -71,11 +71,12 @@ const SchemaApplication: Component<SchemaApplicationProps> = (props) => {
 
   return (
     <>
-      <Button
-        color="primary"
+      <IconButton
+        color="contrast"
         variant="outlined"
         size="small"
         disabled={!canApply()}
+        class="flex items-center pl-1"
         title={
           workspace.content.offline()
             ? "Schema application is unavailable while offline"
@@ -86,10 +87,10 @@ const SchemaApplication: Component<SchemaApplicationProps> = (props) => {
                 : undefined
         }
         onClick={() => setConfirmationOpened(true)}
-      >
-        <span class="i-tabler:pyramid-plus h-4 w-4" />
-        Save &amp; apply
-      </Button>
+        icon="i-tabler:pyramid"
+        label={() => <span class="pl-1 pr-0.5">Save & apply</span>}
+        iconProps={{ class: "h-5 w-5 text-gray-400" }}
+      />
       <ActionConfirmationDialog
         opened={confirmationOpened()}
         title="Save and apply schema?"

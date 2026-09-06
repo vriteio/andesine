@@ -94,7 +94,10 @@ const getFirstCompatibleFragment = (
   node: ContentNode
 ): SchemaFragment | undefined => {
   return fragments.find((fragment) => {
-    return fragment.allowedBlocks.includes(node.type as SchemaFragment["allowedBlocks"][number]);
+    return (
+      node.type === "paragraph" ||
+      fragment.allowedBlocks.includes(node.type as SchemaFragment["allowedBlocks"][number])
+    );
   });
 };
 const migrateContentToSchema = (
@@ -154,9 +157,10 @@ const migrateContentToSchema = (
     for (const block of blocks) {
       const targetFragment =
         matchedFragment &&
-        matchedFragment.allowedBlocks.includes(
-          block.type as SchemaFragment["allowedBlocks"][number]
-        )
+        (block.type === "paragraph" ||
+          matchedFragment.allowedBlocks.includes(
+            block.type as SchemaFragment["allowedBlocks"][number]
+          ))
           ? matchedFragment
           : getFirstCompatibleFragment(fragments, block);
 
