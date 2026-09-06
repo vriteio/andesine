@@ -8,6 +8,7 @@ import {
 } from "@solidjs/router";
 import { type Accessor, createMemo, lazy } from "solid-js";
 
+import CollectionPage from "../../pages/workspace/collection/page";
 import SettingsLayout from "../../pages/workspace/settings/layout";
 import PersonalSettingsPage from "../../pages/workspace/settings/personal/page";
 import WorkspaceSettingsPage from "../../pages/workspace/settings/workspace/page";
@@ -28,7 +29,6 @@ const InvitePage = lazy(() => import("../../pages/invite/page"));
 const NewWorkspacePage = lazy(() => import("../../pages/new-workspace/page"));
 const WorkspaceLayout = lazy(() => import("../../pages/workspace/layout"));
 const EntryPage = lazy(() => import("../../pages/workspace/entry/page"));
-const CollectionPage = lazy(() => import("../../pages/workspace/collection/page"));
 const SchemaPage = lazy(() => import("../../pages/workspace/schema/page"));
 
 interface RouteData {

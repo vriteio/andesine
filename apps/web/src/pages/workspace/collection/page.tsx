@@ -1,16 +1,8 @@
-import { Card, createRef, ScrollShadow, Spinner } from "@andesine/components";
+import { Card, createRef, ScrollShadow, Skeleton, Spinner } from "@andesine/components";
 import { Title } from "@solidjs/meta";
 import { createAsync, revalidate, useParams } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
-import {
-  type Component,
-  createEffect,
-  createMemo,
-  createSignal,
-  onCleanup,
-  Show,
-  Suspense
-} from "solid-js";
+import { type Component, createMemo, createSignal, onCleanup, Show } from "solid-js";
 import { Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
@@ -25,10 +17,17 @@ import { Setting } from "../settings/setting";
 import { SettingsSection } from "../settings/settings-section";
 import type { WorkspaceMember } from "../settings/people/members-section/types";
 import { AccessItem } from "./access-item";
+import { AccessList } from "./access-list";
 import { AddAccessMenu, type AccessPrincipal } from "./add-access-menu";
 
 interface RoleAssignments {
   [id: string]: string;
+}
+interface OptimisticAssignments {
+  collectionID: string;
+  source: Awaited<ReturnType<typeof restrictedAssignmentsQuery>>;
+  groups: RoleAssignments;
+  members: RoleAssignments;
 }
 interface PendingAssignments {
   groupIDs?: string[];
@@ -43,25 +42,16 @@ interface SaveAssignmentsInput {
 }
 type AccessStatus = "allowed" | "denied" | "loading";
 
-const AccessPageSpinner: Component = () => (
-  <div class="flex h-full w-full flex-1 items-center justify-center text-gray-200">
-    <Spinner />
-  </div>
-);
-
 const CollectionPage: Component = () => {
   const params = useParams<{ slug?: string }>();
   const notify = useNotify();
   const { content, currentWorkspace, subscribeToUpdates } = useWorkspace();
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
-  const [groupRoleIDs, setGroupRoleIDs] = createSignal<RoleAssignments>({});
-  const [memberRoleIDs, setMemberRoleIDs] = createSignal<RoleAssignments>({});
+  const [optimisticAssignments, setOptimisticAssignments] = createSignal<OptimisticAssignments>();
   const [pendingGroupIDs, setPendingGroupIDs] = createSignal<string[]>([]);
   const [pendingMemberIDs, setPendingMemberIDs] = createSignal<string[]>([]);
   const collectionID = () => params.slug || "";
-  const collection = createMemo(() => {
-    return content.collections.get({ collectionID: collectionID() });
-  });
+  const collection = createMemo(() => content.collections.get({ collectionID: collectionID() }));
   const migrationActive = () => {
     return content.hasActiveSchemaMigration(collectionID(), true);
   };
@@ -73,37 +63,52 @@ const CollectionPage: Component = () => {
   };
   const accessStatus = createMemo<AccessStatus>(() => {
     if (!currentWorkspace() || content.loading()) return "loading";
-    if (!canManage() || !collection()?.restricted) return "denied";
+    if (content.accessLoading() || content.snapshotError() || !collection()) return "loading";
+    if (!canManage() || collection()?.restricted === false) return "denied";
 
     return "allowed";
   });
-  const data = createAsync(
-    async () => {
-      const id = collectionID();
+  const data = createAsync(async () => {
+    const id = collectionID();
 
-      if (!id || accessStatus() !== "allowed") return null;
+    if (!id || accessStatus() !== "allowed") return null;
 
-      const [assignments, groups, members, roles] = await Promise.all([
-        restrictedAssignmentsQuery({ collectionID: id }),
-        groupsQuery(),
-        membershipsQuery(),
-        rolesQuery()
-      ]);
+    const [assignments, groups, members, roles] = await Promise.all([
+      restrictedAssignmentsQuery({ collectionID: id }),
+      groupsQuery(),
+      membershipsQuery(),
+      rolesQuery()
+    ]);
 
-      return { assignments, collectionID: id, groups, members, roles };
-    },
-    { deferStream: true }
-  );
-  const title = () => {
-    return collection()?.name ? `${collection()?.name} (Restricted access)` : "Restricted access";
+    return { assignments, collectionID: id, groups, members, roles };
+  });
+  const title = () => (collection()?.name ? `${collection()?.name} (Restricted access)` : "");
+  const accessReady = () => {
+    return accessStatus() === "allowed" && data()?.collectionID === collectionID();
   };
-  const pageReady = () => {
-    if (accessStatus() === "loading") return false;
-    if (accessStatus() === "denied") return true;
+  const assignments = () => {
+    const loadedData = data();
+    const optimistic = optimisticAssignments();
 
-    return Boolean(data());
+    if (
+      optimistic?.collectionID === collectionID() &&
+      optimistic?.source === loadedData?.assignments
+    ) {
+      return optimistic;
+    }
+
+    return {
+      groups: Object.fromEntries(
+        (loadedData?.assignments.groups || []).map(({ groupID, roleID }) => [groupID, roleID])
+      ),
+      members: Object.fromEntries(
+        (loadedData?.assignments.members || []).map(({ memberID, roleID }) => [memberID, roleID])
+      )
+    };
   };
-  const roles = createMemo(() => {
+  const groupRoleIDs = () => assignments().groups;
+  const memberRoleIDs = () => assignments().members;
+  const roles = () => {
     return (data()?.roles || []).filter((role) => {
       return (
         role.baseRole !== "admin" &&
@@ -113,23 +118,23 @@ const CollectionPage: Component = () => {
           content.canCollection(collectionID(), "collection:set-publishing"))
       );
     });
-  });
-  const members = createMemo(() => {
+  };
+  const members = () => {
     return ((data()?.members || []) as WorkspaceMember[]).filter((member) => !member.admin);
-  });
-  const assignedGroups = createMemo(() => {
+  };
+  const assignedGroups = () => {
     return (data()?.groups || []).filter((group) => Boolean(groupRoleIDs()[group.id]));
-  });
-  const assignedMembers = createMemo(() => {
+  };
+  const assignedMembers = () => {
     return members().filter((member) => Boolean(memberRoleIDs()[member.id]));
-  });
-  const groupTree = createMemo<TreeMap>(() => ({
+  };
+  const groupTree = (): TreeMap => ({
     [TREE_ROOT_ID]: { items: assignedGroups().map((group) => group.id), levels: [] }
-  }));
-  const memberTree = createMemo<TreeMap>(() => ({
+  });
+  const memberTree = (): TreeMap => ({
     [TREE_ROOT_ID]: { items: assignedMembers().map((member) => member.id), levels: [] }
-  }));
-  const unassignedGroups = createMemo<AccessPrincipal[]>(() => {
+  });
+  const unassignedGroups = (): AccessPrincipal[] => {
     return (data()?.groups || [])
       .filter((group) => !groupRoleIDs()[group.id])
       .map((group) => ({
@@ -138,8 +143,8 @@ const CollectionPage: Component = () => {
         id: group.id,
         label: group.name
       }));
-  });
-  const unassignedMembers = createMemo<AccessPrincipal[]>(() => {
+  };
+  const unassignedMembers = (): AccessPrincipal[] => {
     return members()
       .filter((member) => !memberRoleIDs()[member.id])
       .map((member) => ({
@@ -148,7 +153,7 @@ const CollectionPage: Component = () => {
         id: member.id,
         label: member.profile.name || member.profile.email
       }));
-  });
+  };
   const mutation = createMutation(() => ({
     mutationFn: (input: SaveAssignmentsInput) => {
       return client.collections.setRestrictedAssignments({
@@ -186,13 +191,18 @@ const CollectionPage: Component = () => {
     nextMemberRoleIDs: RoleAssignments,
     pending: PendingAssignments
   ) => {
+    const loadedData = data();
     const nextPendingGroupIDs = pending.groupIDs || [];
     const nextPendingMemberIDs = pending.memberIDs || [];
 
-    if (migrationActive()) return;
+    if (!loadedData || !accessReady() || mutation.isPending || migrationActive()) return;
 
-    setGroupRoleIDs(nextGroupRoleIDs);
-    setMemberRoleIDs(nextMemberRoleIDs);
+    setOptimisticAssignments({
+      collectionID: loadedData.collectionID,
+      source: loadedData.assignments,
+      groups: nextGroupRoleIDs,
+      members: nextMemberRoleIDs
+    });
     setPendingGroupIDs((current) => [...new Set([...current, ...nextPendingGroupIDs])]);
     setPendingMemberIDs((current) => [...new Set([...current, ...nextPendingMemberIDs])]);
     mutation.mutate({
@@ -224,22 +234,6 @@ const CollectionPage: Component = () => {
     save(groupRoleIDs(), nextMemberRoleIDs, { memberIDs: ids });
   };
 
-  createEffect(() => {
-    const loadedData = data();
-
-    if (!loadedData || loadedData.collectionID !== collectionID()) return;
-
-    setGroupRoleIDs(
-      Object.fromEntries(
-        loadedData.assignments.groups.map((assignment) => [assignment.groupID, assignment.roleID])
-      )
-    );
-    setMemberRoleIDs(
-      Object.fromEntries(
-        loadedData.assignments.members.map((assignment) => [assignment.memberID, assignment.roleID])
-      )
-    );
-  });
   const unsubscribeFromUpdates = subscribeToUpdates((event) => {
     const queryKeys = new Set<string>();
 
@@ -260,42 +254,45 @@ const CollectionPage: Component = () => {
 
   return (
     <>
-      <Title>{`${title()} | Andesine`}</Title>
-      <div class="flex w-full flex-1 overflow-hidden px-1">
-        <div class="relative flex h-full w-full overflow-hidden">
-          <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
-          <div class="relative z-0 w-full overflow-auto" ref={setScrollableContainerRef}>
-            <Suspense fallback={<AccessPageSpinner />}>
-              <Show when={pageReady()} fallback={<AccessPageSpinner />}>
-                <div class="flex w-full flex-col items-center px-2.5 pb-5 pt-5 md:px-10 md:pb-10 md:pt-9">
-                  <div class="relative flex w-full max-w-[44rem] flex-col">
-                    <h1 class="mb-3 text-4xl font-semibold md:text-5xl">{title()}</h1>
-                    <Show
-                      when={accessStatus() === "allowed"}
-                      fallback={
-                        <Card
-                          class="flex h-16 items-center justify-center gap-1 rounded-lg bg-gray-50 px-2 text-sm text-gray-400"
-                          shade
-                        >
-                          <div class="i-lucide:lock h-5.5 w-5.5 text-gray-300" />
-                          Restricted access cannot be managed for this collection.
-                        </Card>
-                      }
-                    >
-                      <Show when={migrationActive()}>
-                        <Card
-                          class="mb-4 flex h-16 items-center justify-center gap-1 rounded-lg bg-gray-50 px-2 text-sm text-gray-400"
-                          shade
-                        >
-                          <div class="i-tabler:pyramid h-5.5 w-5.5 text-gray-300" />
-                          Schema migration in progress. Access settings are read only.
-                        </Card>
-                      </Show>
-                      <SettingsSection label="Groups">
-                        <Setting
-                          label="Group access"
-                          description="Grant access to the restricted collection for entire groups of members"
-                          fade={false}
+      <Title>{title() ? `${title()} | Andesine` : "Andesine"}</Title>
+      <Show when={accessStatus() !== "loading"} fallback={<Spinner class="m-auto text-gray-200" />}>
+        <div class="flex w-full flex-1 overflow-hidden px-1">
+          <div class="relative flex h-full w-full overflow-hidden">
+            <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
+            <div class="relative z-0 w-full overflow-auto" ref={setScrollableContainerRef}>
+              <div class="flex w-full flex-col items-center px-2.5 pb-5 pt-5 md:px-10 md:pb-10 md:pt-9">
+                <div class="relative flex w-full max-w-[44rem] flex-col">
+                  <h1 class="mb-3 text-4xl font-semibold md:text-5xl">{title()}</h1>
+                  <Show
+                    when={accessStatus() !== "denied"}
+                    fallback={
+                      <Card
+                        class="flex h-16 items-center justify-center gap-1 rounded-lg bg-gray-50 px-2 text-sm text-gray-400"
+                        shade
+                      >
+                        <div class="i-lucide:lock h-5.5 w-5.5 text-gray-300" />
+                        Restricted access cannot be managed for this collection.
+                      </Card>
+                    }
+                  >
+                    <Show when={migrationActive()}>
+                      <Card
+                        class="mb-4 flex h-16 items-center justify-center gap-1 rounded-lg bg-gray-50 px-2 text-sm text-gray-400"
+                        shade
+                      >
+                        <div class="i-tabler:pyramid h-5.5 w-5.5 text-gray-300" />
+                        Schema migration in progress. Access settings are read only.
+                      </Card>
+                    </Show>
+                    <SettingsSection label="Groups">
+                      <Setting
+                        label="Group access"
+                        description="Grant access to the restricted collection for entire groups of members"
+                        fade={false}
+                      >
+                        <Show
+                          when={accessReady()}
+                          fallback={<Skeleton class="h-7 w-full max-w-40 rounded-lg" />}
                         >
                           <AddAccessMenu
                             label="Groups"
@@ -304,7 +301,9 @@ const CollectionPage: Component = () => {
                             roles={roles()}
                             onAdd={(id, roleID) => updateGroupRoles([id], roleID)}
                           />
-                        </Setting>
+                        </Show>
+                      </Setting>
+                      <AccessList ready={accessReady()}>
                         <Show
                           when={assignedGroups().length > 0}
                           fallback={
@@ -344,12 +343,17 @@ const CollectionPage: Component = () => {
                             />
                           </div>
                         </Show>
-                      </SettingsSection>
-                      <SettingsSection label="Members">
-                        <Setting
-                          label="Member access"
-                          description="Grant access to the restricted collection for specific members"
-                          fade={false}
+                      </AccessList>
+                    </SettingsSection>
+                    <SettingsSection label="Members">
+                      <Setting
+                        label="Member access"
+                        description="Grant access to the restricted collection for specific members"
+                        fade={false}
+                      >
+                        <Show
+                          when={accessReady()}
+                          fallback={<Skeleton class="h-7 w-full max-w-40 rounded-lg" />}
                         >
                           <AddAccessMenu
                             label="Members"
@@ -358,7 +362,9 @@ const CollectionPage: Component = () => {
                             roles={roles()}
                             onAdd={(id, roleID) => updateMemberRoles([id], roleID)}
                           />
-                        </Setting>
+                        </Show>
+                      </Setting>
+                      <AccessList ready={accessReady()}>
                         <Show
                           when={assignedMembers().length > 0}
                           fallback={
@@ -400,15 +406,15 @@ const CollectionPage: Component = () => {
                             />
                           </div>
                         </Show>
-                      </SettingsSection>
-                    </Show>
-                  </div>
+                      </AccessList>
+                    </SettingsSection>
+                  </Show>
                 </div>
-              </Show>
-            </Suspense>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </Show>
     </>
   );
 };
