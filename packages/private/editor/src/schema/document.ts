@@ -2,7 +2,7 @@ import { Document as BaseDocument } from "@tiptap/extension-document";
 import type { EditorMode } from "#editor/client-types";
 
 const Document = BaseDocument.extend({
-  content: "title (block | property | fragment)+"
+  content: "title (block | tableBlock | property | fragment)+"
 });
 const createDocument = (mode: EditorMode) => {
   if (mode === "entry") return Document;

@@ -9,7 +9,11 @@ interface SelectedBlockOptions {
 }
 
 const isEditorBlock = (node: ProseMirrorNode): boolean => {
-  return node.type.isInGroup("block") || STRUCTURE_NODE_TYPES.has(node.type.name);
+  return (
+    node.type.isInGroup("block") ||
+    node.type.isInGroup("tableBlock") ||
+    STRUCTURE_NODE_TYPES.has(node.type.name)
+  );
 };
 const isPositionInInheritedField = (doc: ProseMirrorNode, pos: number): boolean => {
   const resolvedPosition = doc.resolve(Math.max(0, Math.min(pos, doc.content.size)));

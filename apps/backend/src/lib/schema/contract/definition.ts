@@ -33,7 +33,8 @@ const SCHEMA_BLOCK_TYPES = [
   "bulletList",
   "orderedList",
   "taskList",
-  "horizontalRule"
+  "horizontalRule",
+  "table"
 ] as const;
 const schemaBlockType = z.enum(SCHEMA_BLOCK_TYPES);
 const schemaPropertyValueType = z.union([z.boolean(), z.string(), z.array(z.string())]);

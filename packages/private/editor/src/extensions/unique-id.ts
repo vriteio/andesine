@@ -14,7 +14,11 @@ const UniqueID = BaseUniqueID.configure({
     "fragment",
     "property",
     "listItem",
-    "taskItem"
+    "taskItem",
+    "table",
+    "tableRow",
+    "tableCell",
+    "tableHeader"
   ],
   generateID: () => nanoid()
 });

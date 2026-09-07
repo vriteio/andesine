@@ -39,6 +39,14 @@ const Placeholder = Extension.create<PlaceholderOptions>({
             const { anchor } = state.selection;
 
             state.doc.descendants((node, pos) => {
+              if (node.type.name === "table") return false;
+              if (
+                node.type.name === "fragment" &&
+                (node.childCount !== 1 || node.firstChild?.type.name !== "paragraph")
+              ) {
+                return false;
+              }
+
               if (!node.isTextblock || !isNodeEmpty(node)) return true;
 
               const entryTitle = this.options.mode === "entry" && node.type.name === "title";

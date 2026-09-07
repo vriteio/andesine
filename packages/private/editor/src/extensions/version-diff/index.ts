@@ -62,6 +62,10 @@ const createVersionDiffDecorations = (
 ): Decoration[] => {
   const badgeGroups = new Map<number, ChangeBadgeGroup>();
   const decorations: Decoration[] = changes.map((change) => {
+    if (!change.inline && document.nodeAt(change.from)?.type.name === "table") {
+      return Decoration.Node(change.from, change.to, {}, { tableDiff: change.type });
+    }
+
     const anchor = getChangeAnchor(document, change);
     const group = badgeGroups.get(anchor.position) ?? {
       block: anchor.block,

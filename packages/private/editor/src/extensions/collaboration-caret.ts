@@ -1,5 +1,8 @@
+import { invalidateBlockControlLayout } from "#editor/ui/block-control-sizing";
+import type { Editor } from "@tiptap/core";
 import { CollaborationCaret as BaseCollaborationCaret } from "@tiptap/extension-collaboration-caret";
 import { GapCursor } from "@tiptap/pm/gapcursor";
+import { CellSelection } from "@tiptap/pm/tables";
 import {
   NodeSelection,
   Plugin,
@@ -11,6 +14,8 @@ import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import {
   absolutePositionToRelativePosition,
   relativePositionToAbsolutePosition,
+  defaultAwarenessStateFilter,
+  yCursorPlugin,
   yCursorPluginKey,
   ySyncPluginKey
 } from "@tiptap/y-tiptap";
@@ -18,6 +23,7 @@ import { createRelativePositionFromJSON } from "yjs";
 import { createBlockSelectionShade } from "#editor/ui/block-selection";
 import { forEachSelectedBlock, selectionCoversNode } from "#editor/ui/block-utils";
 import { isBlockSelection } from "./block-selection";
+import { createCollaborationCellDecorations } from "./collaboration-cell-selection";
 
 interface CollaborationUser {
   color?: string;
@@ -31,7 +37,7 @@ interface AwarenessSelection {
 
 interface CollaborationSelection extends AwarenessSelection {
   depth?: number;
-  type: "block" | "gap" | "node";
+  type: "block" | "gap" | "node" | "cell";
 }
 
 interface AwarenessState {
@@ -61,6 +67,10 @@ const getCollaborationColor = (color?: string) => {
 const getLocalCollaborationSelection = (
   selection: Selection
 ): LocalCollaborationSelection | null => {
+  if (selection instanceof CellSelection) {
+    return { from: selection.$anchorCell.pos, to: selection.$headCell.pos, type: "cell" };
+  }
+
   if (isBlockSelection(selection)) {
     return {
       depth: selection.depth,
@@ -113,7 +123,7 @@ const createGapCursor = (user: CollaborationUser, clientID: number): HTMLElement
   return cursor;
 };
 
-const createCollaborationSelectionPlugin = (awareness: Awareness) => {
+const createCollaborationSelectionPlugin = (awareness: Awareness, editor: Editor) => {
   const createDecorations = (state: EditorState): DecorationSet => {
     const syncState = ySyncPluginKey.getState(state);
 
@@ -148,6 +158,19 @@ const createCollaborationSelectionPlugin = (awareness: Awareness) => {
 
       const from = Math.min(anchor, head);
       const to = Math.max(anchor, head);
+
+      if (collaborationSelection?.type === "cell") {
+        decorations.push(
+          ...createCollaborationCellDecorations(
+            state.doc,
+            anchor,
+            head,
+            clientID,
+            getCollaborationColor(awarenessState.user?.color)
+          )
+        );
+        return;
+      }
 
       if (collaborationSelection?.type === "node") {
         const node = state.doc.nodeAt(from);
@@ -263,7 +286,7 @@ const createCollaborationSelectionPlugin = (awareness: Awareness) => {
         } satisfies CollaborationSelection);
       };
       const updateRemoteSelections = () => {
-        const selections = new Map<string, { first: HTMLElement; last: HTMLElement }>();
+        const selections = new Map<string, HTMLElement[]>();
         const gapSelections = new Set<string>();
         const nodeSelections = new Set<string>();
         const awarenessStates = awareness.getStates();
@@ -284,9 +307,9 @@ const createCollaborationSelectionPlugin = (awareness: Awareness) => {
               const blocks = selections.get(clientID);
 
               if (blocks) {
-                blocks.last = element;
+                blocks.push(element);
               } else {
-                selections.set(clientID, { first: element, last: element });
+                selections.set(clientID, [element]);
               }
             } else if (element.classList.contains("collaboration-gap-cursor")) {
               gapSelections.add(clientID);
@@ -310,7 +333,7 @@ const createCollaborationSelectionPlugin = (awareness: Awareness) => {
 
         if (!container) return;
 
-        selections.forEach(({ first, last }, clientID) => {
+        selections.forEach((blocks, clientID) => {
           let shade = shades.get(clientID);
 
           if (!shade) {
@@ -324,7 +347,7 @@ const createCollaborationSelectionPlugin = (awareness: Awareness) => {
           const color = awarenessStates.get(Number(clientID))?.user?.color;
 
           shade.element.style.setProperty("--collaboration-color", getCollaborationColor(color));
-          shade.show(view.dom, first, last);
+          shade.show(editor, blocks);
         });
 
         shades.forEach((shade, clientID) => {
@@ -340,6 +363,7 @@ const createCollaborationSelectionPlugin = (awareness: Awareness) => {
         shadeFrame = requestAnimationFrame(updateRemoteSelections);
       };
       const refreshShades = () => {
+        invalidateBlockControlLayout(editor);
         shades.forEach((shade) => shade.refresh());
       };
       const resizeObserver =
@@ -393,10 +417,26 @@ const CollaborationCaret = BaseCollaborationCaret.extend({
     const awareness = this.options.provider?.awareness as Awareness | undefined;
     const parentPlugins = this.parent?.() || [];
 
+    if (!awareness) return parentPlugins;
+
+    const cursorPlugin = yCursorPlugin(this.options.provider.awareness, {
+      cursorBuilder: this.options.render,
+      selectionBuilder: this.options.selectionRender,
+      awarenessStateFilter: (currentClientID, clientID, state: AwarenessState) => {
+        return (
+          defaultAwarenessStateFilter(currentClientID, clientID, state) &&
+          state.collaborationSelection?.type !== "cell"
+        );
+      }
+    });
+
     // Publish special selections even when controls outside the editor have focus.
-    return awareness
-      ? [createCollaborationSelectionPlugin(awareness), ...parentPlugins]
-      : parentPlugins;
+    return [
+      createCollaborationSelectionPlugin(awareness, this.editor),
+      ...parentPlugins.map((plugin) =>
+        plugin.spec.key === yCursorPluginKey ? cursorPlugin : plugin
+      )
+    ];
   }
 });
 

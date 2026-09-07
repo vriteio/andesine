@@ -35,12 +35,7 @@ const createCache = (editor: Editor): BlockControlRectCache => {
     scrollContainer,
     targets: new WeakMap()
   };
-  const invalidate = () => {
-    cache.elements = new WeakMap();
-    cache.fontSize = undefined;
-    cache.layoutVersion += 1;
-    cache.targets = new WeakMap();
-  };
+  const invalidate = () => invalidateBlockControlLayout(editor);
   const onTransaction = ({ transaction }: EditorEvents["transaction"]) => {
     if (transaction.docChanged) invalidate();
   };
@@ -48,8 +43,7 @@ const createCache = (editor: Editor): BlockControlRectCache => {
   const destroy = () => {
     observer?.disconnect();
     window.removeEventListener("resize", invalidate);
-    window.removeEventListener("scroll", invalidate);
-    scrollContainer?.removeEventListener("scroll", invalidate);
+    window.removeEventListener("scroll", invalidate, true);
     editor.off("transaction", onTransaction);
     editor.off("destroy", destroy);
     caches.delete(editor);
@@ -60,8 +54,7 @@ const createCache = (editor: Editor): BlockControlRectCache => {
   if (scrollContainer) observer?.observe(scrollContainer);
 
   window.addEventListener("resize", invalidate);
-  window.addEventListener("scroll", invalidate, { passive: true });
-  scrollContainer?.addEventListener("scroll", invalidate, { passive: true });
+  window.addEventListener("scroll", invalidate, { passive: true, capture: true });
   editor.on("transaction", onTransaction);
   editor.on("destroy", destroy);
 
@@ -90,6 +83,14 @@ const getCachedElementRect = (editor: Editor, element: HTMLElement): DOMRect => 
   }
 
   return rect;
+};
+const invalidateBlockControlLayout = (editor: Editor): void => {
+  const cache = getCache(editor);
+
+  cache.elements = new WeakMap();
+  cache.targets = new WeakMap();
+  cache.fontSize = undefined;
+  cache.layoutVersion += 1;
 };
 
 const getCachedTargetRect = (
@@ -263,6 +264,7 @@ export {
   getBlockControlLayoutVersion,
   getCachedElementRect,
   getEditorScrollContainer,
+  invalidateBlockControlLayout,
   isPointInBlockControlArea
 };
 export type { BlockControlSide, BlockControlTarget };

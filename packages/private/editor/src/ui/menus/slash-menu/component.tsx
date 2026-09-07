@@ -147,14 +147,19 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
   return (
     <Card
       class={clsx(
-        "md:w-64 m-0 overflow-hidden transition duration-200 transform origin-top-left py-0 pl-2 pr-1 relative bg-white"
+        "md:w-64 m-0 overflow-hidden transition duration-200 transform origin-top-left py-0 relative bg-white",
+        props.state.items.length > 0 ? "px-2" : "px-1",
+        props.state.items.length > 11 && "pr-1"
       )}
       data-menu
       shade
     >
       <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
       <div
-        class={clsx("w-full h-full overflow-auto max-h-96 scrollbar-sm scrollbar-white pt-1 pb-2")}
+        class={clsx(
+          "w-full h-full overflow-auto max-h-96 scrollbar-sm scrollbar-white",
+          props.state.items.length > 0 ? "pt-1 pb-2" : "py-1"
+        )}
         ref={setScrollableContainerRef}
       >
         <For
@@ -164,7 +169,9 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
               variant="text"
               text="soft"
               size="small"
-              class="justify-start text-start w-[calc(100%-0.5rem)]"
+              badge
+              hover="none"
+              class="justify-start text-start w-full"
               disabled
             >
               No results
@@ -181,7 +188,7 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
               <Dynamic
                 component={menuItem.shortcut ? Tooltip : Fragment}
                 {...(menuItem.shortcut && {
-                  wrapperClass: props.state.items.length > 11 ? "w-[calc(100%-0.25rem)]" : "w-full",
+                  wrapperClass: "w-full",
                   enabled: !blockHoverSelect() && props.state.visible,
                   content: <Shortcut shortcut={menuItem.shortcut || ""} />,
                   fixed: true,

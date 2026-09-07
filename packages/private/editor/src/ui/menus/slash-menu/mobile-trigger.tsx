@@ -4,8 +4,7 @@ import { type Accessor, createSignal, onCleanup, onMount, Show, type Component }
 import { Portal } from "solid-js/web";
 import { EDITOR_MENU_Z_INDEX } from "#editor/ui/constants";
 import { SlashMenuDropdown } from "./dropdown";
-import { createSlashMenuItems } from "./items";
-import { getAvailableSlashMenuItems } from "./items";
+import { createSlashMenuItems, getAvailableSlashMenuItems, isInsideTableCell } from "./items";
 import type { EditorMode } from "#editor/client-types";
 
 interface Position {
@@ -69,9 +68,16 @@ const MobileSlashMenuTrigger: Component<{
       return;
     }
 
-    if (opened()) return;
-
     const { selection } = props.editor.state;
+
+    if (isInsideTableCell(selection.$from)) {
+      setOpened(false);
+      setPosition(null);
+      setActiveParagraphElement(null);
+      return;
+    }
+
+    if (opened()) return;
 
     if (!focused() || !isTextSelection(selection) || !selection.empty) {
       setPosition(null);

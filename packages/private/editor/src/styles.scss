@@ -55,8 +55,151 @@ header[data-type="title"] {
   @apply bg-gradient-to-r from-secondary via-primary to-transparent;
 }
 
+// Tables
+[data-table-node-view] {
+  @apply relative w-full min-w-0 my-0!;
+}
+
+.ProseMirror :where(*):has(+ [data-table-node-view]) {
+  @apply mb-0!;
+}
+
+[data-table-scroll-container] {
+  @apply relative overflow-x-auto overflow-y-hidden;
+  overscroll-behavior-x: contain;
+}
+
+:is(.block-selection-shade, .collaboration-block-selection-shade)[data-table-selection-shade] {
+  @apply z-1;
+}
+
+[data-table-content] {
+  @apply relative min-w-full;
+  width: max-content;
+  padding: 24px calc(24px + var(--table-preview-width, 0px))
+    calc(24px + var(--table-preview-height, 0px)) var(--table-left-space, 24px);
+}
+
+.ProseMirror [data-table-content] > table {
+  @apply m-0;
+  width: var(--table-content-width, 100%);
+}
+
+// Table gestures
+[data-table-interacting],
+[data-table-interacting] *,
+[data-table-handle],
+[data-table-handle] *,
+[data-table-resize-handle],
+[data-table-extension-handle],
+[data-table-extension-handle] * {
+  @apply select-none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+// Table drag handles
+[data-table-dragging],
+[data-table-dragging] * {
+  @apply cursor-grabbing!;
+}
+
+[data-table-handle="column"] button {
+  @apply absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2;
+}
+
+[data-table-handle="row"] button {
+  @apply absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2;
+}
+
+[data-table-handle] {
+  &:hover,
+  &:focus-within,
+  &[data-selected="true"],
+  &[data-active="true"] {
+    [data-table-grip-marker] {
+      @apply opacity-0;
+    }
+
+    button {
+      @apply opacity-100;
+    }
+  }
+}
+
+// Table extension handles
+[data-table-extension-handle][data-active="true"] button {
+  @apply opacity-100;
+}
+
+// Table cell selection gesture
+[data-table-selecting-cells] {
+  &,
+  * {
+    @apply cursor-crosshair;
+  }
+
+  [data-table-handle],
+  [data-table-extension-handle],
+  [data-table-resize-handle] {
+    @apply invisible;
+  }
+}
+
+// Table columns and cells
+.ProseMirror table {
+  @apply w-full table-fixed border-separate border border-gray-300 rounded-lg overflow-hidden;
+  border-spacing: 0;
+
+  td,
+  th {
+    @apply relative border-0 border-t border-gray-300 p-2 align-top;
+    overflow-wrap: anywhere;
+
+    > p {
+      @apply m-0;
+    }
+  }
+
+  tr:first-of-type > :is(td, th) {
+    @apply border-t-0;
+  }
+
+  tr > :is(td, th) ~ :is(td, th) {
+    @apply border-l;
+  }
+
+  th {
+    @apply bg-gray-100/80 font-semibold text-left;
+  }
+
+  .selectedCell::after {
+    @apply absolute inset-0 z-1 pointer-events-none bg-tertiary/10;
+    content: "";
+  }
+}
+
+// Collaborative cell selection
+.collaboration-cell-selection {
+  @apply absolute inset-0 z-0 pointer-events-none;
+  background: color-mix(in srgb, var(--collaboration-color) 10%, transparent);
+}
+
+// Table drop and resize indicators
+[data-table-indicator="column"] {
+  @apply bg-gradient-to-b from-secondary via-primary to-secondary rounded-full my-2;
+}
+
+[data-table-indicator="row"] {
+  @apply bg-gradient-to-r from-secondary via-primary to-secondary rounded-full mx-2;
+}
+
 // Version diff
 // Content
+.version-diff-table-shade {
+  @apply pointer-events-none absolute z-1 rounded-lg;
+}
+
 .version-diff-block {
   @apply relative z-0;
 
@@ -73,16 +216,19 @@ header[data-type="title"] {
 }
 
 .version-diff-block.version-diff-added::after,
+.version-diff-table-shade.version-diff-added,
 .version-diff-inline.version-diff-added {
   @apply bg-green-500/10;
 }
 
 .version-diff-block.version-diff-removed::after,
+.version-diff-table-shade.version-diff-removed,
 .version-diff-inline.version-diff-removed {
   @apply bg-red-500/10;
 }
 
 .version-diff-block.version-diff-modified::after,
+.version-diff-table-shade.version-diff-modified,
 .version-diff-inline.version-diff-modified {
   @apply bg-blue-500/10;
 }

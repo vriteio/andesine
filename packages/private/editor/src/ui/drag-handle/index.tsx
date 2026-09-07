@@ -20,6 +20,7 @@ import { createDragHandlePlugin, dragHandlePluginKey } from "./drag-handle-plugi
 import { createListItemTargetResolver } from "./list-item-target";
 import { DragHandleTargetPlugin, dragHandleTargetPluginKey } from "./drag-handle-target-plugin";
 import { isPositionInInheritedField } from "#editor/ui/block-utils";
+import { isTableAtScrollStart } from "#editor/ui/views/table-view/scroll";
 
 interface DragHandleMenuProps {
   editor: Editor;
@@ -31,7 +32,14 @@ const shouldShowDragHandle = (
   available: boolean,
   dragging: boolean,
   target: BlockControlTarget | null
-): boolean => dragging || Boolean(available && target && target.node.type.name !== "title");
+): boolean =>
+  dragging ||
+  Boolean(
+    available &&
+    target &&
+    target.node.type.name !== "title" &&
+    (target.node.type.name !== "table" || isTableAtScrollStart(target.dom))
+  );
 
 const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
   let wrapperRef: HTMLDivElement | undefined;
@@ -70,10 +78,11 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
     };
     const updateDragHandleVisibility = () => {
       const visible = shouldShowDragHandle(dragHandleAvailable, isDragging(), currentControlTarget);
+      const tableTarget = currentControlTarget?.node.type.name === "table";
 
       wrapperRef.style.visibility = visible ? "visible" : "hidden";
       wrapperRef.style.opacity = visible ? "1" : "0";
-      wrapperRef.style.pointerEvents = visible ? "auto" : "none";
+      wrapperRef.style.pointerEvents = visible && !tableTarget ? "auto" : "none";
       updateHeadingIndicator(visible);
     };
     const setDragHandleAvailable = (available: boolean) => {
@@ -188,6 +197,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
         if (hoverAreaRef) {
           hoverAreaRef.style.top = `${wrapperRef.offsetHeight}px`;
           hoverAreaRef.style.height = `${Math.max(0, nodeRect.height - wrapperRef.offsetHeight)}px`;
+          hoverAreaRef.style.pointerEvents = target.node.type.name === "table" ? "none" : "auto";
         }
 
         hideDragHandle.clear();
@@ -203,6 +213,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
 
     scrollContainer?.addEventListener("pointermove", handlePointerMove);
     scrollContainer?.addEventListener("pointerleave", handlePointerLeave);
+    props.editor.view.dom.addEventListener("scroll", updateDragHandleVisibility, true);
     window.addEventListener("dragover", handleDragOver);
     window.addEventListener("dragend", stopAutoScroll);
     window.addEventListener("drop", stopAutoScroll);
@@ -248,6 +259,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       hideDragHandle.clear();
       scrollContainer?.removeEventListener("pointermove", handlePointerMove);
       scrollContainer?.removeEventListener("pointerleave", handlePointerLeave);
+      props.editor.view.dom.removeEventListener("scroll", updateDragHandleVisibility, true);
       window.removeEventListener("dragover", handleDragOver);
       window.removeEventListener("dragend", stopAutoScroll);
       window.removeEventListener("drop", stopAutoScroll);
@@ -278,6 +290,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
           color="contrast"
           size="small"
           text="soft"
+          class="pointer-events-auto"
           badge
           onClick={(e) => {
             e.preventDefault();
@@ -298,7 +311,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       </Show>
       <IconButton
         icon="i-lucide:grip-vertical"
-        class="cursor-grab active:cursor-grabbing"
+        class="pointer-events-auto cursor-grab active:cursor-grabbing"
         variant="text"
         color="contrast"
         size="small"

@@ -1,8 +1,46 @@
 import { createRef } from "@andesine/components";
 import type { EditorMode } from "#editor/client-types";
 import type { Editor } from "@tiptap/core";
+import type { ResolvedPos } from "@tiptap/pm/model";
 import { FRAGMENT_BLOCK_TYPES, type FragmentBlockType } from "#editor/schema/fragment";
 import type { SlashMenuItem } from "./component";
+
+const isInsideTableCell = ($pos: ResolvedPos): boolean => {
+  for (let depth = $pos.depth; depth > 0; depth -= 1) {
+    if (["tableCell", "tableHeader"].includes($pos.node(depth).type.name)) return true;
+  }
+
+  return false;
+};
+const canInsertTable = (editor: Editor, pos: number): boolean => {
+  const { doc } = editor.state;
+  const $pos = doc.resolve(pos);
+  const parent = $pos.depth > 0 ? $pos.node($pos.depth - 1) : null;
+  const index = $pos.depth > 0 ? $pos.index($pos.depth - 1) : 0;
+
+  let schemaControlled = false;
+
+  if ($pos.parent.type.name !== "paragraph") return false;
+
+  if (parent?.type.name === "fragment") {
+    return (
+      !Array.isArray(parent.attrs.allowedBlocks) || parent.attrs.allowedBlocks.includes("table")
+    );
+  }
+
+  if (parent !== doc) return false;
+
+  doc.forEach((node) => {
+    if (
+      ["fragment", "property"].includes(node.type.name) &&
+      typeof node.attrs.schemaFieldID === "string"
+    ) {
+      schemaControlled = true;
+    }
+  });
+
+  return !schemaControlled && parent.canReplaceWith(index, index + 1, editor.schema.nodes.table);
+};
 
 const createSlashMenuItems = (): SlashMenuItem[] => {
   const headingLevels = [1, 2, 3, 4, 5, 6] as const;
@@ -108,6 +146,24 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
       }
     },
     {
+      label: "Table",
+      group: "Blocks",
+      icon: "i-lucide:table",
+      schemaKind: "block",
+      schemaBlockType: "table",
+      ref: createRef<HTMLElement | null>(null),
+      command({ editor, range }) {
+        if (!canInsertTable(editor, range.from)) return false;
+
+        return editor
+          .chain()
+          .focus()
+          .deleteRange(range)
+          .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+          .run();
+      }
+    },
+    {
       label: "Fragment",
       group: "Structure",
       markdown: "",
@@ -155,8 +211,13 @@ const getAvailableSlashMenuItems = (
   mode: EditorMode
 ): SlashMenuItem[] => {
   const { $from } = editor.state.selection;
+  const availableItems = items.filter((item) => {
+    return item.schemaBlockType !== "table" || canInsertTable(editor, $from.pos);
+  });
 
   let fragmentDepth = -1;
+
+  if (isInsideTableCell($from)) return [];
 
   for (let depth = $from.depth; depth > 0; depth -= 1) {
     if ($from.node(depth).type.name === "fragment") {
@@ -167,14 +228,14 @@ const getAvailableSlashMenuItems = (
 
   if (fragmentDepth === -1) {
     if (mode === "entry") {
-      return items.filter((item) => item.schemaKind === "block" || $from.depth <= 1);
+      return availableItems.filter((item) => item.schemaKind === "block" || $from.depth <= 1);
     }
 
-    return items.filter((item) => item.schemaKind === "structure");
+    return availableItems.filter((item) => item.schemaKind === "structure");
   }
 
   if (mode === "entry") {
-    return items.filter((item) => item.schemaKind === "block");
+    return availableItems.filter((item) => item.schemaKind === "block");
   }
 
   const fragment = $from.node(fragmentDepth);
@@ -182,7 +243,7 @@ const getAvailableSlashMenuItems = (
     ? (fragment.attrs.allowedBlocks as FragmentBlockType[])
     : [...FRAGMENT_BLOCK_TYPES];
 
-  return items.filter((item) => {
+  return availableItems.filter((item) => {
     return (
       item.schemaKind === "block" &&
       (item.schemaBlockType === "paragraph" ||
@@ -191,4 +252,4 @@ const getAvailableSlashMenuItems = (
   });
 };
 
-export { createSlashMenuItems, getAvailableSlashMenuItems };
+export { createSlashMenuItems, getAvailableSlashMenuItems, isInsideTableCell };

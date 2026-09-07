@@ -7,7 +7,7 @@ import { type Editor } from "@tiptap/core";
 import { render } from "solid-js/web";
 import { EDITOR_MENU_Z_INDEX } from "#editor/ui/constants";
 import type { EditorMode } from "#editor/client-types";
-import { getAvailableSlashMenuItems } from "./items";
+import { getAvailableSlashMenuItems, isInsideTableCell } from "./items";
 
 const stringToRegex = (str: string): RegExp => {
   return new RegExp(str.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&"), "i");
@@ -27,11 +27,13 @@ const createSlashMenuPlugin = (options: {
     editor: options.editor,
     allowSpaces: true,
     startOfLine: true,
-    allow({ editor }) {
+    allow({ state }) {
       if (!window.matchMedia("(min-width: 768px)").matches) return false;
 
-      const { selection } = editor.state;
+      const { selection } = state;
       const selectedNode = selection.$from.node(selection.$from.depth);
+
+      if (isInsideTableCell(selection.$from)) return false;
 
       return (
         (selectedNode?.textContent.startsWith("/") &&

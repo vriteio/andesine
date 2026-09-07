@@ -1,3 +1,4 @@
+import { invalidateBlockControlLayout } from "#editor/ui/block-control-sizing";
 import { type Ref } from "@andesine/components";
 import { type Editor } from "@tiptap/core";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
@@ -328,10 +329,7 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
         return;
       }
 
-      const selectedBlocks: { first: HTMLElement | null; last: HTMLElement | null } = {
-        first: null,
-        last: null
-      };
+      const selectedBlocks: HTMLElement[] = [];
 
       forEachSelectedBlock(
         doc,
@@ -340,29 +338,27 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
         (_node, pos) => {
           const dom = editor.view.nodeDOM(pos);
 
-          if (dom instanceof HTMLElement) {
-            selectedBlocks.first ||= dom;
-            selectedBlocks.last = dom;
-          }
+          if (dom instanceof HTMLElement) selectedBlocks.push(dom);
         },
         { includeCoveredFragments: !isFragmentChildBlockSelection(selection) }
       );
 
-      const { first, last } = selectedBlocks;
-
-      if (!first || !last) {
+      if (!selectedBlocks.length) {
         shade.hide();
         return;
       }
 
-      shade.show(editor.view.dom, first, last);
+      shade.show(editor, selectedBlocks);
     };
     const scheduleUpdate = () => {
       if (frame !== null) return;
 
       frame = requestAnimationFrame(update);
     };
-    const refreshShade = () => shade.refresh();
+    const refreshShade = () => {
+      invalidateBlockControlLayout(editor);
+      shade.refresh();
+    };
     const observer =
       typeof ResizeObserver === "undefined" ? null : new ResizeObserver(refreshShade);
 

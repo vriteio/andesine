@@ -80,13 +80,18 @@ const setDragPreview = (
   wrapper.dir = direction || "ltr";
   wrapper.style.position = "absolute";
   wrapper.style.top = "-10000px";
+  wrapper.style.left = "0";
 
   ranges.forEach((range) => {
     const element = getDraggedElement(editor, range.$from.pos);
 
     if (!element) return;
 
-    const clone = cloneElement(element);
+    // Table viewports include the main area's gutters and space for controls.
+    const previewElement = element.matches("[data-table-node-view]")
+      ? element.querySelector("table") || element
+      : element;
+    const clone = cloneElement(previewElement);
 
     clone.style.margin = "0";
     wrapper.append(clone);

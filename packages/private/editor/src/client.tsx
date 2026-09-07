@@ -23,7 +23,11 @@ import {
   TaskItem,
   ListItem,
   Property,
-  Fragment
+  Fragment,
+  Table,
+  TableCell,
+  TableHeader,
+  TableRow
 } from "./schema";
 import { BubbleMenu } from "./ui/menus/bubble-menu";
 import { BlockSelection as BlockSelectionMenu } from "./ui/block-selection";
@@ -62,6 +66,7 @@ import { DragHandleMenu } from "./ui/drag-handle";
 import type { EditorProps } from "./client-types";
 import { useEditorProvider } from "./use-editor-provider";
 import { createFragmentViewRenderer, createPropertyViewRenderer } from "./ui/views";
+import { createTableViewRenderer } from "./ui/views/table-view";
 import { getOwner } from "solid-js/web";
 
 const ClientEditor: Component<EditorProps> = (props) => {
@@ -154,6 +159,14 @@ const ClientEditor: Component<EditorProps> = (props) => {
       TaskList,
       TaskItem,
       ListItem,
+      Table.extend({
+        addNodeView() {
+          return createTableViewRenderer(owner, () => props.editable ?? true);
+        }
+      }),
+      TableRow,
+      TableCell,
+      TableHeader,
       // Other
       ResourceNameTracker,
       ...schemaExtensions,
@@ -282,10 +295,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
       <div class="overflow-hidden relative flex h-full w-full">
         <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
         <div
-          class={clsx(
-            "relative z-0 w-full overflow-x-hidden overflow-y-auto md:overflow-auto",
-            props.class
-          )}
+          class={clsx("relative z-0 w-full overflow-x-hidden overflow-y-auto", props.class)}
           ref={setScrollableContainerRef}
           data-editor-scrollable-container
         >

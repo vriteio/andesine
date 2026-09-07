@@ -5,6 +5,7 @@ import {
   type Accessor,
   createEffect,
   createSignal,
+  createUniqueId,
   onCleanup,
   type ParentComponent,
   Show
@@ -23,6 +24,7 @@ interface BlockMenuAreaProps {
 
 const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
   const registerShortcuts = useShortcuts();
+  const menuID = createUniqueId();
   const [menuOpened, setMenuOpened] = createSignal(false);
   const [menuAnchorPoint, setMenuAnchorPoint] = createSignal<{ x: number; y: number } | null>(null);
   const [textMenuSelectionRange, setTextMenuSelectionRange] =
@@ -62,9 +64,7 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
 
     if (rangeContainsInheritedField(editor.state.doc, from, to)) return false;
 
-    editor.chain().focus().deleteSelection().run();
-
-    return true;
+    return editor.chain().focus().deleteSelection().run();
   };
   const openMenu = (reference?: HTMLElement) => {
     if (reference) {
@@ -95,18 +95,30 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
 
     const canHandleShortcut = (event: KeyboardEvent) => {
       const target = event.target;
+      const insideMenu =
+        menuOpened() &&
+        target instanceof Element &&
+        target.closest("[data-block-action-menu]")?.getAttribute("data-block-action-menu") ===
+          menuID;
 
       return (
         !editor.isDestroyed &&
         target instanceof Node &&
-        editor.view.dom.contains(target) &&
+        (editor.view.dom.contains(target) || insideMenu) &&
         isBlockSelection(editor.state.selection)
       );
     };
+    const handleShortcut = (event: KeyboardEvent, action: () => boolean): boolean => {
+      if (!canHandleShortcut(event) || !action()) return false;
+
+      handleMenuOpenedChange(false);
+
+      return true;
+    };
     const unregister = registerShortcuts(
       {
-        "$mod+backspace": (event) => canHandleShortcut(event) && handleDelete(),
-        "$mod+c": (event) => canHandleShortcut(event) && handleCopy()
+        "$mod+backspace": (event) => handleShortcut(event, handleDelete),
+        "$mod+c": (event) => handleShortcut(event, handleCopy)
       },
       {
         ignore: (event) => event.repeat || event.isComposing
@@ -154,6 +166,7 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
           {(menuContainer) => (
             <Portal mount={menuContainer}>
               <BlockMenu
+                menuID={menuID}
                 anchorPoint={menuAnchorPoint()}
                 editor={props.editor}
                 menuOpened={menuOpened()}

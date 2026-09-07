@@ -180,7 +180,7 @@ const mergeMatchedNode = (previous: JSONContent, current: JSONContent): VersionD
 
   if (propertyIdentityChanged) return createReplacement(previous, current);
 
-  if (attributesChanged) {
+  if (attributesChanged || current.type === "table") {
     return createNodeMerge(previous, current, "modified");
   }
 

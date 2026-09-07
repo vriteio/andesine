@@ -1,7 +1,7 @@
 import { isBlockSelection } from "#editor/extensions/block-selection";
-import { DropdownMenu, IconButton } from "@andesine/components";
+import { DropdownMenu, IconButton, type MenuItem } from "@andesine/components";
 import { debounce } from "@solid-primitives/scheduled";
-import { type Editor } from "@tiptap/core";
+import { type Editor, type EditorEvents } from "@tiptap/core";
 import { createEffect, createSignal, onCleanup, type ParentComponent } from "solid-js";
 import { useBlockMenuContext } from "./context";
 import {
@@ -21,8 +21,12 @@ import {
   EDITOR_MENU_Z_INDEX
 } from "#editor/ui/constants";
 import { isPositionInInheritedField } from "#editor/ui/block-utils";
+import { createTableMenuItems } from "./table";
+import { createTurnIntoMenuItem } from "./turn-into";
+import { doesTableExtendPastContent } from "#editor/ui/views/table-view/scroll";
 
 interface BlockMenuProps {
+  menuID: string;
   editor: Editor | null;
   textMenuSelectionRange: BlockControlRange | null;
   anchorPoint: { x: number; y: number } | null;
@@ -37,6 +41,31 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
   const [hoverAreaHeight, setHoverAreaHeight] = createSignal(0);
   const [triggerAvailable, setTriggerAvailable] = createSignal(false);
   const [contextMenuMode, setContextMenuMode] = createSignal(false);
+  const [tableItems, setTableItems] = createSignal<MenuItem[]>([]);
+  const [turnIntoItems, setTurnIntoItems] = createSignal<MenuItem[]>([]);
+  const menuItems = (): MenuItem[][] => {
+    const items: MenuItem[] = [
+      {
+        label: "Copy",
+        icon: "i-lucide:copy",
+        onClick: handleCopy,
+        shortcut: "$mod+c"
+      }
+    ];
+    const tableActions = tableItems();
+
+    if (tableActions.length > 0) return [items, tableActions];
+
+    items.push({
+      label: "Delete",
+      icon: "i-lucide:trash",
+      onClick: handleDelete,
+      color: "danger",
+      shortcut: "$mod+backspace"
+    });
+
+    return turnIntoItems().length ? [turnIntoItems(), items] : [items];
+  };
   const handleOpenedChange = (opened: boolean) => {
     props.setMenuOpened(opened);
 
@@ -66,7 +95,8 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
       !triggerAvailable() ||
       !props.editor ||
       !target ||
-      isPositionInInheritedField(props.editor.state.doc, target.pos)
+      isPositionInInheritedField(props.editor.state.doc, target.pos) ||
+      (target.node.type.name === "table" && doesTableExtendPastContent(props.editor, target.dom))
     ) {
       return false;
     }
@@ -77,6 +107,20 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
 
     return true;
   };
+
+  createEffect(() => {
+    const editor = props.editor;
+    const updateMenuItems = (event?: EditorEvents["transaction"]) => {
+      if (event && !event.transaction.docChanged && !event.transaction.selectionSet) return;
+
+      setTableItems(editor && !editor.isDestroyed ? createTableMenuItems(editor) : []);
+      setTurnIntoItems(editor && !editor.isDestroyed ? createTurnIntoMenuItem(editor) : []);
+    };
+
+    updateMenuItems();
+    editor?.on("transaction", updateMenuItems);
+    onCleanup(() => editor?.off("transaction", updateMenuItems));
+  });
 
   createEffect(() => {
     const editor = props.editor;
@@ -101,11 +145,15 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
           pointerTarget && selectionTarget && isTargetInBlockSelection(editor, pointerTarget)
             ? selectionTarget
             : pointerTarget;
+        const tableExtendsPastContent = Boolean(
+          target?.node.type.name === "table" && doesTableExtendPastContent(editor, target.dom)
+        );
 
         // Only show the trigger when the pointer is over a block area
         if (
           !pointerTarget ||
           !target ||
+          tableExtendsPastContent ||
           !isPointInBlockControlArea(editor, pointerTarget, {
             x: event.clientX,
             y: event.clientY,
@@ -225,7 +273,8 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
                   .focus()
                   .setBlockSelection({
                     from: currentNodePos(),
-                    to: currentNodePos() + target.node.nodeSize
+                    to: currentNodePos() + target.node.nodeSize,
+                    depth: state.doc.resolve(currentNodePos()).depth
                   })
                   .run();
               }
@@ -243,23 +292,10 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
       opened={props.menuOpened}
       setOpened={handleOpenedChange}
       cardProps={{
+        ...{ "data-block-action-menu": props.menuID },
         class: "w-48"
       }}
-      items={[
-        {
-          label: "Copy",
-          icon: "i-lucide:copy",
-          onClick: handleCopy,
-          shortcut: "$mod+c"
-        },
-        {
-          label: "Delete",
-          icon: "i-lucide:trash",
-          onClick: handleDelete,
-          color: "danger",
-          shortcut: "$mod+backspace"
-        }
-      ]}
+      items={menuItems()}
     />
   );
 };

@@ -61,6 +61,10 @@ const BLOCK_NODE_TYPES = new Set([
   "listItem",
   "orderedList",
   "paragraph",
+  "table",
+  "tableRow",
+  "tableCell",
+  "tableHeader",
   "taskItem",
   "taskList"
 ]);

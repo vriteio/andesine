@@ -1,17 +1,34 @@
+import type { Editor } from "@tiptap/core";
+import { getCachedElementRect } from "#editor/ui/block-control-sizing";
+import { getTableElement, getTableScrollContainer } from "#editor/ui/views/table-view/scroll";
+
+interface BlockSelectionShadeSegment {
+  first: HTMLElement;
+  last: HTMLElement;
+  table: HTMLTableElement | null;
+  tableContainer: HTMLElement | null;
+}
+
 const createBlockSelectionShade = (
   container: HTMLElement,
   className: string,
   { prepend = false }: { prepend?: boolean } = {}
 ) => {
-  const element = document.createElement("div");
+  const createElement = () => {
+    const element = document.createElement("div");
 
-  let currentEditor: HTMLElement | null = null;
-  let currentFirstBlock: HTMLElement | null = null;
-  let currentLastBlock: HTMLElement | null = null;
+    element.className = className;
+    element.hidden = true;
+    element.setAttribute("aria-hidden", "true");
 
-  element.className = className;
-  element.hidden = true;
-  element.setAttribute("aria-hidden", "true");
+    return element;
+  };
+  const element = createElement();
+  const elements = [element];
+
+  let currentBlocks: HTMLElement[] = [];
+  let currentEditor: Editor | null = null;
+  let currentSegments: BlockSelectionShadeSegment[] = [];
 
   if (prepend) {
     container.prepend(element);
@@ -40,40 +57,124 @@ const createBlockSelectionShade = (
 
     return content?.lastElementChild instanceof HTMLElement ? content.lastElementChild : block;
   };
-  const position = () => {
-    if (!currentEditor || !currentFirstBlock || !currentLastBlock) return;
+  const getSegments = (): BlockSelectionShadeSegment[] => {
+    const segments: BlockSelectionShadeSegment[] = [];
 
-    const containerRect = container.getBoundingClientRect();
-    const editorRect = currentEditor.getBoundingClientRect();
-    const firstRect = currentFirstBlock.getBoundingClientRect();
-    const lastRect = currentLastBlock.getBoundingClientRect();
+    currentBlocks.forEach((block) => {
+      const table = getTableElement(block);
+      const tableContainer = getTableScrollContainer(block);
 
-    element.style.height = `${lastRect.bottom - firstRect.top + 8}px`;
-    element.style.left = `${editorRect.left - containerRect.left + container.scrollLeft - 8}px`;
-    element.style.top = `${firstRect.top - containerRect.top + container.scrollTop - 4}px`;
-    element.style.width = `${editorRect.width + 16}px`;
+      if (table && tableContainer) {
+        segments.push({ first: block, last: block, table, tableContainer });
+        return;
+      }
+
+      const previous = segments[segments.length - 1];
+
+      if (previous && !previous.table) {
+        previous.last = block;
+      } else {
+        segments.push({ first: block, last: block, table: null, tableContainer: null });
+      }
+    });
+
+    return segments;
   };
-  const show = (editor: HTMLElement, firstBlock: HTMLElement, lastBlock: HTMLElement) => {
-    const firstVisualBlock = getFirstVisualBlock(firstBlock);
-    const lastVisualBlock = getLastVisualBlock(lastBlock);
-    const changed = firstVisualBlock !== currentFirstBlock || lastVisualBlock !== currentLastBlock;
+  const mountElement = (shade: HTMLElement, target: HTMLElement) => {
+    if (shade.parentElement === target) return;
+
+    if (prepend) {
+      target.prepend(shade);
+    } else {
+      target.append(shade);
+    }
+  };
+  const positionStandardSegment = (shade: HTMLElement, segment: BlockSelectionShadeSegment) => {
+    if (!currentEditor) return;
+
+    const first = getFirstVisualBlock(segment.first);
+    const last = getLastVisualBlock(segment.last);
+    const containerRect = getCachedElementRect(currentEditor, container);
+    const editorRect = getCachedElementRect(currentEditor, currentEditor.view.dom);
+    const firstRect = getCachedElementRect(currentEditor, first);
+    const lastRect = getCachedElementRect(currentEditor, last);
+
+    mountElement(shade, container);
+    delete shade.dataset.tableSelectionShade;
+    shade.style.height = `${lastRect.bottom - firstRect.top + 8}px`;
+    shade.style.left = `${editorRect.left - containerRect.left + container.scrollLeft - 8}px`;
+    shade.style.top = `${firstRect.top - containerRect.top + container.scrollTop - 4}px`;
+    shade.style.width = `${editorRect.width + 16}px`;
+  };
+  const positionTableSegment = (shade: HTMLElement, segment: BlockSelectionShadeSegment) => {
+    const { table, tableContainer } = segment;
+
+    if (!currentEditor || !table || !tableContainer) return;
+
+    const containerRect = getCachedElementRect(currentEditor, tableContainer);
+    const tableRect = getCachedElementRect(currentEditor, table);
+
+    mountElement(shade, tableContainer);
+    shade.dataset.tableSelectionShade = "";
+    shade.style.height = `${tableRect.height}px`;
+    shade.style.left = `${tableRect.left - containerRect.left + tableContainer.scrollLeft}px`;
+    shade.style.top = `${tableRect.top - containerRect.top + tableContainer.scrollTop}px`;
+    shade.style.width = `${tableRect.width}px`;
+  };
+  const position = () => {
+    if (!currentEditor || !currentBlocks.length) return;
+
+    const segments = currentSegments;
+
+    while (elements.length < segments.length) {
+      elements.push(createElement());
+    }
+
+    elements.forEach((shade, index) => {
+      const segment = segments[index];
+
+      if (!segment) {
+        shade.hidden = true;
+        return;
+      }
+
+      if (shade !== element) {
+        shade.style.setProperty(
+          "--collaboration-color",
+          element.style.getPropertyValue("--collaboration-color")
+        );
+        if (element.dataset.collaborationClient) {
+          shade.dataset.collaborationClient = element.dataset.collaborationClient;
+        } else {
+          delete shade.dataset.collaborationClient;
+        }
+      }
+
+      if (segment.table) positionTableSegment(shade, segment);
+      else positionStandardSegment(shade, segment);
+
+      shade.hidden = false;
+    });
+  };
+  const show = (editor: Editor, blocks: HTMLElement[]) => {
+    const changed =
+      blocks.length !== currentBlocks.length ||
+      blocks.some((block, index) => block !== currentBlocks[index]);
 
     currentEditor = editor;
-    currentFirstBlock = firstVisualBlock;
-    currentLastBlock = lastVisualBlock;
-    if (changed) position();
-    element.hidden = false;
+    currentBlocks = blocks;
+    if (changed) currentSegments = getSegments();
+    if (changed || currentSegments.some((segment) => segment.table)) position();
   };
 
   return {
     element,
     hide: () => {
-      element.hidden = true;
-      currentFirstBlock = null;
-      currentLastBlock = null;
+      elements.forEach((shade) => (shade.hidden = true));
+      currentBlocks = [];
     },
     refresh: position,
-    remove: () => element.remove(),
+    remove: () => elements.forEach((shade) => shade.remove()),
     show
   };
 };
