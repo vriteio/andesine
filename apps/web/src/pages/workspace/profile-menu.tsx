@@ -6,6 +6,7 @@ import { useWorkspace } from "#web/context/workspace";
 import { clearPersistenceData } from "#web/context/workspace/indexeddb";
 import clsx from "clsx";
 import { createMutation } from "@tanstack/solid-query";
+import { isOffline } from "#web/lib/offline";
 
 interface ProfileMenuProps {
   color?: "base" | "contrast";
@@ -75,6 +76,8 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
         </div>
       )
     ]);
+
+    if (isOffline()) return dropdownOptions;
 
     if (sessionList.length > 0) {
       const switchWorkspaceChildren: Array<Array<MenuItem | (() => JSX.Element)>> = sessionList.map(
@@ -165,14 +168,8 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
 
           const sessionList = sessions();
           const current = currentWorkspace();
-          const persistedWorkspaceIDs =
-            sessionList.length > 1
-              ? workspaceList
-                  .filter((workspace) => workspace.userID !== current?.userID)
-                  .map(({ id }) => id)
-              : [];
 
-          await clearPersistenceData({ persist: persistedWorkspaceIDs });
+          if (current) await clearPersistenceData({ userID: current.userID });
 
           if (sessionList.length > 1) {
             const currentSession = sessionList.find((s) => s.user.id === current?.userID);

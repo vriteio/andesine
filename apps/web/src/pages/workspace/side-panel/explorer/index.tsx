@@ -13,7 +13,7 @@ import {
   Shortcut,
   Button
 } from "@andesine/components";
-import { type ComponentProps, createSignal, For, Show } from "solid-js";
+import { type ComponentProps, createSignal, For, onMount, Show } from "solid-js";
 import { Portal } from "solid-js/web";
 import { ExplorerCollection } from "./explorer-collection";
 import { ExplorerProvider } from "./explorer-context";
@@ -39,10 +39,14 @@ const Explorer = () => {
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [contentContainerRef, setContentContainerRef] = createRef<HTMLElement | null>(null);
   const [titleRef, setTitleRef] = createRef<HTMLElement | null>(null);
+  const [mounted, setMounted] = createSignal(false);
   const [pointerInside, setPointerInside] = createSignal(false);
   const [focusInside, setFocusInside] = createSignal(false);
   const [menuOpened, setMenuOpened] = createSignal(false);
-  const loading = createDebounced(content.loading, 100);
+  const debouncedLoading = createDebounced(content.loading, 100);
+  const loading = () => !mounted() || debouncedLoading();
+
+  onMount(() => setMounted(true));
   const { dialogs: moveDialogs, isDraggedOver } = useExplorerDrop(dropRef);
   const marquee = useExplorerMarquee(scrollableContainerRef, contentContainerRef);
   const scrollItemIntoView = (id: string) => {
@@ -81,10 +85,12 @@ const Explorer = () => {
     return [...codes];
   };
   const hasVisiblePublishing = () => {
-    return (content.publishing()?.enabledCollectionIDs.size ?? 0) > 0;
+    return mounted() && (content.publishing()?.enabledCollectionIDs.size ?? 0) > 0;
   };
   const createOptions = (): MenuItem[] => {
     const createOptions: MenuItem[] = [];
+
+    if (content.offline()) return createOptions;
 
     if (content.canEntry(null, "entry:create")) {
       createOptions.push({
@@ -107,6 +113,8 @@ const Explorer = () => {
     return createOptions;
   };
   const headerOptions = (): MenuItem[][] => {
+    if (content.offline()) return [];
+
     if (!hasVisiblePublishing()) return [createOptions()].filter((group) => group.length > 0);
 
     const publishingOptions: MenuItem[] = [
@@ -203,11 +211,11 @@ const Explorer = () => {
                         ? publishing.getChannelName()
                         : undefined
                     }
-                    offline={content.offline()}
-                    syncing={content.syncing()}
+                    offline={mounted() && content.offline()}
+                    syncing={mounted() && content.syncing()}
                   />
                 </div>
-                <Show when={hasHeaderOptions()}>
+                <Show when={mounted() && hasHeaderOptions()}>
                   <div class="md:absolute right-1">
                     <DropdownMenu
                       title="Explorer"

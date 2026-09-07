@@ -8,6 +8,8 @@ type CollaborationStatus =
   | "saved-locally"
   | "synced"
   | "offline-changes"
+  | "offline"
+  | "read-only"
   | "schema-reset"
   | "unauthorized"
   | "failed";
@@ -29,8 +31,10 @@ const CollaborationStatusIndicator: Component<CollaborationStatusIndicatorProps>
     return (
       props.status === "syncing" ||
       props.status === "schema-reset" ||
+      props.status === "read-only" ||
       props.status === "unauthorized" ||
       props.status === "failed" ||
+      props.status === "offline" ||
       ((props.status === "connecting" || props.status === "offline-changes") && showDelayedStatus())
     );
   };
@@ -63,7 +67,9 @@ const CollaborationStatusIndicator: Component<CollaborationStatusIndicatorProps>
         >
           <div
             class={clsx("h-3.5 w-3.5", {
-              "i-lucide:cloud-off text-amber-500": props.status === "offline-changes",
+              "i-lucide:cloud-off text-amber-500":
+                props.status === "offline-changes" || props.status === "offline",
+              "i-lucide:lock-keyhole text-amber-500": props.status === "read-only",
               "i-lucide:shield-alert text-red-500": props.status === "unauthorized",
               "i-lucide:cloud-alert text-red-500": props.status === "failed"
             })}
@@ -72,8 +78,10 @@ const CollaborationStatusIndicator: Component<CollaborationStatusIndicatorProps>
         <span>
           {props.status === "connecting" && (props.hasLocalSnapshot ? "Connecting" : "Connecting")}
           {props.status === "syncing" && "Syncing"}
+          {props.status === "read-only" && "Read-only"}
           {props.status === "schema-reset" && `Applying schema changes`}
           {props.status === "offline-changes" && "Offline changes saved locally"}
+          {props.status === "offline" && "Offline · Saved on this device"}
           {props.status === "unauthorized" && "Access lost"}
           {props.status === "failed" && "Sync failed"}
         </span>

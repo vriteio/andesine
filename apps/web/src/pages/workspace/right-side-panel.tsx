@@ -67,7 +67,9 @@ const useRightSidePanelOptions = () => {
     }
   ];
 
-  return createMemo(() => options.filter((option) => option.available()));
+  return createMemo(() =>
+    content.offline() ? [] : options.filter((option) => option.available())
+  );
 };
 
 const RightSidePanel: Component = () => {

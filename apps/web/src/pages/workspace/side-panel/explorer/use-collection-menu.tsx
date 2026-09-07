@@ -70,6 +70,8 @@ const useCollectionMenu = (collectionID: string) => {
       });
     const migrationDisabled = migrationBlocked ? "Schema migration in progress" : false;
 
+    if (content.offline() && isMulti) return [];
+
     if (!isMulti) {
       const canEditCollection = Boolean(
         collection && content.canCollection(collection.id, "collection:update")
@@ -80,7 +82,7 @@ const useCollectionMenu = (collectionID: string) => {
       const canCreateEntry = Boolean(collection && content.canEntry(collection.id, "entry:create"));
       const schema = collection ? content.schemas.get(collection.id) : null;
 
-      if (content.getSchemaMigration(collectionID)) {
+      if (!content.offline() && content.getSchemaMigration(collectionID)) {
         opts.push([() => <ExplorerSchemaMigrationMenu collectionID={collectionID} />]);
       }
 
@@ -98,7 +100,7 @@ const useCollectionMenu = (collectionID: string) => {
         }
       ];
 
-      if (canEditCollection) {
+      if (canEditCollection && !content.offline()) {
         collectionOptions.push({
           label: "Rename group",
           icon: "i-lucide:pencil",
@@ -113,6 +115,8 @@ const useCollectionMenu = (collectionID: string) => {
       }
 
       opts.push(collectionOptions);
+
+      if (content.offline()) return opts;
 
       const schemaOptions: MenuItem[] = [];
 

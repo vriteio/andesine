@@ -31,6 +31,7 @@ const isAbortError = (error: unknown): boolean => {
 
 interface LocalEditorSnapshotInput {
   workspaceID(): string;
+  userID(): string;
   discardLocalSnapshot(): boolean;
   setLocalSnapshot(documentID: string, available: boolean): void;
   setLocalSnapshotTimeout(documentID: string): void;
@@ -41,11 +42,15 @@ interface LocalEditorSnapshotInput {
 const createLocalEditorSnapshotLifecycle = (input: LocalEditorSnapshotInput) => {
   const beforeProviderAttach = async (provider: EditorProvider) => {
     const documentID = provider.configuration.name;
-    const databaseName = getWorkspaceDatabaseName(input.workspaceID());
+    const userID = input.userID();
+    const databaseName = getWorkspaceDatabaseName(input.workspaceID(), userID);
 
     let persistence: WorkspaceIndexedDBPersistence | null = null;
 
     try {
+      if (!userID)
+        throw new LocalSnapshotAbortError("An account is required to load local content.");
+
       if (input.discardLocalSnapshot()) {
         await withTimeout(clearDocument(databaseName, documentID), LOCAL_SNAPSHOT_TIMEOUT);
       }

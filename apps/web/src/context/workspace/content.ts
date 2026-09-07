@@ -5,10 +5,10 @@ import {
   WORKSPACE_ENTRIES_STORE_NAME,
   WORKSPACE_SCHEMAS_STORE_NAME,
   clearWorkspaceData,
-  deleteIndexedDBDatabase,
   getWorkspaceDatabaseName
 } from "./indexeddb";
 import { createIndexedDBAdapter } from "./persistence";
+import { pruneDocuments } from "./y-indexeddb";
 import {
   type Collection,
   type CollectionAccess,
@@ -19,7 +19,7 @@ import {
   type WorkspaceEvent
 } from "#web/lib/api";
 import solidReactivityAdapter from "@signaldb/solid";
-import { useConnectivitySignal } from "@solid-primitives/connectivity";
+import { isOffline, readOfflineState, saveOfflineAccess } from "#web/lib/offline";
 import { type Accessor, createEffect, createMemo, createSignal, on } from "solid-js";
 import {
   isPersistedCollection,
@@ -54,11 +54,8 @@ interface CollectionSchemaSummary {
   hasActiveVersion: boolean;
   hasUnappliedChanges: boolean;
 }
-const getWorkspaceContentDatabaseName = (workspaceID?: string) => {
-  return getWorkspaceDatabaseName(workspaceID || "ephemeral");
-};
-const createWorkspaceCollections = (workspaceID?: string) => {
-  const databaseName = getWorkspaceContentDatabaseName(workspaceID);
+const createWorkspaceCollections = (workspaceID?: string, userID = "") => {
+  const databaseName = getWorkspaceDatabaseName(workspaceID || "ephemeral", userID);
   const entries = new LocalDBCollection<Entry>({
     name: `${databaseName}:entries`,
     persistence: workspaceID
@@ -99,10 +96,7 @@ const createWorkspaceCollections = (workspaceID?: string) => {
     await Promise.all([entries.dispose(), collections.dispose(), schemas.dispose()]);
   };
 
-  return { workspaceID, entries, collections, schemas, isReady, dispose };
-};
-const clearWorkspaceContent = async (workspaceID: string) => {
-  await deleteIndexedDBDatabase(getWorkspaceContentDatabaseName(workspaceID));
+  return { workspaceID, userID, entries, collections, schemas, isReady, dispose };
 };
 /* eslint-disable @typescript-eslint/no-explicit-any -- SignalDB selectors require its open-ended BaseItem shape. */
 const applyCollectionSnapshot = <T extends { id: IDBValidKey } & Record<string, any>>(
@@ -124,8 +118,7 @@ const applyCollectionSnapshot = <T extends { id: IDBValidKey } & Record<string, 
     }
   });
 };
-const useWorkspaceContent = (workspaceID: Accessor<string>) => {
-  const isOnline = useConnectivitySignal();
+const useWorkspaceContent = (workspaceID: Accessor<string>, userID: Accessor<string>) => {
   const [contentCollections, setContentCollections] = createSignal(createWorkspaceCollections());
   const [loading, setLoading] = createSignal(Boolean(workspaceID()));
   const [accessLoading, setAccessLoading] = createSignal(Boolean(workspaceID()));
@@ -172,7 +165,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
       await currentCollections.schemas.dispose();
     }
 
-    await clearWorkspaceData(targetWorkspaceID);
+    await clearWorkspaceData(targetWorkspaceID, currentCollections.userID);
   };
 
   const getCollectionAccess = (collectionID: string | null = null) => {
@@ -288,7 +281,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
   };
   const readOnly = (collectionID: string | null = null) => {
     return (
-      !isOnline() ||
+      isOffline() ||
       syncing() ||
       !contentCollections().workspaceID ||
       hasActiveSchemaMigration(collectionID) ||
@@ -322,7 +315,36 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
 
     return result;
   };
-  const offline = () => !isOnline();
+  const offline = isOffline;
+  const restoreOfflineAccess = (targetWorkspaceID: string) => {
+    const state = readOfflineState();
+    const cachedAccess = state?.user.id === userID() ? state.access[targetWorkspaceID] : undefined;
+
+    if (offline() && cachedAccess) {
+      setAccessByCollectionID(
+        Object.fromEntries(
+          Object.entries(cachedAccess.accessByCollectionID).map(([id, access]) => [
+            id,
+            {
+              ...access,
+              entryActions: cachedAccess.blockedCollectionIDs.includes(id)
+                ? access.entryActions.filter((action) => action !== "entry:update")
+                : access.entryActions
+            }
+          ])
+        )
+      );
+      setAccessLoading(false);
+    }
+  };
+  const persistOfflineAccess = () => {
+    if (offline() || accessLoading() || !accessByCollectionID()[TREE_ROOT_ID]) return;
+
+    saveOfflineAccess(workspaceID(), userID(), {
+      accessByCollectionID: accessByCollectionID(),
+      blockedCollectionIDs: [...activeSchemaMigrationCollectionIDs()]
+    });
+  };
   const removePublishingEntries = (entryIDs: string[]) => {
     setPublishing((current) => {
       if (!current) return current;
@@ -349,6 +371,25 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
       return { ...current, enabledCollectionIDs };
     });
   };
+  const pruneLocalDocuments = (
+    targetCollections: ReturnType<typeof createWorkspaceCollections>
+  ) => {
+    const targetWorkspaceID = targetCollections.workspaceID;
+
+    if (!targetWorkspaceID) return;
+
+    void pruneDocuments(
+      getWorkspaceDatabaseName(targetWorkspaceID, targetCollections.userID),
+      (documentID) => {
+        if (contentCollections() !== targetCollections) return true;
+
+        return Boolean(
+          targetCollections.entries.findOne({ id: documentID }) ||
+          targetCollections.schemas.findOne({ id: documentID })
+        );
+      }
+    ).catch((error) => console.error("Failed to remove inaccessible local documents", error));
+  };
   const applyExplorerTree = async (
     tree: ExplorerTree,
     targetCollections: ReturnType<typeof createWorkspaceCollections>
@@ -359,7 +400,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
 
     await targetCollections.isReady();
 
-    if (contentCollections().workspaceID !== tree.workspaceID) {
+    if (contentCollections() !== targetCollections) {
       return;
     }
 
@@ -400,13 +441,16 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
     setAccessLoading(false);
     setSnapshotError(false);
     setLoading(false);
+    pruneLocalDocuments(targetCollections);
   };
   const syncWorkspaceContent = async (targetWorkspaceID: string) => {
-    if (!targetWorkspaceID) return;
+    const targetCollections = contentCollections();
+
+    if (!targetWorkspaceID || targetCollections.workspaceID !== targetWorkspaceID) return;
 
     syncingWorkspaces.set(targetWorkspaceID, (syncingWorkspaces.get(targetWorkspaceID) ?? 0) + 1);
 
-    if (contentCollections().workspaceID === targetWorkspaceID) {
+    if (contentCollections() === targetCollections) {
       if (!accessByCollectionID()[TREE_ROOT_ID]) setAccessLoading(true);
 
       setSyncing(true);
@@ -414,16 +458,16 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
 
     try {
       const explorerTree = await client.sync.getExplorerTree();
-      const targetCollections = contentCollections();
 
       await applyExplorerTree(
         { workspaceID: targetWorkspaceID, ...explorerTree },
         targetCollections
       );
     } catch (error) {
-      if (contentCollections().workspaceID === targetWorkspaceID) {
+      if (contentCollections() === targetCollections) {
         setAccessLoading(false);
-        setSnapshotError(true);
+        restoreOfflineAccess(targetWorkspaceID);
+        setSnapshotError(!offline());
         setLoading(false);
       }
 
@@ -437,7 +481,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
         syncingWorkspaces.delete(targetWorkspaceID);
       }
 
-      if (contentCollections().workspaceID === targetWorkspaceID) {
+      if (contentCollections() === targetCollections) {
         setSyncing(remainingSyncs > 0);
       }
     }
@@ -474,6 +518,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
       case "entry:delete":
         contentOperations.sync.entries.applyDelete({ entryIDs: event.data.ids });
         removePublishingEntries(event.data.ids);
+        pruneLocalDocuments(targetCollections);
         break;
       case "collection:create": {
         const access = event.access;
@@ -514,6 +559,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
           return next;
         });
         schemasCollection().removeMany({ collectionID: { $in: event.data.ids } });
+        pruneLocalDocuments(targetCollections);
         break;
       case "schema:create":
       case "schema:update":
@@ -522,6 +568,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
         break;
       case "schema:delete":
         schemasCollection().removeOne({ id: event.data.id });
+        pruneLocalDocuments(targetCollections);
         break;
       case "schema-migration:update": {
         setSchemaMigrations((current) => {
@@ -610,7 +657,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
         break;
     }
   };
-  const switchWorkspace = async (currentWorkspaceID: string, previousWorkspaceID?: string) => {
+  const switchWorkspace = async (currentWorkspaceID: string) => {
     setLoading(Boolean(currentWorkspaceID));
     setAccessLoading(Boolean(currentWorkspaceID));
     setSyncing((syncingWorkspaces.get(currentWorkspaceID) ?? 0) > 0);
@@ -623,15 +670,11 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
     setAccessByCollectionID({});
 
     const previousCollections = contentCollections();
-    const nextCollections = createWorkspaceCollections(currentWorkspaceID);
+    const nextCollections = createWorkspaceCollections(currentWorkspaceID, userID());
 
     setContentCollections(nextCollections);
 
     void previousCollections.dispose();
-
-    if (previousWorkspaceID && !currentWorkspaceID) {
-      await clearWorkspaceContent(previousWorkspaceID);
-    }
 
     if (!currentWorkspaceID) {
       setLoading(false);
@@ -641,9 +684,11 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
 
     await nextCollections.isReady();
 
-    if (contentCollections().workspaceID !== currentWorkspaceID) {
+    if (contentCollections() !== nextCollections) {
       return;
     }
+
+    restoreOfflineAccess(currentWorkspaceID);
 
     if (
       nextCollections.entries.findOne({}) ||
@@ -655,12 +700,13 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
   };
 
   createEffect(
-    on(workspaceID, (currentWorkspaceID, previousWorkspaceID) => {
-      void switchWorkspace(currentWorkspaceID, previousWorkspaceID);
+    on([workspaceID, userID], ([currentWorkspaceID, currentUserID]) => {
+      void switchWorkspace(currentUserID ? currentWorkspaceID : "");
     })
   );
 
   return {
+    persistOfflineAccess,
     accessLoading,
     entriesCollection,
     collectionsCollection,

@@ -50,7 +50,9 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
   const collaborationStatus = () => {
     const state = documentLoadState();
 
-    if (props.editable && state.collaborationReadOnly) return "schema-reset";
+    if (props.editable && state.collaborationReadOnly && !state.resettingSchemaContent) {
+      return "read-only";
+    }
 
     return getCollaborationStatus(state);
   };
@@ -61,6 +63,8 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
 
     return (
       props.editable &&
+      !state.problem &&
+      (state.initialSyncComplete || state.hasLocalSnapshot) &&
       !state.collaborationReadOnly &&
       (props.mode !== "schema" || schemaConnected) &&
       !state.resettingSchemaContent
@@ -68,6 +72,7 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
   };
   const { beforeProviderAttach } = createLocalEditorSnapshotLifecycle({
     workspaceID: () => props.workspaceID,
+    userID: () => props.user?.id || "",
     discardLocalSnapshot,
     setLocalSnapshot,
     setLocalSnapshotTimeout,

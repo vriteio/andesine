@@ -15,6 +15,7 @@ import { authClient, client } from "./lib/api";
 import { getRequestEvent } from "solid-js/web";
 import { appendRedirectTo, normalizeRedirectTo, routes } from "./lib/navigation";
 import { validateWorkspaceID } from "./lib/validation";
+import { isOffline, readOfflineState } from "./lib/offline";
 import { DotsBackground } from "./components/dots-background";
 
 const rootRedirectQuery = query(async () => {
@@ -24,7 +25,25 @@ const rootRedirectQuery = query(async () => {
     return { success: true };
   }
 
-  const { data } = await authClient.getSession();
+  const offlineState = readOfflineState();
+  const offlinePath = typeof window !== "undefined" ? window.location.pathname : "";
+
+  if (isOffline() && offlineState) {
+    if (
+      !offlineState.workspaces.some(
+        (workspace) =>
+          offlinePath.startsWith(`/${workspace.id}/`) || offlinePath === `/${workspace.id}`
+      )
+    ) {
+      throw redirect(`/${offlineState.workspaceID}/`);
+    }
+
+    return { success: true };
+  }
+
+  const { data, error } = await authClient.getSession();
+
+  if (error && isOffline() && offlineState) return { success: true };
   const url = new URL(event ? event.request.url : window.location.href);
   const isAuthRoute = url.pathname.startsWith("/auth");
   const isInviteRoute = url.pathname === "/invite";
@@ -144,7 +163,12 @@ const RootLayout: ParentComponent = (props) => {
               <NotificationsProvider>
                 <ClipboardProvider>
                   <LayoutProvider>
-                    <ErrorBoundary fallback={(_, reset) => <AppError reset={reset} />}>
+                    <ErrorBoundary
+                      fallback={(error, reset) => {
+                        console.error("Failed to render the app", error);
+                        return <AppError reset={reset} />;
+                      }}
+                    >
                       {/* No fallback here to avoid showing loading state while the root redirect query is being resolved */}
                       <Suspense>{props.children}</Suspense>
                     </ErrorBoundary>

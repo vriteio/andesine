@@ -16,7 +16,7 @@ const SnapshotErrorDialog: Component = () => {
 
   return (
     <Dialog
-      opened={content.snapshotError()}
+      opened={content.snapshotError() && !content.offline()}
       onOverlayClick={() => retryMutation.mutate()}
       size="small"
       portal

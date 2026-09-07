@@ -34,7 +34,11 @@ const EditorPane: Component = () => {
     const entry = content.entries.get({ entryID: availableEntryID() || "" });
     const collectionID = entry?.collectionID || null;
 
-    return !content.readOnly(collectionID);
+    return (
+      !content.syncing() &&
+      !content.hasActiveSchemaMigration(collectionID) &&
+      content.canEntry(collectionID, "entry:update")
+    );
   });
   const workspaceID = () => params.workspaceID || currentWorkspace()?.id || "unknown";
 

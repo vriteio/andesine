@@ -23,6 +23,7 @@ type PersistenceUpdatesStore = IDBPObjectStore<
 >;
 
 const PREFERRED_TRIM_SIZE = 500;
+const activePersistences = new Set<WorkspaceIndexedDBPersistence>();
 
 class PersistenceDestroyedError extends Error {
   name = "AbortError";
@@ -39,6 +40,12 @@ const openPersistenceDatabase = async (name: string): Promise<IDBPDatabase> => {
 };
 
 const clearDocument = async (name: string, entryID: string): Promise<void> => {
+  await Promise.all(
+    [...activePersistences]
+      .filter((persistence) => persistence.name === name && persistence.entryID === entryID)
+      .map((persistence) => persistence.destroy())
+  );
+
   const database = await openPersistenceDatabase(name);
   const transaction = database.transaction(WORKSPACE_UPDATES_STORE_NAME, "readwrite");
   const updatesStore = transaction.objectStore(WORKSPACE_UPDATES_STORE_NAME);
@@ -49,6 +56,36 @@ const clearDocument = async (name: string, entryID: string): Promise<void> => {
   }
 
   try {
+    await transaction.done;
+  } finally {
+    database.close();
+  }
+};
+
+const pruneDocuments = async (
+  name: string,
+  hasDocument: (documentID: string) => boolean
+): Promise<void> => {
+  await Promise.all(
+    [...activePersistences]
+      .filter((persistence) => persistence.name === name && !hasDocument(persistence.entryID))
+      .map((persistence) => persistence.destroy())
+  );
+
+  const database = await openPersistenceDatabase(name);
+
+  try {
+    const transaction = database.transaction(WORKSPACE_UPDATES_STORE_NAME, "readwrite");
+    let cursor = await transaction.store.openCursor();
+
+    while (cursor) {
+      if (!hasDocument((cursor.value as PersistedUpdate).entryID)) {
+        await cursor.delete();
+      }
+
+      cursor = await cursor.continue();
+    }
+
     await transaction.done;
   } finally {
     database.close();
@@ -78,6 +115,7 @@ class WorkspaceIndexedDBPersistence {
     doc: Y.Doc,
     options: WorkspaceIndexedDBPersistenceOptions = {}
   ) {
+    activePersistences.add(this);
     this.doc = doc;
     this.entryID = entryID;
     this.name = name;
@@ -254,6 +292,7 @@ class WorkspaceIndexedDBPersistence {
     this.doc.off("update", this.storeUpdate);
     this.doc.off("destroy", this.destroy);
     this.destroyed = true;
+    activePersistences.delete(this);
 
     const database = await this.databasePromise.catch(() => null);
 
@@ -267,4 +306,4 @@ class WorkspaceIndexedDBPersistence {
   }
 }
 
-export { WorkspaceIndexedDBPersistence, clearDocument };
+export { WorkspaceIndexedDBPersistence, clearDocument, pruneDocuments };

@@ -4,6 +4,8 @@ import clsx from "clsx";
 import { createRef, type Ref } from "../ref";
 import { Fragment } from "./fragment";
 
+const InputWrapper: Component<JSX.HTMLAttributes<HTMLDivElement>> = (props) => <div {...props} />;
+
 const inputColors = {
   base: `:base: bg-gray-200 outline-gray-200`,
   contrast: `:base: bg-white outline-gray-200 shadow-gray-200`
@@ -78,7 +80,7 @@ const Input: Component<InputProps> = (props) => {
 
   return (
     <Dynamic
-      component={props.label ? "div" : Fragment}
+      component={props.label ? InputWrapper : Fragment}
       class={clsx(":base: flex flex-col gap-1 group", props.labelWrapperClass)}
     >
       <Show when={props.label}>
@@ -94,7 +96,7 @@ const Input: Component<InputProps> = (props) => {
         </label>
       </Show>
       <Dynamic
-        component={props.slot ? "div" : Fragment}
+        component={props.slot ? InputWrapper : Fragment}
         class={clsx(":base: flex items-center relative", props.slotWrapperClass)}
       >
         <input

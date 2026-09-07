@@ -11,8 +11,18 @@ import {
 import { passkeyClient } from "@better-auth/passkey/client";
 import { config } from "./config";
 import { getRequestEvent } from "solid-js/web";
-import { clearPersistenceData } from "#web/context/workspace/indexeddb";
 import { validateWorkspaceID } from "#web/lib/validation";
+import { lockOfflineState, setOffline } from "#web/lib/offline";
+
+const fetchWithConnectivity: typeof fetch = async (input, init) => {
+  const response = await fetch(input, init).catch((error: unknown) => {
+    if (typeof window !== "undefined" && !navigator.onLine) setOffline(true);
+    throw error;
+  });
+
+  if (typeof window !== "undefined") setOffline(false);
+  return response;
+};
 
 const getRouteWorkspaceID = () => {
   if (typeof window !== "undefined") {
@@ -34,9 +44,13 @@ const link = new RPCLink({
       if (error instanceof ORPCError) {
         if (error.code === "UNAUTHORIZED") {
           if (typeof window !== "undefined") {
-            void clearPersistenceData();
+            lockOfflineState();
 
-            return window.location.assign("/auth/sign-in");
+            if (!window.location.pathname.startsWith("/auth/")) {
+              window.location.assign(
+                `/auth/sign-in?redirectTo=${encodeURIComponent(`${window.location.pathname}${window.location.search}`)}`
+              );
+            }
           }
 
           throw error;
@@ -61,7 +75,7 @@ const link = new RPCLink({
       Object.assign(headers, options.context.headers);
     }
 
-    return fetch(request, {
+    return fetchWithConnectivity(request, {
       ...init,
       credentials: "include",
       headers
@@ -90,7 +104,7 @@ const authClient = createAuthClient({
         headers["x-workspace-id"] = workspaceID;
       }
 
-      return fetch(input, {
+      return fetchWithConnectivity(input, {
         ...init,
         credentials: "include",
         headers

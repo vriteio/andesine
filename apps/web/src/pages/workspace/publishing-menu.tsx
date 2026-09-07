@@ -316,7 +316,7 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
   });
 
   return (
-    <Show when={displayStatus()}>
+    <Show when={!content.offline() && displayStatus()}>
       {(currentStatus) => (
         <DropdownMenu
           title="Publishing"

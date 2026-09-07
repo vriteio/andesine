@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en" data-offline-shell data-accent-color="energy">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f3f4f6" />
+    <title>Offline | Andesine</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="/src/styles.scss" />
+    <link rel="stylesheet" href="/src/__uno.css" />
+    <style>
+      /* Page layout */
+      body:has(#app > main[data-offline-fallback]) {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        background: #f3f4f6;
+        color: #374151;
+        font-family: system-ui, sans-serif;
+      }
+      [data-offline-fallback] {
+        max-width: 24rem;
+        padding: 2rem;
+      }
+      [data-offline-fallback] h1 {
+        font-size: 1.5rem;
+      }
+      [data-offline-fallback] p {
+        line-height: 1.5;
+      }
+      [data-offline-fallback] a {
+        color: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <main data-offline-fallback>
+        <h1>You’re offline</h1>
+        <p>Reconnect to open Andesine. Content saved on this device is still stored locally.</p>
+        <a href="">Try again</a>
+      </main>
+    </div>
+    <script type="module" src="/src/entry-client.tsx"></script>
+  </body>
+</html>

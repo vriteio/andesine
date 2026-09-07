@@ -11,6 +11,7 @@ type MenuItem =
       label: string;
       icon: string;
       active?: boolean;
+      onlineOnly?: boolean;
       link?: string;
       shortcut?: string;
       onClick?: () => void;
@@ -28,7 +29,7 @@ interface MenuProps {
 
 const Menu: Component<MenuProps> = (props) => {
   const { layout } = useLayout();
-  const { currentWorkspace } = useWorkspace();
+  const { currentWorkspace, content } = useWorkspace();
   const md = createMediaQuery("(min-width: 768px)");
   const menu: MenuItem[] = [
     {
@@ -43,6 +44,7 @@ const Menu: Component<MenuProps> = (props) => {
     },
     {
       label: "Search",
+      onlineOnly: true,
       shortcut: "$mod+k",
       icon: "i-material-symbols:search-rounded",
       onClick: props.openSearch
@@ -60,6 +62,7 @@ const Menu: Component<MenuProps> = (props) => {
     },
     {
       label: "Settings",
+      onlineOnly: true,
       shortcut: "$mod+,",
       icon: "i-lucide:settings-2",
       get active() {
@@ -80,7 +83,11 @@ const Menu: Component<MenuProps> = (props) => {
         props.class
       )}
     >
-      <For each={menu}>
+      <For
+        each={menu.filter(
+          (item) => !("onlineOnly" in item && item.onlineOnly && content.offline())
+        )}
+      >
         {(item) => (
           <Show
             when={"separator" in item ? null : item}

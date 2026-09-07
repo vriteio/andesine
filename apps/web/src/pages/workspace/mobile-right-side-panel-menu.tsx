@@ -17,7 +17,7 @@ const MobileRightSidePanelMenu: Component<MobileRightSidePanelMenuProps> = (prop
   const publishingAvailable = () => {
     const entryID = props.entryID;
 
-    if (!entryID) return false;
+    if (!entryID || content.offline()) return false;
 
     const status = content.getEntryPublishingStatus(entryID);
 

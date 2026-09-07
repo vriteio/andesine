@@ -60,6 +60,12 @@ const viteSSRPlugin: FastifyPluginAsync = async (app) => {
       const requestUrl = new URL(request.url, `http://${request.headers.host ?? "localhost"}`);
 
       if (path.extname(requestUrl.pathname)) {
+        if (
+          requestUrl.pathname === "/service-worker.js" ||
+          requestUrl.pathname === "/offline.html"
+        ) {
+          reply.header("Cache-Control", "no-cache");
+        }
         return reply.sendFile(requestUrl.pathname);
       }
 

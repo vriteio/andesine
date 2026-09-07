@@ -1,8 +1,9 @@
-import { type Component, Suspense } from "solid-js";
+import { type Component, onMount, Suspense } from "solid-js";
 import { type RouteSectionProps } from "@solidjs/router";
 import { AnimatedGradientCard } from "#web/components/animated-gradient-card";
 import { NoHydration } from "solid-js/web";
 import { Skeleton } from "@andesine/components";
+import { lockOfflineState } from "#web/lib/offline";
 import { DotsBackground } from "#web/components/dots-background";
 
 const tips = [
@@ -13,6 +14,12 @@ const tips = [
 ];
 
 const AuthLayout: Component<RouteSectionProps> = (props) => {
+  onMount(() => {
+    if (new URLSearchParams(window.location.search).get("addAccount") !== "true") {
+      lockOfflineState();
+    }
+  });
+
   return (
     <div class="flex flex-row h-full w-full">
       <DotsBackground class="absolute mask-edge-fading-16" />

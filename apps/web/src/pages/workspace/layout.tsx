@@ -26,7 +26,7 @@ import { type PrimaryPanel, SidePanel, usePrimaryPanel } from "./side-panel";
 import { VerticalResizeHandle } from "./vertical-resize-handle";
 import { SnapshotErrorDialog } from "./snapshot-error-dialog";
 import { SearchDialog } from "./search-dialog";
-import { useConnectivitySignal } from "@solid-primitives/connectivity";
+import { isOffline } from "#web/lib/offline";
 import { createMediaQuery } from "@solid-primitives/media";
 import { useNotify } from "#web/context/notifications";
 import { RightSidePanel, useRightSidePanelOptions } from "./right-side-panel";
@@ -94,7 +94,6 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
   const navigate = useNavigate();
   const notify = useNotify();
   const md = createMediaQuery("(min-width: 768px)");
-  const isOnline = useConnectivitySignal();
   const [, setSearchParams] = useSearchParams();
   const panel = usePrimaryPanel();
   const [searchOpened, setSearchOpened] = createSignal(false);
@@ -106,7 +105,7 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
   const activePanel = () => (md() || !mobilePanelOpened() ? panel() : mobilePanel());
   const openPanel = (nextPanel: PrimaryPanel, currentEntryID?: string) => {
     if (nextPanel === "settings") {
-      if (!isOnline()) {
+      if (isOffline()) {
         notify({ type: "error", text: "Settings are unavailable while offline" });
 
         return;
@@ -138,7 +137,7 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
     const unregisterSearch = registerShortcuts(
       {
         "$mod+k": () => {
-          setSearchOpened(true);
+          if (!isOffline()) setSearchOpened(true);
           return true;
         }
       },
@@ -280,7 +279,10 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
             <SidePanel selectedPanel={mobilePanel()} />
           </div>
         </Dropdown>
-        <SearchDialog opened={searchOpened()} onClose={() => setSearchOpened(false)} />
+        <SearchDialog
+          opened={searchOpened() && !isOffline()}
+          onClose={() => setSearchOpened(false)}
+        />
         <SnapshotErrorDialog />
       </PublishingProvider>
     </WorkspaceProvider>

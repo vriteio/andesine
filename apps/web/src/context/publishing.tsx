@@ -58,7 +58,7 @@ const PublishingProvider: ParentComponent = (props) => {
   };
   const canRead = () => content.hasEntryActionInAnyCollection("entry:read");
   const channelList = createAsync(async (): Promise<PublishingChannelsResult> => {
-    if (!canRead()) return { result: [] };
+    if (!canRead() || content.offline()) return { result: [] };
 
     try {
       return { result: await publishingChannelsQuery() };
@@ -70,7 +70,7 @@ const PublishingProvider: ParentComponent = (props) => {
   const customStatus = createAsync(async () => {
     const selectedChannel = channel();
 
-    if (!canRead() || selectedChannel === PUBLISHED_CHANNEL) return null;
+    if (!canRead() || content.offline() || selectedChannel === PUBLISHED_CHANNEL) return null;
 
     return {
       channel: selectedChannel,

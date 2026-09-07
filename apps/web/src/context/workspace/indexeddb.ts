@@ -1,7 +1,9 @@
 import { deleteDB, openDB, type IDBPDatabase, type IDBPTransaction } from "idb";
+import { clearOfflineState } from "#web/lib/offline";
 
 interface ClearPersistenceDataOptions {
   persist?: string[];
+  userID?: string;
 }
 
 type WorkspaceDatabaseUpgradeTransaction = IDBPTransaction<unknown, string[], "versionchange">;
@@ -136,20 +138,14 @@ const listIndexedDBDatabaseNames = async (): Promise<string[]> => {
 const deleteIndexedDBDatabases = async (names: Iterable<string>): Promise<void> => {
   await Promise.allSettled(Array.from(new Set(names)).map((name) => deleteIndexedDBDatabase(name)));
 };
-const getDatabaseWorkspaceID = (name: string): string | null => {
-  if (name.startsWith(`${WORKSPACE_DATA_PREFIX}ws_`)) {
-    return name.slice(WORKSPACE_DATA_PREFIX.length);
-  }
-
-  return null;
+const getWorkspaceDatabaseName = (workspaceID: string, userID: string) => {
+  return `${WORKSPACE_DATA_PREFIX}${userID}:${workspaceID}`;
 };
-const getWorkspaceDatabaseName = (workspaceID: string) => {
-  return `${WORKSPACE_DATA_PREFIX}${workspaceID}`;
-};
-const clearWorkspaceData = async (workspaceID: string): Promise<void> => {
-  await deleteIndexedDBDatabase(getWorkspaceDatabaseName(workspaceID));
+const clearWorkspaceData = async (workspaceID: string, userID: string): Promise<void> => {
+  await deleteIndexedDBDatabase(getWorkspaceDatabaseName(workspaceID, userID));
 };
 const clearPersistenceData = async (options: ClearPersistenceDataOptions = {}): Promise<void> => {
+  clearOfflineState(options.persist, options.userID);
   const persistedWorkspaceIDs = new Set(options.persist);
   const databaseNames = await listIndexedDBDatabaseNames();
 
@@ -157,9 +153,15 @@ const clearPersistenceData = async (options: ClearPersistenceDataOptions = {}): 
     databaseNames.filter((name) => {
       if (!name.startsWith(WORKSPACE_DATA_PREFIX)) return false;
 
-      const workspaceID = getDatabaseWorkspaceID(name);
+      const prefix = options.userID
+        ? `${WORKSPACE_DATA_PREFIX}${options.userID}:`
+        : WORKSPACE_DATA_PREFIX;
 
-      return workspaceID === null || !persistedWorkspaceIDs.has(workspaceID);
+      if (!name.startsWith(prefix)) return false;
+
+      const workspaceID = name.slice(name.lastIndexOf(":") + 1);
+
+      return !persistedWorkspaceIDs.has(workspaceID);
     })
   );
 };

@@ -242,7 +242,7 @@ const EditorToolbar: Component = () => {
           </div>
         )}
       </Show>
-      <Show when={!versionID() && schema() && schemaCollection()}>
+      <Show when={!content.offline() && !versionID() && schema() && schemaCollection()}>
         <SchemaApplication
           schemaID={schema()!.id}
           collectionID={schemaCollection()!.id}

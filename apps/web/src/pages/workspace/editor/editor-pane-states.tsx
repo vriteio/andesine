@@ -57,22 +57,27 @@ const EditorLoadErrorView: Component<EditorLoadErrorViewProps> = (props) => {
 const DocumentLoadError: Component<DocumentLoadErrorProps> = (props) => {
   const isUnauthorized = () => props.problem === "unauthorized";
   const isLocalTimeout = () => props.problem === "local-timeout";
+  const isNotCached = () => props.problem === "not-cached";
 
   return (
     <EditorLoadErrorView
       title={
         isUnauthorized()
           ? "Access lost"
-          : isLocalTimeout()
-            ? "Local content unavailable"
-            : "Sync failed"
+          : isNotCached()
+            ? "Not available offline"
+            : isLocalTimeout()
+              ? "Local content unavailable"
+              : "Sync failed"
       }
       description={
         isUnauthorized()
           ? `You no longer have access to this ${props.resourceLabel || "entry"}.`
-          : isLocalTimeout()
-            ? "The editor could not finish loading the local copy of this document."
-            : "The editor could not initialize collaboration for this document."
+          : isNotCached()
+            ? "This document has not been saved on this device. Reconnect to open it."
+            : isLocalTimeout()
+              ? "The editor could not finish loading the local copy of this document."
+              : "The editor could not initialize collaboration for this document."
       }
       actionIcon={isUnauthorized() ? "i-lucide:arrow-left" : "i-lucide:rotate-cw"}
       actionLabel={isUnauthorized() ? "Back" : "Retry"}
@@ -80,7 +85,7 @@ const DocumentLoadError: Component<DocumentLoadErrorProps> = (props) => {
       note={
         <Show when={isLocalTimeout() && props.localTimeoutCount >= 2}>
           <p class="mt-2 text-xs leading-5 text-amber-600">
-            The next retry will discard this document’s local content and load the server copy.
+            Your local content is kept. Close other tabs for this workspace, then retry.
           </p>
         </Show>
       }

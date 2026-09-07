@@ -11,6 +11,11 @@ import {
 } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
+interface ButtonElementProps extends JSX.ButtonHTMLAttributes<HTMLButtonElement> {
+  href?: string;
+  target?: string;
+}
+
 type ButtonColor = "base" | "contrast" | "danger" | "success" | "primary";
 type ButtonVariant = "text" | "solid" | "outlined";
 type ButtonSize = "xs" | "small" | "medium" | "large";
@@ -34,6 +39,15 @@ interface IconButtonProps extends ButtonProps {
   iconProps?: ComponentProps<"div">;
   label?: string | Component;
 }
+
+// Explicit JSX supplies templates when these elements render after hydration.
+const buttonElements = {
+  button: (props: ButtonElementProps) => <button {...props} />,
+  a: (props: ButtonElementProps) => (
+    <a {...(props as JSX.AnchorHTMLAttributes<HTMLAnchorElement>)} />
+  ),
+  div: (props: ButtonElementProps) => <div {...(props as JSX.HTMLAttributes<HTMLDivElement>)} />
+};
 
 const baseClasses =
   ":base: transition-[background-position,opacity] relative ease-out duration-200 font-medium !ring-0 !focus:ring-0 disabled:opacity-70";
@@ -206,7 +220,7 @@ const Button: Component<ButtonProps> = (providedProps) => {
 
   return (
     <Dynamic
-      component={component()}
+      component={buttonElements[component()]}
       {...passedProps}
       class={clsx(
         baseClasses,

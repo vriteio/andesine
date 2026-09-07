@@ -2,6 +2,7 @@ import {
   createContext,
   createEffect,
   createMemo,
+  on,
   onCleanup,
   type ParentComponent,
   useContext
@@ -15,6 +16,7 @@ import { toUserID } from "#web/lib/primitives";
 import { hasPermission as hasGrantedPermission } from "#web/lib/policy";
 import { isWorkspaceEvent } from "#web/lib/validation";
 import { clearPersistenceData } from "./indexeddb";
+import { isOffline, readOfflineState, saveOfflineWorkspace } from "#web/lib/offline";
 
 interface WorkspaceInfo {
   id: string;
@@ -51,7 +53,13 @@ interface WorkspaceContextValue {
 }
 
 const listSessionsQuery = query(async () => {
+  const offlineUser = readOfflineState()?.user;
+
+  if (isOffline()) return offlineUser ? [{ user: offlineUser, sessionToken: "" }] : [];
+
   const { data, error } = await authClient.multiSession.listDeviceSessions();
+
+  if (error && isOffline() && offlineUser) return [{ user: offlineUser, sessionToken: "" }];
 
   if (error || !data) return [] as SessionInfo[];
 
@@ -67,7 +75,33 @@ const listSessionsQuery = query(async () => {
     })
   ) as SessionInfo[];
 }, "sessions");
-const listWorkspacesQuery = query(() => client.workspaces.list(), "workspaces");
+const listWorkspacesQuery = query(async () => {
+  if (isOffline()) return readOfflineState()?.workspaces || [];
+
+  try {
+    const workspaceList = await client.workspaces.list();
+
+    if (typeof window !== "undefined") {
+      const sessions = await listSessionsQuery();
+
+      for (const session of sessions) {
+        const userID = session.user.id;
+
+        void clearPersistenceData({
+          userID,
+          persist: workspaceList
+            .filter((workspace) => workspace.userID === userID)
+            .map(({ id }) => id)
+        });
+      }
+    }
+
+    return workspaceList;
+  } catch (error) {
+    if (isOffline()) return readOfflineState()?.workspaces || [];
+    throw error;
+  }
+}, "workspaces");
 const WorkspaceContext = createContext<WorkspaceContextValue>();
 const WorkspaceProvider: ParentComponent = (props) => {
   const params = useParams<{ workspaceID: string }>();
@@ -128,7 +162,24 @@ const WorkspaceProvider: ParentComponent = (props) => {
       workspace?.admin || hasGrantedPermission(workspace?.permissions || [], required)
     );
   };
-  const content = useWorkspaceContent(workspaceID);
+  const content = useWorkspaceContent(workspaceID, () => currentSession()?.user.id || "");
+  createEffect(() => {
+    const workspace = currentWorkspace();
+    const session = currentSession();
+    const workspaceList = workspaces();
+
+    if (!isOffline() && workspace && session?.sessionToken && workspaceList) {
+      saveOfflineWorkspace(session.user, workspace.id, workspaceList);
+      content.persistOfflineAccess();
+    }
+  });
+  createEffect(
+    on(isOffline, (offline, previous) => {
+      if (!offline && previous === true) {
+        void revalidate(["sessions", "workspaces", "root-redirect"]);
+      }
+    })
+  );
   const subscribeToUpdates = (listener: (event: WorkspaceEvent) => void) => {
     updateListeners.add(listener);
 
@@ -138,9 +189,7 @@ const WorkspaceProvider: ParentComponent = (props) => {
     const workspaceList = workspaces();
     const currentWorkspaceID = workspaceID();
 
-    if (workspaceList === undefined) return;
-
-    void clearPersistenceData({ persist: workspaceList.map(({ id }) => id) });
+    if (workspaceList === undefined || isOffline()) return;
 
     if (
       typeof window === "undefined" ||
@@ -158,8 +207,9 @@ const WorkspaceProvider: ParentComponent = (props) => {
   });
   createEffect(() => {
     const currentWorkspaceID = workspaceID();
+    const currentUserID = currentSession()?.user.id;
 
-    if (typeof window === "undefined" || !currentWorkspaceID) return;
+    if (typeof window === "undefined" || !currentWorkspaceID || !currentUserID) return;
 
     const abortController = new AbortController();
     const waitForRetry = (delay: number) => {
@@ -228,7 +278,7 @@ const WorkspaceProvider: ParentComponent = (props) => {
           }
         } catch (error) {
           if (!abortController.signal.aborted) {
-            console.error("Workspace update stream disconnected", error);
+            if (!isOffline()) console.error("Workspace update stream disconnected", error);
 
             if (content.accessLoading()) {
               await content.syncWorkspaceContent(currentWorkspaceID).catch(() => {});
@@ -244,6 +294,7 @@ const WorkspaceProvider: ParentComponent = (props) => {
     })();
   });
   const switchWorkspace = async (workspaceID: string) => {
+    if (isOffline()) throw new Error("Workspace switching is unavailable while offline");
     if (workspaceID === params.workspaceID) return;
 
     const targetWorkspace = (workspaces() ?? []).find((workspace) => workspace.id === workspaceID);

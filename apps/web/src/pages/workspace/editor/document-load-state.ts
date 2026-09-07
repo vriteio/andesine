@@ -1,5 +1,6 @@
 import type { EditorProvider } from "@andesine/editor";
 import { type Accessor, createEffect, createSignal } from "solid-js";
+import { isOffline } from "#web/lib/offline";
 
 interface DocumentLoadState {
   documentID: string | null;
@@ -18,7 +19,7 @@ interface DocumentLoadState {
 }
 
 type CollaborationConnection = "connecting" | "connected" | "disconnected";
-type CollaborationProblem = "unauthorized" | "failed" | "local-timeout" | null;
+type CollaborationProblem = "unauthorized" | "failed" | "local-timeout" | "not-cached" | null;
 type CollaborationScope = "read-write" | "readonly";
 
 const SCHEMA_CONTENT_RESET_CLOSE_CODE = 4210;
@@ -70,7 +71,8 @@ const useDocumentLoadState = (selectedDocumentID: Accessor<string | undefined>) 
     updateDocumentState(documentID, (currentState) => ({
       ...currentState,
       isCheckingLocal: false,
-      hasLocalSnapshot
+      hasLocalSnapshot,
+      problem: !hasLocalSnapshot && isOffline() ? "not-cached" : currentState.problem
     }));
   };
   const setLocalSnapshotTimeout = (documentID: string) => {
@@ -97,10 +99,7 @@ const useDocumentLoadState = (selectedDocumentID: Accessor<string | undefined>) 
 
     if (!currentState.documentID) return;
 
-    setDiscardLocalSnapshot(
-      resettingSchemaContent ||
-        (currentState.problem === "local-timeout" && currentState.localTimeoutCount >= 2)
-    );
+    setDiscardLocalSnapshot(discardLocalSnapshot() || resettingSchemaContent);
     setDocumentLoadState({
       ...createDocumentLoadState(currentState.documentID, currentState.localTimeoutCount),
       collaborationReadOnly,
@@ -125,6 +124,24 @@ const useDocumentLoadState = (selectedDocumentID: Accessor<string | undefined>) 
     const documentID = provider.configuration.name;
     const websocketProvider = provider.configuration.websocketProvider;
     const handleAuthenticated = (event: { scope: CollaborationScope }) => {
+      const currentState = documentLoadState();
+
+      if (currentState.documentID !== documentID) return;
+
+      if (
+        event.scope === "readonly" &&
+        (currentState.hasLocalSnapshot || currentState.initialSyncComplete)
+      ) {
+        setDiscardLocalSnapshot(true);
+        setDocumentLoadState({
+          ...createDocumentLoadState(documentID),
+          collaborationReadOnly: true
+        });
+        setProviderAttempt((attempt) => attempt + 1);
+        return;
+      }
+
+      setDiscardLocalSnapshot(false);
       updateDocumentState(documentID, (currentState) => ({
         ...currentState,
         authenticated: true,
@@ -176,7 +193,11 @@ const useDocumentLoadState = (selectedDocumentID: Accessor<string | undefined>) 
 
         if (event.event.code === 4401 || event.event.code === 4403) {
           problem = "unauthorized";
-        } else if (!currentState.initialSyncComplete) {
+        } else if (
+          !currentState.initialSyncComplete &&
+          !currentState.hasLocalSnapshot &&
+          currentState.problem !== "not-cached"
+        ) {
           problem = "failed";
         }
 

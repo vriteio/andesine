@@ -66,6 +66,8 @@ const useEntryMenu = (entryID: string) => {
       });
     const migrationDisabled = migrationBlocked ? "Schema migration in progress" : false;
 
+    if (content.offline() && isMulti) return [];
+
     if (!isMulti) {
       const entryOptions: MenuItem[] = [
         {
@@ -81,7 +83,7 @@ const useEntryMenu = (entryID: string) => {
         }
       ];
 
-      if (canEdit) {
+      if (canEdit && !content.offline()) {
         entryOptions.push({
           label: "Rename entry",
           icon: "i-lucide:pencil",
@@ -94,6 +96,8 @@ const useEntryMenu = (entryID: string) => {
       }
 
       options.push(entryOptions);
+
+      if (content.offline()) return options;
     }
 
     if (entriesOnly && publishingEnabled && canManagePublishing) {

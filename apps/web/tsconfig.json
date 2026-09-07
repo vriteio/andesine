@@ -20,5 +20,6 @@
       "#editor/*": ["../../packages/private/editor/src/*"]
     }
   },
-  "include": ["./src/**/*.ts", "./src/**/*.tsx"]
+  "include": ["./src/**/*.ts", "./src/**/*.tsx"],
+  "exclude": ["./src/service-worker"]
 }
