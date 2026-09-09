@@ -1,3 +1,5 @@
+import { workspaces } from "@andesine/backend/db/workspaces";
+import { retainVersionAssets, syncEntryAssets } from "@andesine/backend/lib/assets/references";
 import {
   effectiveSchemaRevisions,
   schemaMigrationEntries,
@@ -42,6 +44,11 @@ const processMigrationEntry = async (
   input: MigrationEntryInput
 ): Promise<ProcessMigrationEntryResult> => {
   return db.transaction(async (transaction) => {
+    await transaction
+      .select({ id: workspaces.id })
+      .from(workspaces)
+      .where(eq(workspaces.id, input.workspaceID))
+      .for("update");
     const [row] = await transaction
       .select({
         entryName: entries.name,
@@ -118,6 +125,23 @@ const processMigrationEntry = async (
       })
       .returning({ id: entryVersions.id });
 
+    await retainVersionAssets({
+      database: transaction,
+      workspaceID: input.workspaceID,
+      entryID: input.entryID,
+      versionID: recoveryVersion.id,
+      document: migrated.previousDocument
+    });
+
+    const imageReferences = await syncEntryAssets({
+      database: transaction,
+      workspaceID: input.workspaceID,
+      entryID: input.entryID,
+      document: migrated.document
+    });
+
+    if (imageReferences.changed) throw new Error("Schema content contains an unauthorized image");
+
     if (contributorIDs.length > 0) {
       await transaction.insert(entryVersionContributors).values(
         contributorIDs.map((membershipID) => ({
@@ -187,6 +211,11 @@ const processMigrationEntry = async (
 };
 const rollbackMigrationEntry = async (input: MigrationEntryInput): Promise<void> => {
   return db.transaction(async (transaction) => {
+    await transaction
+      .select({ id: workspaces.id })
+      .from(workspaces)
+      .where(eq(workspaces.id, input.workspaceID))
+      .for("update");
     const [row] = await transaction
       .select({
         contentState: contents.state,
@@ -211,6 +240,15 @@ const rollbackMigrationEntry = async (input: MigrationEntryInput): Promise<void>
     if (row.entryStatus !== "completed") return;
 
     const restored = replaceSchemaContentState(row.contentState, row.recoveryDocument);
+    const imageReferences = await syncEntryAssets({
+      database: transaction,
+      workspaceID: input.workspaceID,
+      entryID: input.entryID,
+      document: restored.document,
+      recoveryDocument: row.recoveryDocument
+    });
+
+    if (imageReferences.changed) throw new Error("Recovery image is not available");
 
     await transaction
       .update(contents)

@@ -1,8 +1,7 @@
 import { createAsync, query, revalidate, useNavigate } from "@solidjs/router";
 import { Title } from "@solidjs/meta";
 import { type Component, createSignal, Show } from "solid-js";
-import { AnimatedGradientCard } from "#web/components/animated-gradient-card";
-import { IconButton, Input, Tooltip } from "@andesine/components";
+import { IconButton, Input, Tooltip, AnimatedGradientCard } from "@andesine/components";
 import { authClient, client } from "#web/lib/api";
 import { getPostAuthRedirectPath } from "#web/lib/navigation";
 import { createMutation } from "@tanstack/solid-query";

@@ -11,4 +11,4 @@ const createEmbeddings = async (texts: string[]): Promise<number[][]> => {
   return openAIClient.createEmbeddings(texts);
 };
 
-export { createEmbeddings };
+export { createEmbeddings, openAIClient };

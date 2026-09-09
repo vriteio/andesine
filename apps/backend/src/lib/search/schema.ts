@@ -24,6 +24,7 @@ interface SearchCollectionDefinition {
   schema: TypesenseCollectionSchema;
 }
 
+const IMAGE_SEARCH_COLLECTION_ALIAS = "andesine_search_images";
 const CURRENT_SEARCH_COLLECTION_ALIAS = "andesine_search_current";
 const CURRENT_SEARCH_COLLECTION_NAME = "andesine_search_current_v1";
 const PUBLISHED_SEARCH_COLLECTION_ALIAS = "andesine_search_published";
@@ -80,13 +81,30 @@ const createSearchCollectionDefinitions = (
     enable_nested_fields: true
   };
 
+  const imageSchema: TypesenseCollectionSchema = {
+    name: "andesine_search_images_v1",
+    fields: [
+      { name: "workspaceID", type: "string" },
+      { name: "assetID", type: "string" },
+      { name: "filename", type: "string" },
+      { name: "description", type: "string" },
+      { name: "extractedText", type: "string" },
+      { ...embeddingField, optional: true },
+      { name: "updatedAt", type: "int64", sort: true }
+    ],
+    default_sorting_field: "updatedAt",
+    enable_nested_fields: false
+  };
+
   return [
+    { alias: IMAGE_SEARCH_COLLECTION_ALIAS, schema: imageSchema },
     { alias: CURRENT_SEARCH_COLLECTION_ALIAS, schema: currentSchema },
     { alias: PUBLISHED_SEARCH_COLLECTION_ALIAS, schema: publishedSchema }
   ];
 };
 
 export {
+  IMAGE_SEARCH_COLLECTION_ALIAS,
   CURRENT_SEARCH_COLLECTION_ALIAS,
   CURRENT_SEARCH_COLLECTION_NAME,
   PUBLISHED_SEARCH_COLLECTION_ALIAS,

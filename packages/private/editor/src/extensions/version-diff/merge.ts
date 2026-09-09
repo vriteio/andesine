@@ -29,7 +29,7 @@ interface FinalizedNode {
   size: number;
 }
 
-const LEAF_NODE_TYPES = new Set(["hardBreak", "horizontalRule", "property"]);
+const LEAF_NODE_TYPES = new Set(["hardBreak", "horizontalRule", "property", "image"]);
 const TEXT_BLOCK_TYPES = new Set(["heading", "paragraph", "title"]);
 const MIN_INLINE_DIFF_SIMILARITY = 0.5;
 

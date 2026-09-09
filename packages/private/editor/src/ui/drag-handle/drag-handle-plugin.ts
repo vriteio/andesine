@@ -1,3 +1,4 @@
+import { EDITOR_MENU_Z_INDEX } from "#editor/ui/constants";
 import { isChangeOrigin } from "@tiptap/extension-collaboration";
 import { dragHandlePluginDefaultKey } from "@tiptap/extension-drag-handle";
 import type { Editor } from "@tiptap/core";
@@ -16,6 +17,7 @@ import {
 } from "./node-range-drop";
 
 interface DragHandlePluginOptions {
+  container: HTMLElement;
   editor: Editor;
   element: HTMLElement;
   getDragTarget(): DragTarget | null;
@@ -148,7 +150,10 @@ const createDragHandlePlugin = (options: DragHandlePluginOptions) => {
       wrapper.style.left = "0";
       wrapper.style.top = "0";
       wrapper.append(element);
-      editor.view.dom.parentElement?.append(wrapper);
+      wrapper.style.zIndex = String(EDITOR_MENU_Z_INDEX.dragHandle);
+      // ProseMirror recreates plugin views when the plugin list changes. Keep the
+      // same coordinate origin as the handle positioning code on every mount.
+      options.container.append(wrapper);
       element.addEventListener("dragstart", handleDragStart);
       element.addEventListener("dragend", handleDragEnd);
       document.addEventListener("drop", handleDrop);

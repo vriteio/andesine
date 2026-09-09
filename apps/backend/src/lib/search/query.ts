@@ -172,8 +172,10 @@ const buildSearchFilter = (input: SearchFilterInput): string => {
 
   return filters.join(" && ");
 };
-const getVectorQuery = (embedding: number[], limit: number): string => {
-  return `embedding:([${embedding.join(",")}], k:${Math.max(limit * 3, 20)})`;
+const getVectorQuery = (embedding: number[], limit: number, maxDistance?: number): string => {
+  const threshold = maxDistance === undefined ? "" : `, distance_threshold:${maxDistance}`;
+
+  return `embedding:([${embedding.join(",")}], k:${Math.max(limit * 3, 20)}${threshold})`;
 };
 
 export {

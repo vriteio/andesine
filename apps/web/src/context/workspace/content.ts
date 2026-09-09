@@ -1,3 +1,4 @@
+import { pruneCachedImages } from "./image-cache";
 import { Collection as LocalDBCollection } from "@signaldb/core";
 import { createWorkspaceContentOperations } from "./operations";
 import {
@@ -377,6 +378,13 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, userID: Accessor<str
     const targetWorkspaceID = targetCollections.workspaceID;
 
     if (!targetWorkspaceID) return;
+
+    void pruneCachedImages(
+      getWorkspaceDatabaseName(targetWorkspaceID, targetCollections.userID),
+      (entryID) =>
+        contentCollections() !== targetCollections ||
+        Boolean(targetCollections.entries.findOne({ id: entryID }))
+    ).catch((error) => console.error("Failed to remove inaccessible cached images", error));
 
     void pruneDocuments(
       getWorkspaceDatabaseName(targetWorkspaceID, targetCollections.userID),

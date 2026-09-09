@@ -1,3 +1,4 @@
+import { retainVersionAssets } from "#backend/lib/assets/references";
 import { getCurrentDocumentContent, type ContentSnapshot } from "#backend/collaboration";
 import {
   contents,
@@ -12,7 +13,7 @@ import { mapVersion, type VersionDetails, type VersionReason } from "#backend/li
 import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
-import { withAuthorization } from "#backend/lib/policy";
+import { type ServiceResolveContext, withAuthorization } from "#backend/lib/policy";
 
 interface CreateVersionInput {
   entryID: string;
@@ -20,41 +21,50 @@ interface CreateVersionInput {
   contributorIDs: string[];
   name?: string;
   sourceVersionID?: string;
-  snapshot?: ContentSnapshot;
+}
+interface CommitCreateVersionInput extends CreateVersionInput {
+  snapshot: ContentSnapshot;
 }
 interface ResolvedCreateVersion {
   collectionID: string | null;
 }
 
-const createVersion = withAuthorization<CreateVersionInput, ResolvedCreateVersion, VersionDetails>(
+const resolveCreateVersion = async (
+  { database, input, workspaceID }: ServiceResolveContext<CreateVersionInput>,
+  lockEntry = false
+): Promise<ResolvedCreateVersion> => {
+  const query = database
+    .select({ collectionID: entries.collectionID })
+    .from(entries)
+    .where(
+      and(
+        eq(entries.id, toUUID(input.entryID)),
+        eq(entries.workspaceID, workspaceID),
+        isNull(entries.deletedAt)
+      )
+    );
+  const [entry] = await (lockEntry ? query.for("update") : query);
+
+  if (!entry) throw new ORPCError("NOT_FOUND", { message: "Entry not found" });
+
+  return entry;
+};
+const commitCreateVersion = withAuthorization<
+  CommitCreateVersionInput,
+  ResolvedCreateVersion,
+  VersionDetails
+>(
   {
     actions: ({ resolved }) => ({
       entries: [{ action: "version:create", collectionID: resolved.collectionID }]
     }),
-    resolve: async ({ database, input, workspaceID }) => {
-      const [entry] = await database
-        .select({ collectionID: entries.collectionID })
-        .from(entries)
-        .where(
-          and(
-            eq(entries.id, toUUID(input.entryID)),
-            eq(entries.workspaceID, workspaceID),
-            isNull(entries.deletedAt)
-          )
-        )
-        .for("update");
-
-      if (!entry) throw new ORPCError("NOT_FOUND", { message: "Entry not found" });
-
-      return entry;
-    },
+    resolve: (context) => resolveCreateVersion(context, true),
     transaction: "locked-workspace"
   },
   async ({ database, input, workspaceID }) => {
     const entryID = toUUID(input.entryID);
     const inputContributorIDs = input.contributorIDs.map(toUUID);
-    const snapshot =
-      input.snapshot || (await getCurrentDocumentContent(input.entryID, workspaceID));
+    const { snapshot } = input;
     const activityContributors =
       input.reason === "revert"
         ? []
@@ -98,11 +108,21 @@ const createVersion = withAuthorization<CreateVersionInput, ResolvedCreateVersio
       })
       .returning();
 
+    await retainVersionAssets({
+      database,
+      workspaceID,
+      entryID,
+      versionID: created.id,
+      sourceVersionID: input.sourceVersionID ? toUUID(input.sourceVersionID) : undefined,
+      document: snapshot.document
+    });
+
     if (contributorIDs.length > 0) {
       await database.insert(entryVersionContributors).values(
         contributorIDs.map((membershipID) => ({
           workspaceID,
           versionID: created.id,
+          sourceVersionID: input.sourceVersionID ? toUUID(input.sourceVersionID) : undefined,
           membershipID
         }))
       );
@@ -121,4 +141,18 @@ const createVersion = withAuthorization<CreateVersionInput, ResolvedCreateVersio
   }
 );
 
-export { createVersion };
+const createVersion = withAuthorization<CreateVersionInput, ResolvedCreateVersion, VersionDetails>(
+  {
+    actions: ({ resolved }) => ({
+      entries: [{ action: "version:create", collectionID: resolved.collectionID }]
+    }),
+    resolve: resolveCreateVersion
+  },
+  async ({ auth, input, workspaceID }) => {
+    const snapshot = await getCurrentDocumentContent(input.entryID, workspaceID);
+
+    return commitCreateVersion({ ...input, auth, snapshot });
+  }
+);
+
+export { commitCreateVersion, createVersion };

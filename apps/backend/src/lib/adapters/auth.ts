@@ -1,3 +1,4 @@
+import { deleteUserImages } from "#backend/services/assets/profile/delete-user";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { emailOTP, multiSession } from "better-auth/plugins";
@@ -128,6 +129,11 @@ const auth = betterAuth({
   },
   databaseHooks: {
     user: {
+      delete: {
+        before: async (user) => {
+          await deleteUserImages({ userID: user.id });
+        }
+      },
       create: {
         before: async (user) => {
           // Ensure the name is at most 320 chars

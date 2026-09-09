@@ -62,8 +62,8 @@ const link = new RPCLink({
     const event = getRequestEvent();
     const requestHeaders = Object.fromEntries(event?.request.headers.entries() || []);
     const headers: Record<string, string> = {
-      "content-type": requestHeaders["content-type"] || "application/json",
-      "cookie": requestHeaders["cookie"] || ""
+      ...Object.fromEntries(request.headers.entries()),
+      ...(requestHeaders.cookie ? { cookie: requestHeaders.cookie } : {})
     };
     const workspaceID = getRouteWorkspaceID();
 

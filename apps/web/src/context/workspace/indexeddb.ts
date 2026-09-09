@@ -8,6 +8,8 @@ interface ClearPersistenceDataOptions {
 
 type WorkspaceDatabaseUpgradeTransaction = IDBPTransaction<unknown, string[], "versionchange">;
 
+const WORKSPACE_IMAGE_FILES_STORE_NAME = "image-files";
+const WORKSPACE_IMAGE_METADATA_STORE_NAME = "image-metadata";
 const WORKSPACE_DATA_PREFIX = "andesine:";
 const WORKSPACE_ENTRIES_STORE_NAME = "entries";
 const WORKSPACE_COLLECTIONS_STORE_NAME = "collections";
@@ -25,6 +27,12 @@ const hasWorkspaceDatabaseSchema = (database: IDBPDatabase): boolean => {
   const hasSchemasStore = database.objectStoreNames.contains(WORKSPACE_SCHEMAS_STORE_NAME);
   const hasUpdatesStore = database.objectStoreNames.contains(WORKSPACE_UPDATES_STORE_NAME);
 
+  if (
+    !database.objectStoreNames.contains(WORKSPACE_IMAGE_FILES_STORE_NAME) ||
+    !database.objectStoreNames.contains(WORKSPACE_IMAGE_METADATA_STORE_NAME)
+  )
+    return false;
+
   if (!hasEntriesStore || !hasCollectionsStore || !hasSchemasStore || !hasUpdatesStore)
     return false;
 
@@ -36,6 +44,13 @@ const createMissingWorkspaceDatabaseSchema = (
   database: IDBPDatabase,
   transaction: WorkspaceDatabaseUpgradeTransaction
 ): void => {
+  if (!database.objectStoreNames.contains(WORKSPACE_IMAGE_FILES_STORE_NAME)) {
+    database.createObjectStore(WORKSPACE_IMAGE_FILES_STORE_NAME);
+  }
+  if (!database.objectStoreNames.contains(WORKSPACE_IMAGE_METADATA_STORE_NAME)) {
+    database.createObjectStore(WORKSPACE_IMAGE_METADATA_STORE_NAME, { keyPath: "id" });
+  }
+
   if (!database.objectStoreNames.contains(WORKSPACE_ENTRIES_STORE_NAME)) {
     database.createObjectStore(WORKSPACE_ENTRIES_STORE_NAME, { keyPath: "id" });
   }
@@ -167,6 +182,8 @@ const clearPersistenceData = async (options: ClearPersistenceDataOptions = {}): 
 };
 
 export {
+  WORKSPACE_IMAGE_FILES_STORE_NAME,
+  WORKSPACE_IMAGE_METADATA_STORE_NAME,
   WORKSPACE_COLLECTIONS_STORE_NAME,
   WORKSPACE_ENTRIES_STORE_NAME,
   WORKSPACE_SCHEMAS_STORE_NAME,

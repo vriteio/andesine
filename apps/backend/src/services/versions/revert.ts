@@ -1,18 +1,33 @@
-import { replaceDocumentContent } from "#backend/collaboration";
-import { entries, entryPublications, entryVersions, publishingChannels } from "#backend/db";
+import { config } from "#backend/lib/config";
+import {
+  openDocumentContentConnection,
+  replaceDocumentContent,
+  type ContentConnection
+} from "#backend/collaboration";
+import {
+  entries,
+  entryAssets,
+  entryVersionAssets,
+  entryPublications,
+  entryVersions,
+  publishingChannels
+} from "#backend/db";
 import type { VersionDetails } from "#backend/lib/data";
 import { PUBLISHED_CHANNEL_CODE, type PublishingEntryStatus } from "#backend/lib/publishing";
 import { withAuthorization } from "#backend/lib/policy";
 import { toUUID, toVersionID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, isNotNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { createVersion } from "./create";
+import { commitCreateVersion } from "./create";
 import { getVersion } from "./get";
 
 interface RevertVersionInput {
   versionID: string;
   contributorIDs: string[];
+}
+interface CommitRevertVersionInput extends RevertVersionInput {
+  connection: ContentConnection;
 }
 interface ResolvedRevertVersion {
   collectionID: string | null;
@@ -27,8 +42,8 @@ interface RevertVersionResult {
 
 const publishedVersions = alias(entryVersions, "published_versions");
 
-const revertVersion = withAuthorization<
-  RevertVersionInput,
+const commitRevertVersion = withAuthorization<
+  CommitRevertVersionInput,
   ResolvedRevertVersion,
   RevertVersionResult
 >(
@@ -88,7 +103,38 @@ const revertVersion = withAuthorization<
       auth,
       skipAuthorization: authorizationScope
     });
-    const previous = await replaceDocumentContent(target.entryID, target.document, workspaceID);
+    const targetImages = await database
+      .select({ assetID: entryVersionAssets.assetID })
+      .from(entryVersionAssets)
+      .where(
+        and(
+          eq(entryVersionAssets.workspaceID, workspaceID),
+          eq(entryVersionAssets.versionID, toUUID(target.id))
+        )
+      );
+    const pendingUntil = new Date(Date.now() + config.ASSET_UPLOAD_EXPIRY_HOURS * 3600_000);
+
+    // Only an authorized revert grants historical images to the current document.
+    // Collaboration saves wait for this workspace transaction to commit.
+    if (targetImages.length) {
+      await database
+        .insert(entryAssets)
+        .values(
+          targetImages.map(({ assetID }) => ({
+            workspaceID,
+            entryID: toUUID(target.entryID),
+            assetID,
+            pendingUntil
+          }))
+        )
+        .onConflictDoUpdate({
+          target: [entryAssets.entryID, entryAssets.assetID],
+          set: { pendingUntil },
+          setWhere: isNotNull(entryAssets.pendingUntil)
+        });
+    }
+
+    const previous = await replaceDocumentContent(input.connection, target.document);
     const createdVersions: VersionDetails[] = [];
 
     try {
@@ -105,7 +151,7 @@ const revertVersion = withAuthorization<
         .limit(1);
 
       if (!existing) {
-        const safetyVersion = await createVersion({
+        const safetyVersion = await commitCreateVersion({
           auth,
           entryID: target.entryID,
           reason: "auto",
@@ -117,7 +163,7 @@ const revertVersion = withAuthorization<
         createdVersions.push(safetyVersion);
       }
 
-      const version = await createVersion({
+      const version = await commitCreateVersion({
         auth,
         entryID: target.entryID,
         reason: "revert",
@@ -147,7 +193,7 @@ const revertVersion = withAuthorization<
       };
     } catch (error) {
       try {
-        await replaceDocumentContent(target.entryID, previous.document, workspaceID);
+        await replaceDocumentContent(input.connection, previous.document);
       } catch (rollbackError) {
         console.error("Failed to roll back reverted document", {
           error: rollbackError,
@@ -156,6 +202,20 @@ const revertVersion = withAuthorization<
       }
 
       throw error;
+    }
+  }
+);
+
+const revertVersion = withAuthorization<RevertVersionInput, undefined, RevertVersionResult>(
+  {},
+  async ({ auth, input, workspaceID }) => {
+    const target = await getVersion({ ...input, auth, action: "version:revert" });
+    const connection = await openDocumentContentConnection(target.entryID, workspaceID);
+
+    try {
+      return await commitRevertVersion({ ...input, auth, connection });
+    } finally {
+      await connection.disconnect();
     }
   }
 );

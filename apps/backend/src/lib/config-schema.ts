@@ -1,4 +1,5 @@
 import { billingConfigSchema } from "#backend/lib/billing/config-schema";
+import { assetConfigSchema } from "#backend/lib/assets/config-schema";
 import * as z from "zod";
 
 const url = z.preprocess((value) => {
@@ -56,6 +57,12 @@ const configSchema = z.object({
     .min(1)
     .default(1536)
     .describe("Number of dimensions returned by the embedding model"),
+  ASSET_ANALYSIS_MODEL: z
+    .string()
+    .trim()
+    .min(1)
+    .optional()
+    .describe("Vision model for image analysis; defaults to SEARCH_ASK_MODEL"),
   SEARCH_ASK_MODEL: z
     .string()
     .min(1)
@@ -103,7 +110,8 @@ const configSchema = z.object({
     .min(1)
     .default(30)
     .describe("Number of days to keep automatic versions on the Pro plan"),
-  ...billingConfigSchema.shape
+  ...billingConfigSchema.shape,
+  ...assetConfigSchema.shape
 });
 
 export { configSchema };

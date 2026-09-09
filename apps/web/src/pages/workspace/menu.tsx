@@ -46,7 +46,7 @@ const Menu: Component<MenuProps> = (props) => {
       label: "Search",
       onlineOnly: true,
       shortcut: "$mod+k",
-      icon: "i-material-symbols:search-rounded",
+      icon: "i-lucide:search",
       onClick: props.openSearch
     },
     { separator: true },

@@ -1,8 +1,16 @@
+import { createImageMenuItems } from "./image";
 import { isBlockSelection } from "#editor/extensions/block-selection";
 import { DropdownMenu, IconButton, type MenuItem } from "@andesine/components";
 import { debounce } from "@solid-primitives/scheduled";
 import { type Editor, type EditorEvents } from "@tiptap/core";
-import { createEffect, createSignal, onCleanup, type ParentComponent } from "solid-js";
+import {
+  createEffect,
+  createSignal,
+  onCleanup,
+  untrack,
+  type JSX,
+  type ParentComponent
+} from "solid-js";
 import { useBlockMenuContext } from "./context";
 import {
   getBlockControlAnchorRect,
@@ -34,6 +42,16 @@ interface BlockMenuProps {
   setMenuOpened(opened: boolean): void;
 }
 
+type BlockMenuItem = MenuItem | (() => JSX.Element);
+type BlockMenuItems = NonNullable<MenuItem["items"]>;
+
+const getMenuGroups = (items: BlockMenuItems): BlockMenuItem[][] => {
+  if (items.every((item): item is BlockMenuItem[] => Array.isArray(item)))
+    return items.filter((group) => group.length > 0);
+
+  return items.length ? [items.flat()] : [];
+};
+
 const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
   const { handleCopy, handleDelete } = useBlockMenuContext();
   const [currentNodePos, setCurrentNodePos] = createSignal(-1);
@@ -41,30 +59,34 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
   const [hoverAreaHeight, setHoverAreaHeight] = createSignal(0);
   const [triggerAvailable, setTriggerAvailable] = createSignal(false);
   const [contextMenuMode, setContextMenuMode] = createSignal(false);
-  const [tableItems, setTableItems] = createSignal<MenuItem[]>([]);
-  const [turnIntoItems, setTurnIntoItems] = createSignal<MenuItem[]>([]);
-  const menuItems = (): MenuItem[][] => {
+  const [imageItems, setImageItems] = createSignal<BlockMenuItems>([]);
+  const [tableItems, setTableItems] = createSignal<BlockMenuItems>([]);
+  const [turnIntoItems, setTurnIntoItems] = createSignal<BlockMenuItems>([]);
+  const menuItems = (): BlockMenuItem[][] => {
+    const tableActions = tableItems();
+
     const items: MenuItem[] = [
       {
         label: "Copy",
         icon: "i-lucide:copy",
         onClick: handleCopy,
         shortcut: "$mod+c"
+      },
+
+      {
+        label: "Delete",
+        icon: "i-lucide:trash",
+        onClick: handleDelete,
+        color: "danger",
+        shortcut: "$mod+backspace"
       }
     ];
-    const tableActions = tableItems();
 
-    if (tableActions.length > 0) return [items, tableActions];
+    if (tableActions.length > 0) return [...getMenuGroups(tableActions), items];
 
-    items.push({
-      label: "Delete",
-      icon: "i-lucide:trash",
-      onClick: handleDelete,
-      color: "danger",
-      shortcut: "$mod+backspace"
-    });
+    if (imageItems().length) return [...getMenuGroups(imageItems()), items];
 
-    return turnIntoItems().length ? [turnIntoItems(), items] : [items];
+    return [...getMenuGroups(turnIntoItems()), items];
   };
   const handleOpenedChange = (opened: boolean) => {
     props.setMenuOpened(opened);
@@ -115,6 +137,36 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
 
       setTableItems(editor && !editor.isDestroyed ? createTableMenuItems(editor) : []);
       setTurnIntoItems(editor && !editor.isDestroyed ? createTurnIntoMenuItem(editor) : []);
+    };
+
+    updateMenuItems();
+    editor?.on("transaction", updateMenuItems);
+    onCleanup(() => editor?.off("transaction", updateMenuItems));
+  });
+
+  createEffect(() => {
+    const editor = props.editor;
+
+    let imageMenuID: string | undefined;
+
+    const updateMenuItems = (event?: EditorEvents["transaction"]) => {
+      if (event && !event.transaction.docChanged && !event.transaction.selectionSet) return;
+
+      const nextImageItems =
+        editor && !editor.isDestroyed
+          ? createImageMenuItems(editor, () => handleOpenedChange(false))
+          : [];
+      const nextImageID = editor?.state.doc.nodeAt(editor.state.selection.from)?.attrs.id;
+
+      // Preserve input drafts while the menu is open on the same image.
+      if (
+        !untrack(() => props.menuOpened) ||
+        nextImageID !== imageMenuID ||
+        !nextImageItems.length
+      ) {
+        setImageItems(nextImageItems);
+        imageMenuID = nextImageID;
+      }
     };
 
     updateMenuItems();
@@ -293,7 +345,7 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
       setOpened={handleOpenedChange}
       cardProps={{
         ...{ "data-block-action-menu": props.menuID },
-        class: "w-48"
+        class: imageItems().length ? "w-64" : "w-48"
       }}
       items={menuItems()}
     />

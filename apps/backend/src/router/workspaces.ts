@@ -15,7 +15,8 @@ import { Auth } from "#backend/services/auth";
 
 const workspaceSummaryType = workspaceType.pick({
   id: true,
-  name: true
+  name: true,
+  logo: true
 });
 const workspaceListItemType = workspaceSummaryType.extend({
   userID: id().describe("ID of the user associated with this workspace membership"),

@@ -28,6 +28,7 @@ const FragmentView: Component<FragmentViewProps> = (props) => {
           <div
             class="flex h-9 w-full items-center gap-1 text-sm font-medium"
             data-fragment-header
+            data-block-control-anchor
             contentEditable={false}
           >
             <span class="i-lucide:letter-text h-4.5 w-4.5 shrink-0 text-gray-300" />

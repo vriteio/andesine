@@ -1,8 +1,8 @@
-import { createRef } from "@andesine/components";
+import { createRef } from "../ref";
 import { onCleanup, onMount, type ParentComponent, type JSX } from "solid-js";
 import clsx from "clsx";
 
-type Circle = {
+interface Circle {
   x: number;
   y: number;
   dx: number;
@@ -10,7 +10,7 @@ type Circle = {
   radius: number;
   color: string;
   opacity: number;
-};
+}
 
 type AnimatedGradientCardProps = JSX.HTMLAttributes<HTMLDivElement>;
 
@@ -21,6 +21,7 @@ const AnimatedGradientCard: ParentComponent<AnimatedGradientCardProps> = (props)
     return Math.random() * (max - min) + min;
   };
   const drawCircle = (ctx: CanvasRenderingContext2D, circle: Circle) => {
+    ctx.save();
     ctx.globalAlpha = circle.opacity;
     ctx.beginPath();
     ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2, false);
@@ -50,8 +51,9 @@ const AnimatedGradientCard: ParentComponent<AnimatedGradientCardProps> = (props)
       circles.push({ x, y, dx, dy, radius, color, opacity });
     }
 
+    let animationFrame = 0;
     const animate = (): void => {
-      requestAnimationFrame(animate);
+      animationFrame = requestAnimationFrame(animate);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       circles.forEach((circle) => {
         circle.x += circle.dx;
@@ -80,6 +82,7 @@ const AnimatedGradientCard: ParentComponent<AnimatedGradientCardProps> = (props)
     animate();
     window.addEventListener("resize", resize);
     onCleanup(() => {
+      cancelAnimationFrame(animationFrame);
       window.removeEventListener("resize", resize);
     });
   });

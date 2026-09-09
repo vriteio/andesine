@@ -58,7 +58,7 @@ const getBlockControlTargetAtPos = (editor: Editor, pos: number): BlockControlTa
 const getNodeViewTarget = (
   editor: Editor,
   dom: HTMLElement,
-  type: "fragment" | "property"
+  type: "fragment" | "property" | "image"
 ): BlockControlTarget | null => {
   const { state, view } = editor;
 
@@ -87,6 +87,7 @@ const getStructureHitAtPoint = (editor: Editor, x: number, y: number): BlockCont
   let fragmentDOM: HTMLElement | null = null;
   let insideFragment = false;
   let propertyDOM: HTMLElement | null = null;
+  let imageDOM: HTMLElement | null = null;
 
   elements.forEach((element) => {
     const fragment = element.closest<HTMLElement>("[data-fragment-node-view]");
@@ -98,6 +99,7 @@ const getStructureHitAtPoint = (editor: Editor, x: number, y: number): BlockCont
     }
 
     propertyDOM ||= element.closest<HTMLElement>("[data-property-node-view]");
+    imageDOM ||= element.closest<HTMLElement>("[data-image-node-view]");
   });
 
   if (fragmentDOM) {
@@ -105,6 +107,10 @@ const getStructureHitAtPoint = (editor: Editor, x: number, y: number): BlockCont
       insideFragment,
       target: getNodeViewTarget(editor, fragmentDOM, "fragment")
     };
+  }
+
+  if (imageDOM) {
+    return { insideFragment, target: getNodeViewTarget(editor, imageDOM, "image") };
   }
 
   return {

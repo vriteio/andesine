@@ -6,12 +6,18 @@ interface OpenAICompatibleClientConfig {
 }
 
 interface OpenAICompatibleMessage {
-  content: string;
+  content:
+    | string
+    | Array<
+        | { type: "text"; text: string }
+        | { type: "image_url"; image_url: { url: string; detail?: "auto" | "high" | "low" } }
+      >;
   role: "assistant" | "system" | "user";
 }
 
 interface OpenAICompatibleCompletionInput {
   maxTokens?: number;
+  json?: boolean;
   messages: OpenAICompatibleMessage[];
   model: string;
   reasoningEffort?: "high" | "low" | "max" | "medium" | "minimal" | "none" | "xhigh";
@@ -118,9 +124,10 @@ class OpenAICompatibleClient {
       model: input.model,
       messages: input.messages,
       max_completion_tokens: input.maxTokens || 1000,
-      reasoning_effort: input.reasoningEffort
+      reasoning_effort: input.reasoningEffort,
+      response_format: input.json ? { type: "json_object" } : undefined
     });
-    const content = result.choices[0]?.message?.content?.trim();
+    const content = result.choices?.[0]?.message?.content?.trim();
 
     if (!content) throw new Error("The AI API returned an empty completion");
 

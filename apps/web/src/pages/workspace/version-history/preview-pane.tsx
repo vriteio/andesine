@@ -29,6 +29,7 @@ interface VersionPreviewPaneProps {
   currentError(): boolean;
   currentUnavailableDescription: string;
   mode?: EditorMode;
+  images?: EditorProps["images"];
   staticTitle?: string;
   version(): VersionDocument | undefined;
   versionError(): boolean;
@@ -125,6 +126,7 @@ const VersionPreviewContent: Component<VersionPreviewContentProps> = (props) => 
               <Editor
                 class={EDITOR_CONTENT_PADDING}
                 content={selectedVersion.document}
+                images={props.images}
                 editable={false}
                 mode={props.mode}
                 staticTitle={props.staticTitle}
@@ -160,6 +162,7 @@ const VersionPreviewContent: Component<VersionPreviewContentProps> = (props) => 
                           class={SIDE_BY_SIDE_CONTENT_PADDING}
                           content={comparison().previous.content}
                           diff={{ changes: comparison().previous.changes }}
+                          images={props.images}
                           editable={false}
                           mode={props.mode}
                           staticTitle={props.staticTitle}
@@ -172,6 +175,7 @@ const VersionPreviewContent: Component<VersionPreviewContentProps> = (props) => 
                           class={SIDE_BY_SIDE_CONTENT_PADDING}
                           content={comparison().current.content}
                           diff={{ changes: comparison().current.changes }}
+                          images={props.images}
                           editable={false}
                           mode={props.mode}
                           staticTitle={props.staticTitle}
@@ -186,6 +190,7 @@ const VersionPreviewContent: Component<VersionPreviewContentProps> = (props) => 
                       class={DIFF_CONTENT_PADDING}
                       content={comparison().inline.content}
                       diff={{ changes: comparison().inline.changes }}
+                      images={props.images}
                       editable={false}
                       mode={props.mode}
                       staticTitle={props.staticTitle}

@@ -1,3 +1,16 @@
+import { indexAssetSearch } from "./assets/search";
+import { analyzeAsset, scheduleAssetAnalyses } from "./assets/analyze";
+import { processProfileImage } from "./assets/process-profile";
+import { createAssetStorage } from "@andesine/backend/lib/assets/storage";
+import {
+  ASSET_ANALYSIS_JOB_NAME,
+  ASSET_PROCESS_JOB_NAME,
+  PROFILE_IMAGE_JOB_NAME,
+  type ProfileImageJobData,
+  type AssetProcessJobData
+} from "@andesine/backend/lib/queue/asset-jobs";
+import { processAsset } from "./assets/process";
+import { maintainAssets } from "./assets/maintenance";
 import {
   SEARCH_INDEXING_DEFAULT_JOB_OPTIONS,
   SEARCH_INDEXING_QUEUE_NAME
@@ -24,7 +37,8 @@ import {
   reconcileFailedSchemaMigrationJob
 } from "./schema-migrations";
 
-const SCHEMA_MIGRATION_RECOVERY_INTERVAL_MS = 60 * 1000;
+const MAINTENANCE_QUEUE_NAME = "maintenance";
+const MAINTENANCE_INTERVAL_MS = 60_000;
 const queueRedisClient = createClient({ url: config.QUEUE_REDIS_URL });
 const queueRedisConnection = createNodeRedisClient(queueRedisClient);
 const eventsRedisClient = createClient({ url: config.REDIS_URL });
@@ -33,6 +47,11 @@ const typesenseClient = new TypesenseClient({
   apiKey: config.TYPESENSE_API_KEY
 });
 const searchIndexingQueue = new Queue(SEARCH_INDEXING_QUEUE_NAME, {
+  connection: queueRedisConnection,
+  defaultJobOptions: SEARCH_INDEXING_DEFAULT_JOB_OPTIONS,
+  skipWaitingForReady: true
+});
+const maintenanceQueue = new Queue(MAINTENANCE_QUEUE_NAME, {
   connection: queueRedisConnection,
   defaultJobOptions: SEARCH_INDEXING_DEFAULT_JOB_OPTIONS,
   skipWaitingForReady: true
@@ -50,31 +69,53 @@ const jobHandlers = new Map([
   ...createPublishedSearchJobHandlers(jobDependencies),
   ...createSchemaMigrationJobHandlers(schemaMigrationDependencies)
 ]);
+const maintenanceHandlers = new Map([
+  ["schema-migration-recovery", () => recoverAbandonedSchemaMigrations(searchIndexingQueue)]
+]);
+const assetStorage = createAssetStorage(config);
+if (assetStorage) {
+  maintenanceHandlers.set("asset-search-indexing", () => indexAssetSearch(typesenseClient));
+  jobHandlers.set(ASSET_ANALYSIS_JOB_NAME, (job) =>
+    analyzeAsset(job.data.assetID as string, assetStorage)
+  );
+  maintenanceHandlers.set("asset-analysis-recovery", () =>
+    scheduleAssetAnalyses(searchIndexingQueue)
+  );
+  jobHandlers.set(PROFILE_IMAGE_JOB_NAME, (job) =>
+    processProfileImage(job.data as unknown as ProfileImageJobData, assetStorage)
+  );
+  jobHandlers.set(ASSET_PROCESS_JOB_NAME, (job) =>
+    processAsset(job.data as unknown as AssetProcessJobData, assetStorage)
+  );
+  maintenanceHandlers.set("asset-maintenance", () =>
+    maintainAssets(searchIndexingQueue, assetStorage, typesenseClient)
+  );
+}
 const worker = new Worker(SEARCH_INDEXING_QUEUE_NAME, (job) => processJob(job, jobHandlers), {
   autorun: false,
   connection: queueRedisConnection,
   concurrency: config.WORKER_CONCURRENCY
 });
-const schemaMigrationRecovery = { running: false };
-const recoverSchemaMigrations = async (): Promise<void> => {
-  if (schemaMigrationRecovery.running) return;
-
-  schemaMigrationRecovery.running = true;
-
-  try {
-    await recoverAbandonedSchemaMigrations(searchIndexingQueue);
-  } catch (error) {
-    console.error("Failed to check for abandoned schema migrations", { error });
-  } finally {
-    schemaMigrationRecovery.running = false;
-  }
-};
+const maintenanceWorker = new Worker(
+  MAINTENANCE_QUEUE_NAME,
+  (job) => processJob(job, maintenanceHandlers),
+  { autorun: false, connection: queueRedisConnection, concurrency: 1 }
+);
 
 queueRedisClient.on("error", (error) => {
   console.error("Worker Redis client error", { error });
 });
 eventsRedisClient.on("error", (error) => {
   console.error("Worker event Redis client error", { error });
+});
+maintenanceQueue.on("error", (error) => {
+  console.error("Maintenance queue error", { error });
+});
+maintenanceWorker.on("error", (error) => {
+  console.error("Maintenance worker error", { error });
+});
+maintenanceWorker.on("failed", (job, error) => {
+  console.error("Maintenance job failed", { error, jobId: job?.id, jobName: job?.name });
 });
 worker.on("error", (error) => {
   console.error("Background worker error", { error });
@@ -107,6 +148,7 @@ worker.on("failed", (job, error) => {
 
 await Promise.all([
   worker.waitUntilReady(),
+  maintenanceWorker.waitUntilReady(),
   eventsRedisClient.connect(),
   ensureSearchCollections(
     typesenseClient,
@@ -115,15 +157,21 @@ await Promise.all([
     })
   )
 ]);
+// Set the shared limit before any replica starts consuming maintenance jobs.
+await maintenanceQueue.setGlobalConcurrency(1);
+for (const name of maintenanceHandlers.keys()) {
+  await maintenanceQueue.upsertJobScheduler(
+    name,
+    { every: MAINTENANCE_INTERVAL_MS },
+    { name, data: {}, opts: SEARCH_INDEXING_DEFAULT_JOB_OPTIONS }
+  );
+}
 void worker.run().catch((error) => {
   worker.emit("error", error);
 });
-const schemaMigrationRecoveryInterval = setInterval(() => {
-  void recoverSchemaMigrations();
-}, SCHEMA_MIGRATION_RECOVERY_INTERVAL_MS);
-
-schemaMigrationRecoveryInterval.unref();
-void recoverSchemaMigrations();
+void maintenanceWorker.run().catch((error) => {
+  maintenanceWorker.emit("error", error);
+});
 
 console.log("Background worker is ready");
 
@@ -134,7 +182,20 @@ const shutdown = (): Promise<void> => {
   shutdownPromise = (async () => {
     let exitCode = 0;
 
-    clearInterval(schemaMigrationRecoveryInterval);
+    // Finish maintenance while its target queue and database are still available.
+    try {
+      await maintenanceWorker.close();
+    } catch (error) {
+      exitCode = 1;
+      console.error("Failed to close the maintenance worker", error);
+    }
+
+    try {
+      await maintenanceQueue.close();
+    } catch (error) {
+      exitCode = 1;
+      console.error("Failed to close the maintenance queue", error);
+    }
 
     try {
       await worker.close();

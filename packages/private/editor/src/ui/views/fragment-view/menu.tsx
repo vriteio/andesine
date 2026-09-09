@@ -38,6 +38,7 @@ const blockTypeDetails: Record<FragmentBlockType, { icon: string; label: string 
   orderedList: { icon: "i-lucide:list-ordered", label: "Ordered list" },
   taskList: { icon: "i-lucide:list-checks", label: "Task list" },
   horizontalRule: { icon: "i-lucide:minus", label: "Horizontal rule" },
+  image: { icon: "i-lucide:image", label: "Image" },
   table: { icon: "i-lucide:table", label: "Table" }
 };
 const isFragmentBlockType = (value: string): value is FragmentBlockType => {

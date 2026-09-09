@@ -102,10 +102,9 @@ const publishEntry = withAuthorization<PublishEntryInput, ResolvedPublishEntry, 
       });
 
       return { entrySources, publishingEntries };
-    },
-    transaction: "locked-workspace"
+    }
   },
-  async ({ auth, authorizationScope, input, resolved, workspaceID }) => {
+  async ({ auth, input, resolved, workspaceID }) => {
     const { publishingEntries } = resolved;
     const currentEntryIDs = publishingEntries.flatMap((entry) => {
       return entry.versionID ? [] : [entry.entryID];
@@ -115,8 +114,7 @@ const publishEntry = withAuthorization<PublishEntryInput, ResolvedPublishEntry, 
 
     return commitPublishEntry({
       ...input,
-      auth,
-      skipAuthorization: authorizationScope
+      auth
     });
   }
 );

@@ -2,7 +2,7 @@ import { assertKeyDelegation } from "#backend/lib/policy/delegation";
 import type { SessionData } from "#backend/lib/policy/session";
 import { toKeyID, toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
-import { apiKeys, type Key } from "#backend/db";
+import { apiKeys, workspaces, type Key } from "#backend/db";
 import { withAuthorization } from "#backend/lib/policy";
 import { generateKeyValue, generateSalt, hashKey } from "#backend/lib/security";
 import { and, eq } from "drizzle-orm";
@@ -27,6 +27,16 @@ const rotateKeyOperation = async (
   const salt = generateSalt();
   const now = new Date();
   const newKey = await db.transaction(async (tx) => {
+    const [workspace] = await tx
+      .select({ deletingAt: workspaces.deletingAt })
+      .from(workspaces)
+      .where(eq(workspaces.id, workspaceID))
+      .for("update");
+
+    if (!workspace || workspace.deletingAt) {
+      throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
+    }
+
     const [oldKey] = await tx
       .select()
       .from(apiKeys)

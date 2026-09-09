@@ -34,7 +34,8 @@ const SCHEMA_BLOCK_TYPES = [
   "orderedList",
   "taskList",
   "horizontalRule",
-  "table"
+  "table",
+  "image"
 ] as const;
 const schemaBlockType = z.enum(SCHEMA_BLOCK_TYPES);
 const schemaPropertyValueType = z.union([z.boolean(), z.string(), z.array(z.string())]);
@@ -108,6 +109,19 @@ const schemaFragmentType: z.ZodType<SchemaFragment> = z
   })
   .superRefine((fragment, context) => {
     const allowedBlocks = new Set(fragment.allowedBlocks);
+    const containsAsset = (node: ContentNode): boolean => {
+      return Boolean(
+        (node.type === "image" && node.attrs?.assetID) || node.content?.some(containsAsset)
+      );
+    };
+
+    if (fragment.defaultContent.some(containsAsset)) {
+      context.addIssue({
+        code: "custom",
+        message: "Upload images in entries, not schema defaults",
+        path: ["defaultContent"]
+      });
+    }
 
     fragment.defaultContent.forEach((node, index) => {
       if (node.type !== "paragraph" && !allowedBlocks.has(node.type as SchemaBlockType)) {

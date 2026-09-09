@@ -1,5 +1,6 @@
 import { collections } from "#backend/db";
 import {
+  assertEntrySnapshotsSynced,
   getSubtreeEntryIDs,
   isCollectionPublishingEnabled,
   loadPublishingTree,
@@ -23,12 +24,11 @@ interface PublishCollectionResult {
   publishingEntries: PublishingEntryStatus[];
   publishedEntries: number;
 }
+interface CommitPublishCollectionInput extends PublishCollectionInput {
+  snapshotEntryIDs: string[];
+}
 
-const publishCollection = withAuthorization<
-  PublishCollectionInput,
-  undefined,
-  PublishCollectionResult
->(
+const preparePublishCollection = withAuthorization<PublishCollectionInput, undefined, string[]>(
   {
     actions: ({ input }) => ({
       collections: input.collectionIDs.map((collectionID) => ({
@@ -36,8 +36,7 @@ const publishCollection = withAuthorization<
         collectionID
       }))
     }),
-    tree: true,
-    transaction: "locked-workspace"
+    tree: true
   },
   async ({ authorization, database, input, workspaceID }) => {
     const collectionIDs = [...new Set(input.collectionIDs.map(toUUID))];
@@ -73,25 +72,60 @@ const publishCollection = withAuthorization<
         ).flat()
       )
     ];
-    const currentEntryIDs = await filterAuthorizedEntryIDs({
+    return filterAuthorizedEntryIDs({
       action: "publishing:publish",
       authorization,
       database,
       entryIDs: subtreeEntryIDs,
       workspaceID
     });
+  }
+);
+const commitPublishCollection = withAuthorization<
+  CommitPublishCollectionInput,
+  undefined,
+  PublishCollectionResult
+>(
+  {
+    actions: ({ input }) => ({
+      collections: input.collectionIDs.map((collectionID) => ({
+        action: "publishing:publish-tree",
+        collectionID
+      }))
+    }),
+    transaction: "locked-workspace"
+  },
+  async ({ auth, authorizationScope, database, input, workspaceID }) => {
+    const entryIDs = await preparePublishCollection({
+      ...input,
+      auth,
+      skipAuthorization: authorizationScope
+    });
 
-    await syncEntrySnapshots(workspaceID, currentEntryIDs);
+    assertEntrySnapshotsSynced(entryIDs, input.snapshotEntryIDs);
 
-    const result = await publishEntries(database, {
+    return publishEntries(database, {
       workspaceID,
-      entries: currentEntryIDs.map((entryID) => ({ entryID })),
+      entries: entryIDs.map((entryID) => ({ entryID })),
       channel: input.channel,
       contributorIDs: input.contributorIDs
     });
-
-    return result;
   }
 );
+const publishCollection = async (
+  input: Parameters<typeof preparePublishCollection>[0]
+): Promise<PublishCollectionResult> => {
+  const snapshotEntryIDs = await preparePublishCollection(input);
+
+  await syncEntrySnapshots(input.auth.workspaceID, snapshotEntryIDs);
+
+  return commitPublishCollection({
+    collectionIDs: input.collectionIDs,
+    channel: input.channel,
+    contributorIDs: input.contributorIDs,
+    snapshotEntryIDs,
+    auth: input.auth
+  });
+};
 
 export { publishCollection };

@@ -17,6 +17,8 @@ import { prepareSchemaMigrationDocuments } from "./schema-content";
 import { collab } from "./server";
 import type { ContentSnapshot } from "./types";
 
+type ContentConnection = Awaited<ReturnType<typeof collab.openDirectConnection>>;
+
 const prepareSchemaMigrationConnections = async (
   collectionIDs: string[],
   entryIDs: string[] = []
@@ -39,6 +41,14 @@ const assertDocumentWorkspace = async (
     );
 
   if (!entry) throw new ORPCError("NOT_FOUND", { message: "Entry not found" });
+};
+const openDocumentContentConnection = async (
+  documentName: string,
+  workspaceID: string
+): Promise<ContentConnection> => {
+  await assertDocumentWorkspace(documentName, workspaceID);
+
+  return collab.openDirectConnection(documentName, { workspaceID });
 };
 const updateDocumentTitle = async (
   documentName: string,
@@ -63,9 +73,7 @@ const getCurrentDocumentContent = async (
   documentName: string,
   workspaceID: string
 ): Promise<ContentSnapshot> => {
-  await assertDocumentWorkspace(documentName, workspaceID);
-
-  const connection = await collab.openDirectConnection(documentName, { workspaceID });
+  const connection = await openDocumentContentConnection(documentName, workspaceID);
   let snapshot: ContentSnapshot | undefined;
 
   try {
@@ -81,21 +89,15 @@ const getCurrentDocumentContent = async (
   return snapshot;
 };
 const replaceDocumentContent = async (
-  documentName: string,
-  content: ContentNode,
-  workspaceID: string
+  connection: ContentConnection,
+  content: ContentNode
 ): Promise<ContentSnapshot> => {
-  const connection = await collab.openDirectConnection(documentName, { workspaceID });
   let previous: ContentSnapshot | undefined;
 
-  try {
-    await connection.transact((document) => {
-      previous = getContentSnapshot(document);
-      replaceContentDocument(document, content);
-    });
-  } finally {
-    await connection.disconnect();
-  }
+  await connection.transact((document) => {
+    previous = getContentSnapshot(document);
+    replaceContentDocument(document, content);
+  });
 
   if (!previous) throw new Error("Failed to replace collaboration document");
 
@@ -137,7 +139,9 @@ const getCurrentSchemaDefinition = async (
 export {
   getCurrentDocumentContent,
   getCurrentSchemaDefinition,
+  openDocumentContentConnection,
   prepareSchemaMigrationConnections,
   replaceDocumentContent,
   updateDocumentTitle
 };
+export type { ContentConnection };

@@ -7,8 +7,7 @@ import { DEFAULT_COLUMN_WIDTH, setTableColumnWidths } from "#editor/ui/views/tab
 import { getCachedElementRect } from "#editor/ui/block-control-sizing";
 import { getTableContentWidth, getTableElement } from "#editor/ui/views/table-view/scroll";
 
-type TableAction =
-  "addColumnAfter" | "addRowAfter" | "toggleHeaderRow" | "toggleHeaderColumn" | "deleteTable";
+type TableAction = "addColumnAfter" | "addRowAfter" | "toggleHeaderRow" | "toggleHeaderColumn";
 
 const getSelectedTable = (editor: Editor) => {
   const { doc, selection } = editor.state;
@@ -115,24 +114,22 @@ const runTableAction = (editor: Editor, action: TableAction): void => {
   chain.setTextSelection(table.pos + cellOffset + 3);
   chain[action]();
 
-  if (action !== "deleteTable") {
-    chain.command(({ tr, commands }) => {
-      const pos = tr.mapping.map(table.pos, -1);
-      const node = tr.doc.nodeAt(pos);
+  chain.command(({ tr, commands }) => {
+    const pos = tr.mapping.map(table.pos, -1);
+    const node = tr.doc.nodeAt(pos);
 
-      if (node?.type.name !== "table") return false;
+    if (node?.type.name !== "table") return false;
 
-      return commands.setBlockSelection({
-        from: pos,
-        to: pos + node.nodeSize,
-        depth: tr.doc.resolve(pos).depth
-      });
+    return commands.setBlockSelection({
+      from: pos,
+      to: pos + node.nodeSize,
+      depth: tr.doc.resolve(pos).depth
     });
-  }
+  });
 
   chain.run();
 };
-const createTableMenuItems = (editor: Editor): MenuItem[] => {
+const createTableMenuItems = (editor: Editor): NonNullable<MenuItem["items"]> => {
   const table = getSelectedTable(editor);
 
   if (!table) return [];
@@ -171,13 +168,6 @@ const createTableMenuItems = (editor: Editor): MenuItem[] => {
       label: "Add row",
       icon: "i-tabler:arrow-bar-down",
       onClick: () => runTableAction(editor, "addRowAfter")
-    },
-    {
-      label: "Delete table",
-      icon: "i-lucide:trash",
-      color: "danger",
-      shortcut: "$mod+backspace",
-      onClick: () => runTableAction(editor, "deleteTable")
     }
   ];
 };

@@ -1,3 +1,4 @@
+import { ImageSetting } from "../image-setting";
 import { type Component, createEffect, createSignal, Show, Suspense } from "solid-js";
 import { SettingsSection } from "../settings-section";
 import { Input, Skeleton, Spinner } from "@andesine/components";
@@ -73,6 +74,7 @@ const ProfileForm: Component = () => {
 };
 const ProfileSection: Component = () => (
   <SettingsSection label="Profile">
+    <ImageSetting target="user" />
     <Setting label="Full name" description="Your full name" fade={false}>
       <Suspense fallback={<Skeleton class="h-9 w-full max-w-md rounded-lg" />}>
         <ProfileForm />

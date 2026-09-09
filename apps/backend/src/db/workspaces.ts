@@ -1,7 +1,17 @@
 import { id } from "#backend/lib/primitives";
 import { sql } from "drizzle-orm";
-import { jsonb, pgTable, text, timestamp, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  type AnyPgColumn,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+  varchar
+} from "drizzle-orm/pg-core";
 import * as z from "zod";
+import { assets } from "./assets";
 import { timestamps } from "./shared";
 
 interface SubscriptionData {
@@ -30,6 +40,7 @@ interface SubscriptionData {
 const workspaceType = z.object({
   id: id().describe("ID of the workspace"),
   name: z.string().min(1).max(50).describe("Name of the workspace"),
+  logo: z.string().optional().describe("Public workspace logo URL"),
   customerID: z.string().optional().describe("Stripe customer ID"),
   subscriptionStatus: z.string().optional().describe("Subscription status"),
   subscriptionPlan: z.string().optional().describe("Subscription plan"),
@@ -42,6 +53,9 @@ const workspaces = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     name: varchar("name", { length: 50 }).notNull(),
+    logoAssetID: uuid("logo_asset_id").references((): AnyPgColumn => assets.id, {
+      onDelete: "restrict"
+    }),
     customerID: text("customer_id"),
     subscriptionStatus: text("subscription_status").notNull().default("active"),
     subscriptionPlan: text("subscription_plan").notNull().default("free"),

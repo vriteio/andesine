@@ -1,6 +1,9 @@
+import { createEntryImages } from "./images";
+import { pruneCachedImages } from "#web/context/workspace/image-cache";
+import { getWorkspaceDatabaseName } from "#web/context/workspace/indexeddb";
 import { Editor, type EditorInstance, type EditorMode } from "@andesine/editor";
 import clsx from "clsx";
-import { type Component, createEffect, Show } from "solid-js";
+import { type Component, createEffect, createMemo, Show } from "solid-js";
 import { useNotify } from "#web/context/notifications";
 import { config } from "#web/lib/api";
 import { CollaborationStatusIndicator } from "./collaboration-status-indicator";
@@ -70,6 +73,23 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
       !state.resettingSchemaContent
     );
   };
+  const images = createMemo(() => {
+    const entryID = props.documentID;
+    const userID = props.user?.id;
+
+    if (!entryID || !userID || props.mode === "schema") return undefined;
+
+    return createEntryImages({
+      workspaceID: props.workspaceID,
+      userID,
+      entryID,
+      enabled: () => {
+        const state = documentLoadState();
+
+        return editable() && state.connection === "connected" && state.authenticated;
+      }
+    });
+  });
   const { beforeProviderAttach } = createLocalEditorSnapshotLifecycle({
     workspaceID: () => props.workspaceID,
     userID: () => props.user?.id || "",
@@ -165,6 +185,7 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
                 )}
               >
                 <Editor
+                  images={images()}
                   class={EDITOR_CONTENT_PADDING}
                   doc={documentID}
                   url={`${config.PUBLIC_WS_API_URL}/collab`}
@@ -184,8 +205,37 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
                   onEditor={(editor) => {
                     const markEditorNotReady = markEditorReady(documentID);
                     const cleanup = props.onEditor?.(editor);
+                    const databaseName = getWorkspaceDatabaseName(
+                      props.workspaceID,
+                      props.user?.id || ""
+                    );
+
+                    let previousImageIDs = "";
+
+                    const pruneImages = () => {
+                      const assetIDs = new Set<string>();
+
+                      if (props.mode === "schema") return;
+
+                      editor.state.doc.descendants((node) => {
+                        if (node.type.name === "image" && node.attrs.assetID)
+                          assetIDs.add(node.attrs.assetID);
+                      });
+                      const nextImageIDs = [...assetIDs].sort().join(",");
+
+                      if (nextImageIDs === previousImageIDs) return;
+                      previousImageIDs = nextImageIDs;
+
+                      void pruneCachedImages(
+                        databaseName,
+                        (entryID, assetID) => entryID !== documentID || assetIDs.has(assetID)
+                      ).catch(() => undefined);
+                    };
+
+                    editor.on("update", pruneImages);
 
                     return () => {
+                      editor.off("update", pruneImages);
                       cleanup?.();
                       markEditorNotReady();
                     };

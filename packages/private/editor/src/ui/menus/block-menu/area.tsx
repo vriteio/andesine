@@ -141,6 +141,21 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
         onLongPress={(event) => {
           if (!props.editor) return;
 
+          const editor = props.editor;
+          const image =
+            event.target instanceof Element ? event.target.closest("[data-image-node-view]") : null;
+          if (image) {
+            editor.state.doc.descendants((node, pos) => {
+              if (node.type.name !== "image" || editor.view.nodeDOM(pos) !== image) return;
+              editor.commands.setBlockSelection({
+                from: pos,
+                to: pos + node.nodeSize,
+                depth: editor.state.doc.resolve(pos).depth
+              });
+            });
+            return;
+          }
+
           setBlockSelectionAtCoords(props.editor, {
             left: event.clientX,
             top: event.clientY
@@ -154,7 +169,14 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
           const { view, state } = props.editor;
           const { selection } = state;
 
-          if (!isBlockSelection(selection) && isTextSelection(selection) && !selection.empty) {
+          const overImage =
+            event.target instanceof Element && event.target.closest("[data-image-node-view]");
+          if (
+            !overImage &&
+            !isBlockSelection(selection) &&
+            isTextSelection(selection) &&
+            !selection.empty
+          ) {
             return false;
           }
 

@@ -15,7 +15,7 @@ import {
 } from "#editor/ui/block-control-targeting";
 import type { BlockControlTarget } from "#editor/ui/block-control-targeting";
 import { createVerticalAutoScroll } from "#editor/ui/auto-scroll";
-import { BLOCK_CONTROL_HIDE_DELAY, EDITOR_MENU_Z_INDEX } from "#editor/ui/constants";
+import { BLOCK_CONTROL_HIDE_DELAY } from "#editor/ui/constants";
 import { createDragHandlePlugin, dragHandlePluginKey } from "./drag-handle-plugin";
 import { createListItemTargetResolver } from "./list-item-target";
 import { DragHandleTargetPlugin, dragHandleTargetPluginKey } from "./drag-handle-target-plugin";
@@ -52,7 +52,9 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
   const [isEmptyParagraph, setIsEmptyParagraph] = createSignal(false);
 
   onMount(() => {
-    if (!wrapperRef) return;
+    const menuContainer = props.menuContainerRef();
+
+    if (!wrapperRef || !menuContainer) return;
 
     wrapperRef.style.visibility = "hidden";
     wrapperRef.style.opacity = "0";
@@ -219,6 +221,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
     window.addEventListener("drop", stopAutoScroll);
 
     const { plugin, unbind } = createDragHandlePlugin({
+      container: menuContainer,
       element: wrapperRef,
       editor: props.editor,
       getDragTarget: () => currentControlTarget,
@@ -237,13 +240,6 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
 
     props.editor.registerPlugin(DragHandleTargetPlugin());
     props.editor.registerPlugin(plugin);
-    const pluginWrapper = wrapperRef.parentElement;
-    const menuContainer = props.menuContainerRef();
-
-    if (pluginWrapper && menuContainer) {
-      pluginWrapper.style.zIndex = String(EDITOR_MENU_Z_INDEX.dragHandle);
-      menuContainer.append(pluginWrapper);
-    }
     const unregisterSelectionHandler = registerSelectionControlHiding(props.editor, () => {
       if (isDragging()) return;
 

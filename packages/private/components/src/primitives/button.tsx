@@ -78,7 +78,7 @@ const getColorClasses = (color: ButtonColor, variant: ButtonVariant) => {
   const variants: Record<ButtonVariant, string> = {
     solid: ":base: !focus:outline-none",
     text: ":base: bg-transparent !focus:outline-none",
-    outlined: ":base: outline outline-1 shadow-md"
+    outlined: ":base: outline outline-1 -outline-offset-0.5 shadow-md"
   };
 
   if (!isText) {

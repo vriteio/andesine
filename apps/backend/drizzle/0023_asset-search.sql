@@ -1,0 +1,1 @@
+ALTER TABLE "asset_analyses" ADD COLUMN "indexed_at" timestamp with time zone;

@@ -37,7 +37,7 @@ interface AwarenessSelection {
 
 interface CollaborationSelection extends AwarenessSelection {
   depth?: number;
-  type: "block" | "gap" | "node" | "cell";
+  type: "block" | "gap" | "node" | "cell" | "image";
 }
 
 interface AwarenessState {
@@ -67,6 +67,21 @@ const getCollaborationColor = (color?: string) => {
 const getLocalCollaborationSelection = (
   selection: Selection
 ): LocalCollaborationSelection | null => {
+  const node = selection.$from.nodeAfter;
+  const selectsImage =
+    (selection instanceof NodeSelection || isBlockSelection(selection)) &&
+    node?.type.name === "image" &&
+    selection.to === selection.from + node.nodeSize;
+
+  if (selectsImage) {
+    return {
+      from: selection.from,
+      to: selection.to,
+      depth: selection.$from.depth,
+      type: "image"
+    };
+  }
+
   if (selection instanceof CellSelection) {
     return { from: selection.$anchorCell.pos, to: selection.$headCell.pos, type: "cell" };
   }
@@ -189,7 +204,7 @@ const createCollaborationSelectionPlugin = (awareness: Awareness, editor: Editor
         return;
       }
 
-      if (collaborationSelection?.type === "block") {
+      if (collaborationSelection?.type === "block" || collaborationSelection?.type === "image") {
         forEachSelectedBlock(
           state.doc,
           from,
@@ -425,7 +440,8 @@ const CollaborationCaret = BaseCollaborationCaret.extend({
       awarenessStateFilter: (currentClientID, clientID, state: AwarenessState) => {
         return (
           defaultAwarenessStateFilter(currentClientID, clientID, state) &&
-          state.collaborationSelection?.type !== "cell"
+          state.collaborationSelection?.type !== "cell" &&
+          state.collaborationSelection?.type !== "image"
         );
       }
     });

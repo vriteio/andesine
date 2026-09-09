@@ -35,6 +35,7 @@ interface SessionInfo {
     id: string;
     name: string;
     email: string;
+    image?: string | null;
   };
   sessionToken: string;
 }
@@ -64,12 +65,16 @@ const listSessionsQuery = query(async () => {
   if (error || !data) return [] as SessionInfo[];
 
   return data.map(
-    (entry: { session: { token: string }; user: { id: string; name: string; email: string } }) => ({
+    (entry: {
+      session: { token: string };
+      user: { id: string; name: string; email: string; image?: string | null };
+    }) => ({
       user: {
         // entry.user.id returned from authClient is a UUID, convert it to the API user ID format
         id: toUserID(entry.user.id),
         name: entry.user.name,
-        email: entry.user.email
+        email: entry.user.email,
+        image: entry.user.image
       },
       sessionToken: entry.session.token
     })

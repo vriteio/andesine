@@ -13,6 +13,7 @@ type PublicIDPrefix =
   | "grp"
   | "coll"
   | "ent"
+  | "ast"
   | "adn"
   | "ver"
   | "sch"
@@ -66,6 +67,7 @@ const toInviteID = (value: string) => fromUUID(value, "inv");
 const toGroupID = (value: string) => fromUUID(value, "grp");
 const toCollectionID = (value: string) => fromUUID(value, "coll");
 const toEntryID = (value: string) => fromUUID(value, "ent");
+const toAssetID = (value: string) => fromUUID(value, "ast");
 const toKeyID = (value: string) => fromUUID(value, "adn");
 const toVersionID = (value: string) => fromUUID(value, "ver");
 const toSchemaID = (value: string) => fromUUID(value, "sch");
@@ -78,6 +80,7 @@ export {
   generateUUID,
   id,
   publicID,
+  toAssetID,
   toCollectionID,
   toEntryID,
   toGroupID,

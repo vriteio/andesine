@@ -66,13 +66,29 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
 
     dropdownOptions.push([
       () => (
-        <div class="flex min-h-10 flex-col justify-center px-1 py-1 md:min-h-0 md:py-0.5">
-          <span class="text-[16px] leading-5 font-medium text-gray-900 line-clamp-1 md:text-sm">
-            {currentUser?.name || currentUser?.email}
-          </span>
-          <span class="text-sm leading-4 text-gray-500 line-clamp-1 md:text-xs md:leading-none">
-            {currentUser?.email}
-          </span>
+        <div class="flex items-center gap-2 px-1 py-1 md:py-0.5">
+          <Show when={currentUser?.image}>
+            {(image) => (
+              <img
+                src={image()}
+                alt={`${currentUser?.name} avatar`}
+                class="h-8 w-8 shrink-0 rounded-md object-contain"
+              />
+            )}
+          </Show>
+          <div class="flex min-h-10 min-w-0 flex-col justify-center md:min-h-0">
+            <span
+              class={clsx(
+                "text-[16px] font-medium text-gray-900 line-clamp-1 md:text-sm",
+                currentUser?.image ? "leading-none md:leading-none" : "leading-5 md:leading-5"
+              )}
+            >
+              {currentUser?.name || currentUser?.email}
+            </span>
+            <span class="text-sm leading-4 text-gray-500 line-clamp-1 md:text-xs md:leading-none">
+              {currentUser?.email}
+            </span>
+          </div>
         </div>
       )
     ]);
@@ -87,19 +103,47 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
           return [
             [
               () => (
-                <div class="flex min-h-10 flex-col justify-center px-1 py-1 md:min-h-0 md:py-0.5">
-                  <span class="text-[16px] leading-5 font-medium text-gray-700 truncate md:text-sm">
-                    {session.user.name || session.user.email}
-                  </span>
-                  <span class="text-sm leading-4 text-gray-500 truncate md:text-xs md:leading-none">
-                    {session.user.email}
-                  </span>
+                <div class="flex items-center gap-2 px-1 py-1 md:py-0.5">
+                  <Show when={session.user?.image}>
+                    {(image) => (
+                      <img
+                        src={image()}
+                        alt={`${session.user?.name} avatar`}
+                        class="h-8 w-8 shrink-0 rounded-md object-contain"
+                      />
+                    )}
+                  </Show>
+                  <div class="flex min-h-10 min-w-0 flex-col justify-center md:min-h-0">
+                    <span
+                      class={clsx(
+                        "text-[16px] font-medium text-gray-900 line-clamp-1 md:text-sm",
+                        session.user?.image
+                          ? "leading-none md:leading-none"
+                          : "leading-5 md:leading-5"
+                      )}
+                    >
+                      {session.user?.name || session.user?.email}
+                    </span>
+                    <span class="text-sm leading-4 text-gray-500 line-clamp-1 md:text-xs md:leading-none">
+                      {session.user?.email}
+                    </span>
+                  </div>
                 </div>
               )
             ],
             userWorkspaces.map((ws) => ({
               label: ws.name,
-              icon: "i-lucide:hexagon",
+              icon: () => (
+                <Show when={ws.logo} fallback={<div class="i-lucide:hexagon h-full w-full" />}>
+                  {(logo) => (
+                    <img
+                      src={logo()}
+                      alt={`${ws.logo} logo`}
+                      class="h-full w-full rounded object-contain"
+                    />
+                  )}
+                </Show>
+              ),
               selected: ws.id === currentWorkspace()?.id,
               onClick() {
                 return switchWorkspace(ws.id);
@@ -125,7 +169,17 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
       // Fallback: simple workspace list
       const workspaceOptions: Array<MenuItem | (() => JSX.Element)> = workspaceList.map((ws) => ({
         label: ws.name,
-        icon: "i-lucide:hexagon",
+        icon: () => (
+          <Show when={ws.logo} fallback={<div class="i-lucide:hexagon h-full w-full" />}>
+            {(logo) => (
+              <img
+                src={logo()}
+                alt={`${ws.name} logo`}
+                class="h-full w-full rounded-md object-contain"
+              />
+            )}
+          </Show>
+        ),
         selected: ws.id === currentWorkspace()?.id,
         onClick() {
           return switchWorkspace(ws.id);
@@ -218,7 +272,18 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
                 "@hover:bg-gray-200"
               )}
             >
-              <div class="i-lucide:hexagon h-5 w-5 text-gray-500" />
+              <Show
+                when={currentWorkspace()?.logo}
+                fallback={<div class="i-lucide:hexagon h-5 w-5 text-gray-500" />}
+              >
+                {(logo) => (
+                  <img
+                    src={logo()}
+                    alt={`${currentWorkspace()?.name} logo`}
+                    class="h-5 w-5 shrink-0 rounded object-contain md:mr-0.5"
+                  />
+                )}
+              </Show>
               <Show when={!props.compact}>
                 <span class="flex-1 truncate text-start text-sm font-medium">
                   {currentWorkspace()?.name || "Workspace"}

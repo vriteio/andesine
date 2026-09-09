@@ -53,6 +53,7 @@ const updateRoleOperation = async (
     input.name === undefined
       ? undefined
       : await validateRoleName({
+          database: input.database,
           excludeRoleID: input.id,
           name: input.name,
           workspaceID: input.workspaceID

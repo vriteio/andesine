@@ -1,4 +1,5 @@
 import { billingRouter } from "./billing";
+import { assetsRouter } from "./assets";
 import { collectionsRouter } from "./collections";
 import { contentRouter } from "./content";
 import { entriesRouter } from "./entries";
@@ -24,8 +25,10 @@ import { RPCHandler } from "@orpc/server/fastify";
 import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
 import { RATE_LIMITS, consumeRateLimit } from "#backend/lib/security";
 import { config } from "#backend/lib/config";
+import { Auth } from "#backend/services/auth";
 
 const router = {
+  assets: assetsRouter,
   auth: authRouter,
   entries: entriesRouter,
   groups: groupsRouter,
@@ -119,6 +122,57 @@ const routerPlugin: FastifyPluginAsync = async (app) => {
   });
 
   app.removeAllContentTypeParsers();
+  // Authenticate multipart requests before Fastify buffers files. ORPC checks entry access later.
+  app.addHook("onRequest", async (request, reply) => {
+    const contentType = request.headers["content-type"]?.split(";", 1)[0].trim().toLowerCase();
+    const headers = new Headers();
+
+    if (contentType !== "multipart/form-data") return;
+
+    for (const [name, value] of Object.entries(request.headers)) {
+      if (value !== undefined) {
+        headers.set(name, Array.isArray(value) ? value.join(", ") : value);
+      }
+    }
+    reply.header("Cache-Control", "private, no-store");
+
+    try {
+      const auth = await Auth.getSessionData({ headers });
+      const limit = await consumeRateLimit({
+        scope: "asset-upload",
+        key: auth.workspaceID,
+        limit: { max: 30, window: 60 }
+      });
+
+      if (!limit.allowed) {
+        reply.header("Retry-After", limit.retryAfter);
+
+        throw new ORPCError("TOO_MANY_REQUESTS", {
+          message: "Too many image uploads; try again shortly"
+        });
+      }
+    } catch (error) {
+      if (!(error instanceof ORPCError)) throw error;
+
+      return reply.status(error.status).send({ code: error.code, message: error.message });
+    }
+  });
+  app.addContentTypeParser(
+    "multipart/form-data",
+    // Allow multipart headers and fields in addition to the file's separate schema limit.
+    { parseAs: "buffer", bodyLimit: config.ASSET_MAX_UPLOAD_BYTES + 64 * 1024 },
+    async (request: FastifyRequest, body: Buffer) => {
+      const response = new Response(new Uint8Array(body), {
+        headers: { "Content-Type": request.headers["content-type"]! }
+      });
+
+      try {
+        return await response.formData();
+      } catch {
+        throw Object.assign(new Error("Invalid multipart body"), { statusCode: 400 });
+      }
+    }
+  );
   app.addContentTypeParser("*", function (_request, _payload, done) {
     done(null, undefined);
   });

@@ -8,7 +8,8 @@ const FRAGMENT_BLOCK_TYPES = [
   "orderedList",
   "taskList",
   "horizontalRule",
-  "table"
+  "table",
+  "image"
 ] as const;
 
 type FragmentBlockType = (typeof FRAGMENT_BLOCK_TYPES)[number];

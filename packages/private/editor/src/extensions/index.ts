@@ -9,6 +9,6 @@ export * from "./separator";
 export * from "./resource-name-tracker";
 export * from "./schema-constraints";
 export * from "./version-diff";
-export { Collaboration } from "@tiptap/extension-collaboration";
+export * from "./collaboration";
 export { NodeRange } from "@tiptap/extension-node-range";
 export { Gapcursor } from "@tiptap/extension-gapcursor";

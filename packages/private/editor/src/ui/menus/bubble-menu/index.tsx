@@ -82,7 +82,8 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
             !rangeContainsInheritedField(editor.state.doc, selection.from, selection.to) &&
             !isBlockSelection(selection) &&
             isTextSelection(selection) &&
-            !selection.empty;
+            !selection.empty &&
+            editor.state.doc.textBetween(selection.from, selection.to).trim().length > 0;
 
           setOpened(shouldShow);
 

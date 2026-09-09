@@ -1,3 +1,4 @@
+import { getProfileImageURL } from "#backend/lib/assets/profiles";
 import { config } from "#backend/lib/config";
 import { getEffectivePlan } from "#backend/lib/billing";
 import {
@@ -21,7 +22,7 @@ import { db } from "#backend/lib/adapters";
 import { loadAuthorizedCollectionTree, type SessionData } from "#backend/lib/policy";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 
-interface WorkspaceListItem extends Pick<Workspace, "id" | "name"> {
+interface WorkspaceListItem extends Pick<Workspace, "id" | "name" | "logo"> {
   userID: string;
   currentEntryID?: string;
   permissions: Permission[];
@@ -42,6 +43,7 @@ const listWorkspaces = async (input: {
     .select({
       id: workspaces.id,
       name: workspaces.name,
+      logoAssetID: workspaces.logoAssetID,
       userID: memberships.userID,
       membershipID: memberships.id,
       currentEntryID: entries.id,
@@ -98,6 +100,9 @@ const listWorkspaces = async (input: {
       return {
         id: toWorkspaceID(row.id),
         name: row.name,
+        logo: row.logoAssetID
+          ? getProfileImageURL(config.PUBLIC_API_URL, row.logoAssetID)
+          : undefined,
         userID: toUserID(row.userID),
         currentEntryID,
         permissions: row.permissions,

@@ -6,6 +6,7 @@ import {
   schemaMigrations,
   schemaVersions
 } from "@andesine/backend/db/content-schemas";
+import { workspaces } from "@andesine/backend/db/workspaces";
 import { contents } from "@andesine/backend/db/contents";
 import { entries } from "@andesine/backend/db/entries";
 import { entryPublications } from "@andesine/backend/db/publishing";
@@ -14,6 +15,16 @@ import { db } from "../database";
 
 const activateMigration = async (migrationID: string, workspaceID: string): Promise<void> => {
   await db.transaction(async (transaction) => {
+    const [workspace] = await transaction
+      .select({ deletingAt: workspaces.deletingAt })
+      .from(workspaces)
+      .where(eq(workspaces.id, workspaceID))
+      .for("update");
+
+    if (!workspace || workspace.deletingAt) {
+      throw new Error("Workspace is not available for schema migration activation");
+    }
+
     const [migration] = await transaction
       .select()
       .from(schemaMigrations)

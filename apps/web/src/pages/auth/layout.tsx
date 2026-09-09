@@ -1,8 +1,7 @@
 import { type Component, onMount, Suspense } from "solid-js";
 import { type RouteSectionProps } from "@solidjs/router";
-import { AnimatedGradientCard } from "#web/components/animated-gradient-card";
 import { NoHydration } from "solid-js/web";
-import { Skeleton } from "@andesine/components";
+import { Skeleton, AnimatedGradientCard } from "@andesine/components";
 import { lockOfflineState } from "#web/lib/offline";
 import { DotsBackground } from "#web/components/dots-background";
 

@@ -22,6 +22,16 @@ const inviteMemberOperation = async (
   const normalizedEmail = input.email.trim().toLowerCase();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const result = await db.transaction(async (tx) => {
+    const [workspace] = await tx
+      .select({ name: workspaces.name, deletingAt: workspaces.deletingAt })
+      .from(workspaces)
+      .where(eq(workspaces.id, workspaceID))
+      .for("update");
+
+    if (!workspace || workspace.deletingAt) {
+      throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
+    }
+
     await tx
       .update(invitations)
       .set({ status: "expired" })
@@ -36,14 +46,9 @@ const inviteMemberOperation = async (
       .select()
       .from(roles)
       .where(and(eq(roles.id, roleID), eq(roles.workspaceID, workspaceID)));
-    const [workspace] = await tx
-      .select({ id: workspaces.id, name: workspaces.name })
-      .from(workspaces)
-      .where(eq(workspaces.id, workspaceID));
 
     if (!role) throw new ORPCError("BAD_REQUEST", { message: "Role not found" });
     assertRoleDelegation(input.auth, role);
-    if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
 
     const [existingUser] = await tx
       .select({ id: users.id })

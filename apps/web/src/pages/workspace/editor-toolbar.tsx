@@ -13,7 +13,7 @@ import clsx from "clsx";
 const EditorToolbar: Component = () => {
   const params = useParams<{ slug?: string; workspaceID?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { content } = useWorkspace();
+  const { content, currentWorkspace } = useWorkspace();
   const routeData = useRouteData();
   const versionID = () => (typeof searchParams.version === "string" ? searchParams.version : "");
   const comparing = () => searchParams.compare === "current";
@@ -93,14 +93,29 @@ const EditorToolbar: Component = () => {
     <div class="relative z-20 h-11 w-full shrink-0 items-center justify-center gap-1 p-2 flex">
       <Show when={items().length > 0 || isContentTitleLoading()}>
         <span class="flex-1 inline-flex items-center justify-center text-base font-medium leading-[1] bg-gray-50/2.5 backdrop-blur-sm rounded-lg overflow-hidden mr-4">
-          <IconButton
-            icon="i-lucide:hexagon"
-            text="soft"
-            size="small"
-            variant="text"
-            hover="none"
-            badge
-          />
+          <Show
+            when={currentWorkspace()?.logo}
+            fallback={
+              <IconButton
+                icon="i-lucide:hexagon"
+                text="soft"
+                size="small"
+                variant="text"
+                hover="none"
+                badge
+              />
+            }
+          >
+            {(logo) => (
+              <span class="flex h-7 w-7 shrink-0 items-center justify-center">
+                <img
+                  src={logo()}
+                  alt={currentWorkspace()?.name || "Workspace"}
+                  class="h-4 w-4 rounded object-contain"
+                />
+              </span>
+            )}
+          </Show>
           <For each={items()}>
             {(item, index) => {
               const currentEntry = () => {

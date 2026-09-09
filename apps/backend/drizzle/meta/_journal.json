@@ -120,6 +120,55 @@
       "when": 1788732233141,
       "tag": "0016_permission-delegation",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1788820620620,
+      "tag": "0017_image-assets",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1788822979753,
+      "tag": "0018_asset-uploads",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1788869327130,
+      "tag": "0019_pending-entry-assets",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1788895124130,
+      "tag": "0020_asset-retention",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1788900188638,
+      "tag": "0021_asset-upload-scopes",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1788902726100,
+      "tag": "0022_asset-analysis",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1788907802451,
+      "tag": "0023_asset-search",
+      "breakpoints": true
     }
   ]
 }

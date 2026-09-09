@@ -1,3 +1,4 @@
+export * from "./assets";
 export * from "./auth";
 export * from "./collections";
 export * from "./content-schemas";
@@ -15,3 +16,4 @@ export * from "./usage";
 export * from "./users";
 export * from "./versions";
 export * from "./workspaces";
+export * from "./asset-uploads";

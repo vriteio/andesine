@@ -1,4 +1,7 @@
+import { syncEntryAssets } from "#backend/lib/assets/references";
+import { config } from "#backend/lib/config";
 import {
+  workspaces,
   contents,
   effectiveSchemaRevisions,
   entries,
@@ -109,6 +112,14 @@ const collaborationDatabase = new Database({
     const pendingContributorIDs = getPendingContributors(documentName);
     const contributorIDs = pendingContributorIDs.map(toUUID);
     const stored = await db.transaction(async (tx) => {
+      const [workspace] = await tx
+        .select({ id: workspaces.id })
+        .from(workspaces)
+        .where(and(eq(workspaces.id, workspaceID), isNull(workspaces.deletingAt)))
+        .for("update");
+
+      if (!workspace) return null;
+
       const [entry] = await tx
         .select({
           id: entries.id,
@@ -225,6 +236,16 @@ const collaborationDatabase = new Database({
         replaceContentDocument(persistedDocument, normalizedContent.document);
       }
 
+      const assetContent = await syncEntryAssets({
+        database: tx,
+        workspaceID,
+        entryID,
+        restoreUntil: new Date(Date.now() + config.ASSET_UPLOAD_EXPIRY_HOURS * 3600_000),
+        document: serializeContentDocument(persistedDocument)
+      });
+
+      if (assetContent.changed) replaceContentDocument(persistedDocument, assetContent.document);
+
       const mergedState = encodeStateAsUpdate(persistedDocument);
       const document = serializeContentDocument(persistedDocument);
       const hash = hashContentDocument(document);
@@ -324,7 +345,7 @@ const collaborationDatabase = new Database({
 
         return {
           contentChanged,
-          contentNormalized: Boolean(normalizedContent?.changed),
+          contentNormalized: Boolean(normalizedContent?.changed || assetContent.changed),
           entry,
           publishingEntry,
           title
@@ -333,7 +354,7 @@ const collaborationDatabase = new Database({
 
       return {
         contentChanged,
-        contentNormalized: Boolean(normalizedContent?.changed),
+        contentNormalized: Boolean(normalizedContent?.changed || assetContent.changed),
         entry,
         publishingEntry,
         title: null

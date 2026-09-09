@@ -1,5 +1,6 @@
 import { collections, entryPublications } from "#backend/db";
 import {
+  assertEntrySnapshotsSynced,
   getDisabledEntryIDs,
   getSubtreeEntryIDs,
   isCollectionPublishingEnabled,
@@ -29,6 +30,9 @@ interface SetCollectionsPublishingInput {
   publish?: boolean;
   contributorIDs: string[];
 }
+interface CommitCollectionsPublishingInput extends SetCollectionsPublishingInput {
+  snapshotEntryIDs: string[];
+}
 
 const getCollectionDepth = (
   collectionParents: Map<string, string | null>,
@@ -44,8 +48,54 @@ const getCollectionDepth = (
 
   return depth;
 };
-const setCollectionsPublishing = withAuthorization<
+const prepareCollectionsPublishing = withAuthorization<
   SetCollectionsPublishingInput,
+  undefined,
+  string[]
+>(
+  {
+    actions: ({ input }) => ({
+      collections: input.collectionIDs.map((collectionID) => ({
+        action: "collection:set-publishing",
+        collectionID
+      }))
+    }),
+    tree: true
+  },
+  async ({ authorization, database, input, workspaceID }) => {
+    const collectionIDs = [...new Set(input.collectionIDs.map(toUUID))];
+
+    if (!input.enabled || !input.publish) return [];
+
+    const tree = await loadPublishingTree(database, workspaceID);
+    const collectionsByID = new Map(
+      tree.collections.map((collection) => [collection.id, collection])
+    );
+    const selectedCollections = collectionIDs.map((collectionID) => {
+      return collectionsByID.get(collectionID);
+    });
+
+    if (selectedCollections.some((collection) => !collection || collection.parentID === null)) {
+      throw new ORPCError("NOT_FOUND", { message: "Collection not found" });
+    }
+
+    const subtreeEntryIDs = await Promise.all(
+      collectionIDs.map((collectionID) => {
+        return getSubtreeEntryIDs(database, workspaceID, tree, collectionID);
+      })
+    );
+
+    return filterAuthorizedEntryIDs({
+      action: "publishing:publish",
+      authorization,
+      database,
+      entryIDs: [...new Set(subtreeEntryIDs.flat())],
+      workspaceID
+    });
+  }
+);
+const commitCollectionsPublishing = withAuthorization<
+  CommitCollectionsPublishingInput,
   undefined,
   SetCollectionPublishingResult[]
 >(
@@ -61,42 +111,6 @@ const setCollectionsPublishing = withAuthorization<
   },
   async ({ authorization, database, input, workspaceID }) => {
     const collectionIDs = [...new Set(input.collectionIDs.map(toUUID))];
-
-    if (input.enabled && input.publish) {
-      const entryIDs = await (async () => {
-        const tree = await loadPublishingTree(database, workspaceID);
-        const collectionsByID = new Map(
-          tree.collections.map((collection) => [collection.id, collection])
-        );
-        const selectedCollections = collectionIDs.map((collectionID) => {
-          return collectionsByID.get(collectionID);
-        });
-
-        if (selectedCollections.some((collection) => !collection)) {
-          throw new ORPCError("NOT_FOUND", { message: "Collection not found" });
-        }
-
-        if (selectedCollections.some((collection) => collection?.parentID === null)) {
-          throw new ORPCError("NOT_FOUND", { message: "Collection not found" });
-        }
-
-        const subtreeEntryIDs = await Promise.all(
-          collectionIDs.map((collectionID) => {
-            return getSubtreeEntryIDs(database, workspaceID, tree, collectionID);
-          })
-        );
-
-        return filterAuthorizedEntryIDs({
-          action: "publishing:publish",
-          authorization,
-          database,
-          entryIDs: [...new Set(subtreeEntryIDs.flat())],
-          workspaceID
-        });
-      })();
-
-      await syncEntrySnapshots(workspaceID, entryIDs);
-    }
 
     const currentCollections = await database
       .select({
@@ -200,6 +214,9 @@ const setCollectionsPublishing = withAuthorization<
           entryIDs,
           workspaceID
         });
+
+        assertEntrySnapshotsSynced(publishableEntryIDs, input.snapshotEntryIDs);
+
         const result = await publishEntries(database, {
           workspaceID,
           entries: publishableEntryIDs.map((entryID) => ({ entryID })),
@@ -252,5 +269,21 @@ const setCollectionsPublishing = withAuthorization<
     }));
   }
 );
+const setCollectionsPublishing = async (
+  input: Parameters<typeof prepareCollectionsPublishing>[0]
+): Promise<SetCollectionPublishingResult[]> => {
+  const snapshotEntryIDs = await prepareCollectionsPublishing(input);
+
+  await syncEntrySnapshots(input.auth.workspaceID, snapshotEntryIDs);
+
+  return commitCollectionsPublishing({
+    collectionIDs: input.collectionIDs,
+    enabled: input.enabled,
+    publish: input.publish,
+    contributorIDs: input.contributorIDs,
+    snapshotEntryIDs,
+    auth: input.auth
+  });
+};
 
 export { setCollectionsPublishing };

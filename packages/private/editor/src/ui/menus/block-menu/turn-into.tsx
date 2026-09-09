@@ -88,7 +88,7 @@ const getConvertedContent = (
     ? Fragment.from(children)
     : null;
 };
-const createTurnIntoMenuItem = (editor: Editor): MenuItem[] => {
+const createTurnIntoMenuItem = (editor: Editor): NonNullable<MenuItem["items"]> => {
   const block = getSelectedBlock(editor);
 
   if (!block) return [];

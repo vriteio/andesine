@@ -26,6 +26,8 @@ const Editor: Component<EditorProps> = (props) => {
 
 export { Editor };
 export type {
+  EditorImages,
+  EditorImageAsset,
   EditorDiff,
   EditorDiffChange,
   EditorInstance,

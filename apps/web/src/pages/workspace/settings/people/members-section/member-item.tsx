@@ -121,7 +121,14 @@ const MemberItem: Component<{
         checkbox={props.canManage && canManageMember(props.member.id) && !props.loading}
         selectable={props.canManage && canManageMember(props.member.id) && !props.loading}
         class={clsx("px-1 py-0.5", props.loading && "animate-pulse")}
-        icon={<div class="i-lucide:id-card h-5 w-5 text-gray-400" />}
+        icon={
+          <Show
+            when={props.member.profile.image}
+            fallback={<div class="i-lucide:id-card h-5 w-5 text-gray-400" />}
+          >
+            {(image) => <img src={image()} alt="" class="h-5 w-5 rounded-md object-cover" />}
+          </Show>
+        }
         renderLabel={(label) => (
           <div
             class="flex min-w-0 flex-1 items-center gap-1.5"

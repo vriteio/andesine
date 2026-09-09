@@ -1,0 +1,2 @@
+ALTER TABLE "entry_assets" ADD COLUMN "pending_until" timestamp with time zone;--> statement-breakpoint
+CREATE INDEX "entry_assets_pending_until_idx" ON "entry_assets" USING btree ("pending_until") WHERE "entry_assets"."pending_until" is not null;

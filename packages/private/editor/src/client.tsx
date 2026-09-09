@@ -1,3 +1,5 @@
+import { Images } from "./extensions/images";
+import { createImageViewRenderer } from "./ui/views/image-view";
 import {
   MAX_ENTRY_TITLE_LENGTH,
   normalizeEntryTitle,
@@ -12,6 +14,7 @@ import {
   Code,
   Italic,
   HorizontalRule,
+  Image,
   Blockquote,
   Highlight,
   Superscript,
@@ -102,6 +105,8 @@ const ClientEditor: Component<EditorProps> = (props) => {
     const collaborationExtensions = currentProvider
       ? [
           Collaboration.configure({
+            awareness: currentProvider.awareness,
+            canChangeImages: () => props.images?.enabled() ?? false,
             document: currentProvider.document
           }),
           CollaborationCaret.configure({
@@ -150,6 +155,16 @@ const ClientEditor: Component<EditorProps> = (props) => {
       Superscript,
       Subscript,
       Strike,
+      Image.extend({
+        addNodeView() {
+          return createImageViewRenderer(
+            owner,
+            () => props.editable ?? true,
+            () => props.images
+          );
+        }
+      }),
+      Images.configure({ images: () => props.images, notify: props.notify }),
       // Simple blocks
       HorizontalRule,
       Heading,

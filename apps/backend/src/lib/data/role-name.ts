@@ -1,5 +1,6 @@
 import { roles } from "#backend/db";
 import { toUUID } from "#backend/lib/primitives";
+import type { DatabaseClient } from "#backend/lib/policy/service";
 import { db } from "#backend/lib/adapters";
 import { and, eq, ne, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
@@ -23,6 +24,7 @@ const normalizeRoleName = (name: string): string => {
   return normalizedName;
 };
 const validateRoleName = async (input: {
+  database?: DatabaseClient;
   excludeRoleID?: string;
   name: string;
   workspaceID: string;
@@ -35,7 +37,7 @@ const validateRoleName = async (input: {
 
   if (input.excludeRoleID) filters.push(ne(roles.id, toUUID(input.excludeRoleID)));
 
-  const [existingRole] = await db
+  const [existingRole] = await (input.database || db)
     .select({ id: roles.id })
     .from(roles)
     .where(and(...filters))

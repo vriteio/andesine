@@ -1,3 +1,4 @@
+import { retainVersionAssets } from "#backend/lib/assets/references";
 import {
   contents,
   entries,
@@ -116,7 +117,8 @@ const publishEntries = async (
           .select({
             id: entryVersions.id,
             entryID: entryVersions.entryID,
-            hash: entryVersions.hash
+            hash: entryVersions.hash,
+            document: entryVersions.document
           })
           .from(entryVersions)
           .where(
@@ -195,6 +197,14 @@ const publishEntries = async (
       const assignedVersion = providedVersionsByID.get(target.versionID)!;
       const draftHash = content?.hash || hashContentDocument(content?.document || EMPTY_DOCUMENT);
 
+      await retainVersionAssets({
+        database: tx,
+        workspaceID: input.workspaceID,
+        entryID: entry.id,
+        versionID: assignedVersion.id,
+        document: assignedVersion.document
+      });
+
       assignments.push({
         workspaceID: input.workspaceID,
         entryID: entry.id,
@@ -261,6 +271,14 @@ const publishEntries = async (
     }
 
     if (!versionID) throw new Error("Failed to resolve a version for publishing");
+
+    await retainVersionAssets({
+      database: tx,
+      workspaceID: input.workspaceID,
+      entryID: entry.id,
+      versionID,
+      document
+    });
 
     assignments.push({
       workspaceID: input.workspaceID,

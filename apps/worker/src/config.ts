@@ -1,5 +1,6 @@
 import { configSchema as backendConfigSchema } from "@andesine/backend/lib/config-schema";
 import * as z from "zod";
+import { assetConfigSchema } from "@andesine/backend/lib/assets/config-schema";
 
 const configSchema = backendConfigSchema
   .pick({
@@ -10,10 +11,13 @@ const configSchema = backendConfigSchema
     TYPESENSE_API_KEY: true,
     OPENAI_API_KEY: true,
     OPENAI_BASE_URL: true,
+    ASSET_ANALYSIS_MODEL: true,
+    SEARCH_ASK_MODEL: true,
     SEARCH_EMBEDDING_MODEL: true,
     SEARCH_EMBEDDING_DIMENSIONS: true
   })
   .extend({
+    ...assetConfigSchema.shape,
     WORKER_CONCURRENCY: z.coerce
       .number()
       .int()

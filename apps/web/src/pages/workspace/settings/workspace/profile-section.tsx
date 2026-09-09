@@ -1,3 +1,4 @@
+import { ImageSetting } from "../image-setting";
 import { Input, Skeleton, Spinner } from "@andesine/components";
 import { type Component, createEffect, createSignal, Show } from "solid-js";
 import { SettingsSection } from "../settings-section";
@@ -35,6 +36,7 @@ const WorkspaceProfileSection: Component = () => {
 
   return (
     <SettingsSection label="Profile">
+      <ImageSetting target="workspace" />
       <Setting
         label="Workspace name"
         description="The display name for this workspace"

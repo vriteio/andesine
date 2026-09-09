@@ -48,7 +48,7 @@ header[data-type="title"] {
 
 .block-selection-shade,
 .collaboration-block-selection-shade {
-  @apply absolute z-0 rounded-lg opacity-10 pointer-events-none;
+  @apply absolute z-2 rounded-lg opacity-10 pointer-events-none;
 }
 
 .block-selection-shade {
@@ -283,7 +283,12 @@ header[data-type="title"] {
 // Drop and gap cursors
 .drop-cursor,
 .ProseMirror-gapcursor::after {
-  @apply h-0.5! bg-gradient-to-tr! rounded-full;
+  @apply bg-gradient-to-tr! rounded-full;
+}
+
+.drop-cursor.prosemirror-dropcursor-block,
+.ProseMirror-gapcursor::after {
+  @apply h-0.5!;
 }
 
 .ProseMirror-gapcursor {

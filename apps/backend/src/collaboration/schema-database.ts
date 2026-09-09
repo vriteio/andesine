@@ -4,7 +4,8 @@ import {
   effectiveSchemaRevisions,
   memberships,
   schemaDraftContributors,
-  schemaVersions
+  schemaVersions,
+  workspaces
 } from "#backend/db";
 import { emitSchemaEvent } from "#backend/events";
 import { db } from "#backend/lib/adapters";
@@ -94,6 +95,14 @@ const storeSchemaDocument = async ({
   const pendingContributorIDs = getPendingContributors(documentName);
   const contributorIDs = pendingContributorIDs.map(toUUID);
   const stored = await db.transaction(async (tx) => {
+    const [workspace] = await tx
+      .select({ deletingAt: workspaces.deletingAt })
+      .from(workspaces)
+      .where(eq(workspaces.id, rawWorkspaceID))
+      .for("update");
+
+    if (!workspace || workspace.deletingAt) return null;
+
     const [schema] = await tx
       .select({
         id: collectionSchemas.id,

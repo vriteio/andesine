@@ -144,7 +144,7 @@ const cloneContentNodes = (nodes: ContentNode[]): ContentNode[] => {
 };
 const createEmptyContentNodes = (nodes: ContentNode[]): ContentNode[] => {
   return cloneContentNodes(nodes).flatMap((node) => {
-    if (node.type === "text" || node.type === "hardBreak") return [];
+    if (node.type === "text" || node.type === "hardBreak" || node.type === "image") return [];
 
     const content = node.content ? createEmptyContentNodes(node.content) : undefined;
     const attrs = node.type === "taskItem" ? { ...node.attrs, checked: false } : node.attrs;
@@ -163,6 +163,7 @@ const createEmptyContentNodes = (nodes: ContentNode[]): ContentNode[] => {
 const hasMeaningfulContent = (nodes: ContentNode[]): boolean => {
   return nodes.some((node) => {
     if (node.type === "text") return Boolean(node.text);
+    if (node.type === "image") return Boolean(node.attrs?.assetID);
     if (node.type === "horizontalRule" || node.type === "hardBreak") return true;
     if (node.type === "taskItem" && node.attrs?.checked === true) return true;
 

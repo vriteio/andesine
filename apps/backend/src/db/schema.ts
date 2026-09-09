@@ -1,3 +1,5 @@
+import { assetStorageDeletions, assetUploads } from "./asset-uploads";
+import { assetAnalyses, assetFiles, assets, entryAssets, entryVersionAssets } from "./assets";
 import { accounts, passkeys, sessions, verifications } from "./auth";
 import { collections } from "./collections";
 import {
@@ -42,6 +44,11 @@ const schema = {
   verifications,
   passkeys,
   workspaces,
+  assets,
+  assetUploads,
+  assetStorageDeletions,
+  assetAnalyses,
+  assetFiles,
   roles,
   memberships,
   invitations,
@@ -60,8 +67,10 @@ const schema = {
   collectionGroupRoles,
   collectionMemberRoles,
   entries,
+  entryAssets,
   contents,
   entryVersions,
+  entryVersionAssets,
   entryVersionContributors,
   entryVersionActivity,
   entryVersionActivityContributors,

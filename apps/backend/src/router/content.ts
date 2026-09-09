@@ -1,3 +1,7 @@
+import { assetDeliveryVariants } from "#backend/lib/assets/files";
+import { assetFileFormatEnum } from "#backend/db";
+import { Asset } from "#backend/services/assets";
+import { publicID } from "#backend/lib/primitives";
 import { contentNodeType } from "#backend/lib/content";
 import { versionSummaryType } from "#backend/lib/data";
 import { PUBLISHED_CHANNEL_CODE, publishingChannelCodeType } from "#backend/lib/publishing";
@@ -31,6 +35,17 @@ const publishedContentType = z.object({
   channel: publishingChannelCodeType.describe("Publishing channel used for delivery"),
   name: z.string().describe("Entry name stored in the published version"),
   version: versionSummaryType,
+  assets: z.array(
+    z.object({
+      assetID: publicID("ast"),
+      variant: z.enum(assetDeliveryVariants),
+      format: z.enum(assetFileFormatEnum.enumValues),
+      width: z.number(),
+      height: z.number(),
+      byteSize: z.number(),
+      url: z.url()
+    })
+  ),
   content: contentNodeType,
   fragments: z.record(
     z.string(),
@@ -95,6 +110,37 @@ const cachedPublishedTreeType = z.union([
   })
 ]);
 const contentRouter = base.prefix("/content").router({
+  getAsset: base
+    .route({
+      method: "GET",
+      path: "/assets/:workspaceID/:assetID/:variant",
+      outputStructure: "detailed"
+    })
+    .input(
+      z.object({
+        workspaceID: publicID("ws"),
+        assetID: publicID("ast"),
+        variant: z.enum(assetDeliveryVariants)
+      })
+    )
+    .output(
+      z.object({
+        headers: z.object({
+          "Cache-Control": z.literal("private, no-store"),
+          "X-Content-Type-Options": z.literal("nosniff"),
+          "Content-Disposition": z.literal("inline")
+        }),
+        body: z.file()
+      })
+    )
+    .handler(async ({ input }) => ({
+      headers: {
+        "Cache-Control": "private, no-store" as const,
+        "X-Content-Type-Options": "nosniff" as const,
+        "Content-Disposition": "inline" as const
+      },
+      body: await Asset.getPublished(input)
+    })),
   get: base
     .route({
       method: "GET",

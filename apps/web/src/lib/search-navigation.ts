@@ -1,6 +1,7 @@
 import type { EditorInstance } from "@andesine/editor";
 
 interface SearchNavigationTarget {
+  assetID?: string;
   entryID: string;
   headingPath: string[];
   query: string;
@@ -73,6 +74,28 @@ const getSearchNavigationTarget = (state: unknown): SearchNavigationTarget | und
   return searchTarget;
 };
 const scrollToSearchTarget = (editor: EditorInstance, target: SearchNavigationTarget): boolean => {
+  if (target.assetID) {
+    let position: number | undefined;
+
+    editor.state.doc.descendants((node, pos) => {
+      if (
+        position === undefined &&
+        node.type.name === "image" &&
+        node.attrs.assetID === target.assetID
+      )
+        position = pos;
+    });
+    if (position === undefined) return false;
+
+    const element = editor.view.nodeDOM(position);
+
+    if (!(element instanceof HTMLElement)) return false;
+
+    element.scrollIntoView({ block: "center" });
+
+    return true;
+  }
+
   const query = normalizeSearchText(target.query);
   const phrases = [query, ...getSnippetPhrases(target.snippet)].filter(
     (phrase) => phrase.length >= 2

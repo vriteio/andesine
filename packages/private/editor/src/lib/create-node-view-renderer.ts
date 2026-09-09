@@ -129,6 +129,8 @@ const createNodeViewRenderer = <Attributes extends object = Record<string, unkno
           setSelected(false);
         },
         update(updatedNode) {
+          if (updatedNode.type !== node().type) return false;
+
           setNode(updatedNode);
 
           return true;

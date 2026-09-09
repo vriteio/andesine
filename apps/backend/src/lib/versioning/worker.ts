@@ -1,3 +1,4 @@
+import { retainVersionAssets } from "#backend/lib/assets/references";
 import {
   contents,
   entries,
@@ -36,6 +37,13 @@ const processActivity = async (candidate: ActivityCandidate): Promise<void> => {
   }
 
   const createdVersion = await db.transaction(async (tx): Promise<VersionSummary | null> => {
+    const [workspace] = await tx
+      .select({ id: workspaces.id })
+      .from(workspaces)
+      .where(and(eq(workspaces.id, candidate.workspaceID), isNull(workspaces.deletingAt)))
+      .for("update", { skipLocked: true });
+    if (!workspace) return null;
+
     const [entry] = await tx
       .select({ id: entries.id, name: entries.name })
       .from(entries)
@@ -91,6 +99,13 @@ const processActivity = async (candidate: ActivityCandidate): Promise<void> => {
           reason: "auto"
         })
         .returning();
+      await retainVersionAssets({
+        database: tx,
+        workspaceID: candidate.workspaceID,
+        entryID: candidate.entryID,
+        versionID: version.id,
+        document: content.document
+      });
       const contributors = await tx
         .select({ membershipID: entryVersionActivityContributors.membershipID })
         .from(entryVersionActivityContributors)

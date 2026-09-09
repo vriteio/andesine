@@ -6,7 +6,6 @@ import { eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
 interface UpdateWorkspaceInput {
-  logo?: string;
   name?: string;
 }
 

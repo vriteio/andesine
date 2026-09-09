@@ -146,6 +146,17 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
       }
     },
     {
+      label: "Image",
+      group: "Blocks",
+      icon: "i-lucide:image",
+      schemaKind: "block",
+      schemaBlockType: "image",
+      ref: createRef<HTMLElement | null>(null),
+      command({ editor, range }) {
+        return editor.chain().focus().deleteRange(range).insertContent({ type: "image" }).run();
+      }
+    },
+    {
       label: "Table",
       group: "Blocks",
       icon: "i-lucide:table",
@@ -212,6 +223,11 @@ const getAvailableSlashMenuItems = (
 ): SlashMenuItem[] => {
   const { $from } = editor.state.selection;
   const availableItems = items.filter((item) => {
+    if (item.schemaBlockType === "image") {
+      const extension = editor.extensionManager.extensions.find(({ name }) => name === "images");
+
+      return mode === "entry" && Boolean(extension?.options.images()?.enabled());
+    }
     return item.schemaBlockType !== "table" || canInsertTable(editor, $from.pos);
   });
 
