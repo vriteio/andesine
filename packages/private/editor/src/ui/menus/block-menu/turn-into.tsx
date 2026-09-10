@@ -2,6 +2,8 @@ import type { MenuItem } from "@andesine/components";
 import type { Editor } from "@tiptap/core";
 import { Fragment, type Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { isBlockSelection } from "#editor/extensions/block-selection";
+import { findDisallowedElementBlock } from "#editor/lib/element";
+import { FRAGMENT_BLOCK_TYPES } from "#editor/schema/fragment";
 import { isPositionInInheritedField } from "#editor/ui/block-utils";
 
 interface ConversionOption {
@@ -36,7 +38,8 @@ const getSelectedBlock = (editor: Editor) => {
     selection.ranges.length !== 1 ||
     !node ||
     selection.to !== selection.from + node.nodeSize ||
-    (selection.$from.parent !== doc && selection.$from.parent.type.name !== "fragment") ||
+    (selection.$from.parent !== doc &&
+      !["fragment", "element"].includes(selection.$from.parent.type.name)) ||
     isPositionInInheritedField(doc, selection.from)
   ) {
     return null;
@@ -99,12 +102,25 @@ const createTurnIntoMenuItem = (editor: Editor): NonNullable<MenuItem["items"]> 
     : textOptions.some(({ name }) => name === node.type.name)
       ? textOptions
       : [];
+
+  let allowedBlocks: readonly string[] | null = null;
+
+  for (let depth = selection.$from.depth; depth > 0; depth -= 1) {
+    const ancestor = selection.$from.node(depth);
+
+    if (ancestor.type.name !== "fragment") continue;
+
+    allowedBlocks = Array.isArray(ancestor.attrs.allowedBlocks)
+      ? ancestor.attrs.allowedBlocks
+      : FRAGMENT_BLOCK_TYPES;
+    break;
+  }
+
   const items = options.flatMap((option): MenuItem[] => {
     const selected =
       node.type.name === option.name && (!option.level || node.attrs.level === option.level);
     const content = selected ? Fragment.from(node) : getConvertedContent(editor, node, option);
     const parent = selection.$from.parent;
-    const allowedBlocks = parent.type.name === "fragment" ? parent.attrs.allowedBlocks : null;
     const enabledLevels = editor.extensionManager.extensions.find(({ name }) => name === "heading")
       ?.options.enabledLevels;
 
@@ -112,19 +128,9 @@ const createTurnIntoMenuItem = (editor: Editor): NonNullable<MenuItem["items"]> 
     if (!content || !parent.canReplace(selection.$from.index(), selection.$to.index(), content))
       return [];
 
-    let allowed = true;
-
-    content.forEach((child) => {
-      if (
-        Array.isArray(allowedBlocks) &&
-        child.type.name !== "paragraph" &&
-        !allowedBlocks.includes(child.type.name)
-      ) {
-        allowed = false;
-      }
-    });
-
-    if (!allowed) return [];
+    if (allowedBlocks && findDisallowedElementBlock(content.toJSON() || [], allowedBlocks)) {
+      return [];
+    }
 
     return [
       {

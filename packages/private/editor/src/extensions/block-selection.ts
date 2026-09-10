@@ -45,6 +45,19 @@ const setBlockSelectionAtCoords = (
   if (typeof pos !== "number") return false;
 
   const resolvedPos = doc.resolve(pos);
+  for (let depth = resolvedPos.depth; depth > 0; depth -= 1) {
+    if (resolvedPos.node(depth).type.name !== "element") continue;
+
+    const childDepth = Math.min(depth + 1, resolvedPos.depth);
+    const child = resolvedPos.node(childDepth);
+    const from = resolvedPos.before(childDepth);
+    const to = from + child.nodeSize;
+
+    if (!(isBlockSelection(selection) && selection.from <= from && selection.to >= to)) {
+      editor.commands.setBlockSelection({ from, to, depth: childDepth - 1 });
+    }
+    return true;
+  }
   const node = resolvedPos.node(1) || resolvedPos.nodeAfter;
 
   if (!node) return false;

@@ -1,3 +1,4 @@
+import { createElementMenuItems } from "./element";
 import { createImageMenuItems } from "./image";
 import { isBlockSelection } from "#editor/extensions/block-selection";
 import { DropdownMenu, IconButton, type MenuItem } from "@andesine/components";
@@ -60,6 +61,7 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
   const [triggerAvailable, setTriggerAvailable] = createSignal(false);
   const [contextMenuMode, setContextMenuMode] = createSignal(false);
   const [imageItems, setImageItems] = createSignal<BlockMenuItems>([]);
+  const [elementItems, setElementItems] = createSignal<BlockMenuItems>([]);
   const [tableItems, setTableItems] = createSignal<BlockMenuItems>([]);
   const [turnIntoItems, setTurnIntoItems] = createSignal<BlockMenuItems>([]);
   const menuItems = (): BlockMenuItem[][] => {
@@ -82,11 +84,13 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
       }
     ];
 
-    if (tableActions.length > 0) return [...getMenuGroups(tableActions), items];
+    if (tableActions.length > 0)
+      return [...getMenuGroups(tableActions), ...getMenuGroups(elementItems()), items];
 
-    if (imageItems().length) return [...getMenuGroups(imageItems()), items];
+    if (imageItems().length)
+      return [...getMenuGroups(imageItems()), ...getMenuGroups(elementItems()), items];
 
-    return [...getMenuGroups(turnIntoItems()), items];
+    return [...getMenuGroups(turnIntoItems()), ...getMenuGroups(elementItems()), items];
   };
   const handleOpenedChange = (opened: boolean) => {
     props.setMenuOpened(opened);
@@ -135,6 +139,7 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
     const updateMenuItems = (event?: EditorEvents["transaction"]) => {
       if (event && !event.transaction.docChanged && !event.transaction.selectionSet) return;
 
+      setElementItems(editor && !editor.isDestroyed ? createElementMenuItems(editor) : []);
       setTableItems(editor && !editor.isDestroyed ? createTableMenuItems(editor) : []);
       setTurnIntoItems(editor && !editor.isDestroyed ? createTurnIntoMenuItem(editor) : []);
     };

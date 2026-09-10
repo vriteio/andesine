@@ -69,13 +69,15 @@ const forEachSelectedBlock = (
     const selectable = node.type.name === "title" || isEditorBlock(node);
 
     if (!selectable) return true;
+    if (node.type.name === "element" && (from > pos || to < pos + node.nodeSize)) return true;
     if (
-      node.type.name === "fragment" &&
-      (!includeCoveredFragments || !selectionCoversNode(node, pos, from, to))
+      ["fragment", "element"].includes(node.type.name) &&
+      ((node.type.name === "fragment" && !includeCoveredFragments) ||
+        !selectionCoversNode(node, pos, from, to))
     ) {
       return true;
     }
-    if (parent !== doc && parent?.type.name !== "fragment") return false;
+    if (parent !== doc && !["fragment", "element"].includes(parent?.type.name || "")) return false;
 
     if (visitor(node, pos) === false) stopped = true;
 

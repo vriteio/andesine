@@ -16,10 +16,19 @@
     "./normalize-source-name": {
       "types": "./src/lib/normalize-source-name.ts",
       "default": "./src/lib/normalize-source-name.ts"
+    },
+    "./element": {
+      "types": "./src/lib/element.ts",
+      "default": "./src/lib/element.ts"
     }
   },
   "dependencies": {
     "@andesine/components": "workspace:*",
+    "@codemirror/autocomplete": "^6.20.3",
+    "@codemirror/commands": "^6.11.0",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/state": "^6.7.4",
+    "@codemirror/view": "^6.43.11",
     "@hocuspocus/provider": "^4.4.0",
     "@solid-primitives/media": "^2.3.6",
     "@solid-primitives/scheduled": "^1.5.3",

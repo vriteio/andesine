@@ -193,19 +193,65 @@ const getBlockContentRect = (editor: Editor, target: BlockControlTarget): DOMRec
 
 const getBlockControlAnchorRect = (editor: Editor, target: BlockControlTarget): DOMRect => {
   return getCachedTargetRect(editor, target, "anchor", () => {
-    const content = getBlockContentRect(editor, target);
+    const tag =
+      target.node.type.name === "element"
+        ? target.dom.querySelector<HTMLElement>(':scope > [data-element-tag="opening"]')
+        : null;
+    const content = tag ? getCachedElementRect(editor, tag) : getBlockContentRect(editor, target);
     const horizontal = getCachedElementRect(editor, getTargetList(target) || target.dom);
 
     return new DOMRect(horizontal.x, content.y, horizontal.width, Math.max(1, content.height));
   });
 };
 
+const getElementContentRect = (editor: Editor, content: HTMLElement): DOMRect => {
+  const rect = getCachedElementRect(editor, content);
+  const opening = content.parentElement?.querySelector<HTMLElement>(
+    ':scope > [data-element-tag="opening"]'
+  );
+  const closing = content.parentElement?.querySelector<HTMLElement>(
+    ':scope > [data-element-tag="closing"]'
+  );
+
+  if (!opening || !closing || closing.hidden) return rect;
+
+  const top = getCachedElementRect(editor, opening).bottom;
+  const bottom = getCachedElementRect(editor, closing).top;
+
+  return new DOMRect(rect.x, top, rect.width, Math.max(0, bottom - top));
+};
+
 const getBlockControlHoverRect = (editor: Editor, target: BlockControlTarget): DOMRect => {
   return getCachedTargetRect(editor, target, "hover", () => {
     const block = getCachedElementRect(editor, target.dom);
     const list = getTargetList(target);
-    const vertical = list ? getCachedElementRect(editor, list) : block;
+    const $position = editor.state.doc.resolve(target.pos);
+    let vertical = list ? getCachedElementRect(editor, list) : block;
     let horizontal = block;
+
+    if ($position.parent.type.name === "element") {
+      const content = target.dom.parentElement;
+      const previous = $position.nodeBefore;
+      const nextPosition = target.pos + target.node.nodeSize;
+      const previousDOM = previous ? editor.view.nodeDOM(target.pos - previous.nodeSize) : null;
+      const nextDOM = nextPosition < $position.end() ? editor.view.nodeDOM(nextPosition) : null;
+      const contentRect = content ? getElementContentRect(editor, content) : block;
+      const top =
+        previousDOM instanceof HTMLElement
+          ? getCachedElementRect(editor, previousDOM).bottom
+          : contentRect.top;
+      const bottom =
+        nextDOM instanceof HTMLElement
+          ? getCachedElementRect(editor, nextDOM).top
+          : contentRect.bottom;
+
+      vertical = new DOMRect(
+        block.x,
+        Math.min(top, block.top),
+        block.width,
+        Math.max(bottom, block.bottom) - Math.min(top, block.top)
+      );
+    }
 
     if (list) {
       const $pos = editor.state.doc.resolve(target.pos);
@@ -263,6 +309,7 @@ export {
   getBlockControlHoverRect,
   getBlockControlLayoutVersion,
   getCachedElementRect,
+  getElementContentRect,
   getEditorScrollContainer,
   invalidateBlockControlLayout,
   isPointInBlockControlArea

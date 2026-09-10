@@ -173,12 +173,31 @@ const mergeMatchedNode = (previous: JSONContent, current: JSONContent): VersionD
   const propertyIdentityChanged =
     current.type === "property" &&
     getBlockFallbackIdentity(previous) !== getBlockFallbackIdentity(current);
+  const elementBecameSelfClosing =
+    current.type === "element" &&
+    previous.attrs?.selfClosing === false &&
+    current.attrs?.selfClosing === true;
 
   if (unchanged) {
     return createNodeMerge(previous, current);
   }
 
-  if (propertyIdentityChanged) return createReplacement(previous, current);
+  if (propertyIdentityChanged || elementBecameSelfClosing) {
+    return createReplacement(previous, current);
+  }
+
+  if (current.type === "element") {
+    const merged = wrapContentMerge(
+      previous,
+      current,
+      mergeNodeSequence(previous.content, current.content)
+    );
+    if (attributesChanged) {
+      for (const nodes of [merged.current, merged.inline, merged.previous])
+        nodes[0].diff = "modified";
+    }
+    return merged;
+  }
 
   if (attributesChanged || current.type === "table") {
     return createNodeMerge(previous, current, "modified");

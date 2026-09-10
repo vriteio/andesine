@@ -1,3 +1,4 @@
+import { normalizeContentElements } from "./elements";
 import { type Doc, XmlElement, XmlText } from "yjs";
 import type { ContentMark, ContentNode } from "./document";
 
@@ -55,7 +56,7 @@ const createYNodes = (nodes: ContentNode[]): Array<XmlElement | XmlText> => {
 };
 const replaceContentDocument = (document: Doc, content: ContentNode): void => {
   const fragment = document.getXmlFragment("default");
-  const nodes = createYNodes(content.content || []);
+  const nodes = createYNodes(normalizeContentElements(content).content || []);
 
   if (fragment.length > 0) fragment.delete(0, fragment.length);
 

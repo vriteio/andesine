@@ -9,6 +9,7 @@ const FRAGMENT_BLOCK_TYPES = [
   "taskList",
   "horizontalRule",
   "table",
+  "element",
   "image"
 ] as const;
 

@@ -1,3 +1,4 @@
+import { findDisallowedElementBlock } from "@andesine/editor/element";
 import { hashContentDocument, type ContentNode } from "#backend/lib/content";
 import {
   SCHEMA_BLOCK_TYPES,
@@ -94,10 +95,7 @@ const getFirstCompatibleFragment = (
   node: ContentNode
 ): SchemaFragment | undefined => {
   return fragments.find((fragment) => {
-    return (
-      node.type === "paragraph" ||
-      fragment.allowedBlocks.includes(node.type as SchemaFragment["allowedBlocks"][number])
-    );
+    return !findDisallowedElementBlock([node], fragment.allowedBlocks);
   });
 };
 const migrateContentToSchema = (
@@ -156,11 +154,7 @@ const migrateContentToSchema = (
 
     for (const block of blocks) {
       const targetFragment =
-        matchedFragment &&
-        (block.type === "paragraph" ||
-          matchedFragment.allowedBlocks.includes(
-            block.type as SchemaFragment["allowedBlocks"][number]
-          ))
+        matchedFragment && !findDisallowedElementBlock([block], matchedFragment.allowedBlocks)
           ? matchedFragment
           : getFirstCompatibleFragment(fragments, block);
 

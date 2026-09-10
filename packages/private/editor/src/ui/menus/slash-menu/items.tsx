@@ -28,6 +28,9 @@ const canInsertTable = (editor: Editor, pos: number): boolean => {
     );
   }
 
+  if (parent?.type.name === "element")
+    return parent.canReplaceWith(index, index + 1, editor.schema.nodes.table);
+
   if (parent !== doc) return false;
 
   doc.forEach((node) => {
@@ -146,6 +149,17 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
       }
     },
     {
+      label: "Element",
+      group: "Blocks",
+      icon: "i-lucide:code-xml",
+      schemaKind: "block",
+      schemaBlockType: "element",
+      ref: createRef<HTMLElement | null>(null),
+      command({ editor, range }) {
+        return editor.chain().focus().deleteRange(range).insertElement().run();
+      }
+    },
+    {
       label: "Image",
       group: "Blocks",
       icon: "i-lucide:image",
@@ -223,6 +237,7 @@ const getAvailableSlashMenuItems = (
 ): SlashMenuItem[] => {
   const { $from } = editor.state.selection;
   const availableItems = items.filter((item) => {
+    if (item.schemaBlockType === "element" && !editor.can().insertElement()) return false;
     if (item.schemaBlockType === "image") {
       const extension = editor.extensionManager.extensions.find(({ name }) => name === "images");
 
@@ -248,10 +263,6 @@ const getAvailableSlashMenuItems = (
     }
 
     return availableItems.filter((item) => item.schemaKind === "structure");
-  }
-
-  if (mode === "entry") {
-    return availableItems.filter((item) => item.schemaKind === "block");
   }
 
   const fragment = $from.node(fragmentDepth);

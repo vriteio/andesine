@@ -1,3 +1,4 @@
+import { canonicalElementValue } from "../../lib/element";
 import type { JSONContent } from "@tiptap/core";
 
 const CONTENT_IDENTITY_BLOCKS = new Set([
@@ -14,6 +15,11 @@ const CONTENT_IDENTITY_BLOCKS = new Set([
 const getUserFacingAttributes = (node: JSONContent) => {
   const { id: _, ...attributes } = node.attrs ?? {};
 
+  if (node.type === "element") {
+    const { source: _, ...data } = attributes;
+
+    return JSON.parse(canonicalElementValue(data));
+  }
   return attributes;
 };
 const getUserFacingAttributeIdentity = (node: JSONContent) => {

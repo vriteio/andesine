@@ -1,3 +1,4 @@
+import { getElementData, getElementSearchText } from "@andesine/editor/element";
 import { getContentBlocks, type ContentProperty } from "#backend/lib/content/blocks";
 import type { ContentNode } from "#backend/lib/content/document";
 import type {
@@ -55,6 +56,7 @@ const BLOCK_NODE_TYPES = new Set([
   "codeBlock",
   "doc",
   "fragment",
+  "element",
   "hardBreak",
   "heading",
   "horizontalRule",
@@ -79,7 +81,9 @@ const normalizeText = (value: string): string => {
 const getNodeText = (node: ContentNode): string => {
   if (node.type === "property" || node.type === "title") return "";
 
-  const content = `${node.text || ""}${(node.content || []).map(getNodeText).join("")}`;
+  const tag =
+    node.type === "element" ? `${getElementSearchText(getElementData(node.attrs || {}))}\n` : "";
+  const content = `${tag}${node.text || ""}${(node.content || []).map(getNodeText).join("")}`;
 
   return BLOCK_NODE_TYPES.has(node.type) ? `${content}\n` : content;
 };
@@ -97,6 +101,13 @@ const getSearchContentBlocks = (node: ContentNode): SearchContentBlock[] => {
     const text = normalizeText(getNodeText(node));
 
     return text ? [{ headingLevel: getHeadingLevel(node), text }] : [];
+  }
+
+  if (node.type === "element") {
+    return [
+      { text: getElementSearchText(getElementData(node.attrs || {})) },
+      ...(node.content || []).flatMap(getSearchContentBlocks)
+    ];
   }
 
   if (node.type === "fragment") {

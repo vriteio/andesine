@@ -1,3 +1,4 @@
+import { normalizeContentElements } from "#backend/lib/content/elements";
 import { syncEntryAssets } from "#backend/lib/assets/references";
 import { config } from "#backend/lib/config";
 import {
@@ -221,7 +222,9 @@ const collaborationDatabase = new Database({
       applyUpdate(persistedDocument, state);
 
       // The editor enforces schemas during editing. The backend normalizes it before saving, never rewriting the live document.
-      const submittedDocument = serializeContentDocument(persistedDocument);
+      const submittedDocument = normalizeContentElements(
+        serializeContentDocument(persistedDocument)
+      );
       const normalizedContent = activeRevision
         ? migrateContentToSchema({
             defaultMode: "none",

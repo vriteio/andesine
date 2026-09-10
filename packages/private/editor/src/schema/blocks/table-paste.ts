@@ -9,18 +9,20 @@ const normalizePastedCellContent = (slice: Slice, view: EditorView): Slice => {
   const content: ProseMirrorNode[] = [];
 
   let containsTable = false;
+  let containsElement = false;
   let hasTextblock = false;
 
   if (!isInTable(view.state) || !slice.size) return slice;
 
   slice.content.descendants((node) => {
     if (node.type.spec.tableRole) containsTable = true;
+    if (node.type.name === "element") containsElement = true;
 
     return !containsTable;
   });
 
   // Keep copied rows and cells intact for the table paste handler.
-  if (containsTable) return slice;
+  if (containsTable || containsElement) return slice;
 
   slice.content.descendants((node) => {
     if (node.isTextblock) {

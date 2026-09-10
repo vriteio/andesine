@@ -1,3 +1,4 @@
+import { findDisallowedElementBlock } from "../lib/element";
 import { Extension } from "@tiptap/core";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { Plugin } from "@tiptap/pm/state";
@@ -69,16 +70,7 @@ const hasValidFragmentBlocks = (document: ProseMirrorNode): boolean => {
       ? (node.attrs.allowedBlocks as FragmentBlockType[])
       : FRAGMENT_BLOCK_TYPES;
 
-    for (let childIndex = 0; childIndex < node.childCount; childIndex += 1) {
-      const child = node.child(childIndex);
-
-      if (
-        child.type.name !== "paragraph" &&
-        !allowedBlocks.includes(child.type.name as FragmentBlockType)
-      ) {
-        return false;
-      }
-    }
+    if (findDisallowedElementBlock(node.content.toJSON() || [], allowedBlocks)) return false;
   }
 
   return true;

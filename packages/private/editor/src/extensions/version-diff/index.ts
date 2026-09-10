@@ -9,6 +9,7 @@ interface VersionDiffOptions extends EditorDiff {
 }
 
 interface ChangeBadgeGroup {
+  alignToBlock: boolean;
   block: boolean;
   nestedBlock: boolean;
   side: number;
@@ -66,8 +67,21 @@ const createVersionDiffDecorations = (
       return Decoration.Node(change.from, change.to, {}, { tableDiff: change.type });
     }
 
+    if (!change.inline && document.nodeAt(change.from)?.type.name === "element") {
+      return Decoration.Node(
+        change.from,
+        change.to,
+        {
+          "data-element-diff": change.type,
+          ...(change.type !== "modified" ? { class: getChangeClass(change) } : {})
+        },
+        { elementDiff: change.type }
+      );
+    }
+
     const anchor = getChangeAnchor(document, change);
     const group = badgeGroups.get(anchor.position) ?? {
+      alignToBlock: !change.inline && document.nodeAt(change.from)?.type.name === "image",
       block: anchor.block,
       nestedBlock: anchor.nestedBlock,
       side: anchor.side,
@@ -93,7 +107,7 @@ const createVersionDiffDecorations = (
         key: `version-diff-badges:${position}:${types.join(",")}`,
         owner,
         pos: position,
-        props: { types },
+        props: { types, alignToBlock: group.alignToBlock },
         side: group.side
       })
     );

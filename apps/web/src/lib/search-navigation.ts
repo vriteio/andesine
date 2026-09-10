@@ -1,3 +1,4 @@
+import { getElementData, getElementSearchText } from "@andesine/editor/element";
 import type { EditorInstance } from "@andesine/editor";
 
 interface SearchNavigationTarget {
@@ -98,12 +99,21 @@ const scrollToSearchTarget = (editor: EditorInstance, target: SearchNavigationTa
 
   const query = normalizeSearchText(target.query);
   const phrases = [query, ...getSnippetPhrases(target.snippet)].filter(
-    (phrase) => phrase.length >= 2
+    (phrase) => phrase.length > 0
   );
   const heading = normalizeSearchText(target.headingPath.at(-1) || "");
   const textBlocks: SearchTextBlock[] = [];
 
   editor.state.doc.descendants((node, position) => {
+    if (node.type.name === "element") {
+      textBlocks.push({
+        heading: false,
+        position,
+        text: normalizeSearchText(getElementSearchText(getElementData(node.attrs)))
+      });
+
+      return;
+    }
     if (!node.isTextblock) return;
 
     textBlocks.push({
@@ -129,7 +139,14 @@ const scrollToSearchTarget = (editor: EditorInstance, target: SearchNavigationTa
 
   if (!(element instanceof HTMLElement)) return false;
 
-  element.scrollIntoView({ behavior: "smooth", block: "center" });
+  const openingTag = element.querySelector<HTMLElement>('[data-element-tag="opening"]');
+
+  if (openingTag) {
+    openingTag.dataset.elementSearchMatch = "";
+    setTimeout(() => openingTag.removeAttribute("data-element-search-match"), 2500);
+  }
+
+  (openingTag || element).scrollIntoView({ behavior: "smooth", block: "center" });
 
   return true;
 };

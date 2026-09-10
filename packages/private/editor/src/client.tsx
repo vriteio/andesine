@@ -1,3 +1,6 @@
+import { Element } from "./schema/blocks/element";
+import { Elements } from "./extensions/elements";
+import { createElementViewRenderer } from "./ui/views/element-view";
 import { Images } from "./extensions/images";
 import { createImageViewRenderer } from "./ui/views/image-view";
 import {
@@ -165,6 +168,18 @@ const ClientEditor: Component<EditorProps> = (props) => {
         }
       }),
       Images.configure({ images: () => props.images, notify: props.notify }),
+      Element.extend({
+        addNodeView() {
+          return createElementViewRenderer({
+            owner,
+            awareness: currentProvider?.awareness || null,
+            schema: editorMode === "schema",
+            user: collaborationUser,
+            editable: () => props.editable ?? true
+          });
+        }
+      }),
+      Elements.configure({ notify: props.notify }),
       // Simple blocks
       HorizontalRule,
       Heading,

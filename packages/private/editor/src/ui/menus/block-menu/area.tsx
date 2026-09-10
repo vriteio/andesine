@@ -95,6 +95,11 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
 
     const canHandleShortcut = (event: KeyboardEvent) => {
       const target = event.target;
+      if (
+        target instanceof Element &&
+        target.closest('[data-element-editing] [data-element-tag="opening"]')
+      )
+        return false;
       const insideMenu =
         menuOpened() &&
         target instanceof Element &&

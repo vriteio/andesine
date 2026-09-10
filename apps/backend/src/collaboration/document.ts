@@ -1,4 +1,8 @@
-import { hashContentDocument, serializeContentDocument } from "#backend/lib/content";
+import {
+  hashContentDocument,
+  serializeContentDocument,
+  normalizeContentElements
+} from "#backend/lib/content";
 import { MAX_CONTENT_NAME_LENGTH } from "#backend/lib/validation";
 import { type Doc, XmlElement, XmlText } from "yjs";
 import type { ContentSnapshot } from "./types";
@@ -23,7 +27,7 @@ const getDocumentTitle = (document: Doc): string | null => {
   return title || "Untitled";
 };
 const getContentSnapshot = (document: Doc): ContentSnapshot => {
-  const content = serializeContentDocument(document);
+  const content = normalizeContentElements(serializeContentDocument(document));
 
   return {
     document: content,

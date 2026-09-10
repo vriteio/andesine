@@ -10,6 +10,7 @@ const externals = new Set([
   ...builtinModules.map((moduleName) => `node:${moduleName}`)
 ]);
 const bundledModules = new Set([
+  "@andesine/editor/element",
   "@andesine/editor/normalize-resource-name",
   "@andesine/editor/normalize-source-name"
 ]);

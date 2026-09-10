@@ -131,13 +131,15 @@ const matchSchemaFields = (
 const cloneContentNodes = (nodes: ContentNode[]): ContentNode[] => {
   return nodes.map((node) => {
     const attrs = Object.fromEntries(
-      Object.entries(node.attrs || {}).filter(([name]) => name !== "id")
+      Object.entries(structuredClone(node.attrs || {})).filter(([name]) => name !== "id")
     );
     const content = node.content ? cloneContentNodes(node.content) : undefined;
 
     return {
       ...node,
-      ...(Object.keys(attrs).length > 0 ? { attrs } : { attrs: undefined }),
+      ...(node.type !== "text" && node.type !== "hardBreak"
+        ? { attrs: { ...attrs, id: crypto.randomUUID() } }
+        : { attrs: Object.keys(attrs).length ? attrs : undefined }),
       ...(content ? { content } : {})
     };
   });
@@ -162,6 +164,7 @@ const createEmptyContentNodes = (nodes: ContentNode[]): ContentNode[] => {
 };
 const hasMeaningfulContent = (nodes: ContentNode[]): boolean => {
   return nodes.some((node) => {
+    if (node.type === "element") return true;
     if (node.type === "text") return Boolean(node.text);
     if (node.type === "image") return Boolean(node.attrs?.assetID);
     if (node.type === "horizontalRule" || node.type === "hardBreak") return true;

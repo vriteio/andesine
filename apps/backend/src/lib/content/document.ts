@@ -1,3 +1,4 @@
+import { normalizeElementAttributes } from "@andesine/editor/element";
 import { createHash } from "node:crypto";
 import { type Doc, XmlElement, XmlText } from "yjs";
 
@@ -61,7 +62,9 @@ const serializeNode = (item: unknown): ContentNode[] => {
   const content = item.toArray().flatMap(serializeNode);
   const node: ContentNode = { type: item.nodeName };
 
-  if (Object.keys(attrs).length > 0) node.attrs = attrs;
+  if (Object.keys(attrs).length > 0) {
+    node.attrs = item.nodeName === "element" ? normalizeElementAttributes(attrs) : attrs;
+  }
 
   if (content.length > 0) node.content = content;
 

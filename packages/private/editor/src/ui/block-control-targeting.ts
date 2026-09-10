@@ -16,6 +16,7 @@ import {
   type BlockControlTarget
 } from "./block-control-sizing";
 import { BLOCK_CONTROL_PROXIMITY_RATIO, LIST_ITEM_TYPES } from "./constants";
+import { createElementChildTargetResolver } from "./element-child-target";
 
 interface BlockControlRange {
   from: number;
@@ -43,6 +44,10 @@ interface BlockSelectionTargetCache {
 }
 
 const blockSelectionTargetCaches = new WeakMap<Editor, BlockSelectionTargetCache>();
+const elementChildTargetResolvers = new WeakMap<
+  Editor,
+  Map<boolean, ReturnType<typeof createElementChildTargetResolver>>
+>();
 
 const getBlockControlTargetAtPos = (editor: Editor, pos: number): BlockControlTarget | null => {
   if (pos < 0) return null;
@@ -58,7 +63,7 @@ const getBlockControlTargetAtPos = (editor: Editor, pos: number): BlockControlTa
 const getNodeViewTarget = (
   editor: Editor,
   dom: HTMLElement,
-  type: "fragment" | "property" | "image"
+  type: "fragment" | "property" | "image" | "element"
 ): BlockControlTarget | null => {
   const { state, view } = editor;
 
@@ -66,13 +71,15 @@ const getNodeViewTarget = (
     const domPos = view.posAtDOM(dom, 0);
     const directTarget = getBlockControlTargetAtPos(editor, domPos);
 
-    if (directTarget?.node.type.name === type) return directTarget;
+    if (directTarget?.node.type.name === type && directTarget.dom === dom) return directTarget;
 
     const $pos = state.doc.resolve(domPos);
 
     for (let depth = $pos.depth; depth > 0; depth -= 1) {
       if ($pos.node(depth).type.name === type) {
-        return getBlockControlTargetAtPos(editor, $pos.before(depth));
+        const target = getBlockControlTargetAtPos(editor, $pos.before(depth));
+
+        if (target?.dom === dom) return target;
       }
     }
   } catch {
@@ -87,6 +94,7 @@ const getStructureHitAtPoint = (editor: Editor, x: number, y: number): BlockCont
   let fragmentDOM: HTMLElement | null = null;
   let insideFragment = false;
   let propertyDOM: HTMLElement | null = null;
+  let elementDOM: HTMLElement | null = null;
   let imageDOM: HTMLElement | null = null;
 
   elements.forEach((element) => {
@@ -100,6 +108,8 @@ const getStructureHitAtPoint = (editor: Editor, x: number, y: number): BlockCont
 
     propertyDOM ||= element.closest<HTMLElement>("[data-property-node-view]");
     imageDOM ||= element.closest<HTMLElement>("[data-image-node-view]");
+    if (!elementDOM && element.closest("[data-element-tag]"))
+      elementDOM = element.closest<HTMLElement>("[data-element-node-view]");
   });
 
   if (fragmentDOM) {
@@ -108,6 +118,9 @@ const getStructureHitAtPoint = (editor: Editor, x: number, y: number): BlockCont
       target: getNodeViewTarget(editor, fragmentDOM, "fragment")
     };
   }
+
+  if (elementDOM)
+    return { insideFragment, target: getNodeViewTarget(editor, elementDOM, "element") };
 
   if (imageDOM) {
     return { insideFragment, target: getNodeViewTarget(editor, imageDOM, "image") };
@@ -194,6 +207,9 @@ const isTargetInBlockSelection = (editor: Editor, target: BlockControlTarget): b
   const { selection } = editor.state;
 
   if (!isBlockSelection(selection)) return false;
+  if (target.node.type.name === "element")
+    return selection.from <= target.pos && selection.to >= target.pos + target.node.nodeSize;
+
   if (target.node.type.name === "fragment") {
     if (isFragmentChildBlockSelection(selection)) return false;
 
@@ -272,6 +288,10 @@ const getBlockControlHitAtY = (
   const $pos = state.doc.resolve(position.pos);
 
   if (!listItemSpecific) {
+    for (let depth = $pos.depth; depth > 1; depth -= 1) {
+      if ($pos.node(depth - 1).type.name === "element")
+        return { ...structureHit, target: getBlockControlTargetAtPos(editor, $pos.before(depth)) };
+    }
     const pos = $pos.depth ? $pos.before(1) : position.inside >= 0 ? position.inside : $pos.pos;
 
     return { ...structureHit, target: getBlockControlTargetAtPos(editor, pos) };
@@ -289,7 +309,7 @@ const getBlockControlHitAtY = (
   // A fragment header controls the complete fragment. Its content keeps
   // individual block controls for direct children.
   for (let depth = $pos.depth; depth > 1; depth -= 1) {
-    if ($pos.node(depth - 1).type.name === "fragment") {
+    if (["fragment", "element"].includes($pos.node(depth - 1).type.name)) {
       return {
         ...structureHit,
         target: getBlockControlTargetAtPos(editor, $pos.before(depth))
@@ -314,7 +334,15 @@ const getBlockControlTargetAtY = (
   y: number,
   options?: { listItemSpecific?: boolean }
 ): BlockControlTarget | null => {
-  return getBlockControlHitAtY(editor, y, options).target;
+  const listItemSpecific = options?.listItemSpecific ?? true;
+  const resolvers =
+    elementChildTargetResolvers.get(editor) ||
+    new Map<boolean, ReturnType<typeof createElementChildTargetResolver>>();
+  const resolve = resolvers.get(listItemSpecific) || createElementChildTargetResolver(editor);
+
+  resolvers.set(listItemSpecific, resolve);
+  elementChildTargetResolvers.set(editor, resolvers);
+  return resolve(getBlockControlHitAtY(editor, y, options).target, y);
 };
 
 export {

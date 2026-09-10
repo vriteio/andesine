@@ -19,7 +19,7 @@ const getSelectedTable = (editor: Editor) => {
     selection.ranges.length !== 1 ||
     node?.type.name !== "table" ||
     selection.to !== selection.from + node.nodeSize ||
-    (parent !== doc && parent.type.name !== "fragment") ||
+    (parent !== doc && !["fragment", "element"].includes(parent.type.name)) ||
     isPositionInInheritedField(doc, selection.from)
   ) {
     return null;

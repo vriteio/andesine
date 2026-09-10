@@ -257,7 +257,7 @@ header[data-type="title"] {
 }
 
 .version-diff-badge {
-  @apply pointer-events-auto relative flex h-6 w-6 shrink-0 items-center justify-center rounded-lg;
+  @apply pointer-events-auto relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md;
 }
 
 .version-diff-badge-icon {
@@ -633,4 +633,73 @@ header:only-of-type.is-empty:first-child::before,
   [data-block-menu-trigger] {
     display: none !important;
   }
+}
+
+/* Element tags */
+.prose-editor .element-node {
+  @apply relative my-2;
+}
+.prose-editor .element-node:has(+ .element-node) {
+  @apply mb-0;
+}
+.prose-editor .element-node + .element-node {
+  @apply mt-0;
+}
+.prose-editor .element-content > .element-node {
+  @apply my-0;
+}
+.prose-editor .element-tag {
+  @apply font-mono text-sm text-gray-400 my-0.5;
+  white-space: break-spaces;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.25rem;
+  min-height: 1.25rem;
+}
+.prose-editor .element-tag-line {
+  @apply whitespace-pre-wrap;
+  min-height: 1.25rem;
+}
+.prose-editor .element-content {
+  @apply pl-4;
+  min-height: 1.5rem;
+}
+.prose-editor .element-content[hidden],
+.prose-editor .element-tag[hidden] {
+  display: none;
+}
+.prose-editor [data-element-editing] > [data-element-tag] {
+  @apply bg-gray-100;
+}
+.prose-editor [data-element-locked] > [data-element-tag] {
+  background: color-mix(in srgb, var(--element-editor-color) 12%, transparent);
+}
+.prose-editor .element-token-name {
+  @apply text-teal-700 dark:text-teal-300;
+}
+.prose-editor .element-token-property {
+  @apply text-blue-700 dark:text-blue-300;
+}
+.prose-editor .element-token-string {
+  @apply text-amber-700 dark:text-amber-300;
+}
+.prose-editor .element-token-number {
+  @apply text-purple-700 dark:text-purple-300;
+}
+.prose-editor .element-token-literal {
+  @apply text-purple-700 dark:text-purple-300;
+}
+.prose-editor .element-token-punctuation {
+  @apply text-gray-600 dark:text-gray-300;
+}
+.prose-editor [data-element-search-match] {
+  @apply bg-amber-100 dark:bg-amber-950;
+}
+
+/* Element selection */
+.prose-editor .element-node:not([data-element-editing]) > [data-element-tag] {
+  @apply select-none;
+}
+.prose-editor .element-node.ProseMirror-selectednode {
+  @apply outline-none;
 }

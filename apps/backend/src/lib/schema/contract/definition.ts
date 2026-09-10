@@ -1,3 +1,4 @@
+import { findDisallowedElementBlock } from "@andesine/editor/element";
 import { contentNodeType, type ContentNode, type PropertyType } from "#backend/lib/content";
 import * as z from "zod";
 
@@ -35,6 +36,7 @@ const SCHEMA_BLOCK_TYPES = [
   "taskList",
   "horizontalRule",
   "table",
+  "element",
   "image"
 ] as const;
 const schemaBlockType = z.enum(SCHEMA_BLOCK_TYPES);
@@ -124,7 +126,7 @@ const schemaFragmentType: z.ZodType<SchemaFragment> = z
     }
 
     fragment.defaultContent.forEach((node, index) => {
-      if (node.type !== "paragraph" && !allowedBlocks.has(node.type as SchemaBlockType)) {
+      if (findDisallowedElementBlock([node], [...allowedBlocks])) {
         context.addIssue({
           code: "custom",
           message: `Default content uses unsupported block type "${node.type}"`,

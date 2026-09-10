@@ -31,7 +31,7 @@ interface RectBounds {
   top: number;
 }
 interface MarqueeNode {
-  fragmentChildCount?: number;
+  closingRect?: RectBounds;
   fragmentPos?: number;
   fragmentRoot?: boolean;
   pos: number;
@@ -94,43 +94,45 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
         rect.bottom > selectionTop
       );
     };
+    const intersectsNode = (node: MarqueeNode) =>
+      intersects(node.rect) || Boolean(node.closingRect && intersects(node.closingRect));
     const fullySelectedFragments = new Set<number>();
-    const intersectedNodes = marqueeNodes.filter((node) => {
-      return !node.fragmentRoot && intersects(node.rect);
-    });
-    const selectionContexts = new Set(intersectedNodes.map((node) => node.fragmentPos ?? "root"));
-    const selectedFragmentChildren = new Map<number, number>();
+    const intersectedNodes = marqueeNodes.filter(intersectsNode);
+    const directSelection = new Set(intersectedNodes.map((node) => node.pos));
+    const firstHit = intersectedNodes[0]?.pos ?? Infinity;
+    const lastHit = intersectedNodes.at(-1)?.pos ?? -Infinity;
+    const childrenByPosition = new Map<number, MarqueeNode[]>();
+    const nodesByPosition = new Map(marqueeNodes.map((node) => [node.pos, node]));
 
-    if (marqueeNodes.some((node) => node.fragmentRoot && intersects(node.rect))) {
-      selectionContexts.add("root");
+    for (const node of marqueeNodes) {
+      if (node.fragmentPos === undefined) continue;
+      const children = childrenByPosition.get(node.fragmentPos) || [];
+      children.push(node);
+      childrenByPosition.set(node.fragmentPos, children);
     }
-    intersectedNodes.forEach((node) => {
-      if (node.fragmentPos === undefined) return;
 
-      selectedFragmentChildren.set(
-        node.fragmentPos,
-        (selectedFragmentChildren.get(node.fragmentPos) || 0) + 1
-      );
-    });
-    marqueeNodes.forEach((node) => {
-      if (!node.fragmentRoot) return;
-
-      const selectedChildren = selectedFragmentChildren.get(node.pos) || 0;
-      const allChildrenSelected =
-        Boolean(node.fragmentChildCount) && selectedChildren === node.fragmentChildCount;
-      const crossesSelectionContext = selectedChildren > 0 && selectionContexts.size > 1;
-
-      if (intersects(node.rect) || allChildrenSelected || crossesSelectionContext) {
+    // Resolve nested containers from their children toward the document root.
+    for (const node of [...marqueeNodes].reverse()) {
+      if (!node.fragmentRoot) continue;
+      const children = childrenByPosition.get(node.pos) || [];
+      const selectedChildren = children.filter(
+        (child) => directSelection.has(child.pos) || fullySelectedFragments.has(child.pos)
+      ).length;
+      const allChildrenSelected = children.length > 0 && selectedChildren === children.length;
+      const crossesSelectionContext =
+        selectedChildren > 0 && (firstHit < node.pos || lastHit >= node.pos + node.size);
+      if (directSelection.has(node.pos) || allChildrenSelected || crossesSelectionContext)
         fullySelectedFragments.add(node.pos);
-      }
-    });
+    }
     const selectedNodes = marqueeNodes.filter((node) => {
-      if (node.fragmentRoot) return fullySelectedFragments.has(node.pos);
-      if (node.fragmentPos !== undefined && fullySelectedFragments.has(node.fragmentPos)) {
-        return false;
+      let parentPosition = node.fragmentPos;
+      while (parentPosition !== undefined) {
+        if (fullySelectedFragments.has(parentPosition)) return false;
+        parentPosition = nodesByPosition.get(parentPosition)?.fragmentPos;
       }
-
-      return intersects(node.rect);
+      return node.fragmentRoot
+        ? fullySelectedFragments.has(node.pos)
+        : directSelection.has(node.pos);
     });
     if (selectedNodes.length) {
       const firstNode = selectedNodes[0];
@@ -141,7 +143,11 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
         selectedNodes.every((node) => node.fragmentPos === fragmentPos);
       const from = firstNode.pos;
       const to = lastNode.pos + lastNode.size;
-      const position = { from, to, depth: selectsFragmentChildren ? 1 : undefined };
+      const position = {
+        from,
+        to,
+        depth: selectsFragmentChildren ? editor.state.doc.resolve(from).depth : undefined
+      };
       const selection = createBlockRangeSelection(editor.state.doc, position);
       const currentSelection = editor.state.selection;
 
@@ -236,15 +242,35 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
       const dom = editor.view.nodeDOM(pos);
 
       if (dom instanceof HTMLElement) {
+        const container =
+          node.type.name === "fragment" ||
+          (node.type.name === "element" && !node.attrs.selfClosing);
+        const header = container
+          ? dom.querySelector<HTMLElement>(
+              node.type.name === "fragment"
+                ? "[data-fragment-header]"
+                : ':scope > [data-element-tag="opening"]'
+            )
+          : null;
+        const closing =
+          container && node.type.name === "element"
+            ? dom.querySelector<HTMLElement>(':scope > [data-element-tag="closing"]')
+            : null;
         const marqueeNode: MarqueeNode = {
           ...options,
+          fragmentRoot: container,
           size: node.nodeSize,
-          rect: toLocalRect(dom.getBoundingClientRect()),
+          rect: toLocalRect((header || dom).getBoundingClientRect()),
+          closingRect: closing ? toLocalRect(closing.getBoundingClientRect()) : undefined,
           pos
         };
 
         boundingBoxes.push(marqueeNode);
-
+        if (container) {
+          node.forEach((child, offset) => {
+            if (isEditorBlock(child)) addNode(child, pos + 1 + offset, { fragmentPos: pos });
+          });
+        }
         return marqueeNode;
       }
 
@@ -255,38 +281,7 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
       if (node.attrs.inherited) return;
       if (node.type.name !== "title" && !isEditorBlock(node)) return;
 
-      if (node.type.name === "fragment") {
-        const dom = editor.view.nodeDOM(pos);
-        const fragmentHeader =
-          dom instanceof HTMLElement
-            ? dom.querySelector<HTMLElement>("[data-fragment-header]")
-            : null;
-        const fragmentHeaderRect = fragmentHeader?.getBoundingClientRect();
-        const localFragmentHeaderRect = fragmentHeaderRect ? toLocalRect(fragmentHeaderRect) : null;
-        const fragmentNode: MarqueeNode | null = localFragmentHeaderRect
-          ? {
-              fragmentChildCount: 0,
-              fragmentRoot: true,
-              pos,
-              rect: localFragmentHeaderRect,
-              size: node.nodeSize
-            }
-          : null;
-
-        if (fragmentNode) boundingBoxes.push(fragmentNode);
-
-        node.forEach((child, offset) => {
-          if (isEditorBlock(child)) {
-            const childNode = addNode(child, pos + 1 + offset, { fragmentPos: pos });
-
-            if (fragmentNode && childNode) {
-              fragmentNode.fragmentChildCount = (fragmentNode.fragmentChildCount || 0) + 1;
-            }
-          }
-        });
-      } else {
-        addNode(node, pos);
-      }
+      addNode(node, pos);
     });
     setNodes(boundingBoxes);
     editor.chain().setTextSelection(0).run();

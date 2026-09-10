@@ -1,3 +1,5 @@
+import { normalizeContentElements } from "#backend/lib/content/elements";
+import { findDisallowedElementBlock } from "@andesine/editor/element";
 import type { ContentNode } from "#backend/lib/content";
 import {
   SCHEMA_BLOCK_TYPES,
@@ -60,7 +62,7 @@ const createFragmentDefinition = (node: ContentNode): SchemaFragment => {
     ? configuredBlocks
     : [...SCHEMA_BLOCK_TYPES];
   const defaultContent = (node.content || []).filter((block) => {
-    return block.type === "paragraph" || allowedBlocks.includes(block.type as SchemaBlockType);
+    return !findDisallowedElementBlock([block], allowedBlocks);
   });
 
   return {
@@ -68,7 +70,10 @@ const createFragmentDefinition = (node: ContentNode): SchemaFragment => {
     kind: "fragment",
     label: typeof node.attrs?.name === "string" ? node.attrs.name : "",
     allowedBlocks,
-    defaultContent: defaultContent.length > 0 ? defaultContent : [{ type: "paragraph" }]
+    defaultContent:
+      defaultContent.length > 0
+        ? defaultContent.map(normalizeContentElements)
+        : [{ type: "paragraph" }]
   };
 };
 

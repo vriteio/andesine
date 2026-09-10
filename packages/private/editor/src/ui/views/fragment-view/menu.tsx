@@ -10,6 +10,7 @@ import type { Editor } from "@tiptap/core";
 import clsx from "clsx";
 import { createEffect, createSignal, onCleanup, onMount, Show, type JSX } from "solid-js";
 import { getResourceNameDetails } from "#editor/extensions/resource-name-tracker";
+import { findDisallowedElementBlock } from "#editor/lib/element";
 import { MAX_FRAGMENT_NAME_LENGTH } from "#editor/schema";
 import { FRAGMENT_BLOCK_TYPES, type FragmentBlockType } from "#editor/schema/fragment";
 
@@ -32,6 +33,7 @@ interface FragmentMenuProps {
 }
 
 const blockTypeDetails: Record<FragmentBlockType, { icon: string; label: string }> = {
+  element: { icon: "i-lucide:code-xml", label: "Element" },
   heading: { icon: "i-lucide:heading", label: "Heading" },
   blockquote: { icon: "i-lucide:text-quote", label: "Blockquote" },
   bulletList: { icon: "i-lucide:list", label: "Bullet list" },
@@ -66,14 +68,11 @@ const FragmentMenu = (props: FragmentMenuProps): JSX.Element => {
   };
   const commitName = () => props.updateAttributes({ name: name() });
   const allowedBlocks = () => props.attrs.allowedBlocks || [...FRAGMENT_BLOCK_TYPES];
-  const usedBlockTypes = () => {
+  const hasDisallowedBlocks = (allowed: readonly string[]) => {
     const position = props.getPos();
     const fragment = typeof position === "number" ? props.editor.state.doc.nodeAt(position) : null;
-    const blockTypes = new Set<string>();
 
-    fragment?.forEach((node) => blockTypes.add(node.type.name));
-
-    return blockTypes;
+    return Boolean(findDisallowedElementBlock(fragment?.content.toJSON() || [], allowed));
   };
   const availableBlockOptions = () => {
     return FRAGMENT_BLOCK_TYPES.filter((blockType) => !allowedBlocks().includes(blockType)).map(
@@ -94,11 +93,8 @@ const FragmentMenu = (props: FragmentMenuProps): JSX.Element => {
   };
   const setAllowedBlocks = (values: string[]) => {
     const blockTypes = values.filter(isFragmentBlockType);
-    const usedBlocksRemoved = FRAGMENT_BLOCK_TYPES.some((blockType) => {
-      return usedBlockTypes().has(blockType) && !blockTypes.includes(blockType);
-    });
 
-    if (usedBlocksRemoved) return;
+    if (hasDisallowedBlocks(blockTypes)) return;
 
     props.updateAttributes({
       allowedBlocks: FRAGMENT_BLOCK_TYPES.filter((blockType) => blockTypes.includes(blockType))
@@ -174,7 +170,11 @@ const FragmentMenu = (props: FragmentMenuProps): JSX.Element => {
                 getLabel={(value) => {
                   return isFragmentBlockType(value) ? blockTypeDetails[value].label : value;
                 }}
-                isValueDisabled={(value) => usedBlockTypes().has(value)}
+                isValueDisabled={(value) => {
+                  return hasDisallowedBlocks(
+                    FRAGMENT_BLOCK_TYPES.filter((blockType) => blockType !== value)
+                  );
+                }}
                 setValues={setAllowedBlocks}
               />
             </Show>
