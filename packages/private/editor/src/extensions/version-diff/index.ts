@@ -28,6 +28,16 @@ const getChangeAnchor = (document: ProseMirrorNode, change: EditorDiffChange) =>
   if (!change.inline) {
     const node = document.nodeAt(change.from);
 
+    if (node?.type.name === "codeBlock") {
+      return {
+        block: true,
+        nestedBlock: false,
+        position: change.from,
+        side: -1,
+        alignToBlock: true
+      };
+    }
+
     return {
       block: true,
       nestedBlock: Boolean(node && !node.isLeaf),
@@ -39,6 +49,15 @@ const getChangeAnchor = (document: ProseMirrorNode, change: EditorDiffChange) =>
   const position = document.resolve(change.from);
 
   for (let depth = position.depth; depth > 0; depth -= 1) {
+    if (position.node(depth).type.name === "codeBlock") {
+      return {
+        block: true,
+        nestedBlock: false,
+        position: position.before(depth),
+        side: -1,
+        alignToBlock: true
+      };
+    }
     if (position.node(depth).isBlock) {
       return { block: true, nestedBlock: true, position: position.start(depth), side: -1 };
     }
@@ -81,7 +100,9 @@ const createVersionDiffDecorations = (
 
     const anchor = getChangeAnchor(document, change);
     const group = badgeGroups.get(anchor.position) ?? {
-      alignToBlock: !change.inline && document.nodeAt(change.from)?.type.name === "image",
+      alignToBlock:
+        anchor.alignToBlock ||
+        (!change.inline && document.nodeAt(change.from)?.type.name === "image"),
       block: anchor.block,
       nestedBlock: anchor.nestedBlock,
       side: anchor.side,

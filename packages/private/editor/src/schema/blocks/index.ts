@@ -6,3 +6,4 @@ export { Blockquote } from "@tiptap/extension-blockquote";
 export { Paragraph } from "@tiptap/extension-paragraph";
 export { Image } from "./image";
 export { Element } from "./element";
+export { CodeBlock } from "./code-block";

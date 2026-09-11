@@ -90,20 +90,28 @@ body {
     @apply mx-2 my-2;
   }
 }
-.scrollbar-contrast {
-  &::-webkit-scrollbar {
-    @apply bg-gray-100;
-  }
-  &::-webkit-scrollbar-thumb {
-    @apply bg-gray-200 shadow-inner border-2 border-solid border-gray-100 rounded-lg;
-  }
-}
 .scrollbar-white {
   &::-webkit-scrollbar {
     @apply bg-white;
   }
   &::-webkit-scrollbar-thumb {
     @apply bg-gray-100 shadow-inner border-2 border-solid border-white rounded-lg;
+  }
+}
+.scrollbar-base {
+  &::-webkit-scrollbar {
+    @apply bg-gray-50;
+  }
+  &::-webkit-scrollbar-thumb {
+    @apply bg-gray-100 shadow-inner border-2 border-solid border-gray-50 rounded-lg;
+  }
+}
+.scrollbar-contrast {
+  &::-webkit-scrollbar {
+    @apply bg-gray-100;
+  }
+  &::-webkit-scrollbar-thumb {
+    @apply bg-gray-200 shadow-inner border-2 border-solid border-gray-100 rounded-lg;
   }
 }
 ::-webkit-scrollbar-thumb:horizontal {

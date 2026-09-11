@@ -7,7 +7,7 @@ import {
 } from "#editor/lib";
 import { PropertyMenu, propertyTypeDetails, type PropertyAttrs } from "./menu";
 import { PropertyValue } from "./value";
-import { InheritedSchemaFieldBadge } from "../inherited-schema-field-badge";
+import { InheritedSchemaFieldBadge } from "#editor/ui/inherited-schema-field-badge";
 import clsx from "clsx";
 
 interface PropertyViewProps extends NodeViewComponentProps<PropertyAttrs> {

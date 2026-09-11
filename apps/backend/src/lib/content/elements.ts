@@ -10,6 +10,24 @@ const normalizeContentElements = (node: ContentNode): ContentNode => {
   const content = node.content?.map(normalizeContentElements);
   const attrs = node.type === "element" ? normalizeElementAttributes(node.attrs || {}) : node.attrs;
 
+  if (node.type === "codeBlock") {
+    if (
+      content?.some(
+        (child) =>
+          child.type !== "text" ||
+          typeof child.text !== "string" ||
+          !child.text ||
+          child.marks?.length ||
+          child.content?.length
+      )
+    ) {
+      throw new Error("Code blocks can only contain plain text");
+    }
+    if (attrs?.language != null && typeof attrs.language !== "string") {
+      throw new Error("Code block language must be a string");
+    }
+  }
+
   if (node.type === "element") {
     const data = getElementData(attrs!);
     const invalid = findDisallowedElementBlock(content || [], ELEMENT_BLOCKS);

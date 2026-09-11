@@ -77,7 +77,11 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
         shouldShow: ({ editor }) => {
           const { selection } = editor.state;
           const isTitleSelection = selection.$from.parent.type.name === "title";
+          const isCodeSelection =
+            selection.$from.parent.type.name === "codeBlock" &&
+            selection.$from.sameParent(selection.$to);
           const shouldShow =
+            !isCodeSelection &&
             !isTitleSelection &&
             !rangeContainsInheritedField(editor.state.doc, selection.from, selection.to) &&
             !isBlockSelection(selection) &&

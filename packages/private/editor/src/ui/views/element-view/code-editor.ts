@@ -18,14 +18,20 @@ import {
   insertNewlineKeepIndent,
   isolateHistory
 } from "@codemirror/commands";
-import { formatElement, getElementTagName, parseElement, tokenizeElement } from "../../lib/element";
+import {
+  formatElement,
+  getElementTagName,
+  parseElement,
+  tokenizeElement
+} from "../../../lib/element";
+import type { ElementTagSelection } from "../../../lib/element-awareness";
 
 interface ElementCodeEditorOptions {
   parent: HTMLElement;
   source: string;
   selectName: boolean;
   edge?: "start" | "end";
-  onChange(source: string): void;
+  onChange(source: string, selection: ElementTagSelection): void;
   finish(action: "enter" | "down" | "up" | "cancel" | "blur"): void;
 }
 
@@ -142,8 +148,8 @@ const createElementCodeEditor = (options: ElementCodeEditorOptions): EditorView 
         EditorView.lineWrapping,
         tokens,
         EditorView.updateListener.of((update) => {
-          if (update.docChanged) {
-            options.onChange(update.state.doc.toString());
+          if (update.docChanged || update.selectionSet) {
+            options.onChange(update.state.doc.toString(), update.state.selection.main);
           }
         }),
         Prec.highest(
@@ -181,6 +187,7 @@ const createElementCodeEditor = (options: ElementCodeEditorOptions): EditorView 
     })
   });
 
+  options.onChange(view.state.doc.toString(), view.state.selection.main);
   view.focus();
   if (options.edge) {
     view.dispatch({

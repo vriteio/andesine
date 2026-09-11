@@ -8,6 +8,7 @@ const FRAGMENT_BLOCK_TYPES = [
   "orderedList",
   "taskList",
   "horizontalRule",
+  "codeBlock",
   "table",
   "element",
   "image"

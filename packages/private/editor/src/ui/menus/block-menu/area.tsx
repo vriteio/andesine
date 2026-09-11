@@ -147,11 +147,20 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
           if (!props.editor) return;
 
           const editor = props.editor;
-          const image =
-            event.target instanceof Element ? event.target.closest("[data-image-node-view]") : null;
-          if (image) {
+          const block =
+            event.target instanceof Element
+              ? event.target.closest("[data-image-node-view], [data-code-block]")
+              : null;
+
+          if (block) {
             editor.state.doc.descendants((node, pos) => {
-              if (node.type.name !== "image" || editor.view.nodeDOM(pos) !== image) return;
+              if (
+                !["image", "codeBlock"].includes(node.type.name) ||
+                editor.view.nodeDOM(pos) !== block
+              ) {
+                return;
+              }
+
               editor.commands.setBlockSelection({
                 from: pos,
                 to: pos + node.nodeSize,
@@ -174,10 +183,12 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
           const { view, state } = props.editor;
           const { selection } = state;
 
-          const overImage =
-            event.target instanceof Element && event.target.closest("[data-image-node-view]");
+          const overBlock =
+            event.target instanceof Element &&
+            event.target.closest("[data-image-node-view], [data-code-block]");
+
           if (
-            !overImage &&
+            !overBlock &&
             !isBlockSelection(selection) &&
             isTextSelection(selection) &&
             !selection.empty
@@ -194,6 +205,7 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
             <Portal mount={menuContainer}>
               <BlockMenu
                 menuID={menuID}
+                notify={props.notify}
                 anchorPoint={menuAnchorPoint()}
                 editor={props.editor}
                 menuOpened={menuOpened()}

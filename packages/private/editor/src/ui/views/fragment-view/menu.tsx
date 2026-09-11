@@ -33,6 +33,7 @@ interface FragmentMenuProps {
 }
 
 const blockTypeDetails: Record<FragmentBlockType, { icon: string; label: string }> = {
+  codeBlock: { label: "Code block", icon: "i-lucide:square-code" },
   element: { icon: "i-lucide:code-xml", label: "Element" },
   heading: { icon: "i-lucide:heading", label: "Heading" },
   blockquote: { icon: "i-lucide:text-quote", label: "Blockquote" },
@@ -159,6 +160,7 @@ const FragmentMenu = (props: FragmentMenuProps): JSX.Element => {
               options={availableBlockOptions()}
               placeholder="Add block type"
               surfaceClass="!bg-gray-50"
+              scrollableContainerClass="scrollbar-base"
               setValue={addAllowedBlock}
             />
             <Show when={allowedBlocks().length > 0}>

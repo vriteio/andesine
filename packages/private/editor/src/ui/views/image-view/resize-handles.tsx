@@ -1,6 +1,6 @@
 import { For } from "solid-js";
 import clsx from "clsx";
-import type { createImageResize } from "./image-resize";
+import type { createImageResize } from "./resize";
 
 interface ImageResizeHandlesProps {
   resize: ReturnType<typeof createImageResize>;

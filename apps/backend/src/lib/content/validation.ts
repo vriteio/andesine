@@ -16,7 +16,7 @@ const contentNodeType: z.ZodType<ContentNode> = z.lazy(() => {
       text: z.string().optional()
     })
     .superRefine((node, context) => {
-      if (node.type !== "element" && node.type !== "fragment") return;
+      if (node.type !== "element" && node.type !== "fragment" && node.type !== "codeBlock") return;
       try {
         normalizeContentElements(node);
       } catch (error) {

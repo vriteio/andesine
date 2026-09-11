@@ -1,3 +1,4 @@
+import { createCodeBlockMenuItems } from "./code-block";
 import { createElementMenuItems } from "./element";
 import { createImageMenuItems } from "./image";
 import { isBlockSelection } from "#editor/extensions/block-selection";
@@ -36,6 +37,7 @@ import { doesTableExtendPastContent } from "#editor/ui/views/table-view/scroll";
 
 interface BlockMenuProps {
   menuID: string;
+  notify(type: "success" | "error", text: string): void;
   editor: Editor | null;
   textMenuSelectionRange: BlockControlRange | null;
   anchorPoint: { x: number; y: number } | null;
@@ -61,6 +63,7 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
   const [triggerAvailable, setTriggerAvailable] = createSignal(false);
   const [contextMenuMode, setContextMenuMode] = createSignal(false);
   const [imageItems, setImageItems] = createSignal<BlockMenuItems>([]);
+  const [codeItems, setCodeItems] = createSignal<BlockMenuItems>([]);
   const [elementItems, setElementItems] = createSignal<BlockMenuItems>([]);
   const [tableItems, setTableItems] = createSignal<BlockMenuItems>([]);
   const [turnIntoItems, setTurnIntoItems] = createSignal<BlockMenuItems>([]);
@@ -90,7 +93,12 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
     if (imageItems().length)
       return [...getMenuGroups(imageItems()), ...getMenuGroups(elementItems()), items];
 
-    return [...getMenuGroups(turnIntoItems()), ...getMenuGroups(elementItems()), items];
+    return [
+      ...getMenuGroups(codeItems()),
+      ...getMenuGroups(turnIntoItems()),
+      ...getMenuGroups(elementItems()),
+      items
+    ];
   };
   const handleOpenedChange = (opened: boolean) => {
     props.setMenuOpened(opened);
@@ -136,9 +144,27 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
 
   createEffect(() => {
     const editor = props.editor;
+    let codeMenuKey: string | undefined;
+
     const updateMenuItems = (event?: EditorEvents["transaction"]) => {
       if (event && !event.transaction.docChanged && !event.transaction.selectionSet) return;
 
+      const selection = editor?.state.selection;
+      const codeNode =
+        selection?.$from.parent.type.name === "codeBlock"
+          ? selection.$from.parent
+          : selection && editor?.state.doc.nodeAt(selection.from);
+      const nextCodeMenuKey =
+        codeNode?.type.name === "codeBlock"
+          ? `${codeNode.attrs.id}:${codeNode.attrs.language || ""}`
+          : undefined;
+
+      if (!untrack(() => props.menuOpened) || nextCodeMenuKey !== codeMenuKey) {
+        setCodeItems(
+          editor && !editor.isDestroyed ? createCodeBlockMenuItems(editor, props.notify) : []
+        );
+        codeMenuKey = nextCodeMenuKey;
+      }
       setElementItems(editor && !editor.isDestroyed ? createElementMenuItems(editor) : []);
       setTableItems(editor && !editor.isDestroyed ? createTableMenuItems(editor) : []);
       setTurnIntoItems(editor && !editor.isDestroyed ? createTurnIntoMenuItem(editor) : []);
@@ -231,6 +257,13 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
         }
 
         const scrollContainerRect = getCachedElementRect(editor, scrollContainer);
+        const menuLeft =
+          target.node.type.name === "codeBlock"
+            ? Math.min(
+                referenceRect.right + 8,
+                scrollContainerRect.left + scrollContainer.clientWidth - BLOCK_CONTROL_SIZE - 4
+              )
+            : blockRect.right + 8;
 
         setCurrentNodePos(target.pos);
         setCoords({
@@ -239,7 +272,7 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
             scrollContainerRect.top +
             scrollContainer.scrollTop +
             (referenceRect.height - BLOCK_CONTROL_SIZE) / 2,
-          left: blockRect.right - scrollContainerRect.left + scrollContainer.scrollLeft + 8
+          left: menuLeft - scrollContainerRect.left + scrollContainer.scrollLeft
         });
         setHoverAreaHeight(blockRect.height);
         hideTrigger.clear();
@@ -350,7 +383,7 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
       setOpened={handleOpenedChange}
       cardProps={{
         ...{ "data-block-action-menu": props.menuID },
-        class: imageItems().length ? "w-64" : "w-48"
+        class: imageItems().length || codeItems().length ? "w-64" : "w-48"
       }}
       items={menuItems()}
     />

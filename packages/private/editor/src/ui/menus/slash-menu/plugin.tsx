@@ -33,7 +33,9 @@ const createSlashMenuPlugin = (options: {
       const { selection } = state;
       const selectedNode = selection.$from.node(selection.$from.depth);
 
-      if (isInsideTableCell(selection.$from)) return false;
+      if (selectedNode.type.name === "codeBlock" || isInsideTableCell(selection.$from)) {
+        return false;
+      }
 
       return (
         (selectedNode?.textContent.startsWith("/") &&

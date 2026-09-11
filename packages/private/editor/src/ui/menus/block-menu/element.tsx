@@ -57,7 +57,16 @@ const createElementMenuItems = (editor: Editor): MenuItem[] => {
               }
             }
           ]
-        : []),
+        : [
+            {
+              label: "Unwrap",
+              icon: "i-lucide:ungroup",
+              onClick: () => {
+                commit();
+                return editor.chain().unwrapElement(selection.from).focus().run();
+              }
+            }
+          ]),
       {
         label: "Duplicate",
         icon: "i-lucide:copy-plus",
@@ -75,27 +84,11 @@ const createElementMenuItems = (editor: Editor): MenuItem[] => {
                 .run()
             : false;
         }
-      },
-      {
-        label: "Unwrap",
-        icon: "i-lucide:ungroup",
-        onClick: () => {
-          commit();
-          return editor.chain().unwrapElement(selection.from).focus().run();
-        }
       }
     ];
   }
-  if (!editor.can().wrapInElement()) {
-    return [];
-  }
-  return [
-    {
-      label: "Wrap in Element",
-      icon: "i-lucide:code-xml",
-      onClick: () => editor.chain().wrapInElement().run()
-    }
-  ];
+
+  return [];
 };
 
 export { createElementMenuItems };

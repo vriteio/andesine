@@ -301,9 +301,9 @@ header[data-type="title"] {
 
 // Collaboration
 .collaboration-caret {
-  @apply relative z-5 inline-block w-0 pointer-events-auto;
-  height: 1.2em;
-  vertical-align: -0.2em;
+  // An atomic inline-block adds a wrap opportunity, even at zero width.
+  // Keep the empty anchor inline and draw all visible parts outside the text flow.
+  @apply relative z-5 inline pointer-events-auto;
 
   &::before {
     @apply absolute pointer-events-none top-0;
@@ -660,6 +660,10 @@ header:only-of-type.is-empty:first-child::before,
   @apply whitespace-pre-wrap;
   min-height: 1.25rem;
 }
+/* Element draft selections remain visible inside a remote node selection. */
+.prose-editor [data-element-locked] .element-tag-line .collaboration-selection {
+  background: color-mix(in srgb, var(--collaboration-color) 22%, transparent);
+}
 .prose-editor .element-content {
   @apply pl-4;
   min-height: 1.5rem;
@@ -668,30 +672,39 @@ header:only-of-type.is-empty:first-child::before,
 .prose-editor .element-tag[hidden] {
   display: none;
 }
-.prose-editor [data-element-editing] > [data-element-tag] {
-  @apply bg-gray-100;
+/* Shared GitHub Light syntax colors */
+.prose-editor {
+  --syntax-tag: #116329;
+  --syntax-punctuation: #6a737d;
+  --syntax-property: #6f42c1;
+  --syntax-value: #005cc5;
+  --syntax-string: #032f62;
+  --syntax-literal: #e36209;
 }
-.prose-editor [data-element-locked] > [data-element-tag] {
-  background: color-mix(in srgb, var(--element-editor-color) 12%, transparent);
-}
+
+/* Element tokens */
 .prose-editor .element-token-name {
-  @apply text-teal-700 dark:text-teal-300;
+  color: var(--syntax-tag);
 }
 .prose-editor .element-token-property {
-  @apply text-blue-700 dark:text-blue-300;
+  color: var(--syntax-property);
+}
+.prose-editor .element-token-attribute,
+.prose-editor .element-token-operator,
+.prose-editor .element-token-number {
+  color: var(--syntax-value);
 }
 .prose-editor .element-token-string {
-  @apply text-amber-700 dark:text-amber-300;
-}
-.prose-editor .element-token-number {
-  @apply text-purple-700 dark:text-purple-300;
+  color: var(--syntax-string);
 }
 .prose-editor .element-token-literal {
-  @apply text-purple-700 dark:text-purple-300;
+  color: var(--syntax-literal);
 }
 .prose-editor .element-token-punctuation {
-  @apply text-gray-600 dark:text-gray-300;
+  color: var(--syntax-punctuation);
 }
+
+/* Element search matches */
 .prose-editor [data-element-search-match] {
   @apply bg-amber-100 dark:bg-amber-950;
 }
@@ -702,4 +715,99 @@ header:only-of-type.is-empty:first-child::before,
 }
 .prose-editor .element-node.ProseMirror-selectednode {
   @apply outline-none;
+}
+
+/* Code blocks */
+.prose-editor .code-block-node {
+  @apply relative my-2 font-mono text-sm text-gray-700;
+  min-width: 0;
+}
+.prose-editor .code-block-node .cm-editor,
+.prose-editor .code-block-node .cm-content {
+  @apply font-mono;
+}
+.prose-editor .code-block-node .cm-selectionBackground,
+.prose-editor .code-block-selection {
+  @apply bg-tertiary/10!;
+}
+.prose-editor .code-block-node .cm-scroller {
+  @apply scrollbar-sm pr-6;
+}
+.prose-editor .code-block-node .cm-content {
+  flex-grow: 0;
+  width: max-content;
+  min-width: var(--code-content-width, 0px);
+}
+.prose-editor .code-block-node .cm-editor::before {
+  @apply absolute rounded-lg bg-gray-50 pointer-events-none;
+  content: "";
+  top: -0.5rem;
+  bottom: -0.5rem;
+  left: var(--code-background-left, 0px);
+  width: var(--code-background-width, 100%);
+}
+.prose-editor .code-block-node .cm-content,
+.prose-editor .code-block-node .cm-line {
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+.prose-editor .code-block-node.ProseMirror-selectednode {
+  @apply outline-none;
+}
+.prose-editor .code-block-node.version-diff-block::after {
+  left: var(--code-visible-left, 0px);
+  width: var(--code-visible-width, 100%);
+  right: auto;
+}
+.prose-editor .code-block-node.version-diff-added::after,
+.prose-editor .code-block-node.version-diff-removed::after {
+  @apply z-1;
+}
+
+/* Code block panel-wide scroll viewport */
+.prose-editor .code-block-scroll-spacer {
+  flex: 0 0 var(--code-left-space, 0px);
+}
+
+/* Code block line numbers */
+.prose-editor .code-block-node .cm-gutters {
+  @apply border-none bg-gray-50 pl-2 text-gray-400;
+}
+.prose-editor .code-block-node .cm-lineNumbers .cm-gutterElement {
+  @apply pl-0 pr-3;
+  line-height: 1.25rem;
+}
+
+/* Code block indentation and folding */
+.prose-editor .code-block-indent-guides {
+  background-image: repeating-linear-gradient(
+    to right,
+    theme("colors.gray.200") 0 1px,
+    transparent 1px var(--code-indent-unit)
+  );
+  background-size: var(--code-indent-width) 100%;
+  background-repeat: no-repeat;
+}
+.prose-editor .code-block-fold-icon {
+  @apply i-lucide:chevron-right inline-block h-4 w-4 align-middle;
+}
+.prose-editor .code-block-fold-icon-open {
+  @apply rotate-90;
+}
+.prose-editor .code-block-node .cm-foldGutter .cm-gutterElement {
+  @apply flex items-center justify-center px-0.5;
+  line-height: 1.25rem;
+}
+
+/* Mobile code blocks */
+@screen lt-md {
+  .prose-editor .code-block-node {
+    font-size: 16px;
+  }
+}
+
+/* Image placeholders */
+.prose-editor .image-placeholder-card > * {
+  @apply rounded-inherit;
 }

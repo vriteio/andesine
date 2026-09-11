@@ -27,9 +27,13 @@
     "@codemirror/autocomplete": "^6.20.3",
     "@codemirror/commands": "^6.11.0",
     "@codemirror/language": "^6.12.4",
+    "@codemirror/language-data": "^6.5.2",
+    "@codemirror/merge": "^6.12.2",
     "@codemirror/state": "^6.7.4",
     "@codemirror/view": "^6.43.11",
     "@hocuspocus/provider": "^4.4.0",
+    "@lezer/highlight": "^1.2.3",
+    "@replit/codemirror-lang-solidity": "^6.0.2",
     "@solid-primitives/media": "^2.3.6",
     "@solid-primitives/scheduled": "^1.5.3",
     "@tiptap/core": "3.30.2",
@@ -38,6 +42,7 @@
     "@tiptap/extension-bubble-menu": "^3.30.2",
     "@tiptap/extension-bullet-list": "^3.30.2",
     "@tiptap/extension-code": "^3.30.2",
+    "@tiptap/extension-code-block": "3.30.2",
     "@tiptap/extension-collaboration": "^3.30.2",
     "@tiptap/extension-collaboration-caret": "^3.30.2",
     "@tiptap/extension-document": "3.30.2",
@@ -66,9 +71,13 @@
     "@tiptap/y-tiptap": "^3.0.9",
     "clsx": "^2.1.1",
     "nanoid": "^6.0.1",
+    "prettier": "^3.9.6",
     "solid-js": "^1.9.14",
     "tippy.js": "^6.3.7",
     "url-slug": "^5.0.1",
     "yjs": "^13.6.32"
+  },
+  "devDependencies": {
+    "vite": "^8.2.0"
   }
 }

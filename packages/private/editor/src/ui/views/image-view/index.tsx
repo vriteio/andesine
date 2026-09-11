@@ -1,11 +1,11 @@
-import { ImageResizeHandles } from "./image-resize-handles";
-import { ImageUploadPreview } from "./image-upload-preview";
+import { ImageResizeHandles } from "./resize-handles";
+import { ImageUploadPreview } from "./upload-preview";
 import { getImageSize, readImageDimensions } from "#editor/lib/image-dimensions";
 import type { ImageAttributes } from "#editor/schema/blocks/image";
-import { createImageDuplicatePrompt } from "./image-duplicate-prompt";
-import { createImageResize } from "./image-resize";
+import { createImageDuplicatePrompt } from "./duplicate-prompt";
+import { createImageResize } from "./resize";
 import { BLOCK_CONTROL_SIZE } from "#editor/ui/constants";
-import { ImagePlaceholder } from "./image-placeholder";
+import { ImagePlaceholder } from "./placeholder";
 import { hasFileDrag, hasImageURL, readImageDrop } from "#editor/lib/image-drop";
 import {
   createEffect,

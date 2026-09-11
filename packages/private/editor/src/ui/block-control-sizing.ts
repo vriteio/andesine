@@ -200,6 +200,14 @@ const getBlockControlAnchorRect = (editor: Editor, target: BlockControlTarget): 
     const content = tag ? getCachedElementRect(editor, tag) : getBlockContentRect(editor, target);
     const horizontal = getCachedElementRect(editor, getTargetList(target) || target.dom);
 
+    if (target.node.type.name === "codeBlock") {
+      const left = parseFloat(target.dom.style.getPropertyValue("--code-visible-left")) || 0;
+      const width =
+        parseFloat(target.dom.style.getPropertyValue("--code-visible-width")) || horizontal.width;
+
+      return new DOMRect(horizontal.x + left, content.y, width, Math.max(1, content.height));
+    }
+
     return new DOMRect(horizontal.x, content.y, horizontal.width, Math.max(1, content.height));
   });
 };
@@ -227,7 +235,8 @@ const getBlockControlHoverRect = (editor: Editor, target: BlockControlTarget): D
     const list = getTargetList(target);
     const $position = editor.state.doc.resolve(target.pos);
     let vertical = list ? getCachedElementRect(editor, list) : block;
-    let horizontal = block;
+    let horizontal =
+      target.node.type.name === "codeBlock" ? getBlockControlAnchorRect(editor, target) : block;
 
     if ($position.parent.type.name === "element") {
       const content = target.dom.parentElement;

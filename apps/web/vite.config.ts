@@ -5,6 +5,7 @@ import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig(({ isSsrBuild }) => ({
   envPrefix: "PUBLIC_",
+  worker: { format: "es" },
   build: {
     rollupOptions: {
       input: isSsrBuild ? undefined : { app: "index.html", offline: "offline.html" }

@@ -1,4 +1,4 @@
-import { ImageURLInput } from "#editor/ui/views/image-url-input";
+import { ImageURLInput } from "#editor/ui/views/image-view/url-input";
 import { Input, type MenuItem } from "@andesine/components";
 import type { Editor } from "@tiptap/core";
 import { createSignal } from "solid-js";

@@ -1,7 +1,7 @@
 import { DropdownArea } from "@andesine/components";
 import { type Component, Show } from "solid-js";
 import { createNodeViewRenderer, type NodeViewComponentProps } from "#editor/lib";
-import { InheritedSchemaFieldBadge } from "../inherited-schema-field-badge";
+import { InheritedSchemaFieldBadge } from "#editor/ui/inherited-schema-field-badge";
 import { FragmentMenu, type FragmentAttrs } from "./menu";
 
 interface FragmentViewProps extends NodeViewComponentProps<FragmentAttrs> {

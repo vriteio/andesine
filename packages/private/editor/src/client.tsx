@@ -1,8 +1,8 @@
+import { createCodeBlockNavigation } from "./ui/views/code-block-view/navigation";
+import { formatCodeBlock, getCodeFormatParser } from "./lib/code-format";
 import { Element } from "./schema/blocks/element";
 import { Elements } from "./extensions/elements";
-import { createElementViewRenderer } from "./ui/views/element-view";
 import { Images } from "./extensions/images";
-import { createImageViewRenderer } from "./ui/views/image-view";
 import {
   MAX_ENTRY_TITLE_LENGTH,
   normalizeEntryTitle,
@@ -10,6 +10,7 @@ import {
   createDocument,
   Text,
   Paragraph,
+  CodeBlock,
   HardBreak,
   Heading,
   Link,
@@ -71,8 +72,14 @@ import { DragHandleMenu } from "./ui/drag-handle";
 
 import type { EditorProps } from "./client-types";
 import { useEditorProvider } from "./use-editor-provider";
-import { createFragmentViewRenderer, createPropertyViewRenderer } from "./ui/views";
-import { createTableViewRenderer } from "./ui/views/table-view";
+import {
+  createCodeBlockViewRenderer,
+  createElementViewRenderer,
+  createFragmentViewRenderer,
+  createImageViewRenderer,
+  createPropertyViewRenderer,
+  createTableViewRenderer
+} from "./ui/views";
 import { getOwner } from "solid-js/web";
 
 const ClientEditor: Component<EditorProps> = (props) => {
@@ -180,6 +187,40 @@ const ClientEditor: Component<EditorProps> = (props) => {
         }
       }),
       Elements.configure({ notify: props.notify }),
+      CodeBlock.extend({
+        addKeyboardShortcuts() {
+          return {
+            ...this.parent?.(),
+            "Mod-Shift-f": () => {
+              const { selection, doc } = this.editor.state;
+              const pos =
+                selection.$from.parent.type.name === "codeBlock"
+                  ? selection.$from.before()
+                  : selection.from;
+              const node = doc.nodeAt(pos);
+
+              if (
+                node?.type.name !== "codeBlock" ||
+                !getCodeFormatParser(String(node.attrs.language || ""))
+              )
+                return false;
+              void formatCodeBlock(this.editor, pos, props.notify);
+              return true;
+            }
+          };
+        },
+        addNodeView() {
+          return createCodeBlockViewRenderer({
+            awareness: currentProvider?.awareness || null,
+            editable: () => props.editable ?? true,
+            diff: props.diff,
+            notify: props.notify
+          });
+        },
+        addProseMirrorPlugins() {
+          return [...(this.parent?.() || []), createCodeBlockNavigation(this.editor)];
+        }
+      }),
       // Simple blocks
       HorizontalRule,
       Heading,

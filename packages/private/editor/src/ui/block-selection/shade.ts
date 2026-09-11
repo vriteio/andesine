@@ -71,7 +71,12 @@ const createBlockSelectionShade = (
 
       const previous = segments[segments.length - 1];
 
-      if (previous && !previous.table) {
+      if (
+        previous &&
+        !previous.table &&
+        !previous.first.matches("[data-code-block]") &&
+        !block.matches("[data-code-block]")
+      ) {
         previous.last = block;
       } else {
         segments.push({ first: block, last: block, table: null, tableContainer: null });
@@ -91,6 +96,19 @@ const createBlockSelectionShade = (
   };
   const positionStandardSegment = (shade: HTMLElement, segment: BlockSelectionShadeSegment) => {
     if (!currentEditor) return;
+
+    if (segment.first.matches("[data-code-block]")) {
+      mountElement(shade, segment.first);
+
+      delete shade.dataset.tableSelectionShade;
+
+      shade.style.height = "100%";
+      shade.style.width = "var(--code-visible-width, 100%)";
+      shade.style.left = "var(--code-visible-left, 0px)";
+      shade.style.top = "0";
+
+      return;
+    }
 
     const first = getFirstVisualBlock(segment.first);
     const last = getLastVisualBlock(segment.last);

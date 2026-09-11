@@ -173,7 +173,9 @@ const MobileMenuOption = <O extends MenuItem>(props: MobileMenuOptionProps<O>) =
 const MobileMenuItems = <O extends MenuItem>(props: MobileMenuItemsProps<O>) => {
   const rootPage = (): MenuPage<O> => ({ items: props.items });
   const [pages, setPages] = createSignal<Array<MenuPage<O>>>([rootPage()]);
-  const currentPage = () => pages()[pages().length - 1] || rootPage();
+  const currentPage = () => {
+    return pages().length > 1 ? pages()[pages().length - 1] : rootPage();
+  };
 
   createEffect(
     on(

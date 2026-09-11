@@ -19,6 +19,7 @@ const listOptions: ConversionOption[] = [
   { name: "taskList", label: "Task list", icon: "i-lucide:list-checks" }
 ];
 const textOptions: ConversionOption[] = [
+  { name: "codeBlock", label: "Code block", icon: "i-lucide:square-code" },
   { name: "paragraph", label: "Paragraph", icon: "i-lucide:pilcrow" },
   ...[1, 2, 3, 4, 5, 6].map((level) => ({
     name: "heading",
@@ -82,7 +83,15 @@ const getConvertedContent = (
   content.forEach((child) => {
     children.push(
       child.isTextblock
-        ? type.create({ ...child.attrs, level: option.level }, child.content, child.marks)
+        ? type.create(
+            { ...child.attrs, level: option.level },
+            option.name === "codeBlock"
+              ? child.content.size
+                ? editor.schema.text(child.textBetween(0, child.content.size, "\n", "\n"))
+                : undefined
+              : child.content,
+            child.marks
+          )
         : child
     );
   });

@@ -6,7 +6,15 @@ interface ElementData {
 interface ElementToken {
   from: number;
   to: number;
-  kind: "name" | "property" | "string" | "number" | "literal" | "punctuation";
+  kind:
+    | "name"
+    | "attribute"
+    | "property"
+    | "string"
+    | "number"
+    | "literal"
+    | "operator"
+    | "punctuation";
 }
 interface ElementContent {
   type: string;
@@ -44,6 +52,7 @@ const ELEMENT_BLOCKS = [
   "orderedList",
   "taskList",
   "horizontalRule",
+  "codeBlock",
   "table",
   "image",
   "element"
@@ -339,6 +348,7 @@ const tokenizeElement = (source: string): ElementToken[] => {
           break;
         }
       }
+      if (depth && /^\s*:/.test(source.slice(position))) kind = "property";
     } else if (/^[$_\p{ID_Start}]/u.test(source.slice(from))) {
       const identifier =
         (tagName
@@ -349,15 +359,19 @@ const tokenizeElement = (source: string): ElementToken[] => {
       position = from + identifier.length;
       kind = tagName
         ? "name"
-        : !depth || /^\s*:/.test(source.slice(position))
-          ? "property"
-          : "literal";
+        : !depth
+          ? "attribute"
+          : /^\s*:/.test(source.slice(position))
+            ? "property"
+            : "literal";
       tagName = false;
     } else if (/[0-9-]/.test(character)) {
       while (/[0-9.eE+-]/.test(source[position] || "") && position < source.length) {
         position += 1;
       }
       kind = "number";
+    } else if (character === "=") {
+      kind = "operator";
     } else if (character === "<") {
       tagName = true;
     } else if (character === "{" || character === "[") {

@@ -1,3 +1,4 @@
+import { withEmbeddedCursorView } from "./embedded-cursor";
 import { invalidateBlockControlLayout } from "#editor/ui/block-control-sizing";
 import type { Editor } from "@tiptap/core";
 import { CollaborationCaret as BaseCollaborationCaret } from "@tiptap/extension-collaboration-caret";
@@ -22,8 +23,8 @@ import {
 import { createRelativePositionFromJSON } from "yjs";
 import { createBlockSelectionShade } from "#editor/ui/block-selection";
 import { forEachSelectedBlock, selectionCoversNode } from "#editor/ui/block-utils";
-import { isBlockSelection } from "./block-selection";
-import { createCollaborationCellDecorations } from "./collaboration-cell-selection";
+import { isBlockSelection } from "../block-selection";
+import { createCollaborationCellDecorations } from "./cell-selection";
 
 interface CollaborationUser {
   color?: string;
@@ -450,10 +451,12 @@ const CollaborationCaret = BaseCollaborationCaret.extend({
     return [
       createCollaborationSelectionPlugin(awareness, this.editor),
       ...parentPlugins.map((plugin) =>
-        plugin.spec.key === yCursorPluginKey ? cursorPlugin : plugin
+        plugin.spec.key === yCursorPluginKey
+          ? withEmbeddedCursorView(cursorPlugin, this.options.provider.awareness)
+          : plugin
       )
     ];
   }
 });
 
-export { CollaborationCaret };
+export { CollaborationCaret, createCaret, getCollaborationColor };

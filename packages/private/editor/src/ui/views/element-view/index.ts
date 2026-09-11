@@ -1,12 +1,13 @@
-import { isPositionInInheritedField } from "../block-utils";
+import { isPositionInInheritedField } from "../../block-utils";
 import { untrack } from "solid-js";
 import type { EditorView as CodeEditorView } from "@codemirror/view";
 import type { HocuspocusProvider } from "@hocuspocus/provider";
 import type { NodeViewRenderer, EditorEvents } from "@tiptap/core";
 import { NodeSelection, Selection } from "@tiptap/pm/state";
-import { setElementExitSelection } from "../../lib/element-selection";
-import { createElementAwareness } from "../../lib/element-awareness";
-import { createElementDiffView } from "../../extensions/version-diff/element";
+import { setElementExitSelection } from "../../../lib/element-selection";
+import { createElementAwareness } from "../../../lib/element-awareness";
+import { renderElementTag } from "./tag-presence";
+import { createElementDiffView } from "../../../extensions/version-diff/element";
 import { closeHistory } from "@tiptap/pm/history";
 import { yUndoPluginKey } from "@tiptap/y-tiptap";
 import {
@@ -15,7 +16,7 @@ import {
   parseElement,
   tokenizeElement,
   type ElementData
-} from "../../lib/element";
+} from "../../../lib/element";
 
 interface ElementViewOptions {
   owner: unknown;
@@ -72,18 +73,11 @@ const createElementViewRenderer =
 
       if (!editing) {
         const source = remote?.source ?? String(normalizeElementAttributes(node.attrs).source);
+        const renderKey = JSON.stringify([source, remote]);
 
-        if (source !== renderedSource) {
-          opening.replaceChildren(
-            ...source.split(/\r\n?|\n/).map((text) => {
-              const line = document.createElement("div");
-
-              line.className = "element-tag-line";
-              line.textContent = text;
-              return line;
-            })
-          );
-          renderedSource = source;
+        if (renderKey !== renderedSource) {
+          opening.replaceChildren(...renderElementTag(source, remote));
+          renderedSource = renderKey;
         }
       } else {
         renderedSource = null;
@@ -109,7 +103,6 @@ const createElementViewRenderer =
       contentDOM.hidden = closing.hidden = node.attrs.selfClosing;
       dom.toggleAttribute("data-element-editing", editing);
       dom.toggleAttribute("data-element-locked", !!remote);
-      dom.style.setProperty("--element-editor-color", remote?.color || untrack(options.user).color);
       opening.title = closing.title = remote ? `${remote.name} is editing this tag.` : "";
       opening.tabIndex = !editing && canEdit() && !remote ? 0 : -1;
       if (editing) {
@@ -235,7 +228,7 @@ const createElementViewRenderer =
       presence.publish(String(normalizeElementAttributes(node.attrs).source));
       render();
       try {
-        const module = await import("./element-code-editor");
+        const module = await import("./code-editor");
 
         if (destroyed || !editing || generation !== attempt) {
           return;
@@ -248,9 +241,9 @@ const createElementViewRenderer =
           source: draftSource,
           selectName,
           edge,
-          onChange(source) {
+          onChange(source, selection) {
             draftName = getElementTagName(source);
-            presence.publish(source);
+            presence.publish(source, { anchor: selection.anchor, head: selection.head });
             render();
           },
           finish

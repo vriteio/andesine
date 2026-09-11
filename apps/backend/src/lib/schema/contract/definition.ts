@@ -35,6 +35,7 @@ const SCHEMA_BLOCK_TYPES = [
   "orderedList",
   "taskList",
   "horizontalRule",
+  "codeBlock",
   "table",
   "element",
   "image"

@@ -1,5 +1,6 @@
 import type { JSONContent } from "@tiptap/core";
 import type { EditorDiffChange, MergedVersionDiff, VersionComparison } from "../../client-types";
+import { mergeCodeContent } from "./code";
 import {
   getBlockFallbackIdentity,
   getComparableIdentity,
@@ -186,11 +187,13 @@ const mergeMatchedNode = (previous: JSONContent, current: JSONContent): VersionD
     return createReplacement(previous, current);
   }
 
-  if (current.type === "element") {
+  if (current.type === "element" || current.type === "codeBlock") {
     const merged = wrapContentMerge(
       previous,
       current,
-      mergeNodeSequence(previous.content, current.content)
+      current.type === "codeBlock"
+        ? mergeCodeContent(previous.content, current.content)
+        : mergeNodeSequence(previous.content, current.content)
     );
     if (attributesChanged) {
       for (const nodes of [merged.current, merged.inline, merged.previous])

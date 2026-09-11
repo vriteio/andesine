@@ -10,6 +10,7 @@ const UniqueID = BaseUniqueID.configure({
     "taskList",
     "blockquote",
     "horizontalRule",
+    "codeBlock",
     "element",
     "image",
     "heading",

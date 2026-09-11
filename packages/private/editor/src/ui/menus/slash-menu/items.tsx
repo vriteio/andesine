@@ -149,6 +149,19 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
       }
     },
     {
+      label: "Code block",
+      group: "Blocks",
+      icon: "i-lucide:square-code",
+      markdown: "```",
+      shortcut: "$mod+alt+c",
+      schemaKind: "block",
+      schemaBlockType: "codeBlock",
+      ref: createRef<HTMLElement | null>(null),
+      command({ editor, range }) {
+        return editor.chain().focus().deleteRange(range).setCodeBlock().run();
+      }
+    },
+    {
       label: "Element",
       group: "Blocks",
       icon: "i-lucide:code-xml",

@@ -12,7 +12,7 @@ interface ImagePlaceholderProps {
 }
 
 const ImagePlaceholder = (props: ImagePlaceholderProps) => (
-  <AnimatedGradientCard class="@container/image absolute inset-0 h-full w-full rounded-xl overflow-hidden">
+  <AnimatedGradientCard class="image-placeholder-card @container/image absolute inset-0 h-full w-full rounded-xl isolate overflow-hidden">
     <div
       class="flex h-full w-full flex-col items-center justify-center overflow-hidden p-2 text-center"
       aria-label={props.description ? `${props.title}. ${props.description}` : props.title}
