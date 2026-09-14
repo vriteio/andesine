@@ -134,7 +134,7 @@ const createImageMenuItems = (
           [
             {
               label: "Choose existing",
-              icon: "i-lucide:search",
+              icon: "i-tabler:search",
               get disabled() {
                 const images = editor.extensionManager.extensions.find(
                   ({ name }) => name === "images"

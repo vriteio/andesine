@@ -243,7 +243,7 @@ const SearchResults: Component<SearchResultsProps> = (props) => {
       when={props.results.length > 0 || props.query}
       fallback={
         <SearchResultNotice
-          icon="i-lucide:search-x"
+          icon="i-tabler:search-off"
           label="No results"
           sublabel="Adjust your filters or enter a search query"
         />

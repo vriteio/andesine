@@ -208,7 +208,7 @@ const ImageSearch = (props: ImageSearchProps) => {
                     when={result().results.length}
                     fallback={
                       <SearchResultNotice
-                        icon="i-lucide:search-x"
+                        icon="i-tabler:search-off"
                         label="No images found"
                         sublabel="Only images used in accessible entries appear here"
                       />
