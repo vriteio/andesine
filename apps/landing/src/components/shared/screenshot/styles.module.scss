@@ -1,0 +1,8 @@
+// Fade the image and the shaded card's outer shadow.
+.fade {
+  mask-clip: no-clip;
+  mask-size: calc(100% + 2rem) calc(100% + 1rem);
+  mask-position: center bottom;
+  mask-repeat: no-repeat;
+  mask-image: linear-gradient(to bottom, black var(--fade-start, 60%), transparent 100%);
+}

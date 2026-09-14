@@ -1,0 +1,25 @@
+// Native horizontal feature rail
+.rail {
+  padding-inline: max(1rem, calc((100% - 64rem) / 2 + 2rem));
+  scroll-padding-inline: max(1rem, calc((100vw - 64rem) / 2 + 2rem));
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 1rem,
+    black calc(100% - 1rem),
+    transparent
+  );
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+
+  @screen xl {
+    mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+  }
+}

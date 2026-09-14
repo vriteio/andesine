@@ -1,0 +1,133 @@
+// Browser reset and shared application fonts
+@use "@unocss/reset/tailwind.css";
+@use "@andesine/components/styles.scss";
+
+// Application theme
+html {
+  @apply bg-gray-50 text-gray-700 from-secondary via-primary to-secondary;
+  color-scheme: light;
+  font-family: "NunitoVariable", sans-serif;
+  scroll-behavior: smooth;
+  scroll-padding-top: 6rem;
+}
+
+body {
+  @apply bg-gray-50;
+}
+
+::selection {
+  @apply bg-tertiary/10;
+}
+
+// Selection
+::selection {
+  @apply bg-tertiary/10;
+}
+
+// Global scrollbars
+::-webkit-scrollbar {
+  @apply w-3 h-3 bg-gray-50;
+}
+::-webkit-scrollbar-track {
+  @apply mx-2.5 my-2.5;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-200 shadow-inner border-2 border-solid border-gray-50 rounded-lg;
+}
+.scrollbar-sm {
+  &::-webkit-scrollbar {
+    @apply w-2.5 h-2.5;
+  }
+  &::-webkit-scrollbar-track {
+    @apply mx-2 my-2;
+  }
+}
+::-webkit-scrollbar-thumb:horizontal {
+  box-shadow: inset 2px 0 4px 0 rgb(0 0 0 / 5%);
+}
+
+// Native link focus
+body a,
+body button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body a:focus,
+body a:focus-visible {
+  outline: none;
+}
+
+// One-time entry animations
+[data-entry-state="pending"] {
+  opacity: 0;
+}
+
+[data-entry-state="visible"] {
+  animation: content-enter 500ms ease-out both;
+}
+
+[data-entry="left"] {
+  --entry-x: -1rem;
+  --entry-y: 0;
+}
+
+[data-entry="right"] {
+  --entry-x: 1rem;
+  --entry-y: 0;
+}
+
+[data-entry="screenshot"] {
+  --entry-y: 4rem;
+}
+
+[data-entry-delay="125"] {
+  animation-delay: 125ms;
+}
+
+[data-entry-delay="250"] {
+  animation-delay: 250ms;
+}
+
+[data-entry="hero"][data-entry-state="visible"] {
+  animation: hero-enter 1s ease-out both;
+}
+
+@keyframes content-enter {
+  from {
+    opacity: 0;
+    // Keep the detail screenshot's layout transform intact.
+    translate: var(--entry-x, 0) var(--entry-y, 1rem);
+  }
+
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes hero-enter {
+  from {
+    opacity: 0;
+    transform: perspective(100rem) rotateX(30deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: perspective(100rem) rotateX(0);
+  }
+}
+
+// Reduced motion
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  [data-entry] {
+    animation: none !important;
+  }
+
+  [data-entry-state] {
+    opacity: 1;
+  }
+}

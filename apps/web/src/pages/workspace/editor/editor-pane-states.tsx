@@ -1,8 +1,7 @@
-import { IconButton, Skeleton } from "@andesine/components";
+import { IconButton, Skeleton, DotsBackground } from "@andesine/components";
 import { type Component, type JSX, Show } from "solid-js";
 import clsx from "clsx";
 import type { DocumentLoadState } from "./document-load-state";
-import { DotsBackground } from "#web/components/dots-background";
 
 interface EditorLoadErrorViewProps {
   actionIcon: string;

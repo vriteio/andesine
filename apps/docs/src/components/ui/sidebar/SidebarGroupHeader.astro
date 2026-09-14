@@ -1,0 +1,130 @@
+---
+/**
+ * SidebarGroupHeader — the label + disclosure caret row of a sidebar group,
+ * extracted so any consumer composes the same header (no forked markup). It
+ * renders the header only; the caller wraps it in a `Collapsible` and supplies
+ * the `CollapsibleContent`.
+ *
+ * Two shapes (matching the group's data):
+ *   - `indexHref` set  → the label is an `<a>` to the landing page and the caret
+ *     is a separate trigger (whole-row active state).
+ *   - no `indexHref`   → the whole row is the disclosure trigger; the label is
+ *     non-interactive (a pure section divider / nav-only category).
+ *
+ * `deprecated` strikes the label through. Caret rotation is driven by the
+ * trigger's `data-nb-state` via the global rule below.
+ */
+import Icon from "@cloudflare/nimbus-docs/components/Icon.astro";
+import { cn } from "@/lib/cn";
+import { CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Badge } from "@/components/ui/badge";
+import type { SidebarBadge } from "@cloudflare/nimbus-docs/types";
+import { withBase } from "@cloudflare/nimbus-docs/runtime";
+
+interface Props {
+  label: string;
+  isOpen: boolean;
+  /** True when this group is on the active trail — bolds the label. */
+  hasActive?: boolean;
+  badge?: SidebarBadge;
+  indexHref?: string;
+  indexIsCurrent?: boolean;
+  indexIsExternal?: boolean;
+  icon?: string;
+  /** Strike the label through for deprecated sections. */
+  deprecated?: boolean;
+}
+
+const {
+  label,
+  isOpen,
+  hasActive,
+  badge,
+  indexHref,
+  indexIsCurrent,
+  indexIsExternal,
+  icon,
+  deprecated
+} = Astro.props;
+const resolvedIndexHref = indexHref ? withBase(indexHref, import.meta.env.BASE_URL) : undefined;
+
+const rowClass = cn(
+  "group/expander flex min-h-[2rem] items-center rounded-lg px-3 py-1 text-[0.8125rem] no-underline transition-colors duration-150 focus-visible:outline-offset-[-2px]",
+  "hover:bg-accent hover:text-foreground",
+  hasActive ? "font-semibold text-foreground" : "font-medium text-muted-foreground"
+);
+const caretClass =
+  "ml-auto -mr-px shrink-0 w-5 h-5 text-muted-foreground opacity-50 transition-[rotate,color] duration-[250ms] ease-[cubic-bezier(0.87,0,0.13,1)] group-hover/expander:text-foreground";
+const labelClass = cn("break-words", deprecated && "line-through");
+---
+
+{
+  indexHref ? (
+    <div
+      class={cn(rowClass, "p-0", indexIsCurrent ? "bg-accent text-foreground font-semibold" : "")}
+      data-nb-state={isOpen ? "open" : "closed"}
+      data-nb-sidebar-group-label
+    >
+      <a
+        href={resolvedIndexHref}
+        aria-current={indexIsCurrent ? "page" : undefined}
+        target={indexIsExternal ? "_blank" : undefined}
+        rel={indexIsExternal ? "noopener" : undefined}
+        class="flex flex-1 min-w-0 items-center min-h-[2rem] px-3 py-1 rounded-l-lg focus-visible:outline-offset-[-2px]"
+      >
+        <span class="flex items-center gap-2 flex-1 min-w-0">
+          {icon && <Icon name={icon} class="shrink-0 h-4 w-4 text-muted-foreground" />}
+          <span class={labelClass}>{label}</span>
+          {badge &&
+            (typeof badge === "string" ? (
+              <Badge text={badge} />
+            ) : (
+              <Badge text={badge.text} variant={badge.variant} />
+            ))}
+        </span>
+      </a>
+      <CollapsibleTrigger
+        class={cn(
+          "w-auto flex items-center shrink-0 min-h-[2rem] px-3 py-1 rounded-r-lg",
+          "hover:bg-accent hover:text-foreground focus-visible:outline-offset-[-2px]",
+          "group/expander"
+        )}
+        data-nb-state={isOpen ? "open" : "closed"}
+        aria-expanded={isOpen ? "true" : "false"}
+        aria-label={`Toggle ${label} section`}
+      >
+        <Icon name="ph:caret-right" class={caretClass} data-nb-caret />
+      </CollapsibleTrigger>
+    </div>
+  ) : (
+    <CollapsibleTrigger
+      class={cn(rowClass, "justify-between w-full")}
+      data-nb-sidebar-group-label
+      data-nb-state={isOpen ? "open" : "closed"}
+      aria-expanded={isOpen ? "true" : "false"}
+    >
+      <span class="flex items-center gap-2 flex-1 min-w-0">
+        {icon && <Icon name={icon} class="shrink-0 h-4 w-4 text-muted-foreground" />}
+        <span class={labelClass}>{label}</span>
+        {badge &&
+          (typeof badge === "string" ? (
+            <Badge text={badge} />
+          ) : (
+            <Badge text={badge.text} variant={badge.variant} />
+          ))}
+      </span>
+      <Icon name="ph:caret-right" class={caretClass} data-nb-caret />
+    </CollapsibleTrigger>
+  )
+}
+
+<style is:global>
+  /*
+   * Chevron rotation, driven by the trigger's `data-nb-state`. The disclosure
+   * runtime (`@/components/ui/collapsible/collapsible.client`) keeps this
+   * attribute in sync on toggle; this rule turns it into the visual rotation.
+   */
+  [data-nb-collapsible-trigger][data-nb-state="open"] [data-nb-caret] {
+    rotate: 90deg;
+  }
+</style>

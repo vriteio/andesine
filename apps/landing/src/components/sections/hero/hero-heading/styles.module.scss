@@ -1,0 +1,27 @@
+// Rotating use-case line
+.flip {
+  --flip-depth: 0.625em;
+  perspective: 50rem;
+}
+
+.rotator {
+  transform-style: preserve-3d;
+  transform: translateZ(calc(-1 * var(--flip-depth))) rotateX(var(--rotation, 0deg));
+  transition: transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.face {
+  grid-area: 1 / 1;
+  min-height: calc(var(--flip-depth) * 2);
+  backface-visibility: hidden;
+  transform: rotateX(var(--face-rotation)) translateZ(var(--flip-depth));
+  transition: opacity 800ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+// Reduced motion
+@media (prefers-reduced-motion: reduce) {
+  .rotator,
+  .face {
+    transition: none;
+  }
+}

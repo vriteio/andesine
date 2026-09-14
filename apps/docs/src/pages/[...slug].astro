@@ -1,0 +1,74 @@
+---
+import DocsLayout from "../layouts/DocsLayout.astro";
+import {
+  getDocsStaticPaths,
+  getDocsPage,
+  getRouteFlags,
+  getSidebar,
+  getPrevNext,
+  getBreadcrumbs,
+  getEditUrl,
+  getLastUpdated,
+  getTOC,
+  entryRouteKey,
+  stripBase
+} from "@cloudflare/nimbus-docs/runtime";
+import { components } from "../components";
+
+export const prerender = true;
+export const getStaticPaths = getDocsStaticPaths;
+
+const page = await getDocsPage(Astro);
+if (page instanceof Response) return page;
+const { entry, Content, headings } = page;
+
+const currentSlug =
+  stripBase(Astro.url.pathname, import.meta.env.BASE_URL).replace(/\/$/, "") || "/";
+
+const { sidebar: sidebarOn, tableOfContents: tocOn } = await getRouteFlags(entry);
+
+const sidebar = sidebarOn ? await getSidebar(currentSlug, { collection: entry.collection }) : false;
+const prevNext = await getPrevNext(currentSlug, {
+  sidebarTree: sidebar === false ? [] : sidebar,
+  overrides: { prev: entry.data.prev, next: entry.data.next }
+});
+// Pass `collection` so versioned pages (docs-<v>) get version-prefixed
+// breadcrumb hrefs — parity with the getSidebar call above.
+const breadcrumbs = await getBreadcrumbs(currentSlug, { collection: entry.collection });
+const editUrl = await getEditUrl(entry);
+// Frontmatter wins; git is the fallback.
+const lastUpdated = entry.data.lastUpdated ?? (await getLastUpdated(entry));
+// `tocOn` already implies `tableOfContents !== false`, but TS can't carry
+// that boolean narrowing to the value here — re-check it so `getTOC` only
+// ever sees its options object (or undefined), never `false`.
+const tocConfig = entry.data.tableOfContents;
+const toc = tocOn && tocConfig !== false ? getTOC(headings, tocConfig) : false;
+const routeKey = entryRouteKey(entry.id);
+const markdownPath = routeKey ? `/${routeKey}/index.md` : "/index.md";
+const markdownUrl = markdownPath;
+const socialImage = entry.data.socialImage ?? `/og/${entry.id}.png`;
+---
+
+<DocsLayout
+  title={entry.data.title}
+  description={entry.data.description}
+  sidebar={sidebar}
+  headings={toc}
+  breadcrumbs={breadcrumbs}
+  prevNext={prevNext}
+  mode={entry.data.mode}
+  banner={entry.data.banner}
+  head={entry.data.head}
+  searchable={entry.data.searchable}
+  noindex={entry.data.noindex}
+  markdownUrl={markdownUrl}
+  socialImage={socialImage}
+  lastUpdated={lastUpdated}
+  editUrl={editUrl}
+  draft={entry.data.draft}
+  audience={entry.data.audience}
+  collection={entry.collection}
+  entryId={entry.id}
+>
+  <Content components={components} />
+</DocsLayout>

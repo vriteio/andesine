@@ -9,7 +9,15 @@ const typescriptFiles = ["**/*.{cts,mts,ts,tsx}"];
 
 export default tseslint.config(
   {
-    ignores: ["**/.next/**", "**/.turbo/**", "**/coverage/**", "**/dist/**", "**/node_modules/**"]
+    ignores: [
+      "**/.astro/**",
+      "**/.next/**",
+      "**/.turbo/**",
+      "**/.wrangler/**",
+      "**/coverage/**",
+      "**/dist/**",
+      "**/node_modules/**"
+    ]
   },
   {
     ...eslint.configs.recommended,

@@ -1,0 +1,51 @@
+// Legal document typography
+.content {
+  @apply text-base leading-relaxed text-gray-600;
+
+  h1 {
+    @apply text-3xl font-medium leading-tight text-gray-700 md:text-4xl;
+  }
+
+  h3 {
+    @apply mt-10 text-xl font-medium text-gray-700;
+  }
+
+  h4 {
+    @apply mt-8 text-lg font-medium text-gray-700;
+  }
+
+  h5 {
+    @apply mt-6 font-medium text-gray-700;
+  }
+
+  p,
+  ul,
+  ol {
+    @apply mt-4;
+  }
+
+  ul,
+  ol {
+    @apply pl-6;
+  }
+
+  ul {
+    @apply list-disc;
+  }
+
+  ol {
+    @apply list-decimal;
+  }
+
+  li {
+    @apply mt-2;
+  }
+
+  a {
+    @apply font-medium text-gray-700 underline decoration-gray-300 underline-offset-4;
+  }
+
+  strong {
+    @apply font-semibold text-gray-700;
+  }
+}

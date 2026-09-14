@@ -1,0 +1,45 @@
+---
+interface Props {
+  title: string;
+  description: string;
+  path: string;
+}
+
+const { title, description, path } = Astro.props;
+const canonicalUrl = new URL(path, Astro.site).toString();
+---
+
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="description" content={description} />
+<meta name="application-name" content="Andesine" />
+<meta name="author" content="Andesine" />
+<meta name="robots" content="index, follow" />
+<meta name="referrer" content="strict-origin-when-cross-origin" />
+<meta name="format-detection" content="telephone=no" />
+<meta name="color-scheme" content="light" />
+<meta name="theme-color" content="#f9fafb" />
+<meta name="theme-color" content="#f9fafb" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#f9fafb" media="(prefers-color-scheme: dark)" />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Andesine" />
+<meta property="og:locale" content="en_US" />
+<meta property="og:url" content={canonicalUrl} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+
+<link rel="canonical" href={canonicalUrl} />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link
+  rel="preload"
+  href="/nunito-latin-variable-wghtOnly-normal.woff2"
+  as="font"
+  type="font/woff2"
+  crossorigin
+/>
+<title>{title}</title>

@@ -34,16 +34,48 @@ interface TooltipProps {
   offset?: { mainAxis?: number; crossAxis?: number };
 }
 
-const OPEN_DELAY = 500;
-const CLOSE_DELAY = 250;
-const TRANSITION_DURATION = 100;
-const TooltipContext = createContext<{
+interface TooltipContextValue {
   activeTooltip: Accessor<string>;
   visibleTooltip: Accessor<string>;
   setActiveTooltip: Setter<string>;
-} | null>(null);
+}
+
+const OPEN_DELAY = 500;
+const CLOSE_DELAY = 250;
+const TRANSITION_DURATION = 100;
+const TooltipContext = createContext<TooltipContextValue | null>(null);
+const createTooltipState = (): TooltipContextValue => {
+  const [activeTooltip, setActiveTooltip] = createSignal("");
+  const [visibleTooltip, setVisibleTooltip] = createSignal("");
+
+  let timeoutHandle: number | undefined;
+
+  createEffect(
+    on(activeTooltip, (newActiveTooltip, previousActiveTooltip) => {
+      if (timeoutHandle !== undefined) {
+        window.clearTimeout(timeoutHandle);
+      }
+
+      if (newActiveTooltip && !previousActiveTooltip) {
+        timeoutHandle = window.setTimeout(() => {
+          setVisibleTooltip(newActiveTooltip);
+        }, TRANSITION_DURATION);
+      } else {
+        setVisibleTooltip(newActiveTooltip);
+      }
+    })
+  );
+  onCleanup(() => {
+    if (timeoutHandle !== undefined) {
+      window.clearTimeout(timeoutHandle);
+    }
+  });
+
+  return { activeTooltip, visibleTooltip, setActiveTooltip };
+};
 const Tooltip: Component<TooltipProps> = (props) => {
-  const { activeTooltip, visibleTooltip, setActiveTooltip } = useContext(TooltipContext)!;
+  const { activeTooltip, visibleTooltip, setActiveTooltip } =
+    useContext(TooltipContext) || createTooltipState();
   const md = createMediaQuery("(min-width: 768px)");
   const enabled = (): boolean => {
     return typeof props.enabled === "boolean" ? props.enabled : true;
@@ -117,37 +149,9 @@ const Tooltip: Component<TooltipProps> = (props) => {
   );
 };
 const TooltipProvider: ParentComponent = (props) => {
-  const [activeTooltip, setActiveTooltip] = createSignal("");
-  const [visibleTooltip, setVisibleTooltip] = createSignal("");
+  const context = createTooltipState();
 
-  let timeoutHandle: number | undefined;
-
-  createEffect(
-    on(activeTooltip, (newActiveTooltip, previousActiveTooltip) => {
-      if (timeoutHandle !== undefined) {
-        window.clearTimeout(timeoutHandle);
-      }
-
-      if (newActiveTooltip && !previousActiveTooltip) {
-        timeoutHandle = window.setTimeout(() => {
-          setVisibleTooltip(newActiveTooltip);
-        }, TRANSITION_DURATION);
-      } else {
-        setVisibleTooltip(newActiveTooltip);
-      }
-    })
-  );
-  return (
-    <TooltipContext.Provider
-      value={{
-        activeTooltip,
-        visibleTooltip,
-        setActiveTooltip
-      }}
-    >
-      {props.children}
-    </TooltipContext.Provider>
-  );
+  return <TooltipContext.Provider value={context}>{props.children}</TooltipContext.Provider>;
 };
 const useTooltipContext = () => useContext(TooltipContext)!;
 

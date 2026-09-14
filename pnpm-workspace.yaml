@@ -7,4 +7,5 @@ allowBuilds:
   msgpackr-extract: false
   sharp: true
   sqlite3: false
+  workerd: true
 minimumReleaseAge: 1440

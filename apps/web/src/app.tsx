@@ -4,7 +4,8 @@ import {
   DropdownProvider,
   IconButton,
   ShortcutsProvider,
-  TooltipProvider
+  TooltipProvider,
+  DotsBackground
 } from "@andesine/components";
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { ErrorBoundary, type ParentComponent, Suspense, createSignal } from "solid-js";
@@ -16,7 +17,6 @@ import { getRequestEvent } from "solid-js/web";
 import { appendRedirectTo, normalizeRedirectTo, routes } from "./lib/navigation";
 import { validateWorkspaceID } from "./lib/validation";
 import { isOffline, readOfflineState } from "./lib/offline";
-import { DotsBackground } from "./components/dots-background";
 
 const rootRedirectQuery = query(async () => {
   const event = getRequestEvent();

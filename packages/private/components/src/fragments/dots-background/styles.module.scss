@@ -1,0 +1,11 @@
+/* Background */
+.background {
+  @apply left-0 top-0 -z-1 h-full w-full bg-center;
+  --dots-color: rgba(229, 231, 235, 0.8);
+  background-image: radial-gradient(var(--dots-color) 2px, transparent 0);
+  background-size: 16px 16px;
+}
+
+.contrast {
+  --dots-color: theme("colors.gray.100");
+}

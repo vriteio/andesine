@@ -1,0 +1,90 @@
+// Diagram motion
+.float {
+  animation: float 7s ease-in-out infinite;
+}
+
+.pulse {
+  animation: pulse 6s ease-in-out infinite;
+}
+
+.caret {
+  animation: caret 8s ease-in-out infinite;
+}
+
+.draw {
+  stroke-dasharray: 100;
+  animation: draw 7s ease-in-out infinite;
+}
+
+.flow {
+  stroke-dasharray: 3 12;
+  animation: flow 7s linear infinite;
+}
+
+.delay {
+  animation-delay: -2s;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes caret {
+  0%,
+  20%,
+  100% {
+    transform: translateX(0);
+  }
+
+  45%,
+  75% {
+    transform: translateX(24px);
+  }
+}
+
+@keyframes draw {
+  0%,
+  15% {
+    stroke-dashoffset: 100;
+  }
+
+  50%,
+  85% {
+    stroke-dashoffset: 0;
+  }
+
+  100% {
+    stroke-dashoffset: -100;
+  }
+}
+
+@keyframes flow {
+  to {
+    stroke-dashoffset: -60;
+  }
+}
+
+// Reduced motion
+@media (prefers-reduced-motion: reduce) {
+  .graphic * {
+    animation: none !important;
+  }
+}

@@ -1,9 +1,8 @@
 import { type Component, onMount, Suspense } from "solid-js";
 import { type RouteSectionProps } from "@solidjs/router";
 import { NoHydration } from "solid-js/web";
-import { Skeleton, AnimatedGradientCard } from "@andesine/components";
+import { Logo, Skeleton, AnimatedGradientCard, DotsBackground } from "@andesine/components";
 import { lockOfflineState } from "#web/lib/offline";
-import { DotsBackground } from "#web/components/dots-background";
 
 const tips = [
   "You're one invite away from collaborating with your team in real-time across your entire workspace.",
@@ -22,10 +21,7 @@ const AuthLayout: Component<RouteSectionProps> = (props) => {
   return (
     <div class="flex flex-row h-full w-full">
       <DotsBackground class="absolute mask-edge-fading-16" />
-      <div class="flex items-center font-bold text-3xl top-4 left-4 absolute">
-        <div class="h-8 w-8 i-andesine:logo bg-gradient-to-tr" />
-        ndesine
-      </div>
+      <Logo class="top-4 left-4 absolute" />
       <div class="flex-1 relative flex justify-center items-center">
         <div class="p-4 lg:p-24 relative">
           <div class="absolute h-full w-full top-0 left-0 mask-edge-fading-4 lg:mask-edge-fading-24 bg-gray-100 rounded-2xl" />

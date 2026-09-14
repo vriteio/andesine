@@ -76,8 +76,8 @@ const getColorClasses = (color: ButtonColor, variant: ButtonVariant) => {
       ":base: bg-gradient-to-tr from-secondary via-primary to-secondary bg-[length:125%_auto] text-white outline-tertiary"
   };
   const variants: Record<ButtonVariant, string> = {
-    solid: ":base: !focus:outline-none",
-    text: ":base: bg-transparent !focus:outline-none",
+    solid: ":base: !focus:outline-none !focus-visible:outline-none",
+    text: ":base: bg-transparent !focus:outline-none !focus-visible:outline-none",
     outlined: ":base: outline outline-1 -outline-offset-0.5 shadow-md"
   };
 

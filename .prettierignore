@@ -1,2 +1,5 @@
 apps/migrate/drizzle/meta/
 pnpm-lock.yaml
+**/.astro/**
+**/.nimbus/**
+**/.wrangler/**

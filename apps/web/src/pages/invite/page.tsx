@@ -2,10 +2,9 @@ import { type Component, createMemo, createSignal, onMount, Match, Switch, Show 
 import { Title } from "@solidjs/meta";
 import { useLocation, useNavigate } from "@solidjs/router";
 import { authClient, client } from "#web/lib/api";
-import { IconButton } from "@andesine/components";
+import { IconButton, DotsBackground } from "@andesine/components";
 import { appendRedirectTo } from "#web/lib/navigation";
 import { createMutation } from "@tanstack/solid-query";
-import { DotsBackground } from "#web/components/dots-background";
 
 type InviteErrorCode =
   | "INVITE_ACCOUNT_MISMATCH"

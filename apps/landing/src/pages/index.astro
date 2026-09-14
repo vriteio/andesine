@@ -1,0 +1,37 @@
+---
+import { LandingPage } from "../components/landing-page";
+import { HeroRibbon } from "../components/sections/hero/hero-ribbon";
+import { SiteHeader } from "../components/shared/site-header";
+import { Pricing } from "../components/sections/pricing";
+import { HeroHeading } from "../components/sections/hero/hero-heading";
+import { Publishing } from "../components/sections/publishing";
+import DocumentHead from "../components/shared/document-head/index.astro";
+import { PageScrollShadows } from "../components/shared/page-scroll-shadows";
+import "../styles.scss";
+
+const title = "Andesine — The adaptive content workspace";
+const description =
+  "Write, organize, and publish docs, guides, and knowledge bases in one shared workspace. Meet Andesine, the next chapter of Vrite.";
+---
+
+<!doctype html>
+<html lang="en" class="scrollbar-contrast" style="background-color: #f9fafb">
+  <head>
+    <DocumentHead title={title} description={description} path="/" />
+  </head>
+  <body style="background-color: #f9fafb">
+    <PageScrollShadows client:load />
+    <LandingPage>
+      <SiteHeader slot="header" client:load />
+      <HeroRibbon slot="ribbon" client:load />
+      <HeroHeading slot="heading" client:load />
+      <Publishing slot="publishing" client:visible />
+      <Pricing slot="pricing" client:visible />
+    </LandingPage>
+    <script>
+      import { initEntryAnimations } from "../entry-animations";
+
+      initEntryAnimations();
+    </script>
+  </body>
+</html>

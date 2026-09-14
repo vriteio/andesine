@@ -1,0 +1,37 @@
+---
+import { Logo } from "@andesine/components/fragments";
+import DocumentHead from "../document-head/index.astro";
+import { PageScrollShadows } from "../page-scroll-shadows";
+import styles from "./styles.module.scss";
+import "../../../styles.scss";
+
+interface Props {
+  title: string;
+  description: string;
+  path: string;
+}
+
+const { title, description, path } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" class="scrollbar-contrast" style="background-color: #f9fafb">
+  <head>
+    <DocumentHead title={title} description={description} path={path} />
+  </head>
+  <body style="background-color: #f9fafb">
+    <PageScrollShadows client:load />
+    <header
+      class="mx-auto flex w-full max-w-5xl px-4 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] md:px-8"
+    >
+      <a href="/?landing=1" aria-label="Andesine home">
+        <Logo />
+      </a>
+    </header>
+    <main class="mx-auto w-full max-w-3xl px-4 pb-20 pt-8 md:px-8">
+      <article class={styles.content}>
+        <slot />
+      </article>
+    </main>
+  </body>
+</html>

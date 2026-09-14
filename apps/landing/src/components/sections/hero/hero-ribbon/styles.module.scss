@@ -1,0 +1,25 @@
+// Entry reveal
+.ribbon[data-ribbon-ready="true"] {
+  mask-image: linear-gradient(to right, black 33.333%, transparent 66.667%);
+  mask-size: 300% 100%;
+  mask-repeat: no-repeat;
+  animation: reveal 1000ms ease-out both;
+}
+
+@keyframes reveal {
+  from {
+    mask-position: 100% 0;
+  }
+
+  to {
+    mask-position: 0 0;
+  }
+}
+
+// Reduced motion
+@media (prefers-reduced-motion: reduce) {
+  .ribbon[data-ribbon-ready="true"] {
+    animation: none;
+    mask-image: none;
+  }
+}

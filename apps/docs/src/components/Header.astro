@@ -1,0 +1,124 @@
+---
+import type { SidebarSection } from "@cloudflare/nimbus-docs/types";
+import Icon from "@cloudflare/nimbus-docs/components/Icon.astro";
+import { Button } from "./ui/button";
+import { LinkButton } from "./ui/link-button";
+import { ThemeToggle } from "./ui/theme-toggle";
+import SearchTrigger from "./ui/search/SearchTrigger.astro";
+import { config } from "virtual:nimbus/config";
+import { getSidebarSections, stripBase, withBase } from "@cloudflare/nimbus-docs/runtime";
+
+interface Props {
+  /** Astro collection id for the current page, forwarded from DocsLayout. */
+  collection?: string;
+  /** Astro entry id for the current page, forwarded from DocsLayout. */
+  entryId?: string;
+  /**
+   * Whether the page has a sidebar to open. When `false`, the mobile
+   * menu button is hidden — pages that opted out via `sidebar: false`
+   * shouldn't show a button that opens an empty dialog. Default `true`.
+   */
+  showSidebar?: boolean;
+  sections?: SidebarSection[];
+}
+
+// `entryId` is part of Props as a forward-compat hook (the version-switcher
+// recipe reads it) but the base Header doesn't use it — leave it off the
+// destructure to avoid an unused-var warning.
+const { collection, showSidebar = true, sections: sectionsProp } = Astro.props;
+
+// Normalize trailing slash so isActive matches sidebar hrefs.
+const currentSlug =
+  stripBase(Astro.url.pathname, import.meta.env.BASE_URL).replace(/\/$/, "") || "/";
+const sections = sectionsProp ?? (await getSidebarSections(currentSlug, { collection }));
+const showSections = sections.length >= 2;
+const homeHref = withBase("/overview/", import.meta.env.BASE_URL);
+const logoSrc = withBase("/favicon.svg", import.meta.env.BASE_URL);
+const resolveSectionHref = (href: string): string => withBase(href, import.meta.env.BASE_URL);
+---
+
+<header
+  class="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-xl after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-primary/35 after:to-transparent"
+>
+  <div class="mx-auto flex items-center justify-between gap-3 h-14 px-4 lg:px-6">
+    <div class="flex items-center gap-3 min-w-0">
+      <slot name="brand">
+        <a
+          href={homeHref}
+          aria-label="Andesine documentation overview"
+          class="group flex shrink-0 items-center gap-2 no-underline"
+        >
+          <img src={logoSrc} alt="" class="size-7" />
+          <span class="text-lg font-bold tracking-tight text-foreground">Andesine</span>
+          <span
+            class="rounded-md bg-card/80 px-1.5 py-0.5 text-xs font-semibold text-primary shadow-sm ring-1 ring-border"
+          >
+            Docs
+          </span>
+        </a>
+      </slot>
+
+      {
+        showSections && (
+          <nav
+            aria-label="Sections"
+            class="hidden md:flex items-center gap-1 ml-4 pl-4 border-l border-border h-6 min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {sections.map((section) => (
+              <a
+                href={resolveSectionHref(section.href)}
+                aria-current={section.isActive ? "page" : undefined}
+                class:list={[
+                  "px-2 py-1 rounded-md text-[0.8125rem] font-medium no-underline transition-colors shrink-0 whitespace-nowrap",
+                  section.isActive
+                    ? "text-foreground bg-accent"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
+                ]}
+              >
+                {section.label}
+              </a>
+            ))}
+          </nav>
+        )
+      }
+    </div>
+
+    <div class="flex items-center gap-2 shrink-0">
+      <slot name="actions" />
+      <LinkButton href="/auth/sign-up" variant="primary" size="sm" class="hidden md:inline-flex">
+        Start writing
+      </LinkButton>
+      {config.search !== false && <SearchTrigger />}
+      {
+        config.github && (
+          <LinkButton
+            href={config.github}
+            variant="minimal"
+            shape="square"
+            size="sm"
+            aria-label="GitHub"
+            target="_blank"
+            rel="noopener"
+            class="text-muted-foreground"
+          >
+            <Icon name="ph:github-logo" class="w-4 h-4" />
+          </LinkButton>
+        )
+      }
+      <ThemeToggle />
+      {
+        showSidebar && (
+          <Button
+            variant="ghost"
+            shape="square"
+            size="sm"
+            icon="ph:list"
+            aria-label="Open navigation"
+            data-menu-btn
+            class="md:hidden text-muted-foreground"
+          />
+        )
+      }
+    </div>
+  </div>
+</header>

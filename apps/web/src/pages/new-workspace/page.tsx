@@ -1,11 +1,16 @@
 import { createAsync, query, revalidate, useNavigate } from "@solidjs/router";
 import { Title } from "@solidjs/meta";
 import { type Component, createSignal, Show } from "solid-js";
-import { IconButton, Input, Tooltip, AnimatedGradientCard } from "@andesine/components";
+import {
+  IconButton,
+  Input,
+  Tooltip,
+  AnimatedGradientCard,
+  DotsBackground
+} from "@andesine/components";
 import { authClient, client } from "#web/lib/api";
 import { getPostAuthRedirectPath } from "#web/lib/navigation";
 import { createMutation } from "@tanstack/solid-query";
-import { DotsBackground } from "#web/components/dots-background";
 
 const workspacesQuery = query(() => client.workspaces.list(), "workspaces");
 

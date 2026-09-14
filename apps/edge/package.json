@@ -1,0 +1,17 @@
+{
+  "name": "@andesine/edge",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predev": "pnpm --filter @andesine/landing build && pnpm --filter @andesine/docs build",
+    "dev": "wrangler dev -c wrangler.jsonc -c ../docs/wrangler.jsonc",
+    "typecheck": "tsc --noEmit",
+    "predeploy": "pnpm --filter @andesine/landing build && pnpm --filter @andesine/docs build && pnpm typecheck",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260911.1",
+    "typescript": "6.0.3",
+    "wrangler": "^4.95.0"
+  }
+}

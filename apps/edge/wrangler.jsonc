@@ -1,0 +1,20 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "andesine-edge",
+  "main": "./src/index.ts",
+  "compatibility_date": "2026-09-13",
+  "workers_dev": true,
+  "keep_vars": true,
+  "assets": {
+    "directory": "../landing/dist",
+    "binding": "LANDING",
+    "run_worker_first": true,
+    "not_found_handling": "none"
+  },
+  "services": [
+    {
+      "binding": "DOCS",
+      "service": "andesine-docs"
+    }
+  ]
+}
