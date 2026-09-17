@@ -1,13 +1,18 @@
 import { useClipboard } from "#web/context/clipboard";
 import { useWorkspace } from "#web/context/workspace";
 import { useTree } from "#web/components/tree";
-import { useNavigate } from "@solidjs/router";
+import { useNavigate, useSearchParams } from "@solidjs/router";
+import { usePublishing } from "#web/context/publishing";
+import { getOverlayEntryPath } from "./overlay-entry";
+import { withWorkspacePanelParams } from "../../panel-navigation";
 
 const useExplorerActions = () => {
   const { copyText } = useClipboard();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [{ focusedID, selection, flattenedOrder }, tree] = useTree();
   const { workspaceID, content } = useWorkspace();
+  const publishing = usePublishing();
 
   const getFocusedVisibleID = () => {
     const focused = focusedID();
@@ -70,7 +75,9 @@ const useExplorerActions = () => {
       ? content.collections.get({ collectionID: targetID })
       : undefined;
     const targetEntry = targetID ? content.entries.get({ entryID: targetID }) : undefined;
-    const parentID = targetCollection?.id ?? targetEntry?.collectionID;
+    const entryOverlay = targetID ? publishing.getEntryOverlay(targetID) : undefined;
+    const parentID =
+      targetCollection?.id ?? targetEntry?.collectionID ?? entryOverlay?.collectionID ?? undefined;
     const canCreate =
       type === "entry"
         ? ensureEntryAction(parentID || null, "entry:create")
@@ -102,9 +109,15 @@ const useExplorerActions = () => {
     if (!ids.length) return false;
 
     const selectedContent = content.tree.splitIDs({ ids });
+
+    if (selectedContent.collections.length + selectedContent.entries.length !== ids.length) {
+      return true;
+    }
+
     const canDelete =
       selectedContent.collections.every((collectionID) => {
         return (
+          !publishing.isCollectionReverting(collectionID) &&
           content.canCollection(collectionID, "collection:delete") &&
           !content.hasActiveSchemaMigration(collectionID, true)
         );
@@ -113,6 +126,7 @@ const useExplorerActions = () => {
         const entry = content.entries.get({ entryID });
 
         return (
+          !publishing.isEntryReverting(entryID) &&
           content.canEntry(entry?.collectionID || null, "entry:delete") &&
           !content.hasActiveSchemaMigration(entry?.collectionID || null)
         );
@@ -131,6 +145,13 @@ const useExplorerActions = () => {
     const targetID = getCommandTargetID();
     const collection = targetID ? content.collections.get({ collectionID: targetID }) : undefined;
     const entry = targetID ? content.entries.get({ entryID: targetID }) : undefined;
+    const reverting = Boolean(
+      targetID &&
+      (publishing.isCollectionReverting(targetID) || publishing.isEntryReverting(targetID))
+    );
+
+    if (reverting || (targetID && publishing.getEntryOverlay(targetID))) return false;
+
     const canRename = collection
       ? content.canCollection(collection.id, "collection:update") &&
         !content.hasActiveSchemaMigration(collection.id, true)
@@ -146,13 +167,26 @@ const useExplorerActions = () => {
 
     if (!id) return false;
     tree.setExactSelection([]);
-    if (content.collections.get({ collectionID: id })) {
+    if (
+      content.collections.get({ collectionID: id }) ||
+      publishing.getCollectionOverlay(id) ||
+      publishing.getPendingCollectionOverlay(id)
+    ) {
       tree.toggleExpanded(id);
       return true;
     }
-    if (!content.entries.get({ entryID: id })) return false;
+    if (!content.entries.get({ entryID: id })) {
+      const entryOverlay = publishing.getEntryOverlay(id);
 
-    navigate(`/${workspaceID()}/${id}`);
+      if (!entryOverlay) return false;
+
+      navigate(
+        withWorkspacePanelParams(getOverlayEntryPath(workspaceID(), entryOverlay), searchParams)
+      );
+      return true;
+    }
+
+    navigate(withWorkspacePanelParams(`/${workspaceID()}/${id}`, searchParams));
     return true;
   };
   const copyTargetID = () => {

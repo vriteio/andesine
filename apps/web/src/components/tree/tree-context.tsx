@@ -166,6 +166,13 @@ const TreeProvider: ParentComponent<TreeProviderProps> = (props) => {
       }
     )
   );
+  createEffect(
+    on(
+      () => props.expandedSourceKey?.(),
+      () => setRawSelection([]),
+      { defer: true }
+    )
+  );
 
   createEffect(
     on(

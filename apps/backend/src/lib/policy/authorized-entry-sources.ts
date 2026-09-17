@@ -8,12 +8,14 @@ import type { AuthorizedCollectionTree } from "./authorized-collection-tree";
 
 interface EntryAuthorizationSource {
   collectionID?: string | null;
+  deletedAt?: Date | null;
   id: string;
 }
 
 interface LoadEntryAuthorizationSourcesInput {
   database?: Database;
   entryIDs: string[];
+  includeDeleted?: boolean;
   workspaceID: string;
 }
 
@@ -33,16 +35,14 @@ const loadEntryAuthorizationSources = async (
   const database = input.database || db;
   const workspaceID = toUUID(input.workspaceID);
   const entryIDs = [...new Set(input.entryIDs.map(toUUID))];
+  const filters = [eq(entries.workspaceID, workspaceID), inArray(entries.id, entryIDs)];
+
+  if (!input.includeDeleted) filters.push(isNull(entries.deletedAt));
+
   const rows = await database
-    .select({ id: entries.id, collectionID: entries.collectionID })
+    .select({ id: entries.id, collectionID: entries.collectionID, deletedAt: entries.deletedAt })
     .from(entries)
-    .where(
-      and(
-        eq(entries.workspaceID, workspaceID),
-        inArray(entries.id, entryIDs),
-        isNull(entries.deletedAt)
-      )
-    );
+    .where(and(...filters));
 
   if (rows.length !== entryIDs.length) {
     throw new ORPCError("NOT_FOUND", { message: "Entry not found" });

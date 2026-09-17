@@ -28,7 +28,7 @@ const IMAGE_SEARCH_COLLECTION_ALIAS = "andesine_search_images";
 const CURRENT_SEARCH_COLLECTION_ALIAS = "andesine_search_current";
 const CURRENT_SEARCH_COLLECTION_NAME = "andesine_search_current_v1";
 const PUBLISHED_SEARCH_COLLECTION_ALIAS = "andesine_search_published";
-const PUBLISHED_SEARCH_COLLECTION_NAME = "andesine_search_published_v1";
+const PUBLISHED_SEARCH_COLLECTION_NAME = "andesine_search_published_v2";
 const commonFields: TypesenseFieldSchema[] = [
   { name: "scope", type: "string" },
   { name: "workspaceID", type: "string" },
@@ -74,6 +74,7 @@ const createSearchCollectionDefinitions = (
       ...commonFields,
       { name: "channelID", type: "string" },
       { name: "channelCode", type: "string" },
+      { name: "snapshotID", type: "string" },
       { name: "versionID", type: "string" },
       embeddingField
     ],

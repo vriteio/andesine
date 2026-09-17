@@ -1,12 +1,15 @@
 import { IconButton, Skeleton, Tooltip } from "@andesine/components";
-import { useParams } from "@solidjs/router";
-import { type Component, createMemo, createSignal, For, Show, Suspense } from "solid-js";
+import { useParams, useSearchParams } from "@solidjs/router";
+import { type Component, createEffect, createMemo, For, Show, Suspense } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import { useLayout } from "#web/context/layout";
 import { useWorkspace } from "#web/context/workspace";
 import { VersionHistoryPanel } from "./version-history-panel";
 import { VersionHistorySkeleton } from "./version-history/skeleton";
 import { SchemaVersionHistoryPanel } from "./schema/version-history-panel";
+import { PublishingPanel, PublishingPanelFallback } from "./publishing";
+import { usePublishing } from "#web/context/publishing";
+import { RIGHT_SIDE_PANEL_PARAM } from "./panel-navigation";
 
 interface RightSidePanelOption {
   id: string;
@@ -17,6 +20,7 @@ interface RightSidePanelOption {
   available(): boolean;
 }
 const DEFAULT_RIGHT_SIDE_PANEL_WIDTH = 248;
+const PUBLISHING_PANEL_ID = "publishing";
 
 const VersionHistoryPanelFallback: Component = () => {
   return (
@@ -31,7 +35,31 @@ const VersionHistoryPanelFallback: Component = () => {
 
 const useRightSidePanelOptions = () => {
   const params = useParams<{ slug?: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { content, currentWorkspace } = useWorkspace();
+  const publishing = usePublishing();
+  const publishingAvailable = () => {
+    const entry = content.entries.get({ entryID: params.slug || "" });
+    const deletedEntry = entry ? undefined : publishing.getDeletedEntry(params.slug || "");
+    const status = entry ? content.getEntryPublishingStatus(entry.id) : null;
+    const publishedRoot = publishing.getPublishedEntryRoot(params.slug || "");
+
+    return Boolean(
+      currentWorkspace() &&
+      (deletedEntry ||
+        publishedRoot ||
+        (entry &&
+          status &&
+          status !== "outside" &&
+          content.canEntry(entry.collectionID || null, "publishing:read")))
+    );
+  };
+  const publishingAvailabilityResolved = () => {
+    return (
+      content.offline() ||
+      (!content.loading() && !publishing.statusLoading() && !publishing.explorerOverlayLoading())
+    );
+  };
   const options: RightSidePanelOption[] = [
     {
       id: "versions",
@@ -41,11 +69,26 @@ const useRightSidePanelOptions = () => {
       fallback: VersionHistoryPanelFallback,
       available: () => {
         const entry = content.entries.get({ entryID: params.slug || "" });
+        const deletedEntry = entry ? undefined : publishing.getDeletedEntry(params.slug || "");
 
         return Boolean(
-          entry &&
+          (entry || deletedEntry?.canReadVersions) &&
           currentWorkspace() &&
-          content.canEntry(entry.collectionID || null, "version:read")
+          (!entry || content.canEntry(entry.collectionID || null, "version:read"))
+        );
+      }
+    },
+    {
+      id: PUBLISHING_PANEL_ID,
+      label: "Publishing",
+      icon: "i-lucide:radio",
+      component: PublishingPanel,
+      fallback: PublishingPanelFallback,
+      available: () => {
+        return (
+          publishingAvailable() ||
+          (searchParams[RIGHT_SIDE_PANEL_PARAM] === PUBLISHING_PANEL_ID &&
+            !publishingAvailabilityResolved())
         );
       }
     },
@@ -67,6 +110,13 @@ const useRightSidePanelOptions = () => {
     }
   ];
 
+  createEffect(() => {
+    if (searchParams[RIGHT_SIDE_PANEL_PARAM] !== PUBLISHING_PANEL_ID) return;
+    if (!publishingAvailabilityResolved() || publishingAvailable()) return;
+
+    setSearchParams({ [RIGHT_SIDE_PANEL_PARAM]: undefined }, { replace: true });
+  });
+
   return createMemo(() =>
     content.offline() ? [] : options.filter((option) => option.available())
   );
@@ -74,18 +124,27 @@ const useRightSidePanelOptions = () => {
 
 const RightSidePanel: Component = () => {
   const { layout } = useLayout();
-  const { content } = useWorkspace();
+  const [searchParams, setSearchParams] = useSearchParams();
   const options = useRightSidePanelOptions();
-  const [selectedOptionID, setSelectedOptionID] = createSignal<string>();
   const selectedOption = createMemo(() => {
-    return options().find((option) => option.id === selectedOptionID()) || options()[0];
+    const requestedOptionID =
+      searchParams[RIGHT_SIDE_PANEL_PARAM] === PUBLISHING_PANEL_ID
+        ? PUBLISHING_PANEL_ID
+        : "versions";
+
+    return options().find((option) => option.id === requestedOptionID) || options()[0];
   });
+  const selectOption = (option: RightSidePanelOption) => {
+    setSearchParams({
+      [RIGHT_SIDE_PANEL_PARAM]: option.id === PUBLISHING_PANEL_ID ? PUBLISHING_PANEL_ID : undefined
+    });
+  };
 
   return (
     <div class="flex min-h-0 w-full flex-1 flex-col">
       <div class="flex w-full gap-1 px-1">
-        <Show when={options().length === 0 && content.accessLoading()}>
-          <Skeleton class="h-7 w-7 rounded-lg" />
+        <Show when={options().length === 0 && layout.rightSidePanelWidth > 0}>
+          <Skeleton class={["h-7 w-7 rounded-lg", "h-7 w-7 rounded-lg"]} />
         </Show>
         <For each={options()}>
           {(option) => {
@@ -103,7 +162,7 @@ const RightSidePanel: Component = () => {
                     color={selected() ? "primary" : "base"}
                     iconProps={{ class: "h-5 w-5" }}
                     icon={option.icon}
-                    onClick={() => setSelectedOptionID(option.id)}
+                    onClick={() => selectOption(option)}
                     aria-label={option.label}
                     aria-pressed={selected()}
                   />
@@ -117,7 +176,7 @@ const RightSidePanel: Component = () => {
         <Show
           when={layout.rightSidePanelWidth > 0 && selectedOption()}
           fallback={
-            <Show when={layout.rightSidePanelWidth > 0 && content.accessLoading()}>
+            <Show when={layout.rightSidePanelWidth > 0}>
               <VersionHistoryPanelFallback />
             </Show>
           }

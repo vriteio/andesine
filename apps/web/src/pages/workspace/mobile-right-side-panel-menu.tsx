@@ -1,6 +1,7 @@
 import { Dropdown, IconButton } from "@andesine/components";
 import { type Component, createSignal, For, Show, Suspense } from "solid-js";
 import { Dynamic } from "solid-js/web";
+import { usePublishing } from "#web/context/publishing";
 import { useWorkspace } from "#web/context/workspace";
 import { PublishingMenu } from "./publishing-menu";
 import { useRightSidePanelOptions } from "./right-side-panel";
@@ -12,6 +13,7 @@ interface MobileRightSidePanelMenuProps {
 
 const MobileRightSidePanelMenu: Component<MobileRightSidePanelMenuProps> = (props) => {
   const { content } = useWorkspace();
+  const publishing = usePublishing();
   const options = useRightSidePanelOptions();
   const [opened, setOpened] = createSignal(false);
   const publishingAvailable = () => {
@@ -21,7 +23,10 @@ const MobileRightSidePanelMenu: Component<MobileRightSidePanelMenuProps> = (prop
 
     const status = content.getEntryPublishingStatus(entryID);
 
-    return status !== null && status !== "outside";
+    return (
+      status !== null &&
+      (status !== "outside" || Boolean(publishing.getPublishedEntryRoot(entryID)))
+    );
   };
   const available = () => publishingAvailable() || options().length > 0;
   const title = () => props.entryTitle || "Current entry";

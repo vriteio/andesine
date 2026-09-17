@@ -6,11 +6,11 @@ import {
   contents,
   effectiveSchemaRevisions,
   entries,
-  entryPublications,
   entryVersionActivity,
   entryVersionActivityContributors,
   entryVersions,
   publishingChannels,
+  publishingSnapshotEntries,
   memberships,
   schemaMigrationEntries,
   schemaMigrations
@@ -65,7 +65,7 @@ const collaborationDatabase = new Database({
           and(
             eq(contents.entryID, toUUID(documentName)),
             eq(entries.workspaceID, workspaceID),
-            isNull(entries.deletedAt)
+            context.includeDeleted ? undefined : isNull(entries.deletedAt)
           )
         )
         .limit(1);
@@ -133,7 +133,7 @@ const collaborationDatabase = new Database({
           and(
             eq(entries.id, entryID),
             eq(entries.workspaceID, workspaceID),
-            isNull(entries.deletedAt)
+            lastContext.includeDeleted ? undefined : isNull(entries.deletedAt)
           )
         )
         .for("update");
@@ -168,13 +168,16 @@ const collaborationDatabase = new Database({
         activeMigration?.status === "queued" &&
         activeMigration.jobID === null &&
         activeMigration.entryStatus === "queued";
+      const hasPersistedSchemaRevision = lastContext.persistedSchemaRevisionID !== undefined;
+      const preserveSchemaRevision =
+        hasPersistedSchemaRevision || lastContext.preserveSchemaRevision;
 
       if (activeMigration && !preparingMigration) return null;
 
       // Preserve pending edits until the worker saves the recovery version. A move has
       // already changed the collection, so its active schema can be the destination schema.
       const [activeRevision] =
-        entry.collectionID && !preparingMigration
+        entry.collectionID && !preparingMigration && !preserveSchemaRevision
           ? await tx
               .select({
                 definition: effectiveSchemaRevisions.definition,
@@ -196,24 +199,25 @@ const collaborationDatabase = new Database({
           state: contents.state,
           hash: contents.hash,
           publishedHash: entryVersions.hash,
-          publishedVersionID: entryPublications.versionID
+          publishedVersionID: publishingSnapshotEntries.versionID
         })
         .from(contents)
         .leftJoin(
           publishingChannels,
           and(
             eq(publishingChannels.workspaceID, workspaceID),
-            eq(publishingChannels.code, PUBLISHED_CHANNEL_CODE)
+            eq(publishingChannels.code, PUBLISHED_CHANNEL_CODE),
+            isNull(publishingChannels.deletedAt)
           )
         )
         .leftJoin(
-          entryPublications,
+          publishingSnapshotEntries,
           and(
-            eq(entryPublications.entryID, entryID),
-            eq(entryPublications.channelID, publishingChannels.id)
+            eq(publishingSnapshotEntries.entryID, entryID),
+            eq(publishingSnapshotEntries.snapshotID, publishingChannels.currentSnapshotID)
           )
         )
-        .leftJoin(entryVersions, eq(entryVersions.id, entryPublications.versionID))
+        .leftJoin(entryVersions, eq(entryVersions.id, publishingSnapshotEntries.versionID))
         .where(eq(contents.entryID, entryID));
       const persistedDocument = new Doc();
 
@@ -225,15 +229,25 @@ const collaborationDatabase = new Database({
       const submittedDocument = normalizeContentElements(
         serializeContentDocument(persistedDocument)
       );
-      const normalizedContent = activeRevision
-        ? migrateContentToSchema({
-            defaultMode: "none",
-            document: submittedDocument,
-            schema: getResolvedSchemaDefinition(activeRevision.definition)
-          })
-        : preparingMigration
-          ? null
-          : removeContentSchema(submittedDocument);
+      // Revert inspection connections must not migrate unchanged content on disconnect.
+      const normalizedContent = preserveSchemaRevision
+        ? { changed: false, document: submittedDocument }
+        : activeRevision
+          ? migrateContentToSchema({
+              defaultMode: "none",
+              document: submittedDocument,
+              schema: getResolvedSchemaDefinition(activeRevision.definition)
+            })
+          : preparingMigration
+            ? null
+            : removeContentSchema(submittedDocument);
+      const schemaRevisionID = hasPersistedSchemaRevision
+        ? lastContext.persistedSchemaRevisionID
+          ? toUUID(lastContext.persistedSchemaRevisionID)
+          : null
+        : preparingMigration || preserveSchemaRevision
+          ? undefined
+          : activeRevision?.id || null;
 
       if (normalizedContent?.changed) {
         replaceContentDocument(persistedDocument, normalizedContent.document);
@@ -269,7 +283,7 @@ const collaborationDatabase = new Database({
           state: Buffer.from(mergedState),
           document,
           hash,
-          ...(activeRevision && { schemaRevisionID: activeRevision.id }),
+          ...(schemaRevisionID !== undefined && { schemaRevisionID }),
           updatedAt: new Date()
         })
         .onConflictDoUpdate({
@@ -278,7 +292,7 @@ const collaborationDatabase = new Database({
             state: Buffer.from(mergedState),
             document,
             hash,
-            ...(activeRevision && { schemaRevisionID: activeRevision.id }),
+            ...(schemaRevisionID !== undefined && { schemaRevisionID }),
             updatedAt: new Date()
           }
         });

@@ -1,4 +1,10 @@
-import { TreeRoot, TreeSelection, useTree } from "#web/components/tree";
+import {
+  TreeRoot,
+  TreeSelection,
+  TreeSkeleton,
+  useTree,
+  useTreeMarquee
+} from "#web/components/tree";
 import { useWorkspace } from "#web/context/workspace";
 import {
   type Card,
@@ -9,7 +15,6 @@ import {
   IconButton,
   type MenuItem,
   ScrollShadow,
-  Skeleton,
   Shortcut,
   Button
 } from "@andesine/components";
@@ -23,12 +28,15 @@ import { ExplorerSyncStatusIndicator } from "./explorer-sync-status-indicator";
 import { useExplorerActions } from "./use-explorer-actions";
 import { useExplorerDrop } from "./use-explorer-drop";
 import { isExplorerMenuElement, useExplorerKeyboard } from "./use-explorer-keyboard";
-import { useExplorerMarquee } from "./use-explorer-marquee";
 import clsx from "clsx";
 import { PublishingActionsProvider } from "./publishing-actions";
 import { SchemaActionsProvider } from "./schema-actions";
 import { usePublishing } from "#web/context/publishing";
 import { SchemaMigrationFailureDialog } from "../../schema-migration-failure-dialog";
+import { OverlayCollection } from "./overlay-collection";
+import { OverlayEntry } from "./overlay-entry";
+import { sortExplorerCollectionIDs } from "./sort-collections";
+import { sortExplorerEntryIDs } from "./sort-entries";
 
 const Explorer = () => {
   const [{ gap, itemHeight }, { setFocusedID }] = useTree();
@@ -45,10 +53,18 @@ const Explorer = () => {
   const [menuOpened, setMenuOpened] = createSignal(false);
   const debouncedLoading = createDebounced(content.loading, 100);
   const loading = () => !mounted() || debouncedLoading();
+  const getSelectionGroup = (id: string) => {
+    return publishing.getCollectionOverlay(id) ||
+      publishing.getPendingCollectionOverlay(id) ||
+      publishing.getEntryOverlay(id) ||
+      publishing.getPendingEntryOverlay(id)
+      ? "removed"
+      : "normal";
+  };
 
   onMount(() => setMounted(true));
   const { dialogs: moveDialogs, isDraggedOver } = useExplorerDrop(dropRef);
-  const marquee = useExplorerMarquee(scrollableContainerRef, contentContainerRef);
+  const marquee = useTreeMarquee(scrollableContainerRef, contentContainerRef, getSelectionGroup);
   const scrollItemIntoView = (id: string) => {
     const container = scrollableContainerRef();
     const item = container
@@ -68,6 +84,7 @@ const Explorer = () => {
   };
   const keyboard = useExplorerKeyboard({
     active: () => pointerInside() || focusInside(),
+    getSelectionGroup,
     scrollItemIntoView
   });
   const resetFocus = () => {
@@ -134,7 +151,7 @@ const Explorer = () => {
             }
           ]
         : []),
-      ...(publishing.channelsError() || publishing.statusError()
+      ...(publishing.channelsError() || publishing.entryOverlaysError() || publishing.statusError()
         ? [
             {
               label: "Retry publishing status",
@@ -149,6 +166,26 @@ const Explorer = () => {
   };
   const hasHeaderOptions = () => headerOptions().length > 0;
   const { collections, entries } = content.tree.getLevel({ parentID: null });
+  const collectionOverlays = () => publishing.getCollectionOverlaysInParent(null);
+  const pendingCollectionOverlays = () => {
+    return publishing.getPendingCollectionOverlaysInParent(null);
+  };
+  const collectionIDs = () => {
+    return sortExplorerCollectionIDs({
+      collectionOverlays: collectionOverlays(),
+      pendingCollectionOverlays: pendingCollectionOverlays(),
+      workingCollectionIDs: collections().map((collection) => collection.id)
+    });
+  };
+  const entryOverlays = () => publishing.getEntryOverlaysInCollection(null);
+  const pendingEntryOverlays = () => publishing.getPendingEntryOverlaysInCollection(null);
+  const entryIDs = () => {
+    return sortExplorerEntryIDs({
+      entryOverlays: entryOverlays(),
+      pendingEntryOverlays: pendingEntryOverlays(),
+      workingEntries: entries()
+    });
+  };
 
   return (
     <DropdownArea {...EXPLORER_GESTURE_PROPS}>
@@ -157,6 +194,7 @@ const Explorer = () => {
       <TreeRoot>
         <div
           data-explorer-panel
+          data-tree-marquee
           tabIndex={0}
           class="flex min-h-0 flex-1 flex-col items-start justify-center outline-none select-none"
           style={{ "-webkit-touch-callout": "none" }}
@@ -255,22 +293,71 @@ const Explorer = () => {
                 style={{ gap }}
               >
                 <TreeSelection />
-                <Show when={!loading()} fallback={<ExplorerSkeleton itemHeight={itemHeight} />}>
-                  <For each={collections()}>
-                    {(collection) => (
-                      <DropdownArea {...EXPLORER_GESTURE_PROPS}>
-                        <ExplorerCollection collection={collection} topLevel />
-                      </DropdownArea>
-                    )}
+                <Show when={!loading()} fallback={<TreeSkeleton itemHeight={itemHeight} />}>
+                  <For each={collectionIDs()}>
+                    {(collectionID) => {
+                      const collection = () => content.collections.get({ collectionID });
+                      const collectionOverlay = () => {
+                        return (
+                          publishing.getCollectionOverlay(collectionID) ??
+                          publishing.getPendingCollectionOverlay(collectionID)
+                        );
+                      };
+
+                      return (
+                        <Show
+                          when={collection()}
+                          fallback={
+                            <Show when={collectionOverlay()}>
+                              {(overlay) => <OverlayCollection collection={overlay()} topLevel />}
+                            </Show>
+                          }
+                        >
+                          {(workingCollection) => (
+                            <DropdownArea {...EXPLORER_GESTURE_PROPS}>
+                              <ExplorerCollection collection={workingCollection()} topLevel />
+                            </DropdownArea>
+                          )}
+                        </Show>
+                      );
+                    }}
                   </For>
-                  <For each={entries()}>
-                    {(entry) => (
-                      <DropdownArea {...EXPLORER_GESTURE_PROPS}>
-                        <ExplorerEntry entry={entry} topLevel />
-                      </DropdownArea>
-                    )}
+                  <For each={entryIDs()}>
+                    {(entryID) => {
+                      const entry = () => content.entries.get({ entryID });
+                      const entryOverlay = () => {
+                        return (
+                          publishing.getEntryOverlay(entryID) ??
+                          publishing.getPendingEntryOverlay(entryID)
+                        );
+                      };
+
+                      return (
+                        <Show
+                          when={entry()}
+                          fallback={
+                            <Show when={entryOverlay()}>
+                              {(overlay) => <OverlayEntry entry={overlay()} topLevel />}
+                            </Show>
+                          }
+                        >
+                          {(workingEntry) => (
+                            <DropdownArea {...EXPLORER_GESTURE_PROPS}>
+                              <ExplorerEntry entry={workingEntry()} topLevel />
+                            </DropdownArea>
+                          )}
+                        </Show>
+                      );
+                    }}
                   </For>
-                  <Show when={!collections().length && !entries().length}>
+                  <Show
+                    when={
+                      !collectionIDs().length &&
+                      !entries().length &&
+                      !entryOverlays().length &&
+                      !pendingEntryOverlays().length
+                    }
+                  >
                     <div>
                       <For each={createOptions()}>
                         {(option) => (
@@ -323,16 +410,6 @@ const Explorer = () => {
     </DropdownArea>
   );
 };
-
-const ExplorerSkeleton = (props: { itemHeight: string }) => (
-  <>
-    {["w-36", "w-44", "w-32", "w-40"].map((className) => (
-      <div class="flex gap-1.5 items-center px-1" style={{ height: props.itemHeight }}>
-        <Skeleton class={["h-5 w-5 rounded-md", clsx("h-5 rounded-md", className)]} />
-      </div>
-    ))}
-  </>
-);
 
 const ExplorerPanel = () => (
   <ExplorerProvider>

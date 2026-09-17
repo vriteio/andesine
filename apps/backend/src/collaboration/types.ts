@@ -6,6 +6,9 @@ interface CollaborationContext {
   collectionID?: string;
   contributorID?: string;
   entryID?: string;
+  includeDeleted?: boolean;
+  persistedSchemaRevisionID?: string | null;
+  preserveSchemaRevision?: boolean;
   resource?: "entry" | "schema";
   schemaID?: string;
   schemaMigrationReadOnly?: boolean;

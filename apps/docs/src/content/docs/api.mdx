@@ -8,17 +8,85 @@ sidebar:
 Use the content API to deliver published Andesine content to a website, application, or build
 process.
 
+## Authentication
+
+Create an API key with the `read:publishing` permission. Send it as a Bearer token with each tree or
+entry request.
+
+```http
+Authorization: Bearer <api-key>
+```
+
+The API key selects its workspace. A snapshot ID from another workspace does not grant access to
+that workspace.
+
+## Endpoints
+
+| Method | Path                                                                       | Purpose                              |
+| ------ | -------------------------------------------------------------------------- | ------------------------------------ |
+| `GET`  | `/content/tree/{collectionID}`                                             | Read a published collection tree     |
+| `GET`  | `/content/entries/{entryID}`                                               | Read one published entry             |
+| `GET`  | `/content/assets/{workspaceID}/{snapshotID}/{entryID}/{assetID}/{variant}` | Read an image from a published entry |
+
+The OpenAPI description is available at `/openapi.json` on the API host.
+
+## Select published content
+
+Tree and entry requests accept one of these query parameters:
+
+- `channel` selects the channel's current snapshot. If omitted, it defaults to `published`.
+- `snapshotID` selects one current or retained historical snapshot.
+
+Do not send both parameters in one request. The API does not fall back to the current channel when
+a snapshot ID is invalid, unavailable, expired, or from another workspace.
+
+For example, read a tree from the current `published` channel:
+
+```http
+GET /content/tree/{collectionID}?channel=published
+Authorization: Bearer <api-key>
+```
+
+## Consistent reads
+
+Each tree and entry response includes `snapshotID`, `channel`, and `expiresAt`. The current snapshot
+has a null `expiresAt` value. A retained historical snapshot has its scheduled expiry time.
+
+Use the returned `snapshotID` for related reads:
+
+```http
+GET /content/tree/{collectionID}?snapshotID={snapshotID}
+GET /content/entries/{entryID}?snapshotID={snapshotID}
+```
+
+This keeps entry versions, collection names, hierarchy, and order consistent if an author publishes
+new content between requests.
+
 ## Published content
 
 API consumers receive a saved version from a publishing channel. Draft edits do not change the
-published response until a new version is published.
+published response until you publish again. The entry response includes the version summary,
+published name, rich-text content, structured fields, fragments, and available image files.
+
+An entry or collection must be present in the selected snapshot. Its current workspace location,
+publishing eligibility, or deletion state does not change a retained snapshot.
 
 ## Structured fields
 
 Responses can include document properties and named rich-text fragments. This lets consumers use
 the content model directly instead of parsing one large document.
 
-<Aside type="note" title="Reference in progress">
-  Authentication, endpoints, request parameters, and response schemas will be documented here after
-  the public API contract is finalized.
-</Aside>
+## Images
+
+The entry response includes snapshot-scoped URLs for its image variants. Use the returned URL as-is.
+It grants access only when the asset belongs to the entry version selected by that available
+snapshot. An expired snapshot makes its image URLs unavailable too.
+
+## Caching and availability
+
+Tree and entry responses include `ETag` and `Cache-Control` headers. Send `If-None-Match` with a
+known ETag to receive `304 Not Modified` when the selected snapshot response did not change.
+
+Unpublishing removes content from the current channel state. Existing snapshot URLs remain readable
+until their retention deadline. When a snapshot expires, the API returns a not-found response
+instead of partial content.

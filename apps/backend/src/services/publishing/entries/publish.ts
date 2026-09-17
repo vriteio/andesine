@@ -64,9 +64,10 @@ const commitPublishEntry = withAuthorization<
 
       return { entrySources, publishingEntries };
     },
+    tree: true,
     transaction: "locked-workspace"
   },
-  async ({ database, input, resolved, workspaceID }) => {
+  async ({ auth, authorization, database, input, resolved, workspaceID }) => {
     const { entrySources, publishingEntries } = resolved;
 
     const tree = await loadPublishingTree(database, workspaceID);
@@ -78,10 +79,13 @@ const commitPublishEntry = withAuthorization<
     }
 
     return publishEntries(database, {
+      authorization,
       workspaceID,
       entries: publishingEntries,
       channel: input.channel,
-      contributorIDs: input.contributorIDs
+      contributorIDs: input.contributorIDs,
+      creatorID: auth.session?.userID,
+      subscriptionPlan: auth.subscriptionPlan
     });
   }
 );

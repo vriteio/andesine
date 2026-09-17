@@ -2,7 +2,11 @@ import { useParams, useSearchParams } from "@solidjs/router";
 import { type Component, createMemo } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
 import { createEntryImages } from "../editor/images";
-import { createEntryDraftResponse, createVersionDetailsResponse } from "#web/lib/data";
+import {
+  createEntryDraftResponse,
+  createPublishedVersionDetailsResponse,
+  createVersionDetailsResponse
+} from "#web/lib/data";
 import { VersionPreviewPane as SharedVersionPreviewPane } from "../version-history/preview-pane";
 
 const VersionPreviewPane: Component = () => {
@@ -11,6 +15,9 @@ const VersionPreviewPane: Component = () => {
   const [searchParams] = useSearchParams();
   const versionID = () => {
     return typeof searchParams.version === "string" ? searchParams.version : "";
+  };
+  const snapshotID = () => {
+    return typeof searchParams.snapshotID === "string" ? searchParams.snapshotID : "";
   };
   const comparing = () => searchParams.compare === "current";
   const images = createMemo(() => {
@@ -21,14 +28,37 @@ const VersionPreviewPane: Component = () => {
     if (!workspaceID || !userID || !entryID) return undefined;
 
     // History has a separate audience. Do not cache it as current-entry content.
-    return createEntryImages({ workspaceID, userID, entryID, cache: false, enabled: () => false });
-  });
-  const versionResponse = createVersionDetailsResponse(versionID);
-  const draftResponse = createEntryDraftResponse(() => (comparing() ? params.slug || "" : ""));
-  const version = () => {
-    const selectedVersion = versionResponse()?.result;
+    const options = {
+      workspaceID,
+      userID,
+      entryID,
+      cache: false,
+      enabled: () => false
+    };
+    const current = createEntryImages(options);
 
-    return selectedVersion?.entryID === params.slug ? selectedVersion : undefined;
+    return {
+      current,
+      version: snapshotID() ? createEntryImages({ ...options, snapshotID: snapshotID() }) : current
+    };
+  });
+  const versionResponse = createVersionDetailsResponse(() => (snapshotID() ? "" : versionID()));
+  const publishedVersionResponse = createPublishedVersionDetailsResponse(
+    () => (snapshotID() ? params.slug || "" : ""),
+    snapshotID
+  );
+  const draftResponse = createEntryDraftResponse(() => (comparing() ? params.slug || "" : ""));
+  const selectedVersionResponse = () => {
+    return snapshotID() ? publishedVersionResponse() : versionResponse();
+  };
+  const version = () => {
+    const selectedVersion = selectedVersionResponse()?.result;
+
+    if (!selectedVersion) return undefined;
+
+    return selectedVersion.entryID === params.slug && selectedVersion.id === versionID()
+      ? selectedVersion
+      : undefined;
   };
   const currentDocument = () => {
     const draft = draftResponse()?.result;
@@ -39,8 +69,9 @@ const VersionPreviewPane: Component = () => {
   return (
     <SharedVersionPreviewPane
       version={version}
-      images={images()}
-      versionError={() => Boolean(versionResponse()?.error)}
+      images={images()?.version}
+      currentImages={images()?.current}
+      versionError={() => Boolean(selectedVersionResponse()?.error)}
       versionUnavailableDescription="This version could not be loaded or is no longer available."
       currentDocument={currentDocument}
       currentError={() => Boolean(draftResponse()?.error)}

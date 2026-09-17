@@ -132,17 +132,17 @@ const SearchResultContent: Component<SearchResultContentProps> = (props) => (
     </div>
     <div class="flex min-w-0 flex-1 flex-col leading-tight">
       <span class="line-clamp-1">{props.label}</span>
-      <Show when={props.sublabel} keyed>
-        {(sublabel) => (
-          <span class="max-w-4/5 line-clamp-2 text-xs font-normal leading-tight text-gray-400">
+      <span class="max-w-4/5 line-clamp-2 text-xs font-normal leading-tight text-gray-400">
+        <Show when={props.sublabel} fallback={"..."} keyed>
+          {(sublabel) => (
             <Show when={props.highlight} keyed fallback={getContentPreview(sublabel, "")}>
               {(query) => (
                 <HighlightedText query={query} text={getContentPreview(sublabel, query)} />
               )}
             </Show>
-          </span>
-        )}
-      </Show>
+          )}
+        </Show>
+      </span>
     </div>
   </>
 );

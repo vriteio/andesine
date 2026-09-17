@@ -1,23 +1,36 @@
 import { versionDetailsType, versionSummaryType } from "#backend/lib/data";
 import {
+  emitCollectionEvent,
+  emitEntryEvent,
   emitPublishingEntryUpdates,
   emitPublishingEvent,
+  emitPublishingSnapshotAdvance,
+  emitSchemaEvent,
   emitVersionCreationEvents
 } from "#backend/events";
 import {
+  type CommitPublishingSnapshotResult,
   PUBLISHED_CHANNEL_CODE,
   publishingChannelCodeType,
   publishingChannelNameType
 } from "#backend/lib/publishing";
-import { id } from "#backend/lib/primitives";
-import { enqueuePublishedChannelPurge, enqueuePublishedEntrySync } from "#backend/lib/queue";
+import { id, publicID } from "#backend/lib/primitives";
+import {
+  enqueueCurrentCollectionSync,
+  enqueueCurrentEntrySync,
+  enqueuePublishedChannelPurge,
+  enqueuePublishedEntrySync
+} from "#backend/lib/queue";
 import { authenticatedRoute, base } from "#backend/lib/transport";
 import { Publishing } from "#backend/services/publishing";
 import { ORPCError } from "@orpc/server";
 import * as z from "zod";
 
-interface PublishingEntryReference {
-  entryID: string;
+interface PublishingSnapshotUpdateInput {
+  channel: string;
+  memberID?: string;
+  snapshot: CommitPublishingSnapshotResult | null;
+  workspaceID: string;
 }
 
 const publishingChannelType = z.object({
@@ -40,6 +53,39 @@ const entryPublicationType = z.object({
 const publishingChannelListItemType = publishingChannelType.extend({
   assignmentCount: z.number().int().min(0).optional()
 });
+const channelContentEntryType = z.object({
+  canPublish: z.boolean().describe("Whether current permissions allow publishing this entry"),
+  canRevert: z.boolean().describe("Whether current permissions allow reverting this entry"),
+  canUnpublish: z.boolean().describe("Whether current permissions allow unpublishing this entry"),
+  collectionID: id().nullable().describe("Current working collection"),
+  deleted: z.boolean().describe("Whether the working entry is deleted"),
+  entryID: id(),
+  name: z.string(),
+  publishedAt: z.iso.datetime().nullable(),
+  rank: z.string(),
+  status: z.enum(["changes", "pending-publish", "pending-removal", "published"]),
+  treeCollectionID: id().nullable().describe("Collection used to place the entry in the tree"),
+  versionID: id().nullable().describe("Version selected by the current snapshot")
+});
+const channelContentCollectionType = z.object({
+  canPublish: z.boolean().describe("Whether current permissions allow publishing this collection"),
+  canRevert: z.boolean().describe("Whether current permissions allow reverting this collection"),
+  canUnpublish: z
+    .boolean()
+    .describe("Whether current permissions allow unpublishing this collection"),
+  collectionID: id(),
+  deleted: z.boolean().describe("Whether the working collection is deleted"),
+  name: z.string(),
+  parentID: id().nullable(),
+  rank: z.string(),
+  status: z.enum(["changes", "pending-publish", "pending-removal", "published"])
+});
+const channelContentType = z.object({
+  channel: publishingChannelCodeType,
+  collections: z.array(channelContentCollectionType),
+  entries: z.array(channelContentEntryType),
+  snapshotID: publicID("snp")
+});
 const channelInput = z.object({
   channel: publishingChannelCodeType
     .optional()
@@ -50,16 +96,51 @@ const publishEntryTargetType = z.object({
   entryID: id().describe("Entry to publish"),
   versionID: id().optional().describe("Existing version to publish")
 });
+const revertPublishingChangesInputType = channelInput
+  .extend({
+    all: z.boolean().optional().describe("Whether to revert all pending changes"),
+    collectionID: id().describe("Publishing root collection"),
+    collectionIDs: z.array(id()).optional().describe("Collections whose changes to revert"),
+    entryIDs: z.array(id()).optional().describe("Entries whose changes to revert"),
+    snapshotID: publicID("snp").describe("Snapshot used to review the changes")
+  })
+  .refine(
+    ({ all, collectionIDs, entryIDs }) => {
+      const hasSelection = Boolean(collectionIDs?.length || entryIDs?.length);
+
+      return all === true ? !hasSelection : hasSelection;
+    },
+    { message: "Select all changes or specific items" }
+  );
+const revertPublishingChangesResultType = z.object({
+  affectedEntryIDs: z.array(id()),
+  deletedEntryIDs: z.array(id()),
+  noOp: z.boolean(),
+  restoredEntryIDs: z.array(id()),
+  versionedEntryIDs: z.array(id())
+});
 const getContributorIDs = (auth: { session?: { memberID: string } }): string[] => {
   return auth.session ? [auth.session.memberID] : [];
 };
-const syncPublishedEntries = async (
-  workspaceID: string,
-  entries: PublishingEntryReference[]
+const handlePublishingSnapshotUpdate = async (
+  input: PublishingSnapshotUpdateInput
 ): Promise<void> => {
+  const snapshot = input.snapshot;
+
+  if (!snapshot?.created) return;
+
+  emitPublishingSnapshotAdvance({
+    workspaceID: input.workspaceID,
+    channel: input.channel,
+    collectionIDs: snapshot.affectedCollectionIDs,
+    entryIDs: snapshot.affectedEntryIDs,
+    memberID: input.memberID,
+    previousSnapshotID: snapshot.previousSnapshotID,
+    snapshotID: snapshot.snapshotID
+  });
   await enqueuePublishedEntrySync({
-    workspaceID,
-    entryIDs: entries.map(({ entryID }) => entryID)
+    workspaceID: input.workspaceID,
+    entryIDs: snapshot.searchSyncEntryIDs
   });
 };
 const publishingRouter = base.prefix("/publishing").router({
@@ -68,7 +149,11 @@ const publishingRouter = base.prefix("/publishing").router({
     .input(
       z.object({
         collectionID: id().describe("Collection to configure"),
-        enabled: z.boolean().describe("Whether to enable publishing on the collection tree"),
+        enabled: z
+          .boolean()
+          .describe(
+            "Enable publishing, or disable and unpublish the collection tree from all channels"
+          ),
         publish: z
           .boolean()
           .optional()
@@ -95,19 +180,28 @@ const publishingRouter = base.prefix("/publishing").router({
           data: { id: input.collectionID, enabled: input.enabled },
           memberID: context.auth.session?.memberID
         });
-        emitPublishingEntryUpdates({
-          workspaceID: context.auth.workspaceID,
-          entries: result.publishingEntries,
-          memberID: context.auth.session?.memberID
-        });
       }
 
+      emitPublishingEntryUpdates({
+        workspaceID: context.auth.workspaceID,
+        entries: result.publishingEntries,
+        memberID: context.auth.session?.memberID
+      });
       emitVersionCreationEvents(
         context.auth.workspaceID,
         result.createdVersions,
         context.auth.session?.memberID
       );
-      await syncPublishedEntries(context.auth.workspaceID, result.publishingEntries);
+      await Promise.all(
+        result.snapshots.map(({ channel, snapshot }) =>
+          handlePublishingSnapshotUpdate({
+            workspaceID: context.auth.workspaceID,
+            channel,
+            memberID: context.auth.session?.memberID,
+            snapshot
+          })
+        )
+      );
 
       return { publishedEntries: result.publishedEntries };
     }),
@@ -116,7 +210,11 @@ const publishingRouter = base.prefix("/publishing").router({
     .input(
       z.object({
         ids: z.array(id()).min(1).describe("IDs of the collections to configure"),
-        enabled: z.boolean().describe("Whether to enable publishing on the collection trees"),
+        enabled: z
+          .boolean()
+          .describe(
+            "Enable publishing, or disable and unpublish the collection trees from all channels"
+          ),
         publish: z
           .boolean()
           .optional()
@@ -147,22 +245,30 @@ const publishingRouter = base.prefix("/publishing").router({
             data: { id: result.collectionID, enabled: input.enabled },
             memberID: context.auth.session?.memberID
           });
-          emitPublishingEntryUpdates({
-            workspaceID: context.auth.workspaceID,
-            entries: result.publishingEntries,
-            memberID: context.auth.session?.memberID
-          });
         }
 
+        emitPublishingEntryUpdates({
+          workspaceID: context.auth.workspaceID,
+          entries: result.publishingEntries,
+          memberID: context.auth.session?.memberID
+        });
         emitVersionCreationEvents(
           context.auth.workspaceID,
           result.createdVersions,
           context.auth.session?.memberID
         );
       }
-      await syncPublishedEntries(
-        context.auth.workspaceID,
-        results.flatMap(({ publishingEntries }) => publishingEntries)
+      await Promise.all(
+        results
+          .flatMap((result) => result.snapshots)
+          .map(({ channel, snapshot }) => {
+            return handlePublishingSnapshotUpdate({
+              workspaceID: context.auth.workspaceID,
+              channel,
+              memberID: context.auth.session?.memberID,
+              snapshot
+            });
+          })
       );
 
       return { publishedEntries };
@@ -199,7 +305,12 @@ const publishingRouter = base.prefix("/publishing").router({
         result.createdVersions,
         context.auth.session?.memberID
       );
-      await syncPublishedEntries(context.auth.workspaceID, result.publishingEntries);
+      await handlePublishingSnapshotUpdate({
+        workspaceID: context.auth.workspaceID,
+        channel: input.channel,
+        memberID: context.auth.session?.memberID,
+        snapshot: result.snapshot
+      });
 
       return { publishedEntries: result.publishedEntries };
     }),
@@ -235,7 +346,12 @@ const publishingRouter = base.prefix("/publishing").router({
         result.createdVersions,
         context.auth.session?.memberID
       );
-      await syncPublishedEntries(context.auth.workspaceID, result.publishingEntries);
+      await handlePublishingSnapshotUpdate({
+        workspaceID: context.auth.workspaceID,
+        channel: input.channel,
+        memberID: context.auth.session?.memberID,
+        snapshot: result.snapshot
+      });
 
       return { publishedEntries: result.publishedEntries };
     }),
@@ -264,7 +380,12 @@ const publishingRouter = base.prefix("/publishing").router({
         channel: input.channel,
         memberID: context.auth.session?.memberID
       });
-      await syncPublishedEntries(context.auth.workspaceID, result.publishingEntries);
+      await handlePublishingSnapshotUpdate({
+        workspaceID: context.auth.workspaceID,
+        channel: input.channel,
+        memberID: context.auth.session?.memberID,
+        snapshot: result.snapshot
+      });
 
       return { unpublishedEntries: result.unpublishedEntries };
     }),
@@ -293,7 +414,12 @@ const publishingRouter = base.prefix("/publishing").router({
         channel: input.channel,
         memberID: context.auth.session?.memberID
       });
-      await syncPublishedEntries(context.auth.workspaceID, result.publishingEntries);
+      await handlePublishingSnapshotUpdate({
+        workspaceID: context.auth.workspaceID,
+        channel: input.channel,
+        memberID: context.auth.session?.memberID,
+        snapshot: result.snapshot
+      });
 
       return { unpublishedEntries: result.unpublishedEntries };
     }),
@@ -326,7 +452,12 @@ const publishingRouter = base.prefix("/publishing").router({
         result.createdVersions,
         context.auth.session?.memberID
       );
-      await syncPublishedEntries(context.auth.workspaceID, result.publishingEntries);
+      await handlePublishingSnapshotUpdate({
+        workspaceID: context.auth.workspaceID,
+        channel: input.channel,
+        memberID: context.auth.session?.memberID,
+        snapshot: result.snapshot
+      });
     }),
   bulkPublishEntries: authenticatedRoute
     .route({ method: "POST", path: "/entries/bulk/publish" })
@@ -356,7 +487,12 @@ const publishingRouter = base.prefix("/publishing").router({
         result.createdVersions,
         context.auth.session?.memberID
       );
-      await syncPublishedEntries(context.auth.workspaceID, result.publishingEntries);
+      await handlePublishingSnapshotUpdate({
+        workspaceID: context.auth.workspaceID,
+        channel: input.channel,
+        memberID: context.auth.session?.memberID,
+        snapshot: result.snapshot
+      });
     }),
   unpublishEntry: authenticatedRoute
     .route({ method: "DELETE", path: "/entries/:entryID" })
@@ -385,7 +521,12 @@ const publishingRouter = base.prefix("/publishing").router({
         channel: input.channel,
         memberID: context.auth.session?.memberID
       });
-      await syncPublishedEntries(context.auth.workspaceID, result.publishingEntries);
+      await handlePublishingSnapshotUpdate({
+        workspaceID: context.auth.workspaceID,
+        channel: input.channel,
+        memberID: context.auth.session?.memberID,
+        snapshot: result.snapshot
+      });
     }),
   bulkUnpublishEntries: authenticatedRoute
     .route({ method: "POST", path: "/entries/bulk/unpublish" })
@@ -408,13 +549,206 @@ const publishingRouter = base.prefix("/publishing").router({
         channel: input.channel,
         memberID: context.auth.session?.memberID
       });
-      await syncPublishedEntries(context.auth.workspaceID, result.publishingEntries);
+      await handlePublishingSnapshotUpdate({
+        workspaceID: context.auth.workspaceID,
+        channel: input.channel,
+        memberID: context.auth.session?.memberID,
+        snapshot: result.snapshot
+      });
+    }),
+  revertChanges: authenticatedRoute
+    .route({ method: "POST", path: "/changes/revert" })
+    .input(revertPublishingChangesInputType)
+    .output(revertPublishingChangesResultType)
+    .handler(async ({ context, input }) => {
+      const result = await Publishing.Changes.revert({
+        ...input,
+        auth: context.auth,
+        contributorIDs: getContributorIDs(context.auth)
+      });
+      const workspaceID = context.auth.workspaceID;
+      const memberID = context.auth.session?.memberID;
+      const collectionStatesByID = new Map(
+        result.collectionStates.map((state) => [state.collection.id, state])
+      );
+      const entryStatesByID = new Map(result.entryStates.map((entry) => [entry.id, entry]));
+
+      for (const collectionID of result.restoredCollectionIDs) {
+        const state = collectionStatesByID.get(collectionID);
+
+        if (!state) continue;
+
+        emitCollectionEvent(workspaceID, {
+          action: "collection:restore",
+          data: state,
+          memberID
+        });
+      }
+
+      for (const schema of result.restoredSchemas) {
+        emitSchemaEvent(workspaceID, {
+          action: "schema:update",
+          data: schema,
+          memberID
+        });
+      }
+
+      for (const collectionID of result.updatedCollectionIDs) {
+        const state = collectionStatesByID.get(collectionID);
+
+        if (!state) continue;
+
+        emitCollectionEvent(workspaceID, {
+          action: "collection:update",
+          data: { id: collectionID, name: state.collection.name },
+          memberID
+        });
+      }
+
+      for (const collectionID of result.movedCollectionIDs) {
+        const state = collectionStatesByID.get(collectionID);
+
+        if (!state) continue;
+
+        emitCollectionEvent(workspaceID, {
+          action: "collection:move",
+          data: {
+            id: collectionID,
+            index: state.index,
+            newParentID: state.parentID,
+            restrictedBoundaryChanged: true
+          },
+          memberID
+        });
+      }
+
+      for (const entryID of result.restoredEntryIDs) {
+        const entry = entryStatesByID.get(entryID);
+
+        if (!entry) continue;
+
+        emitEntryEvent(workspaceID, {
+          action: "entry:restore",
+          data: entry,
+          memberID
+        });
+      }
+
+      for (const entryID of result.updatedEntryIDs) {
+        const entry = entryStatesByID.get(entryID);
+
+        if (!entry) continue;
+
+        emitEntryEvent(workspaceID, {
+          action: "entry:update",
+          data: { id: entryID, name: entry.name },
+          memberID
+        });
+      }
+
+      for (const entryID of result.movedEntryIDs) {
+        const entry = entryStatesByID.get(entryID);
+
+        if (!entry) continue;
+
+        emitEntryEvent(workspaceID, {
+          action: "entry:move",
+          data: {
+            id: entryID,
+            collectionID: entry.collectionID ?? null,
+            order: entry.order,
+            restrictedBoundaryChanged: true
+          },
+          memberID
+        });
+      }
+
+      if (result.deletedEntryIDs.length > 0) {
+        emitEntryEvent(workspaceID, {
+          action: "entry:delete",
+          data: { ids: result.deletedEntryIDs },
+          memberID
+        });
+      }
+
+      if (result.deletedCollectionIDs.length > 0) {
+        emitCollectionEvent(workspaceID, {
+          action: "collection:delete",
+          data: { ids: result.deletedCollectionIDs },
+          memberID
+        });
+      }
+
+      // Final sibling indices cannot be applied as independent moves in arbitrary order.
+      for (const update of result.collectionOrderUpdates) {
+        emitCollectionEvent(workspaceID, {
+          action: "collection:reorder",
+          data: update,
+          memberID
+        });
+      }
+
+      for (const entryID of result.contentResetEntryIDs) {
+        emitEntryEvent(workspaceID, {
+          action: "entry:content-reset",
+          data: { id: entryID }
+        });
+      }
+
+      for (const collection of result.publishingCollections) {
+        emitPublishingEvent(workspaceID, {
+          action: "publishing:collection-update",
+          data: { id: collection.collectionID, enabled: collection.enabled },
+          memberID
+        });
+      }
+
+      emitPublishingEntryUpdates({
+        workspaceID,
+        entries: result.publishingEntries,
+        channel: input.channel,
+        memberID
+      });
+      emitVersionCreationEvents(workspaceID, result.createdVersions, memberID);
+
+      const affectedEntryIDs = [
+        ...new Set([
+          ...result.deletedEntryIDs,
+          ...result.restoredEntryIDs,
+          ...result.updatedEntryIDs,
+          ...result.movedEntryIDs
+        ])
+      ];
+      const affectedCollectionIDs = [
+        ...new Set([
+          ...result.deletedCollectionIDs,
+          ...result.restoredCollectionIDs,
+          ...result.updatedCollectionIDs,
+          ...result.movedCollectionIDs
+        ])
+      ];
+
+      await Promise.all([
+        enqueueCurrentEntrySync({ workspaceID, entryIDs: affectedEntryIDs }),
+        ...affectedCollectionIDs.map((collectionID) => {
+          return enqueueCurrentCollectionSync({ workspaceID, collectionID });
+        })
+      ]);
+
+      return {
+        affectedEntryIDs,
+        deletedEntryIDs: result.deletedEntryIDs,
+        noOp: result.noOp,
+        restoredEntryIDs: result.restoredEntryIDs,
+        versionedEntryIDs: [...new Set(result.createdVersions.map(({ entryID }) => entryID))]
+      };
     }),
   getEntryVersion: authenticatedRoute
     .route({ method: "GET", path: "/entries/:entryID/version" })
     .input(
       channelInput.extend({
-        entryID: id().describe("Entry whose published version to get")
+        entryID: id().describe("Entry whose published version to get"),
+        snapshotID: publicID("snp").optional().describe("Exact publication snapshot to read")
       })
     )
     .output(versionDetailsType)
@@ -422,7 +756,8 @@ const publishingRouter = base.prefix("/publishing").router({
       return Publishing.Entries.getVersion({
         auth: context.auth,
         entryID: input.entryID,
-        channel: input.channel
+        channel: input.channel,
+        snapshotID: input.snapshotID
       });
     }),
   listEntryPublications: authenticatedRoute
@@ -450,6 +785,22 @@ const publishingRouter = base.prefix("/publishing").router({
       return Publishing.Channels.list({
         auth: context.auth,
         includeAssignmentCount: input.includeAssignmentCount
+      });
+    }),
+  getChannelContent: authenticatedRoute
+    .route({ method: "GET", path: "/channels/:channel/content" })
+    .input(
+      z.object({
+        channel: publishingChannelCodeType,
+        collectionID: id().describe("Publishing root collection whose content to list")
+      })
+    )
+    .output(channelContentType)
+    .handler(({ context, input }) => {
+      return Publishing.Channels.getContent({
+        auth: context.auth,
+        channel: input.channel,
+        collectionID: input.collectionID
       });
     }),
   createChannel: authenticatedRoute

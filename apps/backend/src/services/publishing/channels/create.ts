@@ -1,7 +1,9 @@
-import { publishingChannels } from "#backend/db";
 import { mapPublishingChannel, type PublishingChannel } from "#backend/lib/data";
 import { withAuthorization } from "#backend/lib/policy";
-import { normalizePublishingChannelCode } from "#backend/lib/publishing";
+import {
+  createInitialPublishingChannel,
+  normalizePublishingChannelCode
+} from "#backend/lib/publishing";
 import { ORPCError } from "@orpc/server";
 
 interface CreateChannelInput {
@@ -13,17 +15,16 @@ const createChannel = withAuthorization<CreateChannelInput, undefined, Publishin
     permissions: { session: ["publishing"], key: ["publishing"] },
     transaction: "atomic"
   },
-  async ({ database, input, workspaceID }) => {
+  async ({ auth, database, input, workspaceID }) => {
     const name = input.name.trim();
     const code = normalizePublishingChannelCode(name);
 
-    const [channel] = await database
-      .insert(publishingChannels)
-      .values({ workspaceID, code, name })
-      .onConflictDoNothing({
-        target: [publishingChannels.workspaceID, publishingChannels.code]
-      })
-      .returning();
+    const channel = await createInitialPublishingChannel(database, {
+      workspaceID,
+      code,
+      name,
+      creatorID: auth.session?.userID
+    });
 
     if (!channel) {
       throw new ORPCError("CONFLICT", { message: "A publishing channel with this code exists" });

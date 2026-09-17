@@ -8,8 +8,18 @@ import {
   subscribeToEvent,
   type SubscribeToEvent
 } from "#backend/lib/messaging";
-import { id } from "#backend/lib/primitives";
+import { id, publicID } from "#backend/lib/primitives";
 import * as z from "zod";
+
+interface EmitPublishingSnapshotAdvanceInput {
+  channel: string;
+  collectionIDs: string[];
+  entryIDs: string[];
+  memberID?: string;
+  previousSnapshotID: string;
+  snapshotID: string;
+  workspaceID: string;
+}
 
 declare module "#backend/lib/messaging/events" {
   interface Events {
@@ -46,6 +56,17 @@ const publishingEventType = z.union([
   z.object({
     action: z.literal("publishing:entries-content-update"),
     data: z.object({ entries: z.array(publishingEntryContentUpdateType) })
+  }),
+  z.object({
+    action: z.literal("publishing:channel-advance"),
+    memberID: id().optional(),
+    data: z.object({
+      channel: publishingChannelCodeType,
+      collectionIDs: z.array(id()),
+      entryIDs: z.array(id()),
+      previousSnapshotID: publicID("snp"),
+      snapshotID: publicID("snp")
+    })
   }),
   z.object({
     action: z.literal("publishing:channel-create"),
@@ -103,6 +124,19 @@ const emitPublishingEntryContentUpdates = (input: {
     });
   }
 };
+const emitPublishingSnapshotAdvance = (input: EmitPublishingSnapshotAdvanceInput): void => {
+  emitPublishingEvent(input.workspaceID, {
+    action: "publishing:channel-advance",
+    memberID: input.memberID,
+    data: {
+      channel: input.channel,
+      collectionIDs: input.collectionIDs,
+      entryIDs: input.entryIDs,
+      previousSnapshotID: input.previousSnapshotID,
+      snapshotID: input.snapshotID
+    }
+  });
+};
 const subscribeToPublishingEvents: SubscribeToEvent<{
   [workspaceID: string]: PublishingEvent;
 }> = (workspaceID, callback, options) => {
@@ -116,6 +150,7 @@ export {
   emitPublishingEntryContentUpdates,
   emitPublishingEntryUpdates,
   emitPublishingEvent,
+  emitPublishingSnapshotAdvance,
   publishingEventType,
   subscribeToPublishingEvents
 };

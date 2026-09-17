@@ -1,9 +1,10 @@
 import { createRef } from "@andesine/components";
 import { useTree } from "#web/components/tree";
 import { useWorkspace } from "#web/context/workspace";
+import { usePublishing } from "#web/context/publishing";
 import { type Entry } from "#web/lib/api";
 import { createSignal, onCleanup, onMount } from "solid-js";
-import { useNavigate, useParams } from "@solidjs/router";
+import { useNavigate, useParams, useSearchParams } from "@solidjs/router";
 import {
   draggable,
   dropTargetForElements
@@ -23,6 +24,7 @@ import {
 } from "./explorer-dnd";
 import { useEntryMenu } from "./use-entry-menu";
 import { useExplorerItemSwipe } from "./use-explorer-item-swipe";
+import { withWorkspacePanelParams } from "../../panel-navigation";
 
 interface ExplorerEntryProps {
   entry: Entry;
@@ -33,15 +35,18 @@ interface ExplorerEntryProps {
 const useExplorerEntry = (props: ExplorerEntryProps) => {
   const params = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { workspaceID, content } = useWorkspace();
+  const publishing = usePublishing();
   const [{ isSelected, selection, flattenedOrder }, { setSelection }] = useTree();
   const { dropdownOptions, menuOpened, setMenuOpened } = useEntryMenu(props.entry.id);
   const swipe = useExplorerItemSwipe({
-    enabled: () => selection().length <= 1,
+    enabled: () => selection().length <= 1 && !publishing.isEntryReverting(props.entry.id),
     onOpen: () => setMenuOpened(true)
   });
   const [elementRef, setElementRef] = createRef<HTMLElement | null>(null);
   const [closestEdge, setClosestEdge] = createSignal<Edge | null>(null);
+  const opened = () => props.entry.id === params.slug && !searchParams.snapshotID;
   const getCollectionParentID = (collectionID: string) => {
     const collection = content.collections.get({ collectionID });
 
@@ -81,12 +86,14 @@ const useExplorerEntry = (props: ExplorerEntryProps) => {
     const collectionID = entry?.collectionID || null;
 
     return (
+      !publishing.isEntryReverting(entryID) &&
       content.canEntry(collectionID, "entry:move") &&
       !content.hasActiveSchemaMigration(collectionID)
     );
   };
   const canEditCollection = (collectionID: string) => {
     return (
+      !publishing.isCollectionReverting(collectionID) &&
       content.canCollection(collectionID, "collection:move") &&
       !content.hasActiveSchemaMigration(collectionID, true)
     );
@@ -94,8 +101,14 @@ const useExplorerEntry = (props: ExplorerEntryProps) => {
   const canEditSelection = () => {
     const selectedIDs = selection().includes(props.entry.id) ? selection() : [props.entry.id];
     const selected = content.tree.splitIDs({ ids: selectedIDs });
+    const containsOnlyWorkingContent =
+      selected.entries.length + selected.collections.length === selectedIDs.length;
 
-    return selected.entries.every(canEditEntry) && selected.collections.every(canEditCollection);
+    return (
+      containsOnlyWorkingContent &&
+      selected.entries.every(canEditEntry) &&
+      selected.collections.every(canEditCollection)
+    );
   };
   onMount(() => {
     const element = elementRef();
@@ -166,7 +179,9 @@ const useExplorerEntry = (props: ExplorerEntryProps) => {
         element,
         canDrop: ({ source }) => {
           return (
-            !content.readOnly(props.entry.collectionID || null) && canOrderEntries(source.data)
+            !publishing.isEntryReverting(props.entry.id) &&
+            !content.readOnly(props.entry.collectionID || null) &&
+            canOrderEntries(source.data)
           );
         },
         getData: ({ input }) => {
@@ -204,7 +219,7 @@ const useExplorerEntry = (props: ExplorerEntryProps) => {
   });
 
   const handleClick = () => {
-    navigate(`/${workspaceID()}/${props.entry.id}`);
+    navigate(withWorkspacePanelParams(`/${workspaceID()}/${props.entry.id}`, searchParams));
   };
 
   return {
@@ -215,7 +230,7 @@ const useExplorerEntry = (props: ExplorerEntryProps) => {
     handleClick,
     isSelected,
     menuOpened,
-    params,
+    opened,
     selection,
     setMenuOpened,
     swipe

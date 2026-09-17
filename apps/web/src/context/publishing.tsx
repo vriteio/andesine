@@ -4,13 +4,24 @@ import {
   createContext,
   createEffect,
   createMemo,
+  createSignal,
   onCleanup,
   type ParentComponent,
   useContext
 } from "solid-js";
 import {
+  getPublishingEntryOverlayID,
   type PublishingChannel,
+  type PublishingCollectionOverlay,
+  type PublishingDeletedEntry,
+  type PublishingEntryOverlay,
+  type PublishingExplorerOverlay,
+  type PendingPublishingCollectionOverlay,
+  type PendingPublishingEntryOverlay,
+  type PublishingStatus,
+  publishingChannelContentQuery,
   publishingChannelsQuery,
+  publishingExplorerOverlayQuery,
   publishingPublicationsQuery,
   publishingStatusQuery
 } from "#web/lib/data";
@@ -19,7 +30,14 @@ import { type WorkspaceContentOperationsInput } from "./workspace/operations/typ
 
 interface PublishingState {
   enabledCollectionIDs: Set<string>;
+  neverPublishedCollectionIDs: Set<string>;
+  neverPublishedEntryIDs: Set<string>;
+  unpublishedCollectionIDs: Set<string>;
   unpublishedEntryIDs: Set<string>;
+}
+interface PublishingRevertItems {
+  collectionIDs: string[];
+  entryIDs: string[];
 }
 interface WorkspacePublishingOperationsInput extends WorkspaceContentOperationsInput {
   publishing: Accessor<PublishingState | null>;
@@ -29,10 +47,37 @@ interface PublishingContextValue {
   channels(): PublishingChannel[];
   channelsError(): boolean;
   channelsLoading(): boolean;
+  entryOverlaysError(): boolean;
+  explorerOverlayLoading(): boolean;
+  getCollectionOverlay(collectionID: string): PublishingCollectionOverlay | undefined;
   getCollectionUnpublishedCount(collectionID: string): number;
+  getCollectionOverlays(): PublishingCollectionOverlay[];
+  getCollectionOverlaysInParent(parentID: string | null): PublishingCollectionOverlay[];
+  getPendingCollectionOverlay(collectionID: string): PendingPublishingCollectionOverlay | undefined;
+  getPendingCollectionOverlaysInParent(
+    parentID: string | null
+  ): PendingPublishingCollectionOverlay[];
+  hasCollectionUnpublishedChanges(collectionID: string): boolean;
   getChannelName(code?: string): string;
+  getDeletedEntry(entryID: string): PublishingDeletedEntry | undefined;
+  getEntryOverlay(overlayID: string): PublishingEntryOverlay | undefined;
+  getEntryOverlayByEntryID(entryID: string): PublishingEntryOverlay | undefined;
+  getEntryOverlays(): PublishingEntryOverlay[];
+  getEntryOverlaysInCollection(collectionID: string | null): PublishingEntryOverlay[];
+  getPendingEntryOverlay(entryID: string): PendingPublishingEntryOverlay | undefined;
+  getPendingEntryOverlaysInCollection(collectionID: string | null): PendingPublishingEntryOverlay[];
   getEntryPublishingStatus(entryID: string): ChannelPublishingStatus | null;
+  getPublishedEntryRoot(
+    entryID: string
+  ): PublishingStatus["publishedEntryRoots"][number] | undefined;
+  getPublishedCollectionRoot(collectionID: string): string | undefined;
   retry(): void;
+  isCollectionNeverPublished(collectionID: string): boolean;
+  isCollectionReverting(collectionID: string): boolean;
+  isEntryNeverPublished(entryID: string): boolean;
+  isEntryReverting(entryID: string): boolean;
+  startReverting(items: PublishingRevertItems): void;
+  stopReverting(items: PublishingRevertItems): void;
   setChannel(channel: string): void;
   statusError(): boolean;
   statusLoading(): boolean;
@@ -40,6 +85,11 @@ interface PublishingContextValue {
 interface PublishingChannelsResult {
   error?: true;
   result?: PublishingChannel[];
+}
+interface PublishingExplorerOverlayResult {
+  channel: string;
+  error?: true;
+  result?: PublishingExplorerOverlay;
 }
 
 type ChannelPublishingStatus = "error" | "loading" | "outside" | "published" | "unpublished";
@@ -51,6 +101,10 @@ const PublishingContext = createContext<PublishingContextValue>();
 const PublishingProvider: ParentComponent = (props) => {
   const { content, subscribeToUpdates } = useWorkspace();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [revertingCollectionCounts, setRevertingCollectionCounts] = createSignal(
+    new Map<string, number>()
+  );
+  const [revertingEntryCounts, setRevertingEntryCounts] = createSignal(new Map<string, number>());
   const channel = () => {
     const value = searchParams.channel;
 
@@ -70,12 +124,29 @@ const PublishingProvider: ParentComponent = (props) => {
   const customStatus = createAsync(async () => {
     const selectedChannel = channel();
 
-    if (!canRead() || content.offline() || selectedChannel === PUBLISHED_CHANNEL) return null;
+    if (!canRead() || content.offline()) return null;
 
     return {
       channel: selectedChannel,
       response: await publishingStatusQuery({ channel: selectedChannel })
     };
+  });
+  const explorerOverlay = createAsync(async (): Promise<PublishingExplorerOverlayResult> => {
+    const selectedChannel = channel();
+
+    if (!canRead() || content.offline()) {
+      return { channel: selectedChannel, result: { collections: [], entries: [] } };
+    }
+
+    try {
+      return {
+        channel: selectedChannel,
+        result: await publishingExplorerOverlayQuery({ channel: selectedChannel })
+      };
+    } catch (error) {
+      console.error(error);
+      return { channel: selectedChannel, error: true };
+    }
   });
   const channelResult = () => channelList.latest;
   const customStatusResult = () => {
@@ -83,22 +154,164 @@ const PublishingProvider: ParentComponent = (props) => {
 
     return latest?.channel === channel() ? latest.response : undefined;
   };
+  const explorerOverlayResult = () => {
+    const latest = explorerOverlay.latest;
+
+    return latest?.channel === channel() ? latest : undefined;
+  };
+  const getEntryOverlays = () => {
+    return (explorerOverlayResult()?.result?.entries || []).filter((overlay) => {
+      const entry = content.entries.get({ entryID: overlay.entryID });
+
+      if (!entry) return true;
+      if (overlay.reason === "deleted") return false;
+
+      const snapshotCollectionID = overlay.snapshotCollectionID ?? overlay.collectionID;
+
+      return (entry.collectionID ?? null) !== snapshotCollectionID;
+    });
+  };
+  const getPendingEntryOverlays = () => {
+    const actualOverlayEntryIDs = new Set(getEntryOverlays().map((overlay) => overlay.entryID));
+
+    return [...content.pendingPublishingEntryOverlays().values()].filter((overlay) => {
+      return (
+        !content.entries.get({ entryID: overlay.entryID }) &&
+        !actualOverlayEntryIDs.has(overlay.entryID) &&
+        (!customStatusResult()?.result || publishedEntryRootsByID().has(overlay.entryID))
+      );
+    });
+  };
+  const getCollectionOverlays = () => {
+    return (explorerOverlayResult()?.result?.collections || []).filter((overlay) => {
+      return !content.collections.get({ collectionID: overlay.collectionID });
+    });
+  };
+  const getPendingCollectionOverlays = () => {
+    const actualOverlayIDs = new Set(
+      getCollectionOverlays().map((overlay) => overlay.collectionID)
+    );
+
+    return [...content.pendingPublishingCollectionOverlays().values()].filter((overlay) => {
+      return (
+        !content.collections.get({ collectionID: overlay.collectionID }) &&
+        !actualOverlayIDs.has(overlay.collectionID) &&
+        (!customStatusResult()?.result || publishedCollectionRootsByID().has(overlay.collectionID))
+      );
+    });
+  };
+  const collectionOverlaysByID = createMemo(() => {
+    return new Map(
+      getCollectionOverlays().map((collection) => [collection.collectionID, collection])
+    );
+  });
+  const deletedEntries = (): PublishingDeletedEntry[] => {
+    return getEntryOverlays().filter(
+      (entry): entry is PublishingDeletedEntry => entry.reason === "deleted"
+    );
+  };
+  const publishedEntryRootsByID = createMemo(() => {
+    return new Map(
+      (customStatusResult()?.result?.publishedEntryRoots || []).map((root) => [root.entryID, root])
+    );
+  });
+  const publishedCollectionRootsByID = createMemo(() => {
+    return new Map(
+      (customStatusResult()?.result?.publishedCollectionRoots || []).map((root) => [
+        root.collectionID,
+        root.publishingCollectionID
+      ])
+    );
+  });
   const unpublishedEntryIDs = createMemo(() => {
+    const status = customStatusResult()?.result;
+
+    if (status) return new Set(status.unpublishedEntryIDs);
+
     if (channel() === PUBLISHED_CHANNEL) {
       return content.publishing()?.unpublishedEntryIDs || new Set<string>();
     }
 
-    return new Set(customStatusResult()?.result?.unpublishedEntryIDs || []);
+    return new Set<string>();
+  });
+  const neverPublishedEntryIDs = createMemo(() => {
+    const status = customStatusResult()?.result;
+
+    if (status) return new Set(status.neverPublishedEntryIDs);
+
+    if (channel() === PUBLISHED_CHANNEL) {
+      return content.publishing()?.neverPublishedEntryIDs || new Set<string>();
+    }
+
+    return new Set<string>();
+  });
+  const unpublishedCollectionIDs = createMemo(() => {
+    const status = customStatusResult()?.result;
+
+    if (status) return new Set(status.unpublishedCollectionIDs);
+
+    return content.publishing()?.unpublishedCollectionIDs || new Set<string>();
+  });
+  const neverPublishedCollectionIDs = createMemo(() => {
+    const status = customStatusResult()?.result;
+
+    if (status) return new Set(status.neverPublishedCollectionIDs);
+
+    return content.publishing()?.neverPublishedCollectionIDs || new Set<string>();
   });
   const channels = () => channelResult()?.result || [];
   const channelsLoading = () => canRead() && channelResult() === undefined;
   const channelsError = () => Boolean(channelResult()?.error);
+  const entryOverlaysError = () => Boolean(explorerOverlayResult()?.error);
+  const explorerOverlayLoading = () => {
+    return !content.offline() && canRead() && explorerOverlayResult() === undefined;
+  };
   const statusLoading = () => {
-    return channel() !== PUBLISHED_CHANNEL && canRead() && customStatusResult() === undefined;
+    return !content.offline() && canRead() && customStatusResult() === undefined;
   };
   const statusError = () => Boolean(customStatusResult()?.error);
   const getChannelName = (code = channel()) => {
     return channels().find((availableChannel) => availableChannel.code === code)?.name || code;
+  };
+  const getDeletedEntry = (entryID: string) => {
+    return deletedEntries().find((entry) => entry.entryID === entryID);
+  };
+  const getCollectionOverlay = (collectionID: string) => {
+    return collectionOverlaysByID().get(collectionID);
+  };
+  const getCollectionOverlaysInParent = (parentID: string | null) => {
+    return getCollectionOverlays().filter((overlay) => overlay.parentID === parentID);
+  };
+  const getPendingCollectionOverlay = (collectionID: string) => {
+    return getPendingCollectionOverlays().find((overlay) => overlay.collectionID === collectionID);
+  };
+  const getPendingCollectionOverlaysInParent = (parentID: string | null) => {
+    return getPendingCollectionOverlays().filter((overlay) => overlay.parentID === parentID);
+  };
+  const getPublishedEntryRoot = (entryID: string) => publishedEntryRootsByID().get(entryID);
+  const getPublishedCollectionRoot = (collectionID: string) =>
+    publishedCollectionRootsByID().get(collectionID);
+  const getEntryOverlay = (overlayID: string) => {
+    return getEntryOverlays().find((overlay) => getPublishingEntryOverlayID(overlay) === overlayID);
+  };
+  const getEntryOverlayByEntryID = (entryID: string) => {
+    return getEntryOverlays().find((overlay) => overlay.entryID === entryID);
+  };
+  const getEntryOverlaysInCollection = (collectionID: string | null) => {
+    return getEntryOverlays().filter((overlay) => {
+      const displayCollectionID =
+        overlay.snapshotCollectionID && collectionOverlaysByID().has(overlay.snapshotCollectionID)
+          ? overlay.snapshotCollectionID
+          : overlay.collectionID;
+
+      return displayCollectionID === collectionID;
+    });
+  };
+  const getPendingEntryOverlay = (entryID: string) => {
+    return getPendingEntryOverlays().find((overlay) => overlay.entryID === entryID);
+  };
+  const getPendingEntryOverlaysInCollection = (collectionID: string | null) => {
+    return getPendingEntryOverlays().filter((overlay) => overlay.collectionID === collectionID);
   };
   const setChannel = (nextChannel: string) => {
     setSearchParams(
@@ -108,44 +321,91 @@ const PublishingProvider: ParentComponent = (props) => {
   };
   const retry = () => {
     void revalidate(publishingChannelsQuery.key);
+    void revalidate(publishingExplorerOverlayQuery.keyFor({ channel: channel() }));
 
-    if (channel() !== PUBLISHED_CHANNEL) {
-      void revalidate(publishingStatusQuery.keyFor({ channel: channel() }));
-    }
+    void revalidate(publishingStatusQuery.keyFor({ channel: channel() }));
   };
   const getEntryPublishingStatus = (entryID: string): ChannelPublishingStatus | null => {
     const baseStatus = content.getEntryPublishingStatus(entryID);
 
-    if (!baseStatus || baseStatus === "outside" || channel() === PUBLISHED_CHANNEL) {
+    if (!baseStatus || baseStatus === "outside") {
       return baseStatus;
     }
 
+    if (content.offline() && channel() === PUBLISHED_CHANNEL) return baseStatus;
     if (statusLoading()) return "loading";
     if (statusError()) return "error";
 
     return unpublishedEntryIDs().has(entryID) ? "unpublished" : "published";
   };
   const getCollectionUnpublishedCount = (collectionID: string) => {
-    if (channel() === PUBLISHED_CHANNEL) {
-      return content.getCollectionUnpublishedCount(collectionID);
-    }
-
     if (statusLoading() || statusError()) return 0;
 
     const collections = content.collectionsCollection().find().fetch();
     const collectionsByID = new Map(collections.map((collection) => [collection.id, collection]));
-    let count = 0;
+    const changedEntryIDs = new Set<string>();
 
     for (const entryID of unpublishedEntryIDs()) {
       const entry = content.entriesCollection().findOne({ id: entryID });
       const collection = entry?.collectionID ? collectionsByID.get(entry.collectionID) : undefined;
 
       if (collection && [collection.id, ...collection.ancestors].includes(collectionID)) {
-        count += 1;
+        changedEntryIDs.add(entryID);
       }
     }
 
-    return count;
+    for (const overlay of getEntryOverlays()) {
+      const collection = overlay.collectionID
+        ? collectionsByID.get(overlay.collectionID)
+        : undefined;
+
+      if (collection && [collection.id, ...collection.ancestors].includes(collectionID)) {
+        changedEntryIDs.add(overlay.entryID);
+      }
+    }
+
+    return changedEntryIDs.size;
+  };
+  const hasCollectionUnpublishedChanges = (collectionID: string) => {
+    return unpublishedCollectionIDs().has(collectionID);
+  };
+  const isCollectionNeverPublished = (collectionID: string) => {
+    return neverPublishedCollectionIDs().has(collectionID);
+  };
+  const isEntryNeverPublished = (entryID: string) => {
+    return neverPublishedEntryIDs().has(entryID);
+  };
+  const updateRevertingCounts = (
+    setter: typeof setRevertingEntryCounts,
+    ids: string[],
+    change: 1 | -1
+  ) => {
+    setter((current) => {
+      const next = new Map(current);
+
+      for (const id of ids) {
+        const count = (next.get(id) ?? 0) + change;
+
+        if (count > 0) next.set(id, count);
+        else next.delete(id);
+      }
+
+      return next;
+    });
+  };
+  const startReverting = (items: PublishingRevertItems) => {
+    updateRevertingCounts(setRevertingCollectionCounts, items.collectionIDs, 1);
+    updateRevertingCounts(setRevertingEntryCounts, items.entryIDs, 1);
+  };
+  const stopReverting = (items: PublishingRevertItems) => {
+    updateRevertingCounts(setRevertingCollectionCounts, items.collectionIDs, -1);
+    updateRevertingCounts(setRevertingEntryCounts, items.entryIDs, -1);
+  };
+  const isCollectionReverting = (collectionID: string) => {
+    return revertingCollectionCounts().has(collectionID);
+  };
+  const isEntryReverting = (entryID: string) => {
+    return revertingEntryCounts().has(entryID);
   };
 
   createEffect(() => {
@@ -163,15 +423,82 @@ const PublishingProvider: ParentComponent = (props) => {
     setChannel(PUBLISHED_CHANNEL);
   });
 
+  createEffect(() => {
+    const result = explorerOverlayResult()?.result;
+    const status = customStatusResult()?.result;
+
+    if (!result) return;
+
+    const actualEntryIDs = new Set(result.entries.map((overlay) => overlay.entryID));
+    const actualCollectionIDs = new Set(result.collections.map((overlay) => overlay.collectionID));
+    const publishedEntryIDs = new Set(
+      (status?.publishedEntryRoots ?? []).map((root) => root.entryID)
+    );
+    const publishedCollectionIDs = new Set(
+      (status?.publishedCollectionRoots ?? []).map((root) => root.collectionID)
+    );
+    const confirmedEntryIDs = [...content.pendingPublishingEntryOverlays().keys()].filter(
+      (entryID) => actualEntryIDs.has(entryID) || (status && !publishedEntryIDs.has(entryID))
+    );
+    const confirmedCollectionIDs = [...content.pendingPublishingCollectionOverlays().keys()].filter(
+      (collectionID) =>
+        actualCollectionIDs.has(collectionID) ||
+        (status && !publishedCollectionIDs.has(collectionID))
+    );
+
+    if (confirmedEntryIDs.length > 0) {
+      content.removePendingPublishingEntryOverlays(confirmedEntryIDs);
+    }
+
+    if (confirmedCollectionIDs.length > 0) {
+      content.removePendingPublishingCollectionOverlays(confirmedCollectionIDs);
+    }
+  });
+
   const unsubscribeFromUpdates = subscribeToUpdates((event) => {
+    const changesWorkingStructure =
+      event.action.startsWith("collection:") ||
+      event.action === "entry:create" ||
+      event.action === "entry:restore" ||
+      event.action === "entry:update" ||
+      event.action === "entry:move" ||
+      event.action === "entry:delete" ||
+      event.action === "publishing:collection-update";
+
+    if (changesWorkingStructure) {
+      void revalidate(publishingChannelContentQuery.key);
+      void revalidate(publishingStatusQuery.keyFor({ channel: channel() }));
+    }
+
+    if (
+      event.action === "entry:delete" ||
+      event.action === "entry:move" ||
+      event.action === "entry:restore" ||
+      event.action === "collection:move" ||
+      event.action === "collection:restore" ||
+      event.action === "collection:update" ||
+      event.action === "collection:delete"
+    ) {
+      void revalidate(publishingExplorerOverlayQuery.keyFor({ channel: channel() }));
+    }
+
     if (event.action.startsWith("publishing:channel-")) {
       void revalidate(publishingChannelsQuery.key);
+      void revalidate(publishingChannelContentQuery.key);
+      void revalidate(publishingExplorerOverlayQuery.keyFor({ channel: channel() }));
       void revalidate(publishingPublicationsQuery.key);
+
+      if (event.action === "publishing:channel-advance" && event.data.channel === channel()) {
+        void revalidate(publishingStatusQuery.keyFor({ channel: channel() }));
+      }
+
       return;
     }
 
     if (event.action === "publishing:entries-content-update") {
-      if (event.data.entries.length > 0 && channel() !== PUBLISHED_CHANNEL) {
+      void revalidate(publishingChannelContentQuery.key);
+
+      if (event.data.entries.length > 0) {
         void revalidate(publishingStatusQuery.keyFor({ channel: channel() }));
       }
 
@@ -179,15 +506,15 @@ const PublishingProvider: ParentComponent = (props) => {
     }
 
     if (event.action === "publishing:entries-update" && event.data.entries.length > 0) {
+      void revalidate(publishingChannelContentQuery.key);
+      void revalidate(publishingExplorerOverlayQuery.keyFor({ channel: channel() }));
       void revalidate(
         event.data.entries.map((entry) => {
           return publishingPublicationsQuery.keyFor({ entryID: entry.entryID });
         })
       );
 
-      if (channel() !== PUBLISHED_CHANNEL) {
-        void revalidate(publishingStatusQuery.keyFor({ channel: channel() }));
-      }
+      void revalidate(publishingStatusQuery.keyFor({ channel: channel() }));
     }
   });
 
@@ -200,13 +527,36 @@ const PublishingProvider: ParentComponent = (props) => {
         channels,
         channelsError,
         channelsLoading,
+        entryOverlaysError,
+        explorerOverlayLoading,
+        getCollectionOverlay,
+        getCollectionOverlays,
+        getCollectionOverlaysInParent,
+        getPendingCollectionOverlay,
+        getPendingCollectionOverlaysInParent,
         getCollectionUnpublishedCount,
         getChannelName,
+        getDeletedEntry,
+        getEntryOverlay,
+        getEntryOverlayByEntryID,
+        getEntryOverlays,
+        getEntryOverlaysInCollection,
+        getPendingEntryOverlay,
+        getPendingEntryOverlaysInCollection,
         getEntryPublishingStatus,
+        getPublishedEntryRoot,
+        getPublishedCollectionRoot,
+        hasCollectionUnpublishedChanges,
+        isCollectionNeverPublished,
+        isCollectionReverting,
+        isEntryNeverPublished,
+        isEntryReverting,
         retry,
         setChannel,
+        startReverting,
         statusError,
-        statusLoading
+        statusLoading,
+        stopReverting
       }}
     >
       {props.children}

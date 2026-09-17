@@ -14,6 +14,8 @@ import type { SessionData } from "./session";
 const isRestrictedAuthorizationEvent = (auth: SessionData, event: WorkspaceEvent): boolean => {
   const changesResourceLocation =
     event.action === "collection:move" ||
+    event.action === "collection:restore" ||
+    event.action === "entry:restore" ||
     (event.action === "entry:move" && event.data.restrictedBoundaryChanged === true);
   const changesRestriction =
     (event.action === "collection:create" && event.data.restricted) ||
@@ -80,8 +82,24 @@ const filterRestrictedWorkspaceEvent = async (
     return access ? { ...event, access } : null;
   }
 
+  if (event.action === "collection:restore") {
+    const access = authorization.getAccess(event.data.collection.id);
+
+    return access ? { ...event, access } : null;
+  }
+
   if (event.action === "collection:update" || event.action === "collection:move") {
-    return authorization.canAccessCollection(event.data.id) ? event : null;
+    if (!authorization.canAccessCollection(event.data.id)) return null;
+
+    if (event.action === "collection:update" && event.data.descendants) {
+      const descendants = event.data.descendants.filter((id) => {
+        return authorization.canAccessCollection(id);
+      });
+
+      return { ...event, data: { ...event.data, descendants } };
+    }
+
+    return event;
   }
 
   if (event.action === "collection:delete") {
@@ -90,7 +108,23 @@ const filterRestrictedWorkspaceEvent = async (
     return ids.length > 0 ? { ...event, data: { ids } } : null;
   }
 
+  if (event.action === "collection:reorder") {
+    if (event.data.parentID && !authorization.canAccessCollection(event.data.parentID)) {
+      return null;
+    }
+
+    const descendants = event.data.descendants.filter((id) => {
+      return authorization.canAccessCollection(id);
+    });
+
+    return { ...event, data: { ...event.data, descendants } };
+  }
+
   if (event.action === "entry:create") {
+    return authorization.canEntry(event.data.collectionID, "entry:read") ? event : null;
+  }
+
+  if (event.action === "entry:restore") {
     return authorization.canEntry(event.data.collectionID, "entry:read") ? event : null;
   }
 
@@ -154,6 +188,22 @@ const filterRestrictedWorkspaceEvent = async (
 
   if (event.action === "publishing:collection-update") {
     return authorization.canEntry(event.data.id, "publishing:read") ? event : null;
+  }
+
+  if (event.action === "publishing:channel-advance") {
+    const entryIDs = await filterEntryIDs(
+      auth,
+      authorization,
+      event.data.entryIDs,
+      "publishing:read"
+    );
+    const collectionIDs = event.data.collectionIDs.filter((collectionID) => {
+      return authorization.canEntry(collectionID, "publishing:read");
+    });
+
+    return entryIDs.length > 0 || collectionIDs.length > 0
+      ? { ...event, data: { ...event.data, collectionIDs, entryIDs } }
+      : null;
   }
 
   if (event.action === "publishing:entries-update") {

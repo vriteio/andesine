@@ -25,9 +25,7 @@ const entryVersions = pgTable(
     entryName: text("entry_name").notNull(),
     document: jsonb("document").$type<ContentNode>().notNull(),
     hash: varchar("hash", { length: 64 }).notNull(),
-    schemaRevisionID: uuid("schema_revision_id").references(() => effectiveSchemaRevisions.id, {
-      onDelete: "set null"
-    }),
+    schemaRevisionID: uuid("schema_revision_id"),
     name: text("name"),
     reason: versionReasonEnum("reason").notNull(),
     sourceVersionID: uuid("source_version_id").references((): AnyPgColumn => entryVersions.id, {
@@ -47,6 +45,11 @@ const entryVersions = pgTable(
       columns: [table.workspaceID, table.entryID],
       foreignColumns: [entries.workspaceID, entries.id]
     }).onDelete("cascade"),
+    foreignKey({
+      name: "entry_versions_workspace_schema_revision_fk",
+      columns: [table.workspaceID, table.schemaRevisionID],
+      foreignColumns: [effectiveSchemaRevisions.workspaceID, effectiveSchemaRevisions.id]
+    }).onDelete("restrict"),
     index("entry_versions_workspace_entry_created_idx").on(
       table.workspaceID,
       table.entryID,
@@ -56,6 +59,10 @@ const entryVersions = pgTable(
       table.workspaceID,
       table.entryID,
       table.hash
+    ),
+    index("entry_versions_workspace_schema_revision_idx").on(
+      table.workspaceID,
+      table.schemaRevisionID
     )
   ]
 );

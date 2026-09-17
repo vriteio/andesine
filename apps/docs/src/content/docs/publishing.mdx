@@ -8,18 +8,128 @@ sidebar:
 Publishing creates a stable version of your content. Draft edits remain in the workspace until
 you publish again.
 
+## Channels and snapshots
+
+Each publishing channel points to one immutable snapshot. The snapshot contains the published
+entries, their selected versions, and the published collection structure for that channel.
+
+A channel can represent a production site, preview environment, product surface, or another
+delivery target. Publishing advances only the selected channel. Other channels keep their current
+content until you publish to them.
+
+Snapshots stay mostly internal in the authoring interface. API responses include the snapshot ID so
+an application can keep all reads on one published state.
+
+## Publish content
+
+Use the normal **Publish** action for an entry or collection. Publishing includes the required
+collection names, hierarchy, location, and order. You do not need a separate action for structure.
+
+Publishing one entry does not publish unrelated draft edits or moves. Publishing a collection
+applies the selected subtree. A move that does not change an entry's content reuses its selected
+version.
+
+The **Publishing** view in the right panel shows the state of the open entry's publishing-enabled
+collection. When the workspace has more than one channel, use the menu next to the view title to
+select a channel and manage its changes. The selected channel does not change the shared workspace
+draft. The same menu also provides the available Publish and Unpublish actions.
+
+When the channel has pending changes, the view keeps the collection hierarchy below the
+publishing-enabled collection for context. The publishing-enabled collection is the invisible root
+of this tree. The view shows only documents that are not published, have pending changes, or
+are pending removal. Each row keeps its normal folder or document icon and shows its publishing
+status on the right. Open a changed document to compare its last published version with the current
+draft.
+
+Use **Publish** above the tree to publish the complete publishing-enabled collection. Select item
+checkboxes to manage several changes together. You can also drag across rows or use Shift with the
+arrow keys to select a range. The action row then shows **Publish** with the number of publishable
+items. When the complete publishing-enabled collection is pending removal, the primary action
+changes to **Unpublish**. Each action updates the channel in one operation.
+
+A collection row can represent a name, location, order, addition, or removal change. Thus, an empty
+collection with a pending structure change can also be selected. A collection checkbox selects
+its structure change and all changes in its subtree. Its checkbox is selected when all applicable
+changes are selected and is partially selected when only some are selected.
+
+## Revert pending changes
+
+Use **Revert** from the Publishing view menu to discard pending draft changes. With no selection,
+**Revert all changes** applies to the complete tree. With selected rows, **Revert** applies only to
+the selected entries and collection changes.
+
+Choose the action that matches the direction of the change:
+
+- **Publish** copies selected draft changes to the selected channel and advances its snapshot.
+- **Unpublish** removes selected content from the channel and advances its snapshot. It does not
+  delete the workspace draft.
+- **Revert pending changes** changes the workspace draft to match the selected channel. It does not
+  advance the channel snapshot.
+- **Revert to version** replaces the current document with one historical version. It does not
+  restore publishing structure or advance a channel snapshot.
+
+Publishing Revert changes the shared workspace draft. It restores the names, content, schema,
+location, and order accepted by the selected channel. It does not change the channel snapshot.
+Because the draft is shared, reverting against one channel can create pending changes for another
+channel.
+
+The action restores required parent collections when needed. For example, reverting one entry from
+a deleted collection restores the required collection path but leaves unselected sibling entries
+deleted. Reverting a collection includes its selected subtree.
+
+If an entry has no published state in the selected channel, Revert deletes it from the draft. The
+same rule applies to a new collection and its selected descendants. The confirmation dialog warns
+you before it deletes this never-published content. When Revert replaces an existing document, it
+keeps the replaced draft content in version history.
+
+For the current document, use **Revert pending changes** in the editor Publishing menu. This is the
+same publishing action as Revert in the Publishing view.
+
+## Delete and unpublish
+
+**Delete** removes content from the workspace only. It does not remove content from a publishing
+channel. If a deleted entry is still published, it stays in the Explorer with a crossed-out name.
+You can open its published version in read-only mode and use the **Versions** and **Publishing**
+views.
+
+The publishing indicator stays amber until you unpublish the entry. Use **Unpublish** separately
+for each channel that must stop delivering it. The Publishing view also lists other pending
+removals, such as content moved outside the publishing scope.
+
+Unpublishing changes only the current state of the selected channel. It does not revoke retained
+historical snapshots.
+
+**Disable publishing** also unpublishes the collection tree from every channel. This includes
+its accepted subtree and content currently in its draft subtree. The setting and all affected
+channel snapshots change in one transaction. Retained historical snapshots remain available until
+expiry. Moving a collection outside a publishing tree does not unpublish it; use **Unpublish** or
+**Revert pending changes** from its Explorer menu.
+
+## Snapshot retention
+
+A channel's current snapshot does not expire. When publishing or unpublishing advances the channel,
+the former snapshot enters the workspace's version-history retention period. Its snapshot URLs
+remain readable until the displayed expiry time. After expiry, the API returns a not-found response
+for the complete snapshot and its assets.
+
+Deleting a channel also puts its final snapshot into the normal retention period. A new channel
+that later uses the same code has a different identity and does not inherit the old history.
+
 ## Content API
 
-Read published content from your website, application, or build process through the content API.
-
-## Channels
-
-Use channels to control where a saved version is available. A channel can represent a production
-site, preview environment, product surface, or another delivery target.
+Read published content from your website, application, or build process through the
+[Content API](/api). Use the returned snapshot ID for consistent tree, entry, and asset reads while
+your application completes a build or request sequence.
 
 ## Version history
 
-Compare published versions and restore an earlier version when required.
+Compare entry versions and publish an earlier version when required. A retained publication
+snapshot protects its selected versions and their image files until that snapshot expires.
+
+**Revert to version** restores one selected historical document version. It does not restore the
+complete state accepted by a publishing channel, and it does not change collection placement or a
+channel snapshot. Use publishing Revert when you must restore the selected channel's published
+content and structure instead.
 
 ## Content transformers
 

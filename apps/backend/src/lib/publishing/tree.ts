@@ -4,8 +4,10 @@ import { and, asc, eq, inArray, isNull, or } from "drizzle-orm";
 
 interface PublishingCollection {
   id: string;
+  name: string;
   parentID: string | null;
   publishingEnabled: boolean;
+  rank: string;
 }
 interface PublishingTree {
   collections: PublishingCollection[];
@@ -21,8 +23,10 @@ const loadPublishingTree = async (
   const rows = await tx
     .select({
       id: collections.id,
+      name: collections.name,
       parentID: collections.parentID,
-      publishingEnabled: collections.publishingEnabled
+      publishingEnabled: collections.publishingEnabled,
+      rank: collections.rank
     })
     .from(collections)
     .where(and(eq(collections.workspaceID, workspaceID), isNull(collections.deletedAt)))

@@ -23,11 +23,29 @@ const collectionEventType = z.union([
     data: collectionType
   }),
   z.object({
+    action: z.literal("collection:restore"),
+    memberID: id().optional(),
+    access: collectionAccessType.optional(),
+    data: z.object({
+      collection: collectionType,
+      parentID: id().nullable(),
+      index: z.number().int().min(0)
+    })
+  }),
+  z.object({
     action: z.literal("collection:update"),
     memberID: id().optional(),
     data: z.object({
       ...collectionType.pick({ id: true }).shape,
       ...collectionType.omit({ id: true }).partial().shape
+    })
+  }),
+  z.object({
+    action: z.literal("collection:reorder"),
+    memberID: id().optional(),
+    data: z.object({
+      parentID: id().nullable(),
+      descendants: z.array(id())
     })
   }),
   z.object({

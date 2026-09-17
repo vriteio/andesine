@@ -1,11 +1,15 @@
-import { createMemo, For } from "solid-js";
+import { type Component, createMemo, For } from "solid-js";
 import { useTree } from "./tree-context";
 
-const TreeSelection = () => {
+interface TreeSelectionProps {
+  transform?(selection: string[]): string[];
+}
+
+const TreeSelection: Component<TreeSelectionProps> = (props) => {
   const [{ selection, flattenedLayout }] = useTree();
   const selectionBlocks = createMemo(() => {
     const layout = flattenedLayout();
-    const sel = selection();
+    const sel = props.transform?.(selection()) ?? selection();
     const blocks: Array<{ top: number; height: number }> = [];
     let currentBlock: { top: number; height: number } | null = null;
 

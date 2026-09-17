@@ -1,7 +1,6 @@
 import { rankBetweenNeighbors, toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
 import {
   collections,
-  entryPublications,
   effectiveSchemaRevisions,
   schemaMigrationCollections,
   schemaMigrations
@@ -13,7 +12,7 @@ import {
   lockPublishingEntries,
   loadPublishingTree
 } from "#backend/lib/publishing";
-import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import {
   filterAuthorizedEntryIDs,
@@ -214,9 +213,6 @@ const planCollectionMove = withAuthorization<MoveCollectionInput, undefined, Mov
       });
     }
 
-    const unpublishEntryIDs =
-      wasPublishingEnabled && !willBePublishingEnabled ? publishingEntryIDs : [];
-
     if (schemaMigration.migrationID) {
       const entryIDs = await getSubtreeEntryIDs(
         database,
@@ -241,8 +237,7 @@ const planCollectionMove = withAuthorization<MoveCollectionInput, undefined, Mov
             collectionID,
             sourceParentID: collection.parentID,
             sourceOrder: collection.rank,
-            entryIDs,
-            unpublishEntryIDs
+            entryIDs
           }
         })
         .where(eq(schemaMigrations.id, schemaMigration.migrationID));
@@ -260,10 +255,6 @@ const planCollectionMove = withAuthorization<MoveCollectionInput, undefined, Mov
       schemaMigration.affectedCollectionIDs = [
         ...new Set([...schemaMigration.affectedCollectionIDs, collection.parentID])
       ];
-    } else if (unpublishEntryIDs.length > 0) {
-      await database
-        .delete(entryPublications)
-        .where(inArray(entryPublications.entryID, unpublishEntryIDs));
     }
 
     return {
@@ -271,7 +262,7 @@ const planCollectionMove = withAuthorization<MoveCollectionInput, undefined, Mov
       newParentID: requestedParentID ? toCollectionID(requestedParentID) : null,
       publishingEntries: affectedPublishingEntryIDs.map((entryID) => ({
         entryID: toEntryID(entryID),
-        hasUnpublishedChanges: willBePublishingEnabled,
+        hasUnpublishedChanges: true,
         versionID: null
       })),
       restrictedBoundaryChanged,

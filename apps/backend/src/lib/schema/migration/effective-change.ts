@@ -26,6 +26,7 @@ interface CreateEffectiveSchemaChangeInput {
   database: Database;
   excludedSchemaIDs?: string[];
   initiatedBy: string | null;
+  preserveEntryContent?: boolean;
   rootCollectionIDs: string[];
   schemaID: string | null;
   schemaVersionID: string | null;
@@ -191,6 +192,37 @@ const createEffectiveSchemaChange = async (
   const targetRevisionByCollectionID = new Map(
     targetRevisions.map((revision) => [revision.collectionID, revision.id])
   );
+
+  // Publishing reverts restore selected documents separately. Refresh inheritance
+  // without migrating unrelated drafts or replacing their recorded schema revisions.
+  if (input.preserveEntryContent) {
+    const changedCollectionIDs = plannedRevisions.map(({ collectionID }) => collectionID);
+
+    await input.database
+      .update(effectiveSchemaRevisions)
+      .set({ active: false })
+      .where(
+        and(
+          eq(effectiveSchemaRevisions.workspaceID, input.workspaceID),
+          inArray(effectiveSchemaRevisions.collectionID, changedCollectionIDs),
+          eq(effectiveSchemaRevisions.active, true)
+        )
+      );
+
+    if (targetRevisions.length > 0) {
+      await input.database
+        .update(effectiveSchemaRevisions)
+        .set({ active: true })
+        .where(
+          inArray(
+            effectiveSchemaRevisions.id,
+            targetRevisions.map(({ id }) => id)
+          )
+        );
+    }
+
+    return { affectedCollectionIDs: changedCollectionIDs, migrationID: null, totalEntries: 0 };
+  }
 
   if (definedRevisions.length === 0) {
     const disabledCollectionIDs = plannedRevisions.map(({ collectionID }) => collectionID);

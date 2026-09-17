@@ -1,6 +1,6 @@
 import { collectionType, entryType } from "#backend/db";
 import { collectionAccessType } from "#backend/lib/policy";
-import { id } from "#backend/lib/primitives";
+import { id, publicID } from "#backend/lib/primitives";
 import { PUBLISHED_CHANNEL_CODE, publishingChannelCodeType } from "#backend/lib/publishing";
 import { authenticatedRoute, base, sessionRoute } from "#backend/lib/transport";
 import { Memberships } from "#backend/services/memberships";
@@ -34,9 +34,43 @@ const explorerTreeType = z.object({
   publishing: z
     .object({
       enabledCollectionIDs: z.array(id()),
+      neverPublishedCollectionIDs: z.array(id()),
+      neverPublishedEntryIDs: z.array(id()),
+      unpublishedCollectionIDs: z.array(id()),
       unpublishedEntryIDs: z.array(id())
     })
     .nullable()
+});
+const publishingEntryOverlayType = z.object({
+  canReadVersions: z.boolean(),
+  canUnpublish: z.boolean(),
+  channel: publishingChannelCodeType,
+  collectionID: id().nullable(),
+  entryID: id(),
+  name: z.string(),
+  order: z.string(),
+  publishingCollectionID: id().nullable(),
+  publishingCollectionName: z.string().nullable(),
+  reason: z.enum(["deleted", "moved"]),
+  snapshotCollectionID: id().nullable(),
+  snapshotID: publicID("snp"),
+  versionID: id(),
+  workingCollectionID: id().nullable()
+});
+const publishingCollectionOverlayType = z.object({
+  canUnpublish: z.boolean(),
+  channel: publishingChannelCodeType,
+  collectionID: id(),
+  name: z.string(),
+  order: z.string(),
+  parentID: id().nullable(),
+  publishingCollectionID: id(),
+  publishingCollectionName: z.string(),
+  snapshotID: publicID("snp")
+});
+const publishingExplorerOverlayType = z.object({
+  collections: z.array(publishingCollectionOverlayType),
+  entries: z.array(publishingEntryOverlayType)
 });
 
 const syncRouter = base.router({
@@ -59,6 +93,15 @@ const syncRouter = base.router({
       includePublishing: true
     });
   }),
+  getExplorerOverlay: sessionRoute
+    .input(z.object({ channel: publishingChannelCodeType }))
+    .output(publishingExplorerOverlayType)
+    .handler(({ context, input }) => {
+      return Sync.getExplorerOverlay({
+        auth: context.auth,
+        channel: input.channel
+      });
+    }),
   getPublishingStatus: sessionRoute
     .input(
       z.object({
@@ -68,6 +111,22 @@ const syncRouter = base.router({
     .output(
       z.object({
         channel: publishingChannelCodeType,
+        neverPublishedCollectionIDs: z.array(id()),
+        neverPublishedEntryIDs: z.array(id()),
+        publishedEntryRoots: z.array(
+          z.object({
+            collectionID: id(),
+            entryID: id(),
+            name: z.string()
+          })
+        ),
+        publishedCollectionRoots: z.array(
+          z.object({
+            collectionID: id(),
+            publishingCollectionID: id()
+          })
+        ),
+        unpublishedCollectionIDs: z.array(id()),
         unpublishedEntryIDs: z.array(id())
       })
     )

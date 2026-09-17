@@ -27,6 +27,7 @@ interface VersionDocument {
 interface VersionPreviewPaneProps {
   currentDocument(): EditorDocument | undefined;
   currentError(): boolean;
+  currentImages?: EditorProps["images"];
   currentUnavailableDescription: string;
   mode?: EditorMode;
   images?: EditorProps["images"];
@@ -43,6 +44,21 @@ type EditorDocument = NonNullable<EditorProps["content"]>;
 const DIFF_CONTENT_PADDING = "px-4 pb-5 pt-5 md:px-12 md:pb-10 md:pt-9";
 const SIDE_BY_SIDE_CONTENT_PADDING = "px-4 pb-5 pt-12 md:px-12 md:pb-10 md:pt-9";
 const SIDE_BY_SIDE_MIN_WIDTH = 1280;
+
+const getDocumentImageIDs = (document?: EditorDocument): Set<string> => {
+  const assetIDs = new Set<string>();
+  const visit = (node: EditorDocument) => {
+    if (node.type === "image" && typeof node.attrs?.assetID === "string") {
+      assetIDs.add(node.attrs.assetID);
+    }
+
+    for (const child of node.content || []) visit(child);
+  };
+
+  if (document) visit(document);
+
+  return assetIDs;
+};
 
 const VersionPreviewSkeleton: Component = () => {
   return (
@@ -61,8 +77,30 @@ const VersionPreviewContent: Component<VersionPreviewContentProps> = (props) => 
   );
   const comparing = () => searchParams.compare === "current";
   const inlineComparison = () => !props.wide || searchParams.compareView === "inline";
+  const inlineImages = createMemo(() => {
+    const versionImages = props.images;
+    const currentImages = props.currentImages;
+    const versionImageIDs = getDocumentImageIDs(props.version()?.document);
+
+    if (!versionImages) return currentImages;
+    if (!currentImages || currentImages === versionImages) return versionImages;
+
+    return {
+      ...versionImages,
+      load: (assetID: string, signal: AbortSignal, onCached?: (file: Blob) => void) => {
+        const source = versionImageIDs.has(assetID) ? versionImages : currentImages;
+
+        return source.load(assetID, signal, onCached);
+      }
+    };
+  });
   const close = () => {
-    setSearchParams({ version: undefined, compare: undefined, compareView: undefined });
+    setSearchParams({
+      version: undefined,
+      snapshotID: undefined,
+      compare: undefined,
+      compareView: undefined
+    });
   };
   const stopComparing = () => {
     setSearchParams({ compare: undefined, compareView: undefined });
@@ -175,7 +213,7 @@ const VersionPreviewContent: Component<VersionPreviewContentProps> = (props) => 
                           class={SIDE_BY_SIDE_CONTENT_PADDING}
                           content={comparison().current.content}
                           diff={{ changes: comparison().current.changes }}
-                          images={props.images}
+                          images={props.currentImages || props.images}
                           editable={false}
                           mode={props.mode}
                           staticTitle={props.staticTitle}
@@ -190,7 +228,7 @@ const VersionPreviewContent: Component<VersionPreviewContentProps> = (props) => 
                       class={DIFF_CONTENT_PADDING}
                       content={comparison().inline.content}
                       diff={{ changes: comparison().inline.changes }}
-                      images={props.images}
+                      images={inlineImages()}
                       editable={false}
                       mode={props.mode}
                       staticTitle={props.staticTitle}

@@ -1,6 +1,7 @@
 import { pruneCachedImages } from "./image-cache";
 import { Collection as LocalDBCollection } from "@signaldb/core";
 import { createWorkspaceContentOperations } from "./operations";
+import { ROOT_COLLECTION_NAME } from "./operations/types";
 import {
   WORKSPACE_COLLECTIONS_STORE_NAME,
   WORKSPACE_ENTRIES_STORE_NAME,
@@ -33,6 +34,10 @@ import {
   isSchemaMigrationActive,
   type SchemaMigrationProgress
 } from "#web/lib/data/schema-migrations";
+import {
+  type PendingPublishingCollectionOverlay,
+  type PendingPublishingEntryOverlay
+} from "#web/lib/data";
 
 interface ExplorerTree {
   workspaceID: string;
@@ -45,6 +50,9 @@ interface ExplorerTree {
   schemas: CollectionSchemaSummary[];
   publishing: {
     enabledCollectionIDs: string[];
+    neverPublishedCollectionIDs: string[];
+    neverPublishedEntryIDs: string[];
+    unpublishedCollectionIDs: string[];
     unpublishedEntryIDs: string[];
   } | null;
 }
@@ -126,6 +134,11 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, userID: Accessor<str
   const [syncing, setSyncing] = createSignal(false);
   const [snapshotError, setSnapshotError] = createSignal(false);
   const [publishing, setPublishing] = createSignal<PublishingState | null>(null);
+  const [pendingPublishingEntryOverlays, setPendingPublishingEntryOverlays] = createSignal(
+    new Map<string, PendingPublishingEntryOverlay>()
+  );
+  const [pendingPublishingCollectionOverlays, setPendingPublishingCollectionOverlays] =
+    createSignal(new Map<string, PendingPublishingCollectionOverlay>());
   const [schemaMigrations, setSchemaMigrations] = createSignal(
     new Map<string, SchemaMigrationProgress>()
   );
@@ -145,14 +158,107 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, userID: Accessor<str
         .flatMap(({ collectionIDs }) => collectionIDs)
     );
   });
-  const contentOperations = createWorkspaceContentOperations({
-    entriesCollection,
-    collectionsCollection
-  });
   const publishingOperations = createWorkspacePublishingOperations({
     entriesCollection,
     collectionsCollection,
     publishing
+  });
+  const addPendingPublishingEntryOverlays = (entries: Entry[]) => {
+    const publishingState = publishing();
+
+    if (!publishingState) return;
+
+    setPendingPublishingEntryOverlays((current) => {
+      const next = new Map(current);
+
+      for (const entry of entries) {
+        const publishingEnabled =
+          entry.collectionID &&
+          publishingOperations.isCollectionPublishingEnabled(entry.collectionID);
+        const wasPublished = !publishingState.neverPublishedEntryIDs.has(entry.id);
+
+        if (!publishingEnabled || !wasPublished) continue;
+
+        next.set(entry.id, {
+          collectionID: entry.collectionID ?? null,
+          entryID: entry.id,
+          name: entry.name,
+          order: entry.order,
+          reason: "deleted"
+        });
+      }
+
+      return next;
+    });
+  };
+  const addPendingPublishingCollectionOverlays = (collections: Collection[]) => {
+    const publishingState = publishing();
+    const allCollections = collectionsCollection().find().fetch();
+    const collectionsByID = new Map(
+      allCollections.map((collection) => [collection.id, collection])
+    );
+    const rootCollection = allCollections.find(
+      (collection) => collection.name === ROOT_COLLECTION_NAME
+    );
+
+    if (!publishingState) return;
+
+    setPendingPublishingCollectionOverlays((current) => {
+      const next = new Map(current);
+
+      for (const collection of collections) {
+        const publishingEnabled = publishingOperations.isCollectionPublishingEnabled(collection.id);
+        const wasPublished = !publishingState.neverPublishedCollectionIDs.has(collection.id);
+
+        if (!publishingEnabled || !wasPublished) continue;
+
+        const parentID = collection.ancestors.at(-1) ?? null;
+        const parent = parentID ? collectionsByID.get(parentID) : rootCollection;
+
+        next.set(collection.id, {
+          collectionID: collection.id,
+          index: Math.max(parent?.descendants.indexOf(collection.id) ?? 0, 0),
+          name: collection.name,
+          parentID
+        });
+      }
+
+      return next;
+    });
+  };
+  const removePendingPublishingEntryOverlays = (entryIDs: string[]) => {
+    setPendingPublishingEntryOverlays((current) => {
+      const next = new Map(current);
+
+      for (const entryID of entryIDs) next.delete(entryID);
+
+      return next;
+    });
+  };
+  const removePendingPublishingCollectionOverlays = (collectionIDs: string[]) => {
+    setPendingPublishingCollectionOverlays((current) => {
+      const next = new Map(current);
+
+      for (const collectionID of collectionIDs) next.delete(collectionID);
+
+      return next;
+    });
+  };
+  const contentOperations = createWorkspaceContentOperations({
+    entriesCollection,
+    collectionsCollection,
+    onCollectionsDeleting: (collections, entries) => {
+      addPendingPublishingCollectionOverlays(collections);
+      addPendingPublishingEntryOverlays(entries);
+    },
+    onCollectionsDeleteFailed: (collections, entries) => {
+      removePendingPublishingCollectionOverlays(collections.map((collection) => collection.id));
+      removePendingPublishingEntryOverlays(entries.map((entry) => entry.id));
+    },
+    onEntriesDeleting: addPendingPublishingEntryOverlays,
+    onEntriesDeleteFailed: (entries) => {
+      removePendingPublishingEntryOverlays(entries.map((entry) => entry.id));
+    }
   });
   const disposeWorkspaceContent = async (targetWorkspaceID: string) => {
     const currentCollections = contentCollections();
@@ -350,13 +456,15 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, userID: Accessor<str
     setPublishing((current) => {
       if (!current) return current;
 
+      const neverPublishedEntryIDs = new Set(current.neverPublishedEntryIDs);
       const unpublishedEntryIDs = new Set(current.unpublishedEntryIDs);
 
       for (const entryID of entryIDs) {
+        neverPublishedEntryIDs.delete(entryID);
         unpublishedEntryIDs.delete(entryID);
       }
 
-      return { ...current, unpublishedEntryIDs };
+      return { ...current, neverPublishedEntryIDs, unpublishedEntryIDs };
     });
   };
   const removePublishingCollections = (collectionIDs: string[]) => {
@@ -442,6 +550,9 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, userID: Accessor<str
       tree.publishing
         ? {
             enabledCollectionIDs: new Set(tree.publishing.enabledCollectionIDs),
+            neverPublishedCollectionIDs: new Set(tree.publishing.neverPublishedCollectionIDs),
+            neverPublishedEntryIDs: new Set(tree.publishing.neverPublishedEntryIDs),
+            unpublishedCollectionIDs: new Set(tree.publishing.unpublishedCollectionIDs),
             unpublishedEntryIDs: new Set(tree.publishing.unpublishedEntryIDs)
           }
         : null
@@ -501,6 +612,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, userID: Accessor<str
 
     switch (event.action) {
       case "entry:create":
+      case "entry:restore":
         contentOperations.sync.entries.applyCreate({ entry: event.data });
         break;
       case "entry:update": {
@@ -524,6 +636,13 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, userID: Accessor<str
         break;
       }
       case "entry:delete":
+        addPendingPublishingEntryOverlays(
+          event.data.ids.flatMap((entryID) => {
+            const entry = contentOperations.entries.get({ entryID });
+
+            return entry ? [entry] : [];
+          })
+        );
         contentOperations.sync.entries.applyDelete({ entryIDs: event.data.ids });
         removePublishingEntries(event.data.ids);
         pruneLocalDocuments(targetCollections);
@@ -541,12 +660,36 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, userID: Accessor<str
         }
         break;
       }
+      case "collection:restore": {
+        const access = event.access;
+
+        contentOperations.sync.collections.applyCreate({ collection: event.data.collection });
+        contentOperations.sync.collections.applyMove({
+          collectionID: event.data.collection.id,
+          parentID: event.data.parentID,
+          index: event.data.index
+        });
+
+        if (access) {
+          setAccessByCollectionID((current) => ({
+            ...current,
+            [event.data.collection.id]: access
+          }));
+        }
+        break;
+      }
       case "collection:update": {
         const { id, ...updates } = event.data;
 
         contentOperations.sync.collections.applyUpdate({ collectionID: id, updates });
         break;
       }
+      case "collection:reorder":
+        contentOperations.sync.collections.applyUpdate({
+          collectionID: event.data.parentID ?? TREE_ROOT_ID,
+          updates: { descendants: event.data.descendants }
+        });
+        break;
       case "collection:move":
         contentOperations.sync.collections.applyMove({
           collectionID: event.data.id,
@@ -555,6 +698,18 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, userID: Accessor<str
         });
         break;
       case "collection:delete":
+        addPendingPublishingCollectionOverlays(
+          event.data.ids.flatMap((collectionID) => {
+            const collection = contentOperations.collections.get({ collectionID });
+
+            return collection ? [collection] : [];
+          })
+        );
+        addPendingPublishingEntryOverlays(
+          entriesCollection()
+            .find({ collectionID: { $in: event.data.ids } })
+            .fetch()
+        );
         contentOperations.sync.collections.applyDelete({ collectionIDs: event.data.ids });
         removePublishingCollections(event.data.ids);
         setAccessByCollectionID((current) => {
@@ -623,6 +778,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, userID: Accessor<str
         setPublishing((current) => {
           if (!current) return current;
 
+          const neverPublishedEntryIDs = new Set(current.neverPublishedEntryIDs);
           const unpublishedEntryIDs = new Set(current.unpublishedEntryIDs);
 
           for (const entry of event.data.entries) {
@@ -631,9 +787,15 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, userID: Accessor<str
             } else {
               unpublishedEntryIDs.delete(entry.entryID);
             }
+
+            if (entry.hasUnpublishedChanges && !entry.versionID) {
+              neverPublishedEntryIDs.add(entry.entryID);
+            } else {
+              neverPublishedEntryIDs.delete(entry.entryID);
+            }
           }
 
-          return { ...current, unpublishedEntryIDs };
+          return { ...current, neverPublishedEntryIDs, unpublishedEntryIDs };
         });
         break;
       case "publishing:entries-content-update":
@@ -671,6 +833,8 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, userID: Accessor<str
     setSyncing((syncingWorkspaces.get(currentWorkspaceID) ?? 0) > 0);
     setSnapshotError(false);
     setPublishing(null);
+    setPendingPublishingEntryOverlays(new Map());
+    setPendingPublishingCollectionOverlays(new Map());
     setSchemaMigrations(new Map());
     terminalSchemaMigrationIDs.clear();
     for (const timer of schemaMigrationRemovalTimers.values()) window.clearTimeout(timer);
@@ -726,6 +890,10 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, userID: Accessor<str
     syncing,
     snapshotError,
     publishing,
+    pendingPublishingEntryOverlays,
+    pendingPublishingCollectionOverlays,
+    removePendingPublishingEntryOverlays,
+    removePendingPublishingCollectionOverlays,
     canCollection,
     canEntry,
     getCollectionAccess,

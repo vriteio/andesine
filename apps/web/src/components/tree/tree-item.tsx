@@ -23,6 +23,7 @@ interface TreeItemProps {
   iconClass?: string;
   selectable?: boolean;
   checkbox?: boolean;
+  selectionState?: boolean | "indeterminate";
   actions?: JSX.Element;
   highlighted?: boolean;
   dataAttributes?: Record<string, string>;
@@ -30,6 +31,7 @@ interface TreeItemProps {
   labelMaxLength?: number;
   ref?: (el: HTMLElement) => void;
   onClick?: (event: MouseEvent) => void;
+  onSelectionChange?(selected: boolean): void;
   onRename?: (name: string) => void;
   renderLabel?: (label: JSX.Element) => JSX.Element;
 }
@@ -43,6 +45,11 @@ const TreeItem: Component<TreeItemProps> = (props) => {
   ] = useTree();
   const [currentName, setCurrentName] = createSignal("");
   const [cancelledRef, setCancelledRef] = createRef(false);
+  const selected = () => {
+    return props.selectionState !== undefined
+      ? props.selectionState === true
+      : isSelected(props.id);
+  };
   const focusItem = () => {
     setFocusedItem(props.id, "hover");
   };
@@ -51,8 +58,19 @@ const TreeItem: Component<TreeItemProps> = (props) => {
       setFocusedItem(null, null);
     }
   };
+  const handlePointerDown = (event: PointerEvent) => {
+    const contextSelected = selected() || props.selectionState === "indeterminate";
+
+    if (event.button !== 2 || !props.selectable || contextSelected) return;
+
+    if (props.onSelectionChange) {
+      props.onSelectionChange(true);
+    } else {
+      setSelection([props.id]);
+    }
+  };
   const handleClick = (event: MouseEvent) => {
-    const selected = isSelected(props.id);
+    const itemSelected = selected();
     const selectionTarget =
       event.target instanceof Element && event.target.closest("[data-tree-selectable]");
 
@@ -66,48 +84,56 @@ const TreeItem: Component<TreeItemProps> = (props) => {
 
     if (
       props.selectable &&
-      (selected || props.checkbox) &&
+      (itemSelected || props.checkbox) &&
       event.target instanceof HTMLElement &&
       event.target.closest("[data-tree-selectable]")
     ) {
-      setSelection((sel) => {
-        if (selected) {
-          return sel.filter((id) => id !== props.id);
-        } else {
-          return [...sel, props.id];
-        }
-      });
-
-      return;
-    }
-
-    if (event.metaKey || event.ctrlKey || event.shiftKey) {
-      setSelection((sel) => {
-        if (event.shiftKey) {
-          if (sel.length === 0) {
-            return [props.id];
-          }
-
-          const order = flattenedOrder();
-          const index = order.indexOf(props.id);
-          const startIndex = order.findIndex((id) => sel.includes(id));
-          const endIndex = order.findLastIndex((id) => sel.includes(id));
-
-          if (index < startIndex) {
-            return order.slice(index, endIndex + 1);
-          }
-
-          return order.slice(startIndex, index + 1);
-        } else if (event.metaKey || event.ctrlKey) {
-          if (sel.includes(props.id)) {
+      if (props.onSelectionChange) {
+        props.onSelectionChange(!itemSelected);
+      } else {
+        setSelection((sel) => {
+          if (itemSelected) {
             return sel.filter((id) => id !== props.id);
           }
 
           return [...sel, props.id];
-        }
+        });
+      }
 
-        return [props.id];
-      });
+      return;
+    }
+
+    if (props.selectable && (event.metaKey || event.ctrlKey || event.shiftKey)) {
+      if (props.onSelectionChange) {
+        props.onSelectionChange(!itemSelected);
+      } else {
+        setSelection((sel) => {
+          if (event.shiftKey) {
+            if (sel.length === 0) {
+              return [props.id];
+            }
+
+            const order = flattenedOrder();
+            const index = order.indexOf(props.id);
+            const startIndex = order.findIndex((id) => sel.includes(id));
+            const endIndex = order.findLastIndex((id) => sel.includes(id));
+
+            if (index < startIndex) {
+              return order.slice(index, endIndex + 1);
+            }
+
+            return order.slice(startIndex, index + 1);
+          } else if (event.metaKey || event.ctrlKey) {
+            if (sel.includes(props.id)) {
+              return sel.filter((id) => id !== props.id);
+            }
+
+            return [...sel, props.id];
+          }
+
+          return [props.id];
+        });
+      }
     } else {
       setSelection([]);
       props.onClick?.(event);
@@ -156,10 +182,10 @@ const TreeItem: Component<TreeItemProps> = (props) => {
   return (
     <div
       class={clsx(
-        ":base: relative flex min-w-0 flex-1 gap-1 font-medium items-center pl-0.5 rounded-r-lg group @hover:cursor-pointer w-full overflow-hidden select-none",
+        ":base: relative flex min-w-0 flex-1 gap-1 font-medium items-center pl-0.5 rounded-r-lg group @hover:cursor-pointer w-full overflow-hidden select-none focus-visible:outline-none",
         (props.selectable || (keyboardItems && focusedSource() === "keyboard")) &&
           isFocused(props.id) &&
-          !isSelected(props.id) &&
+          !selected() &&
           !props.highlighted &&
           ":base: bg-gradient-to-r from-gray-500/10 to-transparent",
         props.topLevel && ":base: rounded-l-lg",
@@ -175,6 +201,7 @@ const TreeItem: Component<TreeItemProps> = (props) => {
         if (keyboardItems && event.target === element) setFocusedItem(props.id, "keyboard");
       }}
       onClick={handleClick}
+      onPointerDown={handlePointerDown}
       onPointerEnter={focusItem}
       onPointerLeave={clearHoverFocus}
       data-tree-item={props.id}
@@ -182,7 +209,7 @@ const TreeItem: Component<TreeItemProps> = (props) => {
         Object.entries(props.dataAttributes || {}).map(([k, v]) => [`data-${k}`, v])
       )}
     >
-      <Show when={props.highlighted && !isSelected(props.id)}>
+      <Show when={props.highlighted && !selected()}>
         <div
           class={clsx(
             "left-0 -z-10 rounded-r-lg absolute h-full w-full opacity-10 from-secondary via-primary to-transparent bg-gradient-to-r",
@@ -202,7 +229,7 @@ const TreeItem: Component<TreeItemProps> = (props) => {
           data-tree-selectable
           class={clsx("flex h-6 w-6 items-center justify-center", props.iconClass)}
         >
-          <Show when={!props.checkbox || !isSelected(props.id)}>
+          <Show when={!props.checkbox || (!selected() && props.selectionState !== "indeterminate")}>
             <div
               class={clsx(
                 "h-6 w-6 flex justify-center items-center",
@@ -213,8 +240,14 @@ const TreeItem: Component<TreeItemProps> = (props) => {
             </div>
           </Show>
           <Show when={props.checkbox}>
-            <div class={clsx(!isSelected(props.id) && "hidden media-mouse:group-hover:block")}>
-              <Checkbox size="small" checked={isSelected(props.id)} />
+            <div
+              class={clsx(
+                !selected() &&
+                  props.selectionState !== "indeterminate" &&
+                  "hidden media-mouse:group-hover:block"
+              )}
+            >
+              <Checkbox size="small" checked={props.selectionState ?? isSelected(props.id)} />
             </div>
           </Show>
         </div>

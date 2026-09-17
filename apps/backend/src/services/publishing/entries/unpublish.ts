@@ -1,11 +1,11 @@
-import { entryPublications, publishingChannels } from "#backend/db";
+import { publishingSnapshotEntries } from "#backend/db";
 import {
-  lockPublishingEntries,
-  normalizePublishingChannelCode,
+  commitPublishingSnapshot,
+  resolvePublishingSnapshot,
+  type CommitPublishingSnapshotResult,
   type PublishingEntryStatus
 } from "#backend/lib/publishing";
 import { toEntryID, toUUID } from "#backend/lib/primitives";
-import { ORPCError } from "@orpc/server";
 import { and, eq, inArray } from "drizzle-orm";
 import {
   type EntryAuthorizationSource,
@@ -21,6 +21,7 @@ interface UnpublishEntryInput {
 interface UnpublishEntryResult {
   publishingEntries: PublishingEntryStatus[];
   removed: boolean;
+  snapshot: CommitPublishingSnapshotResult;
 }
 
 const unpublishEntry = withAuthorization<
@@ -35,50 +36,59 @@ const unpublishEntry = withAuthorization<
         collectionID
       }))
     }),
+    includeDeleted: true,
     resolve: ({ database, input, workspaceID }) => {
-      return loadEntryAuthorizationSources({ database, entryIDs: input.entryIDs, workspaceID });
+      return loadEntryAuthorizationSources({
+        database,
+        entryIDs: input.entryIDs,
+        includeDeleted: true,
+        workspaceID
+      });
     },
     tree: true,
     transaction: "locked-workspace"
   },
-  async ({ authorization, database, input, resolved, workspaceID }) => {
+  async ({ auth, authorization, database, input, resolved, workspaceID }) => {
     const entryIDs = [...new Set(input.entryIDs.map(toUUID))];
     const versionID = input.versionID ? toUUID(input.versionID) : null;
-    const channelCode = normalizePublishingChannelCode(input.channel);
-
-    const [channel] = await database
-      .select({ id: publishingChannels.id })
-      .from(publishingChannels)
+    const snapshot = await resolvePublishingSnapshot(database, workspaceID, {
+      channelCode: input.channel
+    });
+    const publishedEntries = await database
+      .select({
+        entryID: publishingSnapshotEntries.entryID,
+        versionID: publishingSnapshotEntries.versionID
+      })
+      .from(publishingSnapshotEntries)
       .where(
         and(
-          eq(publishingChannels.workspaceID, workspaceID),
-          eq(publishingChannels.code, channelCode)
+          eq(publishingSnapshotEntries.snapshotID, snapshot.id),
+          inArray(publishingSnapshotEntries.entryID, entryIDs)
         )
       );
-
-    if (!channel) throw new ORPCError("NOT_FOUND", { message: "Publishing channel not found" });
-
-    await lockPublishingEntries(database, workspaceID, entryIDs);
-
-    const filters = [
-      inArray(entryPublications.entryID, entryIDs),
-      eq(entryPublications.channelID, channel.id)
-    ];
-
-    if (versionID) filters.push(eq(entryPublications.versionID, versionID));
-
-    const removed = await database
-      .delete(entryPublications)
-      .where(and(...filters))
-      .returning({ versionID: entryPublications.versionID });
+    const entryRemovals = publishedEntries
+      .filter((entry) => !versionID || entry.versionID === versionID)
+      .map(({ entryID }) => entryID);
+    const result = await commitPublishingSnapshot(database, {
+      authorization,
+      workspaceID,
+      channelCode: input.channel,
+      creatorID: auth.session?.userID,
+      entryRemovals,
+      expectedSnapshotID: snapshot.id,
+      reason: "unpublish",
+      subscriptionPlan: auth.subscriptionPlan
+    });
 
     return {
       publishingEntries: resolved.map((entry) => ({
         entryID: toEntryID(entry.id),
-        hasUnpublishedChanges: authorization.isPublishingEnabled(entry.collectionID),
+        hasUnpublishedChanges:
+          !entry.deletedAt && authorization.isPublishingEnabled(entry.collectionID),
         versionID: null
       })),
-      removed: removed.length > 0
+      removed: result.affectedEntryIDs.length > 0,
+      snapshot: result
     };
   }
 );

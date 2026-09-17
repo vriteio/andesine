@@ -18,7 +18,7 @@ import {
 } from "solid-js";
 import { useLayout } from "#web/context/layout";
 import { PublishingProvider } from "#web/context/publishing";
-import { useWorkspace, WorkspaceProvider } from "#web/context/workspace";
+import { WorkspaceProvider } from "#web/context/workspace";
 import { EditorToolbar } from "./editor-toolbar";
 import { Menu } from "./menu";
 import { ProfileMenu } from "./profile-menu";
@@ -31,6 +31,7 @@ import { createMediaQuery } from "@solid-primitives/media";
 import { useNotify } from "#web/context/notifications";
 import { RightSidePanel, useRightSidePanelOptions } from "./right-side-panel";
 import clsx from "clsx";
+import { LEFT_SIDE_PANEL_PARAM } from "./panel-navigation";
 
 interface WorkspaceRightSidePanelProps {
   hidden: boolean;
@@ -42,7 +43,6 @@ const MAX_SIDE_PANEL_WIDTH = 640;
 const WorkspaceRightSidePanel: Component<WorkspaceRightSidePanelProps> = (props) => {
   const params = useParams<{ slug?: string }>();
   const { layout, setLayout } = useLayout();
-  const { content } = useWorkspace();
   const options = useRightSidePanelOptions();
   const isDocumentRoute = () => {
     return Boolean(params.slug?.startsWith("ent_") || params.slug?.startsWith("sch_"));
@@ -50,8 +50,7 @@ const WorkspaceRightSidePanel: Component<WorkspaceRightSidePanelProps> = (props)
   const available = () => {
     return (
       !props.hidden &&
-      (options().length > 0 ||
-        (isDocumentRoute() && layout.rightSidePanelWidth > 0 && content.accessLoading()))
+      (options().length > 0 || (isDocumentRoute() && layout.rightSidePanelWidth > 0))
     );
   };
 
@@ -126,7 +125,9 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
     } else if (nextPanel === "explorer" && isSettingsRoute()) {
       navigate(`${workspacePath()}${currentEntryID ? `/${currentEntryID}` : ""}`);
     } else {
-      setSearchParams({ p: nextPanel === "help" ? "help" : undefined });
+      setSearchParams({
+        [LEFT_SIDE_PANEL_PARAM]: nextPanel === "help" ? "help" : undefined
+      });
     }
 
     if (md() && layout.leftSidePanelWidth === 0) {

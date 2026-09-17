@@ -371,6 +371,7 @@ const buildSearchDocuments = <TDocument extends SearchDocument>(
             scope: source.scope,
             channelID: source.channelID,
             channelCode: source.channelCode,
+            snapshotID: source.snapshotID,
             versionID: source.versionID
           }
         : { ...baseDocument, scope: source.scope };

@@ -21,6 +21,11 @@ const entryEventType = z.union([
     data: entryType
   }),
   z.object({
+    action: z.literal("entry:restore"),
+    memberID: id().optional(),
+    data: entryType
+  }),
+  z.object({
     action: z.literal("entry:update"),
     memberID: id().optional(),
     data: z.object({

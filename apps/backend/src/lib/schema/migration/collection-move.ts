@@ -1,7 +1,7 @@
 import { collections } from "#backend/db/collections";
 import { schemaMigrations } from "#backend/db/content-schemas";
 import { contents } from "#backend/db/contents";
-import { entryPublications, publishingChannels } from "#backend/db/publishing";
+import { publishingChannels, publishingSnapshotEntries } from "#backend/db/publishing";
 import { entryVersions } from "#backend/db/versions";
 import { workspaces } from "#backend/db/workspaces";
 import { rankBetweenNeighbors, toCollectionID, toEntryID } from "#backend/lib/primitives";
@@ -74,17 +74,18 @@ const restoreSchemaCollectionMove = async (
             publishingChannels,
             and(
               eq(publishingChannels.workspaceID, workspaceID),
-              eq(publishingChannels.code, PUBLISHED_CHANNEL_CODE)
+              eq(publishingChannels.code, PUBLISHED_CHANNEL_CODE),
+              isNull(publishingChannels.deletedAt)
             )
           )
           .leftJoin(
-            entryPublications,
+            publishingSnapshotEntries,
             and(
-              eq(entryPublications.entryID, contents.entryID),
-              eq(entryPublications.channelID, publishingChannels.id)
+              eq(publishingSnapshotEntries.entryID, contents.entryID),
+              eq(publishingSnapshotEntries.snapshotID, publishingChannels.currentSnapshotID)
             )
           )
-          .leftJoin(entryVersions, eq(entryVersions.id, entryPublications.versionID))
+          .leftJoin(entryVersions, eq(entryVersions.id, publishingSnapshotEntries.versionID))
           .where(inArray(contents.entryID, move.entryIDs))
       : [];
 

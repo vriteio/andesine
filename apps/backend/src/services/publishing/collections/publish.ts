@@ -3,8 +3,11 @@ import {
   assertEntrySnapshotsSynced,
   getSubtreeEntryIDs,
   isCollectionPublishingEnabled,
+  loadAuthorizedSnapshotRemovalEntries,
   loadPublishingTree,
   publishEntries,
+  resolveCollectionSnapshotChanges,
+  type CommitPublishingSnapshotResult,
   type PublishingEntryStatus,
   syncEntrySnapshots
 } from "#backend/lib/publishing";
@@ -23,6 +26,7 @@ interface PublishCollectionResult {
   createdVersions: VersionSummary[];
   publishingEntries: PublishingEntryStatus[];
   publishedEntries: number;
+  snapshot: CommitPublishingSnapshotResult | null;
 }
 interface CommitPublishCollectionInput extends PublishCollectionInput {
   snapshotEntryIDs: string[];
@@ -93,9 +97,11 @@ const commitPublishCollection = withAuthorization<
         collectionID
       }))
     }),
+    includeDeleted: true,
+    tree: true,
     transaction: "locked-workspace"
   },
-  async ({ auth, authorizationScope, database, input, workspaceID }) => {
+  async ({ auth, authorization, authorizationScope, database, input, workspaceID }) => {
     const entryIDs = await preparePublishCollection({
       ...input,
       auth,
@@ -103,12 +109,29 @@ const commitPublishCollection = withAuthorization<
     });
 
     assertEntrySnapshotsSynced(entryIDs, input.snapshotEntryIDs);
+    const snapshotOperations = await resolveCollectionSnapshotChanges(database, {
+      authorization,
+      workspaceID,
+      channelCode: input.channel,
+      collectionIDs: [...new Set(input.collectionIDs.map(toUUID))]
+    });
+
+    await loadAuthorizedSnapshotRemovalEntries({
+      ...snapshotOperations,
+      authorization,
+      database,
+      workspaceID
+    });
 
     return publishEntries(database, {
+      authorization,
       workspaceID,
       entries: entryIDs.map((entryID) => ({ entryID })),
       channel: input.channel,
-      contributorIDs: input.contributorIDs
+      contributorIDs: input.contributorIDs,
+      creatorID: auth.session?.userID,
+      snapshotOperations,
+      subscriptionPlan: auth.subscriptionPlan
     });
   }
 );

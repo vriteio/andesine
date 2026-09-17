@@ -32,7 +32,7 @@ interface VersionHistoryItemProps {
   canManagePublishing?: boolean;
   contributorNames: string[];
   onAssign?(channel: string): void;
-  onCompare(): void;
+  onCompare?(): void;
   onOpen(): void;
   onRename(name: string): void;
   onRevert?(): void;
@@ -74,13 +74,16 @@ const VersionHistoryItem: Component<VersionHistoryItemProps> = (props) => {
     closeMobileDropdowns();
   };
   const options = (): Array<MenuItem[]> => {
-    const itemOptions: MenuItem[] = [
-      {
-        label: "Compare with current",
-        icon: "i-lucide:git-compare-arrows",
-        onClick: () => navigate(props.onCompare)
-      }
-    ];
+    const onCompare = props.onCompare;
+    const itemOptions: MenuItem[] = onCompare
+      ? [
+          {
+            label: "Compare with current",
+            icon: "i-lucide:git-compare-arrows",
+            onClick: () => navigate(onCompare)
+          }
+        ]
+      : [];
 
     if (props.canManage) {
       itemOptions.push({
@@ -124,7 +127,7 @@ const VersionHistoryItem: Component<VersionHistoryItemProps> = (props) => {
       groups.push(publishingOptions);
     }
 
-    return groups;
+    return groups.filter((group) => group.length > 0);
   };
 
   return (
@@ -228,7 +231,7 @@ const VersionHistoryItem: Component<VersionHistoryItemProps> = (props) => {
           </div>
         )}
         actions={
-          <>
+          <Show when={options().length > 0}>
             <DropdownMenu
               class="self-start"
               title={label()}
@@ -261,7 +264,7 @@ const VersionHistoryItem: Component<VersionHistoryItemProps> = (props) => {
                 </div>
               )}
             />
-          </>
+          </Show>
         }
       />
     </DropdownArea>

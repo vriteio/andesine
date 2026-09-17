@@ -39,7 +39,7 @@ interface AssetDetails {
 }
 
 const getAsset = withAuthorization<AssetInput, undefined, AssetDetails>(
-  { tree: true },
+  { includeDeleted: true, tree: true },
   async ({ database, authorization, workspaceID, input }) => {
     await loadAssetWorkspace(database, workspaceID);
     const assetID = toUUID(input.assetID);
@@ -66,7 +66,6 @@ const getAsset = withAuthorization<AssetInput, undefined, AssetDetails>(
         and(
           input.entryID ? eq(entries.id, toUUID(input.entryID)) : undefined,
           eq(entries.workspaceID, workspaceID),
-          isNull(entries.deletedAt),
           or(eq(entryAssets.assetID, assetID), eq(assetUploads.assetID, assetID))
         )
       );
@@ -79,7 +78,6 @@ const getAsset = withAuthorization<AssetInput, undefined, AssetDetails>(
         .where(
           and(
             eq(entries.workspaceID, workspaceID),
-            isNull(entries.deletedAt),
             eq(entryVersionAssets.assetID, assetID),
             input.entryID ? eq(entries.id, toUUID(input.entryID)) : undefined
           )

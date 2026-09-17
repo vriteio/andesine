@@ -1,4 +1,8 @@
-import { collections, entries, entryPublications, publishingChannels } from "#backend/db";
+import {
+  publishingChannels,
+  publishingSnapshotCollections,
+  publishingSnapshotEntries
+} from "#backend/db";
 import type {
   AskResult,
   PublishedAskInput,
@@ -10,7 +14,7 @@ import { type Database, withAuthorization } from "#backend/lib/policy";
 import { normalizePublishingChannelCode } from "#backend/lib/publishing";
 import { toUUID, toVersionID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
-import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { ask, search, type SearchDocumentAuthorizer } from "./core";
 
 const createDocumentAuthorizer = (
@@ -24,38 +28,32 @@ const createDocumentAuthorizer = (
     const rows = await database
       .select({
         channelID: publishingChannels.id,
-        entryID: entryPublications.entryID,
-        versionID: entryPublications.versionID
+        entryID: publishingSnapshotEntries.entryID,
+        snapshotID: publishingSnapshotEntries.snapshotID,
+        versionID: publishingSnapshotEntries.versionID
       })
-      .from(entryPublications)
+      .from(publishingSnapshotEntries)
       .innerJoin(
         publishingChannels,
         and(
-          eq(publishingChannels.id, entryPublications.channelID),
           eq(publishingChannels.workspaceID, workspaceID),
-          eq(publishingChannels.code, channel)
-        )
-      )
-      .innerJoin(
-        entries,
-        and(
-          eq(entries.id, entryPublications.entryID),
-          eq(entries.workspaceID, workspaceID),
-          isNull(entries.deletedAt)
+          eq(publishingChannels.code, channel),
+          eq(publishingChannels.currentSnapshotID, publishingSnapshotEntries.snapshotID),
+          isNull(publishingChannels.deletedAt)
         )
       )
       .where(
         and(
-          eq(entryPublications.workspaceID, workspaceID),
+          eq(publishingSnapshotEntries.workspaceID, workspaceID),
           inArray(
-            entryPublications.entryID,
+            publishingSnapshotEntries.entryID,
             documents.map(({ entryID }) => toUUID(entryID))
           )
         )
       );
     const assignmentKeys = new Set(
-      rows.map(({ channelID, entryID, versionID }) => {
-        return `${entryID}:${channelID}:${toVersionID(versionID)}`;
+      rows.map(({ channelID, entryID, snapshotID, versionID }) => {
+        return `${entryID}:${channelID}:${snapshotID}:${toVersionID(versionID)}`;
       })
     );
 
@@ -63,14 +61,17 @@ const createDocumentAuthorizer = (
       documents.flatMap((document) => {
         if (document.scope !== "published") return [];
 
-        const assignmentKey = `${toUUID(document.entryID)}:${document.channelID}:${document.versionID}`;
+        const assignmentKey = `${toUUID(document.entryID)}:${document.channelID}:${toUUID(
+          document.snapshotID
+        )}:${document.versionID}`;
 
         return assignmentKeys.has(assignmentKey) ? [document.id] : [];
       })
     );
   };
 };
-const assertNonRootCollectionFilter = async (
+const assertPublishedCollectionFilter = async (
+  channel: string,
   collectionID: string | undefined,
   database: Database,
   workspaceID: string
@@ -78,14 +79,21 @@ const assertNonRootCollectionFilter = async (
   if (!collectionID) return;
 
   const [collection] = await database
-    .select({ id: collections.id })
-    .from(collections)
+    .select({ id: publishingSnapshotCollections.collectionID })
+    .from(publishingSnapshotCollections)
+    .innerJoin(
+      publishingChannels,
+      and(
+        eq(publishingChannels.workspaceID, workspaceID),
+        eq(publishingChannels.code, channel),
+        eq(publishingChannels.currentSnapshotID, publishingSnapshotCollections.snapshotID),
+        isNull(publishingChannels.deletedAt)
+      )
+    )
     .where(
       and(
-        eq(collections.id, toUUID(collectionID)),
-        eq(collections.workspaceID, workspaceID),
-        isNotNull(collections.parentID),
-        isNull(collections.deletedAt)
+        eq(publishingSnapshotCollections.collectionID, toUUID(collectionID)),
+        eq(publishingSnapshotCollections.workspaceID, workspaceID)
       )
     )
     .limit(1);
@@ -100,7 +108,7 @@ const searchPublished = withAuthorization<PublishedSearchInput, undefined, Searc
   async ({ auth, database, input, workspaceID }) => {
     const channel = normalizePublishingChannelCode(input.channel);
 
-    await assertNonRootCollectionFilter(input.collectionID, database, workspaceID);
+    await assertPublishedCollectionFilter(channel, input.collectionID, database, workspaceID);
 
     return search({
       ...input,
@@ -118,7 +126,7 @@ const askPublished = withAuthorization<PublishedAskInput, undefined, AskResult>(
   async ({ auth, database, input, workspaceID }) => {
     const channel = normalizePublishingChannelCode(input.channel);
 
-    await assertNonRootCollectionFilter(input.collectionID, database, workspaceID);
+    await assertPublishedCollectionFilter(channel, input.collectionID, database, workspaceID);
 
     return ask({
       ...input,

@@ -4,6 +4,7 @@ import { type Accessor, type Component, Match, Switch } from "solid-js";
 import { ExplorerPanel } from "./explorer";
 import { HelpPanel } from "./help";
 import { SettingsMenu } from "./settings-menu";
+import { LEFT_SIDE_PANEL_PARAM } from "../panel-navigation";
 
 interface SidePanelProps {
   selectedPanel?: PrimaryPanel;
@@ -18,7 +19,7 @@ const usePrimaryPanel = (): Accessor<PrimaryPanel> => {
   const settingsPath = () => `/${params.workspaceID || ""}/settings`;
 
   return () => {
-    if (searchParams.p === "help") {
+    if (searchParams[LEFT_SIDE_PANEL_PARAM] === "help") {
       return "help";
     }
 

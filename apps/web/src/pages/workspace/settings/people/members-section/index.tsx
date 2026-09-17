@@ -1,24 +1,14 @@
-import { IconButton, Skeleton } from "@andesine/components";
+import { IconButton } from "@andesine/components";
 import { createAsync, revalidate, useNavigate, useParams } from "@solidjs/router";
 import { type Component, Show, Suspense, useTransition } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
+import { TreeSkeleton } from "#web/components/tree";
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
 import { InviteList } from "./invite-list";
 import { WorkspaceMemberList } from "./member-list";
 import { invitesQuery, membershipsQuery, rolesQuery } from "#web/lib/data";
 import type { InvitationSubsectionProps } from "./types";
-
-const ListSkeleton: Component = () => (
-  <div class="flex flex-col">
-    <div class="flex h-8 items-center gap-1 px-1">
-      <Skeleton class={["h-6 w-6", "h-6 flex-1"]} />
-    </div>
-    <div class="flex h-8 items-center gap-1 px-1">
-      <Skeleton class={["h-6 w-6", "h-6 flex-1"]} />
-    </div>
-  </div>
-);
 
 const InvitationsSubsection: Component<InvitationSubsectionProps> = (props) => {
   const [invitesRefreshing, startInvitesRefresh] = useTransition();
@@ -38,7 +28,9 @@ const InvitationsSubsection: Component<InvitationSubsectionProps> = (props) => {
         fade={false}
       />
       <div class="relative flex w-full flex-col">
-        <Suspense fallback={<ListSkeleton />}>
+        <Suspense
+          fallback={<TreeSkeleton fullWidth itemHeight="2rem" rowCount={2} size="medium" />}
+        >
           <InviteList
             invites={props.invites || []}
             roles={props.roles || []}
@@ -95,7 +87,9 @@ const MembersSection: Component = () => {
           </Show>
         </Setting>
         <div class="relative flex w-full flex-col">
-          <Suspense fallback={<ListSkeleton />}>
+          <Suspense
+            fallback={<TreeSkeleton fullWidth itemHeight="2rem" rowCount={2} size="medium" />}
+          >
             <WorkspaceMemberList
               members={members() || []}
               roles={roles() || []}

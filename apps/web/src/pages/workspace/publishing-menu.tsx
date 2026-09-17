@@ -21,6 +21,7 @@ import {
   publishingStatusQuery,
   type VersionReason
 } from "#web/lib/data";
+import { useEntryPublishingRevert } from "./publishing/use-entry-publishing-revert";
 
 interface PublishingMenuProps {
   entryID: string;
@@ -45,18 +46,16 @@ interface VersionReasonDetails {
 }
 
 type PublishingAction = "publish" | "unpublish";
-type PublishingDisplayStatus =
-  "changes" | "error" | "loading" | "not-published" | "published" | "unpublished";
+type PublishingDisplayStatus = "changes" | "error" | "loading" | "not-published" | "published";
 type PublishingMenuItem = MenuItem | (() => JSX.Element);
 
 const PUBLISHED_CHANNEL = "published";
 const STATUS_LABELS: Record<PublishingDisplayStatus, string> = {
-  "changes": "Unpublished changes",
+  "changes": "Pending changes",
   "error": "Status unavailable",
   "loading": "Loading",
-  "not-published": "Publish",
-  "published": "Published",
-  "unpublished": "Unpublished"
+  "not-published": "Not published",
+  "published": "Published"
 };
 const VERSION_REASON_DETAILS: Record<VersionReason, VersionReasonDetails> = {
   "auto": { icon: "i-lucide:circle-dot-dashed", label: "Automatic" },
@@ -81,7 +80,7 @@ const PublishingStatusIcon: Component<PublishingStatusIconProps> = (props) => {
               props.status === "published",
             "i-lucide:triangle-alert text-red-500": props.status === "error",
             "i-material-symbols:published-with-changes-rounded text-amber-500":
-              props.status === "changes" || props.status === "unpublished",
+              props.status === "changes",
             "i-material-symbols:publish-rounded text-gray-400": props.status === "not-published"
           })}
         />
@@ -97,10 +96,15 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
   const [, setSearchParams] = useSearchParams();
   const notify = useNotify();
   const [menuOpened, setMenuOpened] = createSignal(false);
+  const entryRevert = useEntryPublishingRevert({
+    entryID: () => props.entryID,
+    onCompleted: () => setMenuOpened(false),
+    onOpen: () => setMenuOpened(false)
+  });
   const selectedChannel = publishing.channel;
   const baseStatus = () => content.getEntryPublishingStatus(props.entryID);
-  const publishingEnabled = () => baseStatus() !== null && baseStatus() !== "outside";
   const entry = () => content.entries.get({ entryID: props.entryID });
+  const publishingEnabled = () => baseStatus() !== null && Boolean(entryRevert.collectionID());
   const channelOptions = createMemo(() => {
     const channelCodes = new Set<string>([PUBLISHED_CHANNEL, selectedChannel()]);
 
@@ -110,7 +114,13 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
 
     return [...channelCodes];
   });
-  const status = () => publishing.getEntryPublishingStatus(props.entryID);
+  const status = () => {
+    const currentStatus = publishing.getEntryPublishingStatus(props.entryID);
+
+    if (currentStatus !== "outside" || !entryRevert.collectionID()) return currentStatus;
+
+    return entryRevert.status();
+  };
   const publications = createAsync(
     async (): Promise<PublishingPublicationsResult | null> => {
       const entryID = props.entryID;
@@ -151,7 +161,7 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
     if (version()) return "changes";
     if (publicationResponse()?.result) return "not-published";
 
-    return "unpublished";
+    return "not-published";
   };
 
   const revalidateChannel = (channel = selectedChannel()) => {
@@ -189,10 +199,14 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
       });
     }
   }));
+  const mutationPending = () => actionMutation.isPending || entryRevert.isPending();
   const runAction = (action: PublishingAction) => {
-    if (actionMutation.isPending) return;
+    if (mutationPending()) return;
 
     actionMutation.mutate({ action, channel: selectedChannel() });
+  };
+  const openRevert = () => {
+    if (!mutationPending()) entryRevert.open();
   };
   const openAssignedVersion = () => {
     const currentVersion = version();
@@ -249,6 +263,7 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
   };
   const options = createMemo<Array<PublishingMenuItem[]>>(() => {
     const groups: Array<PublishingMenuItem[]> = [];
+    const changeOptions: MenuItem[] = [];
     const currentStatus = displayStatus();
     const collectionID = entry()?.collectionID || null;
     const canManage =
@@ -264,14 +279,24 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
     }
 
     if (canManage && currentStatus !== "published") {
-      groups.push([
-        {
-          label: "Publish current",
-          icon: "i-material-symbols:publish-rounded",
-          onClick: () => runAction("publish")
-        }
-      ]);
+      changeOptions.push({
+        disabled: mutationPending(),
+        label: "Publish current",
+        icon: "i-material-symbols:publish-rounded",
+        onClick: () => runAction("publish")
+      });
     }
+
+    if (entryRevert.available()) {
+      changeOptions.push({
+        disabled: mutationPending(),
+        label: "Revert pending changes",
+        icon: "i-lucide:undo-2",
+        onClick: openRevert
+      });
+    }
+
+    if (changeOptions.length > 0) groups.push(changeOptions);
 
     if (publishing.channelsError() || publishing.statusError() || publicationResponse()?.error) {
       groups.push([
@@ -305,6 +330,7 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
     if (currentStatus === "published" || version()) {
       groups.push([
         {
+          disabled: mutationPending(),
           label: "Unpublish",
           icon: "i-material-symbols:unpublished-outline-rounded",
           onClick: () => runAction("unpublish")
@@ -316,53 +342,55 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
   });
 
   return (
-    <Show when={!content.offline() && displayStatus()}>
-      {(currentStatus) => (
-        <DropdownMenu
-          title="Publishing"
-          cardProps={{ class: "w-52" }}
-          items={options()}
-          opened={menuOpened()}
-          setOpened={(opened) => {
-            setMenuOpened(opened);
+    <>
+      <Show when={!content.offline() && displayStatus()}>
+        {(currentStatus) => (
+          <DropdownMenu
+            title="Publishing"
+            cardProps={{ class: "w-52" }}
+            items={options()}
+            opened={menuOpened()}
+            setOpened={(opened) => {
+              setMenuOpened(opened);
 
-            if (opened && publishingEnabled()) {
-              revalidateChannel();
-            }
-          }}
-          mobileSheetDragFromContent={false}
-          trigger={() => (
-            <Show
-              when={props.triggerVariant === "menu"}
-              fallback={
-                <Button
-                  class="flex w-full min-w-0 items-center justify-start"
-                  size="small"
-                  variant="outlined"
-                  color="contrast"
-                  aria-label="Publishing status"
-                >
-                  <PublishingStatusIcon status={currentStatus()} />
-                  <span class="min-w-0 flex-1 truncate px-1 text-start">
-                    {STATUS_LABELS[currentStatus()]}
-                  </span>
-                  <div class="i-lucide:chevrons-up-down ml-auto shrink-0 text-gray-400" />
-                </Button>
+              if (opened && publishingEnabled()) {
+                revalidateChannel();
               }
-            >
-              <button
-                type="button"
-                class="group relative flex min-h-7 w-full flex-1 select-none items-center gap-1 overflow-hidden rounded-lg pl-0.5 text-left font-medium outline-none @hover:bg-gradient-to-r @hover:from-gray-500/10 @hover:to-transparent"
-                aria-label="Open publishing menu"
+            }}
+            mobileSheetDragFromContent={false}
+            trigger={() => (
+              <Show
+                when={props.triggerVariant === "menu"}
+                fallback={
+                  <Button
+                    class="flex w-full min-w-0 items-center justify-start"
+                    size="small"
+                    variant="outlined"
+                    color="contrast"
+                    aria-label="Publishing status"
+                  >
+                    <PublishingStatusIcon status={currentStatus()} />
+                    <span class="min-w-0 flex-1 truncate px-1 text-start">
+                      {STATUS_LABELS[currentStatus()]}
+                    </span>
+                    <div class="i-lucide:chevrons-up-down ml-auto shrink-0 text-gray-400" />
+                  </Button>
+                }
               >
-                <PublishingStatusIcon status={currentStatus()} size="large" />
-                <span class="min-w-0 flex-1 truncate">Publishing</span>
-              </button>
-            </Show>
-          )}
-        />
-      )}
-    </Show>
+                <button
+                  type="button"
+                  class="group relative flex min-h-7 w-full flex-1 select-none items-center gap-1 overflow-hidden rounded-lg pl-0.5 text-left font-medium outline-none @hover:bg-gradient-to-r @hover:from-gray-500/10 @hover:to-transparent"
+                  aria-label="Open publishing menu"
+                >
+                  <PublishingStatusIcon status={currentStatus()} size="large" />
+                  <span class="min-w-0 flex-1 truncate">Publishing</span>
+                </button>
+              </Show>
+            )}
+          />
+        )}
+      </Show>
+    </>
   );
 };
 

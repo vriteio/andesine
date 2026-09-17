@@ -2,6 +2,15 @@ import { Checkbox as BaseCheckbox } from "@ark-ui/solid/checkbox";
 import clsx from "clsx";
 import { type Component } from "solid-js";
 
+interface CheckboxProps {
+  controlClass?: string;
+  iconClass?: string;
+  size?: CheckboxSize;
+  disabled?: boolean;
+  checked?: boolean | "indeterminate";
+  setChecked?(checked: boolean): void;
+}
+
 type CheckboxSize = "small" | "medium" | "large";
 
 const sizeClasses: Record<CheckboxSize, { control: string; icon: string }> = {
@@ -10,20 +19,11 @@ const sizeClasses: Record<CheckboxSize, { control: string; icon: string }> = {
   large: { control: ":base: w-8 h-8 rounded-lg", icon: ":base: w-6 h-6" }
 };
 
-interface CheckboxProps {
-  controlClass?: string;
-  iconClass?: string;
-  size?: CheckboxSize;
-  disabled?: boolean;
-  checked?: boolean;
-  setChecked?(checked: boolean): void;
-}
-
 const Checkbox: Component<CheckboxProps> = (props) => (
   <BaseCheckbox.Root
     checked={props.checked}
     onCheckedChange={(details) => {
-      props.setChecked?.(!!details.checked);
+      props.setChecked?.(details.checked === true);
     }}
     disabled={props.disabled}
   >
@@ -32,6 +32,7 @@ const Checkbox: Component<CheckboxProps> = (props) => (
         `:base: flex items-center justify-center outline outline-2 -outline-offset-2 cursor-pointer`,
         `:base: outline-gray-400`,
         `:base: data-[state=checked]:outline-transparent data-[state=checked]:bg-gradient-to-tr`,
+        `:base: data-[state=indeterminate]:outline-transparent data-[state=indeterminate]:bg-gradient-to-tr`,
         `:base: data-[disabled]:opacity-70 data-[disabled]:pointer-events-none`,
         sizeClasses[props.size || "medium"].control,
         props.controlClass
@@ -40,7 +41,8 @@ const Checkbox: Component<CheckboxProps> = (props) => (
       <BaseCheckbox.Indicator>
         <div
           class={clsx(
-            `:base: i-lucide:check text-white`,
+            ":base: text-white",
+            props.checked === "indeterminate" ? "i-lucide:minus" : "i-lucide:check",
             sizeClasses[props.size || "medium"].icon,
             props.iconClass
           )}

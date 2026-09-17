@@ -76,6 +76,7 @@ interface WithAuthorizationOptions<Input, Resolved> {
   permissions?:
     AuthorizationRequirements | ((input: Input) => AuthorizationRequirements | undefined);
   plan?: "pro" | ((input: Input) => "pro" | undefined);
+  includeDeleted?: boolean;
   resolve?: (context: ServiceResolveContext<Input>) => Promise<Resolved>;
   transaction?: TransactionMode;
   tree?: boolean;
@@ -194,7 +195,11 @@ function withAuthorization<Input, Resolved = undefined, Result = void>(
       const actions = skipsAuthorization ? undefined : options.actions?.({ input, resolved });
       const needsTree = options.tree || actions !== undefined;
       const authorization = needsTree
-        ? await loadAuthorizedCollectionTree({ auth, database: databaseClient })
+        ? await loadAuthorizedCollectionTree({
+            auth,
+            database: databaseClient,
+            includeDeleted: options.includeDeleted
+          })
         : undefined;
       const authorizationScope =
         existingScope ||

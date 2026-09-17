@@ -30,9 +30,19 @@ interface PublishedTreeCollectionOutput {
   entries: PublishedTreeEntryOutput[];
   collections: PublishedTreeCollectionOutput[];
 }
+interface PublishingSnapshotSelector {
+  channel?: string;
+  snapshotID?: string;
+}
+
+const hasValidSnapshotSelector = (input: PublishingSnapshotSelector): boolean => {
+  return !input.channel || !input.snapshotID;
+};
 
 const publishedContentType = z.object({
   channel: publishingChannelCodeType.describe("Publishing channel used for delivery"),
+  snapshotID: publicID("snp").describe("Publication snapshot used for delivery"),
+  expiresAt: z.date().nullable().describe("Expiry time for a retained historical snapshot"),
   name: z.string().describe("Entry name stored in the published version"),
   version: versionSummaryType,
   assets: z.array(
@@ -96,6 +106,8 @@ const cachedPublishedContentType = z.union([
 ]);
 const publishedTreeType = z.object({
   channel: publishingChannelCodeType,
+  snapshotID: publicID("snp").describe("Publication snapshot used for delivery"),
+  expiresAt: z.date().nullable().describe("Expiry time for a retained historical snapshot"),
   collection: publishedTreeCollectionType
 });
 const cachedPublishedTreeType = z.union([
@@ -113,12 +125,14 @@ const contentRouter = base.prefix("/content").router({
   getAsset: base
     .route({
       method: "GET",
-      path: "/assets/:workspaceID/:assetID/:variant",
+      path: "/assets/:workspaceID/:snapshotID/:entryID/:assetID/:variant",
       outputStructure: "detailed"
     })
     .input(
       z.object({
         workspaceID: publicID("ws"),
+        snapshotID: publicID("snp"),
+        entryID: id(),
         assetID: publicID("ast"),
         variant: z.enum(assetDeliveryVariants)
       })
@@ -154,20 +168,26 @@ const contentRouter = base.prefix("/content").router({
     })
     .use(authorized)
     .input(
-      z.object({
-        entryID: id().describe("Entry whose published content to get"),
-        channel: publishingChannelCodeType
-          .optional()
-          .default(PUBLISHED_CHANNEL_CODE)
-          .describe("Publishing channel, defaults to published")
-      })
+      z
+        .object({
+          entryID: id().describe("Entry whose published content to get"),
+          channel: publishingChannelCodeType
+            .optional()
+            .describe(`Publishing channel, defaults to ${PUBLISHED_CHANNEL_CODE}`),
+          snapshotID: publicID("snp").optional().describe("Historical publication snapshot to read")
+        })
+        .refine(hasValidSnapshotSelector, {
+          message: "Use either channel or snapshotID, not both",
+          path: ["snapshotID"]
+        })
     )
     .output(cachedPublishedContentType)
     .handler(async ({ context, input }) => {
       const content = await Publishing.Entries.getContent({
         workspaceID: context.auth.workspaceID,
         entryID: input.entryID,
-        channel: input.channel
+        channel: input.channel,
+        snapshotID: input.snapshotID
       });
       const entityTag = hashEntityTag(content);
       const headers = getCacheHeaders(entityTag);
@@ -191,20 +211,26 @@ const contentRouter = base.prefix("/content").router({
     })
     .use(authorized)
     .input(
-      z.object({
-        collectionID: id().describe("Publishing-enabled collection whose tree to get"),
-        channel: publishingChannelCodeType
-          .optional()
-          .default(PUBLISHED_CHANNEL_CODE)
-          .describe("Publishing channel, defaults to published")
-      })
+      z
+        .object({
+          collectionID: id().describe("Publishing-enabled collection whose tree to get"),
+          channel: publishingChannelCodeType
+            .optional()
+            .describe(`Publishing channel, defaults to ${PUBLISHED_CHANNEL_CODE}`),
+          snapshotID: publicID("snp").optional().describe("Historical publication snapshot to read")
+        })
+        .refine(hasValidSnapshotSelector, {
+          message: "Use either channel or snapshotID, not both",
+          path: ["snapshotID"]
+        })
     )
     .output(cachedPublishedTreeType)
     .handler(async ({ context, input }) => {
       const content = await Publishing.Collections.getContentTree({
         workspaceID: context.auth.workspaceID,
         collectionID: input.collectionID,
-        channel: input.channel
+        channel: input.channel,
+        snapshotID: input.snapshotID
       });
       const entityTag = hashEntityTag(content);
       const headers = getCacheHeaders(entityTag);

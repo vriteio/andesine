@@ -1,14 +1,16 @@
-import { collections, entryPublications } from "#backend/db";
+import { collections, publishingChannels } from "#backend/db";
 import {
   assertEntrySnapshotsSynced,
   getDisabledEntryIDs,
   getSubtreeEntryIDs,
   isCollectionPublishingEnabled,
+  loadAuthorizedSnapshotRemovalEntries,
   loadPublishingTree,
-  lockPublishingEntries,
   PUBLISHED_CHANNEL_CODE,
   publishEntries,
-  syncEntrySnapshots
+  resolveCollectionSnapshotChanges,
+  syncEntrySnapshots,
+  type CommitPublishingSnapshotResult
 } from "#backend/lib/publishing";
 import { toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
 import type { VersionSummary } from "#backend/lib/data";
@@ -16,6 +18,7 @@ import type { PublishingEntryStatus } from "#backend/lib/publishing";
 import { ORPCError } from "@orpc/server";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { filterAuthorizedEntryIDs, withAuthorization } from "#backend/lib/policy";
+import { unpublishCollection } from "./unpublish";
 
 interface SetCollectionPublishingResult {
   changed: boolean;
@@ -23,6 +26,7 @@ interface SetCollectionPublishingResult {
   createdVersions: VersionSummary[];
   publishingEntries: PublishingEntryStatus[];
   publishedEntries: number;
+  snapshots: Array<{ channel: string; snapshot: CommitPublishingSnapshotResult }>;
 }
 interface SetCollectionsPublishingInput {
   collectionIDs: string[];
@@ -107,9 +111,10 @@ const commitCollectionsPublishing = withAuthorization<
       }))
     }),
     tree: true,
+    includeDeleted: true,
     transaction: "locked-workspace"
   },
-  async ({ authorization, database, input, workspaceID }) => {
+  async ({ auth, authorization, authorizationScope, database, input, workspaceID }) => {
     const collectionIDs = [...new Set(input.collectionIDs.map(toUUID))];
 
     const currentCollections = await database
@@ -155,6 +160,10 @@ const commitCollectionsPublishing = withAuthorization<
         })
       : collectionIDs;
     const results: SetCollectionPublishingResult[] = [];
+    const collectionsToPublish: string[] = [];
+    const publishableEntryIDs = new Set<string>();
+    const unpublishedEntryIDs = new Set<string>();
+    let publicationResultIndex = -1;
 
     for (const collectionID of orderedCollectionIDs) {
       const collection = collectionsByID.get(collectionID)!;
@@ -165,7 +174,8 @@ const commitCollectionsPublishing = withAuthorization<
           collectionID,
           createdVersions: [],
           publishingEntries: [],
-          publishedEntries: 0
+          publishedEntries: 0,
+          snapshots: []
         });
         continue;
       }
@@ -202,12 +212,13 @@ const commitCollectionsPublishing = withAuthorization<
                   hasUnpublishedChanges: true,
                   versionID: null
                 })),
-            publishedEntries: 0
+            publishedEntries: 0,
+            snapshots: []
           });
           continue;
         }
 
-        const publishableEntryIDs = await filterAuthorizedEntryIDs({
+        const collectionPublishableEntryIDs = await filterAuthorizedEntryIDs({
           action: "publishing:publish",
           authorization,
           database,
@@ -215,28 +226,25 @@ const commitCollectionsPublishing = withAuthorization<
           workspaceID
         });
 
-        assertEntrySnapshotsSynced(publishableEntryIDs, input.snapshotEntryIDs);
+        const collectionPublishedEntryIDs = new Set(collectionPublishableEntryIDs);
 
-        const result = await publishEntries(database, {
-          workspaceID,
-          entries: publishableEntryIDs.map((entryID) => ({ entryID })),
-          channel: PUBLISHED_CHANNEL_CODE,
-          contributorIDs: input.contributorIDs
-        });
-        const publishedEntryIDs = new Set(publishableEntryIDs);
-        const unpublishedEntries = entryIDs
-          .filter((entryID) => !publishedEntryIDs.has(entryID))
-          .map((entryID) => ({
-            entryID: toEntryID(entryID),
-            hasUnpublishedChanges: true,
-            versionID: null
-          }));
+        assertEntrySnapshotsSynced(collectionPublishableEntryIDs, input.snapshotEntryIDs);
+
+        collectionsToPublish.push(collectionID);
+        for (const entryID of collectionPublishableEntryIDs) publishableEntryIDs.add(entryID);
+        for (const entryID of entryIDs) {
+          if (!collectionPublishedEntryIDs.has(entryID)) unpublishedEntryIDs.add(entryID);
+        }
+
+        if (publicationResultIndex === -1) publicationResultIndex = results.length;
 
         results.push({
           changed: true,
           collectionID,
-          ...result,
-          publishingEntries: [...result.publishingEntries, ...unpublishedEntries]
+          createdVersions: [],
+          publishingEntries: [],
+          publishedEntries: 0,
+          snapshots: []
         });
         continue;
       }
@@ -244,10 +252,7 @@ const commitCollectionsPublishing = withAuthorization<
       const disabledEntryIDs = await getDisabledEntryIDs(database, workspaceID, tree, collectionID);
 
       if (disabledEntryIDs.length > 0) {
-        await lockPublishingEntries(database, workspaceID, disabledEntryIDs);
-        await database
-          .delete(entryPublications)
-          .where(inArray(entryPublications.entryID, disabledEntryIDs));
+        for (const entryID of disabledEntryIDs) unpublishedEntryIDs.add(entryID);
       }
 
       results.push({
@@ -259,8 +264,81 @@ const commitCollectionsPublishing = withAuthorization<
           hasUnpublishedChanges: false,
           versionID: null
         })),
-        publishedEntries: 0
+        publishedEntries: 0,
+        snapshots: []
       });
+    }
+
+    if (collectionsToPublish.length > 0) {
+      const snapshotOperations = await resolveCollectionSnapshotChanges(database, {
+        authorization,
+        workspaceID,
+        channelCode: PUBLISHED_CHANNEL_CODE,
+        collectionIDs: collectionsToPublish
+      });
+
+      await loadAuthorizedSnapshotRemovalEntries({
+        ...snapshotOperations,
+        authorization,
+        database,
+        workspaceID
+      });
+
+      const result = await publishEntries(database, {
+        authorization,
+        workspaceID,
+        entries: [...publishableEntryIDs].map((entryID) => ({ entryID })),
+        channel: PUBLISHED_CHANNEL_CODE,
+        contributorIDs: input.contributorIDs,
+        creatorID: auth.session?.userID,
+        snapshotOperations,
+        subscriptionPlan: auth.subscriptionPlan
+      });
+      const publicationResult = results[publicationResultIndex];
+
+      publicationResult.createdVersions = result.createdVersions;
+      publicationResult.publishedEntries = result.publishedEntries;
+      publicationResult.publishingEntries = [
+        ...result.publishingEntries,
+        ...[...unpublishedEntryIDs]
+          .filter((entryID) => !publishableEntryIDs.has(entryID))
+          .map((entryID) => ({
+            entryID: toEntryID(entryID),
+            hasUnpublishedChanges: true,
+            versionID: null
+          }))
+      ];
+      if (result.snapshot) {
+        publicationResult.snapshots.push({
+          channel: PUBLISHED_CHANNEL_CODE,
+          snapshot: result.snapshot
+        });
+      }
+    }
+
+    if (!input.enabled) {
+      const channels = await database
+        .select({ code: publishingChannels.code })
+        .from(publishingChannels)
+        .where(
+          and(eq(publishingChannels.workspaceID, workspaceID), isNull(publishingChannels.deletedAt))
+        )
+        .orderBy(publishingChannels.id);
+
+      for (const channel of channels) {
+        const result = await unpublishCollection({
+          auth,
+          channel: channel.code,
+          collectionIDs: collectionIDs.map(toCollectionID),
+          includeWorkingTree: true,
+          skipAuthorization: authorizationScope
+        });
+
+        results[0].snapshots.push({ channel: channel.code, snapshot: result.snapshot });
+        if (channel.code === PUBLISHED_CHANNEL_CODE) {
+          results[0].publishingEntries.push(...result.publishingEntries);
+        }
+      }
     }
 
     return results.map((result) => ({

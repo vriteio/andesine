@@ -1,8 +1,11 @@
-import { type ParentComponent } from "solid-js";
+import { createMemo, type ParentComponent } from "solid-js";
 import { useParams } from "@solidjs/router";
-import { TreeProvider, useTree } from "#web/components/tree";
+import { TREE_ROOT_ID, TreeProvider, type TreeMap, useTree } from "#web/components/tree";
 import { getRequestEvent } from "solid-js/web";
 import { useWorkspace } from "#web/context/workspace";
+import { usePublishing } from "#web/context/publishing";
+import { sortExplorerCollectionIDs } from "./sort-collections";
+import { sortExplorerEntryIDs } from "./sort-entries";
 
 const EXPLORER_STATE_COOKIE = "explorer-state";
 
@@ -61,6 +64,7 @@ const readExplorerStateCookie = () => {
 
 const ExplorerProvider: ParentComponent = (props) => {
   const { content } = useWorkspace();
+  const publishing = usePublishing();
   const params = useParams<{ workspaceID?: string }>();
   const currentWorkspaceID = () => params.workspaceID || null;
   const expandedSourceKey = currentWorkspaceID;
@@ -96,13 +100,104 @@ const ExplorerProvider: ParentComponent = (props) => {
       JSON.stringify(nextExpandedState)
     )}; path=/; SameSite=Lax`;
   };
+  const levelIDs = createMemo(() => {
+    return {
+      ...content.collections.getIDs(),
+      ...Object.fromEntries(
+        publishing.getCollectionOverlays().map((collection) => [collection.collectionID, true])
+      ),
+      ...Object.fromEntries(
+        [...content.pendingPublishingCollectionOverlays().keys()].map((collectionID) => [
+          collectionID,
+          true
+        ])
+      )
+    };
+  });
+  const tree = createMemo<TreeMap>(() => {
+    const workingTree = content.tree.getMap();
+    const nextTree = Object.fromEntries(
+      Object.entries(workingTree).map(([levelID, level]) => {
+        const collectionID = levelID === TREE_ROOT_ID ? null : levelID;
+        const collectionOverlays = publishing.getCollectionOverlaysInParent(collectionID);
+        const pendingCollectionOverlays =
+          publishing.getPendingCollectionOverlaysInParent(collectionID);
+        const entryOverlays = publishing.getEntryOverlaysInCollection(collectionID);
+        const pendingEntryOverlays = publishing.getPendingEntryOverlaysInCollection(collectionID);
+        const workingEntries = level.items.flatMap((entryID) => {
+          const entry = content.entries.get({ entryID });
+
+          return entry ? [entry] : [];
+        });
+        const items = sortExplorerEntryIDs({
+          entryOverlays,
+          pendingEntryOverlays,
+          workingEntries
+        });
+        const levels = sortExplorerCollectionIDs({
+          collectionOverlays,
+          pendingCollectionOverlays,
+          workingCollectionIDs: level.levels
+        });
+
+        return [levelID, { items, levels }];
+      })
+    );
+
+    for (const collection of publishing.getCollectionOverlays()) {
+      const collectionOverlays = publishing.getCollectionOverlaysInParent(collection.collectionID);
+      const entryOverlays = publishing.getEntryOverlaysInCollection(collection.collectionID);
+      const pendingEntryOverlays = publishing.getPendingEntryOverlaysInCollection(
+        collection.collectionID
+      );
+
+      nextTree[collection.collectionID] = {
+        items: sortExplorerEntryIDs({
+          entryOverlays,
+          pendingEntryOverlays,
+          workingEntries: []
+        }),
+        levels: sortExplorerCollectionIDs({
+          collectionOverlays,
+          workingCollectionIDs: []
+        })
+      };
+    }
+
+    for (const collection of content.pendingPublishingCollectionOverlays().values()) {
+      const collectionOverlays = publishing.getCollectionOverlaysInParent(collection.collectionID);
+      const pendingCollectionOverlays = publishing.getPendingCollectionOverlaysInParent(
+        collection.collectionID
+      );
+      const entryOverlays = publishing.getEntryOverlaysInCollection(collection.collectionID);
+      const pendingEntryOverlays = publishing.getPendingEntryOverlaysInCollection(
+        collection.collectionID
+      );
+
+      nextTree[collection.collectionID] = {
+        items: sortExplorerEntryIDs({
+          entryOverlays,
+          pendingEntryOverlays,
+          workingEntries: []
+        }),
+        levels: sortExplorerCollectionIDs({
+          collectionOverlays,
+          pendingCollectionOverlays,
+          workingCollectionIDs: []
+        })
+      };
+    }
+
+    return nextTree;
+  });
+
   return (
     <TreeProvider
-      tree={content.tree.getMap}
-      levelIDs={content.collections.getIDs}
+      tree={tree}
+      levelIDs={levelIDs}
       initialExpanded={initialExpanded}
       expandedSourceKey={expandedSourceKey}
-      persistExpandedReady={() => !content.loading()}
+      persistExpandedReady={() => !content.loading() && !publishing.explorerOverlayLoading()}
       onExpandedChange={persistExpanded}
     >
       {props.children}

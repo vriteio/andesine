@@ -1,36 +1,40 @@
-import { useTree } from "#web/components/tree";
 import { createRef } from "@andesine/components";
 import { createSignal, onCleanup, onMount } from "solid-js";
+import { useTree } from "./tree-context";
 
-type BoxSelection = {
+interface TreeMarqueeSelection {
   active: boolean;
-  x: number;
-  y: number;
   currentX: number;
   currentY: number;
-  width: number;
   height: number;
-};
+  width: number;
+  x: number;
+  y: number;
+}
 
-const emptyBox = (): BoxSelection => ({
+type TreeMarqueeMode = "add" | "remove" | "replace";
+
+const createEmptySelection = (): TreeMarqueeSelection => ({
   active: false,
-  x: 0,
-  y: 0,
   currentX: 0,
   currentY: 0,
+  height: 0,
   width: 0,
-  height: 0
+  x: 0,
+  y: 0
 });
 
-const useExplorerMarquee = (
+const useTreeMarquee = (
   container: () => HTMLElement | null,
-  contentContainer: () => HTMLElement | null
+  contentContainer: () => HTMLElement | null,
+  getSelectionGroup?: (id: string) => string | null
 ) => {
   const [{ selection, flattenedLayout }, { setExactSelection }] = useTree();
   const [pointerDown, setPointerDown] = createSignal(false);
-  const [boxSelection, setBoxSelection] = createSignal(emptyBox());
+  const [boxSelection, setBoxSelection] = createSignal(createEmptySelection());
   const [initialSelection, setInitialSelection] = createRef<string[]>([]);
-  const [mode, setMode] = createRef<"replace" | "add" | "remove">("replace");
+  const [mode, setMode] = createRef<TreeMarqueeMode>("replace");
+  const [selectionGroup, setSelectionGroup] = createRef<string | null>(null);
   const [scrollFrame, setScrollFrame] = createRef(0);
   const [containerRect, setContainerRect] = createRef<DOMRect | null>(null);
   const [contentOffsetTop, setContentOffsetTop] = createRef(0);
@@ -73,18 +77,32 @@ const useExplorerMarquee = (
     const right = Math.max(box.x, box.currentX);
     const top = Math.min(box.y, box.currentY);
     const bottom = Math.max(box.y, box.currentY);
-    const selected = flattenedLayout().flatMap((item) => {
+    const intersected = flattenedLayout().flatMap((item) => {
       const itemTop = rect.top + contentOffsetTop() + item.top - element.scrollTop;
       const intersects =
         rect.left < right && itemTop < bottom && rect.right > left && itemTop + item.height > top;
 
       return intersects ? [item.id] : [];
     });
+    const firstIntersected =
+      box.currentY >= box.y ? intersected[0] : intersected[intersected.length - 1];
+
+    if (intersected.length === 0) {
+      setSelectionGroup(null);
+    } else if (!selectionGroup() && firstIntersected) {
+      setSelectionGroup(getSelectionGroup?.(firstIntersected) ?? null);
+    }
+
+    const currentSelectionGroup = selectionGroup();
+    const selected = currentSelectionGroup
+      ? intersected.filter((id) => getSelectionGroup?.(id) === currentSelectionGroup)
+      : intersected;
 
     if (mode() === "add") {
       setExactSelection(Array.from(new Set([...initialSelection(), ...selected])));
     } else if (mode() === "remove") {
       const selectedSet = new Set(selected);
+
       setExactSelection(initialSelection().filter((id) => !selectedSet.has(id)));
     } else {
       setExactSelection(selected);
@@ -92,9 +110,11 @@ const useExplorerMarquee = (
   };
   const startAutoScroll = () => {
     stopAutoScroll();
+
     const scroll = () => {
       const element = container();
       const box = boxSelection();
+
       if (!element || !pointerDown() || !box.active) return stopAutoScroll();
 
       const rect = getContainerRect();
@@ -109,6 +129,7 @@ const useExplorerMarquee = (
             ? Math.min(12, (box.currentY - rect.bottom + threshold) / 3)
             : 0;
       const previous = element.scrollTop;
+
       element.scrollTop += speed;
       if (element.scrollTop !== previous) applySelection(box);
       setScrollFrame(window.requestAnimationFrame(scroll));
@@ -117,10 +138,12 @@ const useExplorerMarquee = (
     setScrollFrame(window.requestAnimationFrame(scroll));
   };
   const onPointerDown = (event: PointerEvent) => {
-    if (!(event.target instanceof HTMLElement) || event.button !== 0) return;
+    const target = event.target;
+
+    if (!(target instanceof Element) || event.button !== 0) return;
     if (
-      !event.target.closest("[data-explorer-panel]") ||
-      event.target.matches("[data-entry] *, [data-collection] *")
+      !target.closest("[data-tree-marquee]") ||
+      target.closest("[data-tree-interaction], [data-tree-item]")
     ) {
       return;
     }
@@ -137,16 +160,17 @@ const useExplorerMarquee = (
     }
 
     setInitialSelection(selection());
+    setSelectionGroup(null);
     setMode(
       event.altKey ? "remove" : event.metaKey || event.ctrlKey || event.shiftKey ? "add" : "replace"
     );
     setPointerDown(true);
     setBoxSelection({
-      ...emptyBox(),
-      x: point.x,
-      y: point.y,
+      ...createEmptySelection(),
       currentX: point.x,
-      currentY: point.y
+      currentY: point.y,
+      x: point.x,
+      y: point.y
     });
   };
   const onPointerMove = (event: PointerEvent) => {
@@ -161,8 +185,8 @@ const useExplorerMarquee = (
       active: previous.active || width > 10 || height > 10,
       currentX: point.x,
       currentY: point.y,
-      width,
-      height
+      height,
+      width
     };
 
     setBoxSelection(next);
@@ -174,8 +198,9 @@ const useExplorerMarquee = (
     setPointerDown(false);
     setContainerRect(null);
     setContentOffsetTop(0);
+    setSelectionGroup(null);
     stopAutoScroll();
-    setBoxSelection(emptyBox());
+    setBoxSelection(createEmptySelection());
   };
 
   onMount(() => {
@@ -199,4 +224,4 @@ const useExplorerMarquee = (
   return { boxSelection, onPointerDown };
 };
 
-export { useExplorerMarquee };
+export { useTreeMarquee };

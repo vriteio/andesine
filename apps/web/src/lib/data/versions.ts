@@ -10,6 +10,10 @@ interface VersionHistoryQueryInput {
 interface VersionDetailsQueryInput {
   id: string;
 }
+interface PublishedVersionDetailsQueryInput {
+  entryID: string;
+  snapshotID: string;
+}
 
 interface VersionQueryResult<T> {
   result?: T;
@@ -43,6 +47,9 @@ const versionDetailsQuery = query(
   (input: VersionDetailsQueryInput) => getQueryResult(() => client.versions.get(input)),
   "version-details"
 );
+const publishedVersionDetailsQuery = query((input: PublishedVersionDetailsQueryInput) => {
+  return getQueryResult(() => client.publishing.getEntryVersion(input));
+}, "published-version-details");
 const createKeyedResponse = <T>(
   key: () => string,
   request: (id: string) => Promise<VersionQueryResult<T>>
@@ -72,11 +79,30 @@ const createEntryDraftResponse = (entryID: () => string) => {
 const createVersionDetailsResponse = (versionID: () => string) => {
   return createKeyedResponse(versionID, (id) => versionDetailsQuery({ id }));
 };
+const createPublishedVersionDetailsResponse = (entryID: () => string, snapshotID: () => string) => {
+  const getKey = () => {
+    const selectedEntryID = entryID();
+    const selectedSnapshotID = snapshotID();
+
+    return selectedEntryID && selectedSnapshotID ? `${selectedEntryID}:${selectedSnapshotID}` : "";
+  };
+
+  return createKeyedResponse(getKey, (key) => {
+    const [selectedEntryID, selectedSnapshotID] = key.split(":");
+
+    return publishedVersionDetailsQuery({
+      entryID: selectedEntryID,
+      snapshotID: selectedSnapshotID
+    });
+  });
+};
 
 export {
   createEntryDraftResponse,
+  createPublishedVersionDetailsResponse,
   createVersionDetailsResponse,
   entryDraftQuery,
+  publishedVersionDetailsQuery,
   versionDetailsQuery,
   versionHistoryQuery
 };
@@ -84,6 +110,7 @@ export type {
   VersionDetails,
   VersionDetailsQueryInput,
   VersionHistoryQueryInput,
+  PublishedVersionDetailsQueryInput,
   VersionListPage,
   VersionQueryResult,
   VersionReason,

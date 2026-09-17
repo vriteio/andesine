@@ -1,20 +1,23 @@
 import {
-  collections,
-  entries,
-  entryPublications,
-  entryVersions,
-  publishingChannels
+  publishingSnapshotCollections,
+  publishingSnapshotEntries,
+  entryVersions
 } from "#backend/db";
 import { withPublicWorkspace } from "#backend/lib/policy";
 import {
-  getSubtreeCollectionIDs,
-  isCollectionPublishingEnabled,
-  loadPublishingTree,
-  normalizePublishingChannelCode
+  normalizePublishingChannelCode,
+  PUBLISHED_CHANNEL_CODE,
+  resolvePublishingSnapshot
 } from "#backend/lib/publishing";
-import { toCollectionID, toEntryID, toUUID, toVersionID } from "#backend/lib/primitives";
+import {
+  toCollectionID,
+  toEntryID,
+  toSnapshotID,
+  toUUID,
+  toVersionID
+} from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
-import { and, asc, eq, inArray, isNull } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 
 interface PublishedTreeEntry {
   id: string;
@@ -33,11 +36,14 @@ interface PublishedTreeCollection {
 interface PublishedContentTree {
   channel: string;
   collection: PublishedTreeCollection;
+  expiresAt: Date | null;
+  snapshotID: string;
 }
 
 interface GetPublishedContentTreeInput {
   collectionID: string;
-  channel: string;
+  channel?: string;
+  snapshotID?: string;
 }
 
 const getPublishedContentTree = withPublicWorkspace<
@@ -45,67 +51,35 @@ const getPublishedContentTree = withPublicWorkspace<
   PublishedContentTree
 >({ transaction: "atomic" }, async ({ database, input, workspaceID }) => {
   const collectionID = toUUID(input.collectionID);
-  const channel = normalizePublishingChannelCode(input.channel);
-
-  const tree = await loadPublishingTree(database, workspaceID);
-  const collection = tree.collections.find(({ id }) => id === collectionID);
-
-  if (!collection || collection.parentID === null) {
-    throw new ORPCError("NOT_FOUND", { message: "Published collection not found" });
-  }
-
-  if (!isCollectionPublishingEnabled(tree, collectionID)) {
-    throw new ORPCError("NOT_FOUND", { message: "Published collection not found" });
-  }
-
-  const [publishingChannel] = await database
-    .select({ id: publishingChannels.id })
-    .from(publishingChannels)
-    .where(
-      and(eq(publishingChannels.workspaceID, workspaceID), eq(publishingChannels.code, channel))
-    );
-
-  if (!publishingChannel) {
-    throw new ORPCError("NOT_FOUND", { message: "Publishing channel not found" });
-  }
-
-  const collectionIDs = getSubtreeCollectionIDs(tree, collectionID);
+  const snapshot = input.snapshotID
+    ? await resolvePublishingSnapshot(database, workspaceID, { snapshotID: input.snapshotID })
+    : await resolvePublishingSnapshot(database, workspaceID, {
+        channelCode: normalizePublishingChannelCode(input.channel || PUBLISHED_CHANNEL_CODE)
+      });
   const collectionRows = await database
-    .select({ id: collections.id, name: collections.name, parentID: collections.parentID })
-    .from(collections)
-    .where(
-      and(
-        eq(collections.workspaceID, workspaceID),
-        inArray(collections.id, collectionIDs),
-        isNull(collections.deletedAt)
-      )
-    )
-    .orderBy(asc(collections.rank), asc(collections.id));
+    .select({
+      id: publishingSnapshotCollections.collectionID,
+      name: publishingSnapshotCollections.name,
+      parentID: publishingSnapshotCollections.parentID
+    })
+    .from(publishingSnapshotCollections)
+    .where(eq(publishingSnapshotCollections.snapshotID, snapshot.id))
+    .orderBy(
+      asc(publishingSnapshotCollections.rank),
+      asc(publishingSnapshotCollections.collectionID)
+    );
   const entryRows = await database
     .select({
-      id: entries.id,
-      collectionID: entries.collectionID,
+      id: publishingSnapshotEntries.entryID,
+      collectionID: publishingSnapshotEntries.collectionID,
       entryName: entryVersions.entryName,
       versionID: entryVersions.id,
       versionHash: entryVersions.hash
     })
-    .from(entries)
-    .innerJoin(
-      entryPublications,
-      and(
-        eq(entryPublications.entryID, entries.id),
-        eq(entryPublications.channelID, publishingChannel.id)
-      )
-    )
-    .innerJoin(entryVersions, eq(entryVersions.id, entryPublications.versionID))
-    .where(
-      and(
-        eq(entries.workspaceID, workspaceID),
-        inArray(entries.collectionID, collectionIDs),
-        isNull(entries.deletedAt)
-      )
-    )
-    .orderBy(asc(entries.rank), asc(entries.id));
+    .from(publishingSnapshotEntries)
+    .innerJoin(entryVersions, eq(entryVersions.id, publishingSnapshotEntries.versionID))
+    .where(eq(publishingSnapshotEntries.snapshotID, snapshot.id))
+    .orderBy(asc(publishingSnapshotEntries.rank), asc(publishingSnapshotEntries.entryID));
   const entriesByCollection = new Map<string, PublishedTreeEntry[]>();
   const collectionsByParent = new Map<string, typeof collectionRows>();
 
@@ -148,7 +122,12 @@ const getPublishedContentTree = withPublicWorkspace<
     throw new ORPCError("NOT_FOUND", { message: "Published collection not found" });
   }
 
-  return { channel, collection: mapCollection(root) };
+  return {
+    channel: snapshot.channelCode,
+    collection: mapCollection(root),
+    expiresAt: snapshot.expiresAt,
+    snapshotID: toSnapshotID(snapshot.id)
+  };
 });
 
 export { getPublishedContentTree };

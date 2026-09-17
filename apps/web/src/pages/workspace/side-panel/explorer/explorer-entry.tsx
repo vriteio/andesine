@@ -1,4 +1,4 @@
-import { type Card, DropdownMenu, IconButton, Tooltip } from "@andesine/components";
+import { type Card, DropdownMenu, IconButton, Spinner, Tooltip } from "@andesine/components";
 import { TreeItem } from "#web/components/tree";
 import clsx from "clsx";
 import { type Component, type ComponentProps, Show } from "solid-js";
@@ -20,11 +20,12 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
     handleClick,
     isSelected,
     menuOpened,
-    params,
+    opened,
     selection,
     setMenuOpened,
     swipe
   } = useExplorerEntry(props);
+  const reverting = () => publishing.isEntryReverting(props.entry.id);
   const publishingStatus = () => publishing.getEntryPublishingStatus(props.entry.id);
   const canEdit = () => {
     return workspaceContent.canEntry(props.entry.collectionID || null, "entry:update");
@@ -33,6 +34,7 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
     const status = publishingStatus();
     const defaultChannel = publishing.channel() === "published";
     const channelName = publishing.getChannelName();
+    const moved = publishing.getEntryOverlayByEntryID(props.entry.id)?.reason === "moved";
 
     if (status === "loading") {
       return defaultChannel ? "Loading publishing status" : `Loading ${channelName} status`;
@@ -44,7 +46,15 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
 
     if (status === "published") return defaultChannel ? "Published" : `Published to ${channelName}`;
 
-    return defaultChannel ? "Unpublished" : `Unpublished in ${channelName}`;
+    if (publishing.isEntryNeverPublished(props.entry.id)) {
+      return defaultChannel ? "Not published" : `Not published in ${channelName}`;
+    }
+
+    if (moved) {
+      return defaultChannel ? "Moved, pending changes" : `Moved, pending changes in ${channelName}`;
+    }
+
+    return defaultChannel ? "Pending changes" : `Pending changes in ${channelName}`;
   };
   return (
     <div class="flex relative min-h-7">
@@ -100,7 +110,10 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
                       class={clsx(
                         "flex justify-center items-center h-2.5 w-2.5 i-lucide:radio",
                         publishingStatus() === "error" && "text-red-500",
-                        publishingStatus() === "unpublished" && "text-amber-500"
+                        publishingStatus() === "unpublished" &&
+                          (publishing.isEntryNeverPublished(props.entry.id)
+                            ? "text-gray-500"
+                            : "text-amber-500")
                       )}
                     />
                   </div>
@@ -112,7 +125,7 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
           ref={setElementRef}
           onClick={handleClick}
           onRename={(name) => {
-            if (content.readOnly(props.entry.collectionID || null)) return;
+            if (reverting() || content.readOnly(props.entry.collectionID || null)) return;
 
             content.entries
               .update({
@@ -123,7 +136,14 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
           }}
           labelMaxLength={MAX_CONTENT_NAME_LENGTH}
           actions={
-            <>
+            <Show
+              when={!reverting()}
+              fallback={
+                <div class="flex h-7 w-7 items-center justify-center">
+                  <Spinner class="h-4 w-4" color="primary" />
+                </div>
+              }
+            >
               <DropdownMenu
                 title={props.entry.name}
                 cardProps={
@@ -144,7 +164,7 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
                         "shrink-0",
                         swipe.swiping() && "flex",
                         !swipe.swiping() &&
-                          (props.entry.id === params.slug
+                          (opened()
                             ? !menuOpened() &&
                               "opacity-20 media-mouse:opacity-0 media-mouse:group-hover:opacity-100"
                             : !menuOpened() &&
@@ -168,7 +188,7 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
                 )}
                 items={dropdownOptions()}
               />
-              <Show when={props.entry.id === params.slug && !menuOpened()}>
+              <Show when={opened() && !menuOpened()}>
                 <div
                   class={clsx(
                     "hidden media-mouse:flex justify-center items-center h-7 w-7 absolute right-0 top-0",
@@ -183,7 +203,7 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
                   />
                 </div>
               </Show>
-            </>
+            </Show>
           }
         />
       </div>

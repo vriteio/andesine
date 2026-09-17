@@ -1,4 +1,4 @@
-import { entries, entryPublications, publishingChannels } from "#backend/db";
+import { entries, publishingChannels, publishingSnapshotEntries } from "#backend/db";
 import { mapPublishingChannel, type PublishingChannel } from "#backend/lib/data";
 import { withAuthorization } from "#backend/lib/policy";
 import { toUUID } from "#backend/lib/primitives";
@@ -13,7 +13,11 @@ interface ListChannelsInput {
 }
 
 const listChannels = withAuthorization<ListChannelsInput, undefined, PublishingChannelListItem[]>(
-  { permissions: { session: true, key: ["read:publishing"] }, tree: true },
+  {
+    includeDeleted: true,
+    permissions: { session: true, key: ["read:publishing"] },
+    tree: true
+  },
   async ({ authorization, database, input, workspaceID }) => {
     const includeAssignmentCount = input.includeAssignmentCount;
 
@@ -30,22 +34,23 @@ const listChannels = withAuthorization<ListChannelsInput, undefined, PublishingC
         })
         .from(publishingChannels)
         .leftJoin(
-          entryPublications,
+          publishingSnapshotEntries,
           and(
-            eq(entryPublications.channelID, publishingChannels.id),
-            eq(entryPublications.workspaceID, workspaceID)
+            eq(publishingSnapshotEntries.snapshotID, publishingChannels.currentSnapshotID),
+            eq(publishingSnapshotEntries.workspaceID, workspaceID)
           )
         )
         .leftJoin(
           entries,
           and(
-            eq(entries.id, entryPublications.entryID),
+            eq(entries.id, publishingSnapshotEntries.entryID),
             eq(entries.workspaceID, workspaceID),
-            isNull(entries.deletedAt),
             visibleEntry
           )
         )
-        .where(eq(publishingChannels.workspaceID, workspaceID))
+        .where(
+          and(eq(publishingChannels.workspaceID, workspaceID), isNull(publishingChannels.deletedAt))
+        )
         .groupBy(publishingChannels.id)
         .orderBy(desc(publishingChannels.builtIn), asc(publishingChannels.name));
 
@@ -58,7 +63,9 @@ const listChannels = withAuthorization<ListChannelsInput, undefined, PublishingC
     const channels = await database
       .select()
       .from(publishingChannels)
-      .where(eq(publishingChannels.workspaceID, workspaceID))
+      .where(
+        and(eq(publishingChannels.workspaceID, workspaceID), isNull(publishingChannels.deletedAt))
+      )
       .orderBy(desc(publishingChannels.builtIn), asc(publishingChannels.name));
 
     return channels.map(mapPublishingChannel);

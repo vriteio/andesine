@@ -5,6 +5,10 @@ import { type Accessor } from "solid-js";
 interface WorkspaceContentOperationsInput {
   entriesCollection: Accessor<LocalDBCollection<Entry>>;
   collectionsCollection: Accessor<LocalDBCollection<Collection>>;
+  onCollectionsDeleting?(collections: Collection[], entries: Entry[]): void;
+  onCollectionsDeleteFailed?(collections: Collection[], entries: Entry[]): void;
+  onEntriesDeleting?(entries: Entry[]): void;
+  onEntriesDeleteFailed?(entries: Entry[]): void;
 }
 
 interface ContentTreeLevel {

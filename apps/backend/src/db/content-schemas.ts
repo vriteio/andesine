@@ -28,14 +28,12 @@ interface SchemaEntryMove {
   entryID: string;
   sourceCollectionID: string | null;
   sourceOrder: string;
-  unpublishOnCompletion?: boolean;
 }
 interface SchemaCollectionMove {
   collectionID: string;
   sourceParentID: string;
   sourceOrder: string;
   entryIDs: string[];
-  unpublishEntryIDs: string[];
 }
 
 const schemaMigrationStatusEnum = pgEnum("schema_migration_status", [

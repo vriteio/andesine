@@ -186,9 +186,11 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
       return entry ? [entry] : [];
     });
 
+    input.onEntriesDeleting?.(deletedEntries);
     applyEntryDelete(entryIDs);
 
     client.entries.bulkDelete({ ids: entryIDs }).catch(() => {
+      input.onEntriesDeleteFailed?.(deletedEntries);
       entries.batch(() => {
         for (const entry of deletedEntries) {
           entries.replaceOne({ id: entry.id }, entry, { upsert: true });

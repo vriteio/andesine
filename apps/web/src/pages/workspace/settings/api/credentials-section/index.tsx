@@ -1,5 +1,5 @@
-import { Card, IconButton, Skeleton } from "@andesine/components";
-import { Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
+import { Card, IconButton } from "@andesine/components";
+import { Tree, TREE_ROOT_ID, type TreeMap, TreeSkeleton } from "#web/components/tree";
 import { useNotify } from "#web/context/notifications";
 import { client, type Key, type KeyPermission } from "#web/lib/api";
 import { createAsync, revalidate, useNavigate, useParams } from "@solidjs/router";
@@ -226,16 +226,7 @@ const CredentialsSection: Component = () => {
         </Setting>
         <div class="relative flex w-full flex-col">
           <Suspense
-            fallback={
-              <div class="flex flex-col">
-                <div class="flex h-8 items-center gap-1 px-1">
-                  <Skeleton class={["h-6 w-6", "h-6 flex-1"]} />
-                </div>
-                <div class="flex h-8 items-center gap-1 px-1">
-                  <Skeleton class={["h-6 w-6", "h-6 flex-1"]} />
-                </div>
-              </div>
-            }
+            fallback={<TreeSkeleton fullWidth itemHeight="2rem" rowCount={2} size="medium" />}
           >
             <APIKeyList
               keys={keys()}

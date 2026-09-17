@@ -4,7 +4,6 @@ import {
   contents,
   effectiveSchemaRevisions,
   entries,
-  entryPublications,
   schemaMigrationCollections,
   schemaMigrationEntries,
   schemaMigrations
@@ -233,8 +232,7 @@ const planEntryMove = withAuthorization<MoveEntryInput, ResolvedMoveEntry, MoveE
             entryMove: {
               entryID,
               sourceCollectionID,
-              sourceOrder: resolved.sourceOrder,
-              unpublishOnCompletion: wasPublishingEnabled && !willBePublishingEnabled
+              sourceOrder: resolved.sourceOrder
             },
             initiatedBy: auth.session?.memberID ? toUUID(auth.session.memberID) : null,
             totalEntries: 1
@@ -275,10 +273,6 @@ const planEntryMove = withAuthorization<MoveEntryInput, ResolvedMoveEntry, MoveE
       }
     }
 
-    if (wasPublishingEnabled && !willBePublishingEnabled && !schemaMigration.migrationID) {
-      await database.delete(entryPublications).where(eq(entryPublications.entryID, entryID));
-    }
-
     return {
       collectionChanged: sourceCollectionID !== destinationCollectionID,
       order: rank,
@@ -286,7 +280,7 @@ const planEntryMove = withAuthorization<MoveEntryInput, ResolvedMoveEntry, MoveE
         ? [
             {
               entryID: toEntryID(entryID),
-              hasUnpublishedChanges: willBePublishingEnabled,
+              hasUnpublishedChanges: true,
               versionID: null
             }
           ]

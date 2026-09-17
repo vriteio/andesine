@@ -13,6 +13,7 @@ interface EntryImagesOptions {
   entryID: string;
   enabled(): boolean;
   cache?: boolean;
+  snapshotID?: string;
 }
 
 const createEntryImages = (options: EntryImagesOptions): EditorImages => {
@@ -73,6 +74,24 @@ const createEntryImages = (options: EntryImagesOptions): EditorImages => {
     },
     async load(assetID, signal, onCached) {
       signal.throwIfAborted();
+
+      if (options.snapshotID) {
+        if (isOffline()) throw new Error("Connect to view this image.");
+
+        const response = await client.content.getAsset(
+          {
+            assetID,
+            entryID: options.entryID,
+            snapshotID: options.snapshotID,
+            variant: "display",
+            workspaceID: options.workspaceID
+          },
+          { signal }
+        );
+
+        return response.body;
+      }
+
       const cached =
         options.cache === false
           ? null

@@ -26,7 +26,7 @@ async function resolveGetVersion({
       and(
         eq(entries.workspaceID, entryVersions.workspaceID),
         eq(entries.id, entryVersions.entryID),
-        isNull(entries.deletedAt)
+        input.action === "version:revert" ? isNull(entries.deletedAt) : undefined
       )
     )
     .where(and(eq(entryVersions.id, versionID), eq(entryVersions.workspaceID, workspaceID)));
@@ -46,6 +46,7 @@ const getVersion = withAuthorization<GetVersionInput, ResolvedGetVersion, Versio
         }
       ]
     }),
+    includeDeleted: true,
     resolve: resolveGetVersion
   },
   async ({ database, input, resolved, workspaceID }) => {

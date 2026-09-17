@@ -1,8 +1,11 @@
-import { publishingChannels } from "#backend/db";
+import { publishingChannels, publishingSnapshots } from "#backend/db";
 import { withAuthorization } from "#backend/lib/policy";
-import { normalizePublishingChannelCode } from "#backend/lib/publishing";
+import {
+  getPublishingSnapshotExpiry,
+  normalizePublishingChannelCode
+} from "#backend/lib/publishing";
 import { ORPCError } from "@orpc/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 interface DeleteChannelInput {
   code: string;
@@ -16,14 +19,24 @@ const deleteChannel = withAuthorization<DeleteChannelInput, undefined, DeleteCha
     permissions: { session: ["publishing"], key: ["publishing"] },
     transaction: "atomic"
   },
-  async ({ database, input, workspaceID }) => {
+  async ({ auth, database, input, workspaceID }) => {
     const code = normalizePublishingChannelCode(input.code);
+    const now = new Date();
+    const expiresAt = getPublishingSnapshotExpiry(auth.subscriptionPlan, now);
 
     const [channel] = await database
-      .select({ id: publishingChannels.id, builtIn: publishingChannels.builtIn })
+      .select({
+        id: publishingChannels.id,
+        builtIn: publishingChannels.builtIn,
+        currentSnapshotID: publishingChannels.currentSnapshotID
+      })
       .from(publishingChannels)
       .where(
-        and(eq(publishingChannels.workspaceID, workspaceID), eq(publishingChannels.code, code))
+        and(
+          eq(publishingChannels.workspaceID, workspaceID),
+          eq(publishingChannels.code, code),
+          isNull(publishingChannels.deletedAt)
+        )
       )
       .for("update");
 
@@ -34,7 +47,20 @@ const deleteChannel = withAuthorization<DeleteChannelInput, undefined, DeleteCha
       });
     }
 
-    await database.delete(publishingChannels).where(eq(publishingChannels.id, channel.id));
+    if (!channel.currentSnapshotID) {
+      throw new ORPCError("INTERNAL_SERVER_ERROR", {
+        message: "Publishing channel has no current snapshot"
+      });
+    }
+
+    await database
+      .update(publishingSnapshots)
+      .set({ supersededAt: now, expiresAt })
+      .where(eq(publishingSnapshots.id, channel.currentSnapshotID));
+    await database
+      .update(publishingChannels)
+      .set({ currentSnapshotID: null, deletedAt: now, updatedAt: now })
+      .where(eq(publishingChannels.id, channel.id));
 
     return { channelID: channel.id };
   }

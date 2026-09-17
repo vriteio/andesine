@@ -5,27 +5,42 @@ import { useRouteData } from "#web/lib/navigation";
 import { Button, IconButton, Skeleton, Tooltip } from "@andesine/components";
 import { MobileRightSidePanelMenu } from "./mobile-right-side-panel-menu";
 import { RightSidePanelToggle } from "./right-side-panel";
-import { createSchemaVersionDetailsResponse, createVersionDetailsResponse } from "#web/lib/data";
+import {
+  createPublishedVersionDetailsResponse,
+  createSchemaVersionDetailsResponse,
+  createVersionDetailsResponse
+} from "#web/lib/data";
 import { PublishingMenu } from "./publishing-menu";
 import { SchemaApplication } from "./schema-application";
 import clsx from "clsx";
+import { usePublishing } from "#web/context/publishing";
 
 const EditorToolbar: Component = () => {
   const params = useParams<{ slug?: string; workspaceID?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { content, currentWorkspace } = useWorkspace();
+  const publishing = usePublishing();
   const routeData = useRouteData();
   const versionID = () => (typeof searchParams.version === "string" ? searchParams.version : "");
+  const snapshotID = () => {
+    return typeof searchParams.snapshotID === "string" ? searchParams.snapshotID : "";
+  };
   const comparing = () => searchParams.compare === "current";
   const inlineComparison = () => searchParams.compareView === "inline";
   const comparisonLayoutLabel = () => (inlineComparison() ? "Show side by side" : "Show inline");
   const versionResponse = createVersionDetailsResponse(() => {
-    return params.slug?.startsWith("ent_") ? versionID() : "";
+    return params.slug?.startsWith("ent_") && !snapshotID() ? versionID() : "";
   });
+  const publishedVersionResponse = createPublishedVersionDetailsResponse(
+    () => (params.slug?.startsWith("ent_") && snapshotID() ? params.slug : ""),
+    snapshotID
+  );
   const schemaVersionResponse = createSchemaVersionDetailsResponse(() => {
     return params.slug?.startsWith("sch_") ? versionID() : "";
   });
-  const version = () => versionResponse()?.result;
+  const version = () => {
+    return snapshotID() ? publishedVersionResponse()?.result : versionResponse()?.result;
+  };
   const schemaVersion = () => schemaVersionResponse()?.result;
   const collection = createMemo(() => {
     if (!params.slug?.startsWith("coll_") || routeData()) return null;
@@ -36,6 +51,11 @@ const EditorToolbar: Component = () => {
     if (!params.slug?.startsWith("ent_") || routeData()) return null;
 
     return content.entriesCollection().findOne({ id: params.slug });
+  });
+  const deletedEntry = createMemo(() => {
+    if (!params.slug?.startsWith("ent_") || routeData()) return null;
+
+    return publishing.getDeletedEntry(params.slug);
   });
   const schema = createMemo(() => {
     if (!params.slug?.startsWith("sch_") || routeData()) return null;
@@ -63,9 +83,11 @@ const EditorToolbar: Component = () => {
 
     const currentCollection = collection();
     const currentEntry = entry();
+    const currentDeletedEntry = deletedEntry();
 
     if (currentCollection) return [{ label: currentCollection.name }];
     if (currentEntry) return [{ label: currentEntry.name }];
+    if (currentDeletedEntry) return [{ label: currentDeletedEntry.name }];
     if (schema()) {
       return [{ label: schemaCollection()?.name || "Collection" }, { label: "Schema" }];
     }
@@ -84,6 +106,7 @@ const EditorToolbar: Component = () => {
   const returnToCurrent = () => {
     setSearchParams({
       version: undefined,
+      snapshotID: undefined,
       compare: undefined,
       compareView: undefined
     });

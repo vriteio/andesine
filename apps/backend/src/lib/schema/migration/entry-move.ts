@@ -2,7 +2,7 @@ import { entries } from "#backend/db/entries";
 import { schemaMigrations } from "#backend/db/content-schemas";
 import { workspaces } from "#backend/db/workspaces";
 import { contents } from "#backend/db/contents";
-import { entryPublications, publishingChannels } from "#backend/db/publishing";
+import { publishingChannels, publishingSnapshotEntries } from "#backend/db/publishing";
 import { entryVersions } from "#backend/db/versions";
 import { PUBLISHED_CHANNEL_CODE } from "#backend/lib/publishing/config";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
@@ -70,17 +70,18 @@ const restoreSchemaEntryMove = async (
       publishingChannels,
       and(
         eq(publishingChannels.workspaceID, workspaceID),
-        eq(publishingChannels.code, PUBLISHED_CHANNEL_CODE)
+        eq(publishingChannels.code, PUBLISHED_CHANNEL_CODE),
+        isNull(publishingChannels.deletedAt)
       )
     )
     .leftJoin(
-      entryPublications,
+      publishingSnapshotEntries,
       and(
-        eq(entryPublications.entryID, contents.entryID),
-        eq(entryPublications.channelID, publishingChannels.id)
+        eq(publishingSnapshotEntries.entryID, contents.entryID),
+        eq(publishingSnapshotEntries.snapshotID, publishingChannels.currentSnapshotID)
       )
     )
-    .leftJoin(entryVersions, eq(entryVersions.id, entryPublications.versionID))
+    .leftJoin(entryVersions, eq(entryVersions.id, publishingSnapshotEntries.versionID))
     .where(eq(contents.entryID, move.entryID));
 
   return {

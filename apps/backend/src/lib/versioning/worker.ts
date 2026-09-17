@@ -2,19 +2,21 @@ import { retainVersionAssets } from "#backend/lib/assets/references";
 import {
   contents,
   entries,
-  entryPublications,
   entryVersionActivity,
   entryVersionActivityContributors,
   entryVersionContributors,
   entryVersions,
+  publishingSnapshotEntries,
+  publishingSnapshots,
   workspaces
 } from "#backend/db";
 import { db } from "#backend/lib/adapters";
 import { config } from "#backend/lib/config";
 import { emitVersionDeletionEvents, emitVersionEvent } from "#backend/events/versions";
 import { mapVersionSummary, type VersionSummary } from "#backend/lib/data/entry-version";
+import { deletePublishingSnapshots } from "#backend/lib/publishing";
 import { toEntryID, toVersionID, toWorkspaceID } from "#backend/lib/primitives";
-import { and, desc, eq, isNull, lte, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, lt, lte, notExists, sql } from "drizzle-orm";
 import { AUTOMATIC_VERSION_QUEUE_INTERVAL_MS } from "./config";
 
 interface ActivityCandidate {
@@ -24,6 +26,8 @@ interface ActivityCandidate {
 }
 
 const AUTOMATIC_VERSION_BATCH_SIZE = 100;
+const PUBLISHING_SNAPSHOT_CLEANUP_BATCH_SIZE = 100;
+const VERSION_CLEANUP_WORKSPACE_BATCH_SIZE = 100;
 
 let automaticVersionInterval: NodeJS.Timeout | undefined;
 let automaticVersionRun: Promise<void> | undefined;
@@ -72,11 +76,18 @@ const processActivity = async (candidate: ActivityCandidate): Promise<void> => {
     if (!activity) return null;
 
     const [content] = await tx
-      .select({ document: contents.document, hash: contents.hash })
+      .select({
+        document: contents.document,
+        hash: contents.hash,
+        schemaRevisionID: contents.schemaRevisionID
+      })
       .from(contents)
       .where(eq(contents.entryID, candidate.entryID));
     const [latestVersion] = await tx
-      .select({ hash: entryVersions.hash })
+      .select({
+        hash: entryVersions.hash,
+        schemaRevisionID: entryVersions.schemaRevisionID
+      })
       .from(entryVersions)
       .where(
         and(
@@ -87,7 +98,12 @@ const processActivity = async (candidate: ActivityCandidate): Promise<void> => {
       .orderBy(desc(entryVersions.createdAt))
       .limit(1);
 
-    if (content?.document && content.hash && latestVersion?.hash !== content.hash) {
+    if (
+      content?.document &&
+      content.hash &&
+      (latestVersion?.hash !== content.hash ||
+        latestVersion.schemaRevisionID !== content.schemaRevisionID)
+    ) {
       const [version] = await tx
         .insert(entryVersions)
         .values({
@@ -96,6 +112,7 @@ const processActivity = async (candidate: ActivityCandidate): Promise<void> => {
           entryName: entry.name,
           document: content.document,
           hash: content.hash,
+          schemaRevisionID: content.schemaRevisionID,
           reason: "auto"
         })
         .returning();
@@ -145,16 +162,53 @@ const processActivity = async (candidate: ActivityCandidate): Promise<void> => {
     });
   }
 };
+const deleteExpiredPublishingSnapshots = async (): Promise<void> => {
+  const candidates = await db
+    .select({ id: publishingSnapshots.id, workspaceID: publishingSnapshots.workspaceID })
+    .from(publishingSnapshots)
+    .where(lte(publishingSnapshots.expiresAt, new Date()))
+    .orderBy(publishingSnapshots.expiresAt)
+    .limit(PUBLISHING_SNAPSHOT_CLEANUP_BATCH_SIZE);
+
+  for (const candidate of candidates) {
+    await db.transaction(async (transaction) => {
+      const [workspace] = await transaction
+        .select({ id: workspaces.id })
+        .from(workspaces)
+        .where(eq(workspaces.id, candidate.workspaceID))
+        .for("update", { skipLocked: true });
+
+      if (!workspace) return;
+
+      const [snapshot] = await transaction
+        .select({ id: publishingSnapshots.id })
+        .from(publishingSnapshots)
+        .where(
+          and(
+            eq(publishingSnapshots.id, candidate.id),
+            eq(publishingSnapshots.workspaceID, candidate.workspaceID),
+            lte(publishingSnapshots.expiresAt, new Date())
+          )
+        )
+        .for("update", { skipLocked: true });
+
+      if (!snapshot) return;
+
+      await deletePublishingSnapshots(transaction, candidate.workspaceID, [snapshot.id]);
+    });
+  }
+};
 const deleteExpiredAutomaticVersions = async (): Promise<void> => {
-  const deleted = await db.execute<{ entryID: string; id: string; workspaceID: string }>(sql`
-    delete from ${entryVersions}
-    using ${workspaces}
-    where ${entryVersions.workspaceID} = ${workspaces.id}
-      and ${entryVersions.reason} in ('auto', 'schema-migration')
+  const candidates = await db.execute<{ workspaceID: string }>(sql`
+    select distinct ${entryVersions.workspaceID} as "workspaceID"
+    from ${entryVersions}
+    inner join ${workspaces} on ${workspaces.id} = ${entryVersions.workspaceID}
+    where ${entryVersions.reason} in ('auto', 'schema-migration')
       and not exists (
         select 1
-        from ${entryPublications}
-        where ${entryPublications.versionID} = ${entryVersions.id}
+        from ${publishingSnapshotEntries}
+        where ${publishingSnapshotEntries.workspaceID} = ${entryVersions.workspaceID}
+          and ${publishingSnapshotEntries.versionID} = ${entryVersions.id}
       )
       and ${entryVersions.createdAt} < now() - (
         case
@@ -163,22 +217,57 @@ const deleteExpiredAutomaticVersions = async (): Promise<void> => {
           else ${config.VERSION_RETENTION_DAYS}::integer
         end * interval '1 day'
       )
-    returning
-      ${entryVersions.id} as id,
-      ${entryVersions.entryID} as "entryID",
-      ${entryVersions.workspaceID} as "workspaceID"
+    limit ${VERSION_CLEANUP_WORKSPACE_BATCH_SIZE}
   `);
-  const versionsByWorkspace = new Map<string, Array<{ entryID: string; id: string }>>();
 
-  for (const version of deleted.rows) {
-    const versions = versionsByWorkspace.get(version.workspaceID) || [];
+  for (const candidate of candidates.rows) {
+    const deleted = await db.transaction(async (transaction) => {
+      const [workspace] = await transaction
+        .select({ subscriptionPlan: workspaces.subscriptionPlan })
+        .from(workspaces)
+        .where(eq(workspaces.id, candidate.workspaceID))
+        .for("update", { skipLocked: true });
 
-    versions.push({ entryID: toEntryID(version.entryID), id: toVersionID(version.id) });
-    versionsByWorkspace.set(version.workspaceID, versions);
-  }
+      if (!workspace) return [];
 
-  for (const [workspaceID, versions] of versionsByWorkspace) {
-    emitVersionDeletionEvents(toWorkspaceID(workspaceID), versions);
+      const retentionDays =
+        !config.BILLING_ENABLED || workspace.subscriptionPlan === "pro"
+          ? config.PRO_VERSION_RETENTION_DAYS
+          : config.VERSION_RETENTION_DAYS;
+      const expiresBefore = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
+
+      return transaction
+        .delete(entryVersions)
+        .where(
+          and(
+            eq(entryVersions.workspaceID, candidate.workspaceID),
+            inArray(entryVersions.reason, ["auto", "schema-migration"]),
+            lt(entryVersions.createdAt, expiresBefore),
+            notExists(
+              transaction
+                .select({ versionID: publishingSnapshotEntries.versionID })
+                .from(publishingSnapshotEntries)
+                .where(
+                  and(
+                    eq(publishingSnapshotEntries.workspaceID, entryVersions.workspaceID),
+                    eq(publishingSnapshotEntries.versionID, entryVersions.id)
+                  )
+                )
+            )
+          )
+        )
+        .returning({ entryID: entryVersions.entryID, id: entryVersions.id });
+    });
+
+    if (deleted.length === 0) continue;
+
+    emitVersionDeletionEvents(
+      toWorkspaceID(candidate.workspaceID),
+      deleted.map((version) => ({
+        entryID: toEntryID(version.entryID),
+        id: toVersionID(version.id)
+      }))
+    );
   }
 };
 const runAutomaticVersionQueue = async (): Promise<void> => {
@@ -211,6 +300,7 @@ const runAutomaticVersionQueue = async (): Promise<void> => {
     }
   }
 
+  await deleteExpiredPublishingSnapshots();
   await deleteExpiredAutomaticVersions();
 };
 const checkAutomaticVersionQueue = (): void => {

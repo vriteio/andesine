@@ -19,6 +19,11 @@ import type { ContentSnapshot } from "./types";
 
 type ContentConnection = Awaited<ReturnType<typeof collab.openDirectConnection>>;
 
+interface OpenDocumentContentConnectionOptions {
+  includeDeleted?: boolean;
+  preserveSchemaRevision?: boolean;
+}
+
 const prepareSchemaMigrationConnections = async (
   collectionIDs: string[],
   entryIDs: string[] = []
@@ -27,7 +32,8 @@ const prepareSchemaMigrationConnections = async (
 };
 const assertDocumentWorkspace = async (
   documentName: string,
-  workspaceID: string
+  workspaceID: string,
+  options: OpenDocumentContentConnectionOptions = {}
 ): Promise<void> => {
   const [entry] = await db
     .select({ id: entries.id })
@@ -36,7 +42,7 @@ const assertDocumentWorkspace = async (
       and(
         eq(entries.id, toUUID(documentName)),
         eq(entries.workspaceID, toUUID(workspaceID)),
-        isNull(entries.deletedAt)
+        options.includeDeleted ? undefined : isNull(entries.deletedAt)
       )
     );
 
@@ -44,11 +50,16 @@ const assertDocumentWorkspace = async (
 };
 const openDocumentContentConnection = async (
   documentName: string,
-  workspaceID: string
+  workspaceID: string,
+  options: OpenDocumentContentConnectionOptions = {}
 ): Promise<ContentConnection> => {
-  await assertDocumentWorkspace(documentName, workspaceID);
+  await assertDocumentWorkspace(documentName, workspaceID, options);
 
-  return collab.openDirectConnection(documentName, { workspaceID });
+  return collab.openDirectConnection(documentName, {
+    workspaceID,
+    includeDeleted: options.includeDeleted,
+    preserveSchemaRevision: options.preserveSchemaRevision
+  });
 };
 const updateDocumentTitle = async (
   documentName: string,
@@ -103,6 +114,12 @@ const replaceDocumentContent = async (
 
   return previous;
 };
+const setPersistedDocumentSchemaRevision = (
+  connection: ContentConnection,
+  schemaRevisionID: string | null
+): void => {
+  connection.context.persistedSchemaRevisionID = schemaRevisionID;
+};
 const getCurrentSchemaDefinition = async (
   documentName: string,
   workspaceID: string
@@ -142,6 +159,7 @@ export {
   openDocumentContentConnection,
   prepareSchemaMigrationConnections,
   replaceDocumentContent,
+  setPersistedDocumentSchemaRevision,
   updateDocumentTitle
 };
-export type { ContentConnection };
+export type { ContentConnection, OpenDocumentContentConnectionOptions };

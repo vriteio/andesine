@@ -25,7 +25,12 @@ import {
 import { invitations } from "./invitations";
 import { apiKeys } from "./keys";
 import { memberships } from "./memberships";
-import { entryPublications, publishingChannels } from "./publishing";
+import {
+  publishingChannels,
+  publishingSnapshotCollections,
+  publishingSnapshotEntries,
+  publishingSnapshots
+} from "./publishing";
 import { roles } from "./roles";
 import { dailyUsage, usageLedger } from "./usage";
 import { users } from "./users";
@@ -75,7 +80,9 @@ const schema = {
   entryVersionActivity,
   entryVersionActivityContributors,
   publishingChannels,
-  entryPublications,
+  publishingSnapshots,
+  publishingSnapshotCollections,
+  publishingSnapshotEntries,
   apiKeys,
   dailyUsage,
   usageLedger,

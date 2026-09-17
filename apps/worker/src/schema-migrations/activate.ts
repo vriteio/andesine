@@ -9,7 +9,6 @@ import {
 import { workspaces } from "@andesine/backend/db/workspaces";
 import { contents } from "@andesine/backend/db/contents";
 import { entries } from "@andesine/backend/db/entries";
-import { entryPublications } from "@andesine/backend/db/publishing";
 import { and, eq, inArray, isNull, ne } from "drizzle-orm";
 import { db } from "../database";
 
@@ -117,22 +116,6 @@ const activateMigration = async (migrationID: string, workspaceID: string): Prom
           .set({ enabled: false, updatedAt: new Date() })
           .where(eq(collectionSchemas.id, migration.schemaID));
       }
-    }
-
-    const unpublishEntryIDs = [
-      ...(migration.entryMove?.unpublishOnCompletion ? [migration.entryMove.entryID] : []),
-      ...(migration.collectionMove?.unpublishEntryIDs || [])
-    ];
-
-    if (unpublishEntryIDs.length > 0) {
-      await transaction
-        .delete(entryPublications)
-        .where(
-          and(
-            eq(entryPublications.workspaceID, workspaceID),
-            inArray(entryPublications.entryID, unpublishEntryIDs)
-          )
-        );
     }
 
     await transaction

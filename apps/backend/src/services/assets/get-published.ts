@@ -3,12 +3,12 @@ import type { assetDeliveryVariants } from "#backend/lib/assets/files";
 import {
   assetFiles,
   assets,
-  entries,
-  entryPublications,
   entryVersionAssets,
+  publishingSnapshotEntries,
   workspaces
 } from "#backend/db";
 import { requireAssetStorage } from "#backend/lib/assets/client";
+import { resolvePublishingSnapshot } from "#backend/lib/publishing";
 import { withPublicWorkspace } from "#backend/lib/policy";
 import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
@@ -16,13 +16,18 @@ import { and, eq, isNull, lte, or, desc } from "drizzle-orm";
 
 interface GetPublishedAssetInput {
   assetID: string;
+  entryID: string;
+  snapshotID: string;
   variant: (typeof assetDeliveryVariants)[number];
 }
 
 // Publication is the access grant. Asset ownership alone never grants public access.
 const getPublishedAsset = withPublicWorkspace<GetPublishedAssetInput, File>(
-  {},
+  { transaction: "atomic" },
   async ({ database, workspaceID, input }) => {
+    const snapshot = await resolvePublishingSnapshot(database, workspaceID, {
+      snapshotID: input.snapshotID
+    });
     const [file] = await database
       .select({ file: assetFiles })
       .from(assetFiles)
@@ -33,16 +38,18 @@ const getPublishedAsset = withPublicWorkspace<GetPublishedAssetInput, File>(
       )
       .innerJoin(entryVersionAssets, eq(entryVersionAssets.assetID, assets.id))
       .innerJoin(
-        entryPublications,
+        publishingSnapshotEntries,
         and(
-          eq(entryPublications.versionID, entryVersionAssets.versionID),
-          eq(entryPublications.workspaceID, workspaceID)
+          eq(publishingSnapshotEntries.snapshotID, snapshot.id),
+          eq(publishingSnapshotEntries.entryID, toUUID(input.entryID)),
+          eq(publishingSnapshotEntries.versionID, entryVersionAssets.versionID),
+          eq(publishingSnapshotEntries.workspaceID, workspaceID)
         )
       )
-      .innerJoin(entries, and(eq(entries.id, entryPublications.entryID), isNull(entries.deletedAt)))
       .where(
         and(
           eq(assets.workspaceID, workspaceID),
+          eq(entryVersionAssets.workspaceID, workspaceID),
           eq(assets.id, toUUID(input.assetID)),
           or(
             eq(assetFiles.variant, input.variant),

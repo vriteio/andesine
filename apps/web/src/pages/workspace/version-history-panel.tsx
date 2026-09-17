@@ -23,6 +23,7 @@ import {
 import { CreateVersionDialog, RevertVersionDialog } from "./version-dialogs";
 import { VersionHistoryList } from "./version-history/list";
 import { useVersionPublishing } from "./use-version-publishing";
+import { usePublishing } from "#web/context/publishing";
 
 interface VersionHistoryPanelProps {
   opened?: boolean;
@@ -33,6 +34,7 @@ const VersionHistoryPanel: Component<VersionHistoryPanelProps> = (props) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { layout } = useLayout();
   const { content, subscribeToUpdates } = useWorkspace();
+  const publishingContext = usePublishing();
   const notify = useNotify();
   const [additionalPages, setAdditionalPages] = createSignal<VersionListPage[]>([]);
   const [loadingMore, setLoadingMore] = createSignal(false);
@@ -44,6 +46,8 @@ const VersionHistoryPanel: Component<VersionHistoryPanelProps> = (props) => {
   const activeVersionID = () =>
     typeof searchParams.version === "string" ? searchParams.version : "";
   const canManage = () => {
+    if (publishingContext.getDeletedEntry(entryID())) return false;
+
     const entry = content.entries.get({ entryID: entryID() });
 
     return content.canEntry(entry?.collectionID || null, "version:create");
@@ -95,6 +99,7 @@ const VersionHistoryPanel: Component<VersionHistoryPanelProps> = (props) => {
   const clearPreview = () => {
     setSearchParams({
       version: undefined,
+      snapshotID: undefined,
       compare: undefined,
       compareView: undefined
     });
@@ -102,6 +107,7 @@ const VersionHistoryPanel: Component<VersionHistoryPanelProps> = (props) => {
   const openVersion = (version: string, compare = false) => {
     setSearchParams({
       version,
+      snapshotID: undefined,
       compare: compare ? "current" : undefined,
       compareView: undefined
     });
@@ -259,10 +265,14 @@ const VersionHistoryPanel: Component<VersionHistoryPanelProps> = (props) => {
 
           if (entryVersion) publishing.assign(entryVersion, channel);
         }}
-        onCompare={(version) => {
-          void revalidate(entryDraftQuery.keyFor({ id: entryID() }));
-          openVersion(version.id, true);
-        }}
+        onCompare={
+          publishingContext.getDeletedEntry(entryID())
+            ? undefined
+            : (version) => {
+                void revalidate(entryDraftQuery.keyFor({ id: entryID() }));
+                openVersion(version.id, true);
+              }
+        }
         onLoadMore={loadMore}
         onOpen={(version) => openVersion(version.id)}
         onRefresh={refreshHistory}

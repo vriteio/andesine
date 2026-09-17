@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "@solidjs/router";
 import { createEffect, createMemo, createSignal, type JSX, on } from "solid-js";
 import { useClipboard } from "#web/context/clipboard";
 import { useNotify } from "#web/context/notifications";
+import { usePublishing } from "#web/context/publishing";
 import { useWorkspace } from "#web/context/workspace";
 import { useTree } from "#web/components/tree";
 import { usePublishingActions } from "./publishing-actions";
@@ -14,6 +15,7 @@ const useCollectionMenu = (collectionID: string) => {
   const notify = useNotify();
   const { closeMobileDropdowns } = useDropdown();
   const { content, currentWorkspace } = useWorkspace();
+  const publishing = usePublishing();
   const navigate = useNavigate();
   const params = useParams<{ workspaceID?: string }>();
   const publishingActions = usePublishingActions();
@@ -30,6 +32,8 @@ const useCollectionMenu = (collectionID: string) => {
     const isMulti = selectedCount > 1;
     const selectedIDs = isMulti ? selection() : [collectionID];
     const selected = content.tree.splitIDs({ ids: selectedIDs });
+    const containsOnlyWorkingContent =
+      selected.collections.length + selected.entries.length === selectedIDs.length;
     const collection = content.collections.get({ collectionID });
     const selectedCollections = selection().flatMap((id) => {
       const selectedCollection = content.collections.get({ collectionID: id });
@@ -58,8 +62,38 @@ const useCollectionMenu = (collectionID: string) => {
     const canPublish = targetCollections.every((selectedCollection) => {
       return content.canCollection(selectedCollection.id, "publishing:publish-tree");
     });
+    const collections = content.collectionsCollection().find().fetch();
+    const entries = content.entriesCollection().find().fetch();
     const canUnpublish = targetCollections.every((selectedCollection) => {
-      return content.canCollection(selectedCollection.id, "publishing:unpublish-tree");
+      const subtreeCollectionIDs = new Set(
+        collections
+          .filter((subtreeCollection) => {
+            return (
+              subtreeCollection.id === selectedCollection.id ||
+              subtreeCollection.ancestors.includes(selectedCollection.id)
+            );
+          })
+          .map(({ id }) => id)
+      );
+      const containsPublishedCollection = collections.some((subtreeCollection) => {
+        return (
+          subtreeCollectionIDs.has(subtreeCollection.id) &&
+          Boolean(publishing.getPublishedCollectionRoot(subtreeCollection.id))
+        );
+      });
+      const containsPublishedEntry = entries.some((entry) => {
+        return (
+          Boolean(entry.collectionID && subtreeCollectionIDs.has(entry.collectionID)) &&
+          Boolean(publishing.getPublishedEntryRoot(entry.id))
+        );
+      });
+
+      return (
+        !publishing.statusLoading() &&
+        !publishing.statusError() &&
+        (containsPublishedCollection || containsPublishedEntry) &&
+        content.canCollection(selectedCollection.id, "publishing:unpublish-tree")
+      );
     });
     const migrationBlocked =
       selected.collections.some((id) => content.hasActiveSchemaMigration(id, true)) ||
@@ -102,7 +136,7 @@ const useCollectionMenu = (collectionID: string) => {
 
       if (canEditCollection && !content.offline()) {
         collectionOptions.push({
-          label: "Rename group",
+          label: "Rename collection",
           icon: "i-lucide:pencil",
           disabled: migrationDisabled,
           onClick: () => {
@@ -279,7 +313,9 @@ const useCollectionMenu = (collectionID: string) => {
 
       if (!publishingEnabled && canConfigurePublishing) {
         publishingOptions.push({
-          label: isMulti ? `Enable publishing for ${selectedCount} groups` : "Enable publishing",
+          label: isMulti
+            ? `Enable publishing for ${selectedCount} collections`
+            : "Enable publishing",
           icon: "i-lucide:radio",
           onClick: () => {
             publishingActions.open("enable", publishingTarget);
@@ -287,17 +323,32 @@ const useCollectionMenu = (collectionID: string) => {
         });
       }
 
-      if (publishingEnabled && canPublish) {
+      if (
+        publishingEnabled &&
+        canPublish &&
+        publishingActions.hasPendingChanges(publishingTarget)
+      ) {
         publishingOptions.push({
-          label: isMulti ? `Publish ${selectedCount} groups` : "Publish group",
+          label: isMulti ? `Publish ${selectedCount} collections` : "Publish collection",
           icon: "i-material-symbols:publish-rounded",
           onClick: () => publishingActions.open("publish", publishingTarget)
         });
       }
 
-      if (publishingEnabled && canUnpublish) {
+      if (publishingActions.canRevert(publishingTarget)) {
         publishingOptions.push({
-          label: isMulti ? `Unpublish ${selectedCount} groups` : "Unpublish group",
+          label: isMulti
+            ? `Revert pending changes for ${selectedCount} collections`
+            : "Revert pending changes",
+          icon: "i-lucide:undo-2",
+          disabled: publishingActions.revertPending(),
+          onClick: () => publishingActions.openRevert(publishingTarget)
+        });
+      }
+
+      if (canUnpublish) {
+        publishingOptions.push({
+          label: isMulti ? `Unpublish ${selectedCount} collections` : "Unpublish collection",
           icon: "i-material-symbols:unpublished-outline-rounded",
           onClick: () => publishingActions.open("unpublish", publishingTarget)
         });
@@ -305,7 +356,9 @@ const useCollectionMenu = (collectionID: string) => {
 
       if (publishingRoot && canConfigurePublishing) {
         publishingOptions.push({
-          label: isMulti ? `Disable publishing for ${selectedCount} groups` : "Disable publishing",
+          label: isMulti
+            ? `Disable publishing for ${selectedCount} collections`
+            : "Disable publishing",
           icon: "i-lucide:radio-off",
           onClick: () => {
             publishingActions.open("disable", publishingTarget);
@@ -319,6 +372,7 @@ const useCollectionMenu = (collectionID: string) => {
     }
 
     const canDelete =
+      containsOnlyWorkingContent &&
       selected.collections.every((id) => {
         return content.canCollection(id, "collection:delete");
       }) &&
@@ -353,9 +407,9 @@ const useCollectionMenu = (collectionID: string) => {
 
   createEffect(
     on(menuOpened, (opened) => {
-      if (!opened) return;
+      if (!opened || selection().includes(collectionID)) return;
 
-      setSelection((current) => (current.includes(collectionID) ? current : [collectionID]));
+      setSelection([collectionID]);
     })
   );
 

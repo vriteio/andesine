@@ -41,7 +41,13 @@ interface ExplorerTree {
     status: "queued" | "running" | "rolling_back";
     totalEntries: number;
   }>;
-  publishing: { enabledCollectionIDs: string[]; unpublishedEntryIDs: string[] } | null;
+  publishing: {
+    enabledCollectionIDs: string[];
+    neverPublishedCollectionIDs: string[];
+    neverPublishedEntryIDs: string[];
+    unpublishedCollectionIDs: string[];
+    unpublishedEntryIDs: string[];
+  } | null;
 }
 
 const getExplorerTree = withAuthorization<GetExplorerTreeInput, undefined, ExplorerTree>(
@@ -181,6 +187,34 @@ const getExplorerTree = withAuthorization<GetExplorerTreeInput, undefined, Explo
                 authorization.canAccessCollection(collectionID)
               );
             }),
+            neverPublishedCollectionIDs: publishing.collections
+              .filter(({ collectionID, hasUnpublishedChanges, published }) => {
+                return (
+                  hasUnpublishedChanges &&
+                  !published &&
+                  authorization.canAccessCollection(collectionID)
+                );
+              })
+              .map(({ collectionID }) => collectionID),
+            neverPublishedEntryIDs: publishing.entries
+              .filter(({ entryID, hasUnpublishedChanges, versionID }) => {
+                const entry = entryRowsByID.get(entryID);
+                const collectionID = entry?.collectionID
+                  ? toCollectionID(entry.collectionID)
+                  : null;
+
+                return (
+                  hasUnpublishedChanges &&
+                  !versionID &&
+                  authorization.canAccessCollection(collectionID)
+                );
+              })
+              .map(({ entryID }) => entryID),
+            unpublishedCollectionIDs: publishing.collections
+              .filter(({ collectionID, hasUnpublishedChanges }) => {
+                return hasUnpublishedChanges && authorization.canAccessCollection(collectionID);
+              })
+              .map(({ collectionID }) => collectionID),
             unpublishedEntryIDs: publishing.entries
               .filter(({ entryID, hasUnpublishedChanges }) => {
                 const entry = entryRowsByID.get(entryID);

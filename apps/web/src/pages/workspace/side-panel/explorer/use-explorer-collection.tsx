@@ -10,6 +10,7 @@ import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/el
 import { type DragLocationHistory } from "@atlaskit/pragmatic-drag-and-drop/types";
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 import { useWorkspace } from "#web/context/workspace";
+import { usePublishing } from "#web/context/publishing";
 import {
   attachClosestEdge,
   type Edge,
@@ -28,6 +29,8 @@ import {
 import { CollectionBoundaryDropTarget } from "./collection-boundary-drop-target";
 import { useCollectionMenu } from "./use-collection-menu";
 import { useExplorerItemSwipe } from "./use-explorer-item-swipe";
+import { sortExplorerCollectionIDs } from "./sort-collections";
+import { sortExplorerEntryIDs } from "./sort-entries";
 
 interface ExplorerCollectionProps {
   collection: Collection;
@@ -43,8 +46,12 @@ const useExplorerCollection = (props: ExplorerCollectionProps) => {
     { toggleExpanded, setExpanded, setSelection }
   ] = useTree();
   const { content } = useWorkspace();
+  const publishing = usePublishing();
   const { dropdownOptions, menuOpened, setMenuOpened } = useCollectionMenu(props.collection.id);
-  const swipe = useExplorerItemSwipe({ onOpen: () => setMenuOpened(true) });
+  const swipe = useExplorerItemSwipe({
+    enabled: () => !publishing.isCollectionReverting(props.collection.id),
+    onOpen: () => setMenuOpened(true)
+  });
   const [elementRef, setElementRef] = createRef<HTMLElement | null>(null);
   const [subtreeRef, setSubtreeRef] = createRef<HTMLElement | null>(null);
   const [isLabelDraggedOver, setIsLabelDraggedOver] = createSignal(false);
@@ -75,6 +82,7 @@ const useExplorerCollection = (props: ExplorerCollectionProps) => {
     if (
       content.offline() ||
       content.syncing() ||
+      publishing.isCollectionReverting(props.collection.id) ||
       content.hasActiveSchemaMigration(props.collection.id)
     ) {
       return false;
@@ -94,12 +102,14 @@ const useExplorerCollection = (props: ExplorerCollectionProps) => {
     const collectionID = entry?.collectionID || null;
 
     return (
+      !publishing.isEntryReverting(entryID) &&
       content.canEntry(collectionID, "entry:move") &&
       !content.hasActiveSchemaMigration(collectionID)
     );
   };
   const canEditCollection = (collectionID: string) => {
     return (
+      !publishing.isCollectionReverting(collectionID) &&
       content.canCollection(collectionID, "collection:move") &&
       !content.hasActiveSchemaMigration(collectionID, true)
     );
@@ -109,8 +119,14 @@ const useExplorerCollection = (props: ExplorerCollectionProps) => {
       ? selection()
       : [props.collection.id];
     const selected = content.tree.splitIDs({ ids: selectedIDs });
+    const containsOnlyWorkingContent =
+      selected.entries.length + selected.collections.length === selectedIDs.length;
 
-    return selected.entries.every(canEditEntry) && selected.collections.every(canEditCollection);
+    return (
+      containsOnlyWorkingContent &&
+      selected.entries.every(canEditEntry) &&
+      selected.collections.every(canEditCollection)
+    );
   };
   const changesParent = (
     source: { data: Record<string | symbol, unknown> },
@@ -188,20 +204,55 @@ const useExplorerCollection = (props: ExplorerCollectionProps) => {
   };
 
   const { collections, entries } = content.tree.getLevel({ parentID: props.collection.id });
+  const collectionOverlays = () => {
+    return publishing.getCollectionOverlaysInParent(props.collection.id);
+  };
+  const pendingCollectionOverlays = () => {
+    return publishing.getPendingCollectionOverlaysInParent(props.collection.id);
+  };
+  const entryOverlays = () => publishing.getEntryOverlaysInCollection(props.collection.id);
+  const pendingEntryOverlays = () => {
+    return publishing.getPendingEntryOverlaysInCollection(props.collection.id);
+  };
   const isExpandedEmpty = () => {
-    return isExpanded(props.collection.id) && collections().length === 0 && entries().length === 0;
+    return (
+      isExpanded(props.collection.id) &&
+      collections().length === 0 &&
+      collectionOverlays().length === 0 &&
+      pendingCollectionOverlays().length === 0 &&
+      entries().length === 0 &&
+      entryOverlays().length === 0 &&
+      pendingEntryOverlays().length === 0
+    );
   };
   const hasSubtreeContent = () => {
-    return collections().length > 0 || entries().length > 0;
+    return (
+      collections().length > 0 ||
+      collectionOverlays().length > 0 ||
+      pendingCollectionOverlays().length > 0 ||
+      entries().length > 0 ||
+      entryOverlays().length > 0 ||
+      pendingEntryOverlays().length > 0
+    );
   };
   const renderBottomDropLineAfterSubtree = () => {
     return closestEdge() === "bottom" && isExpanded(props.collection.id) && hasSubtreeContent();
   };
   const treeMap = createMemo<TreeMap>(() => {
+    const items = sortExplorerEntryIDs({
+      entryOverlays: entryOverlays(),
+      pendingEntryOverlays: pendingEntryOverlays(),
+      workingEntries: entries()
+    });
+
     return {
       [props.collection.id]: {
-        items: entries().map((entry) => entry.id),
-        levels: collections().map((col) => col.id)
+        items,
+        levels: sortExplorerCollectionIDs({
+          collectionOverlays: collectionOverlays(),
+          pendingCollectionOverlays: pendingCollectionOverlays(),
+          workingCollectionIDs: collections().map((collection) => collection.id)
+        })
       }
     };
   });

@@ -281,9 +281,11 @@ const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
     const rootCollection = getRootCollection();
     const originalRootCollection = rootCollection ? { ...rootCollection } : undefined;
 
+    input.onCollectionsDeleting?.(deletedCollections, deletedEntries);
     applyCollectionDelete(deletedCollectionIDs);
 
     client.collections.bulkDelete({ ids: deletedCollectionIDs }).catch(() => {
+      input.onCollectionsDeleteFailed?.(deletedCollections, deletedEntries);
       collections.batch(() => {
         if (originalRootCollection) {
           collections.replaceOne({ id: originalRootCollection.id }, originalRootCollection, {

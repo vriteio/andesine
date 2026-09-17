@@ -1,5 +1,5 @@
 import { toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
-import { collections, entries, entryPublications, memberships } from "#backend/db";
+import { collections, entries, memberships } from "#backend/db";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { withAuthorization } from "#backend/lib/policy";
@@ -84,12 +84,6 @@ const deleteCollections = withAuthorization<DeleteCollectionsInput, undefined, D
       .returning({ id: entries.id });
 
     if (deletedEntries.length > 0) {
-      await database.delete(entryPublications).where(
-        inArray(
-          entryPublications.entryID,
-          deletedEntries.map(({ id }) => id)
-        )
-      );
       await database
         .update(memberships)
         .set({ currentEntryID: null, updatedAt: new Date() })

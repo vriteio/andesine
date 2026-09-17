@@ -11,6 +11,7 @@ interface TreeKeyboardInput {
   renameTarget(): boolean;
   deleteTarget(): boolean;
   copyTargetID(): boolean;
+  getSelectionGroup?(id: string): string | null;
   navigateHierarchy?(direction: "left" | "right"): boolean;
   createForCommandTarget?(type: "entry" | "collection"): boolean;
   canSelect?(id: string): boolean;
@@ -34,11 +35,13 @@ const useTreeKeyboard = (input: TreeKeyboardInput) => {
   const [{ selection, flattenedOrder }, tree] = useTree();
   const [rangeAnchor, setRangeAnchor] = createRef<string | null>(null);
   const [rangeHead, setRangeHead] = createRef<string | null>(null);
+  const [rangeSelectionGroup, setRangeSelectionGroup] = createRef<string | null>(null);
   const [typeaheadQuery, setTypeaheadQuery] = createRef("");
   const [typeaheadTimeout, setTypeaheadTimeout] = createRef(0);
   const resetRange = () => {
     setRangeAnchor(null);
     setRangeHead(null);
+    setRangeSelectionGroup(null);
   };
   const focusItem = (id: string, scroll = false) => {
     tree.setFocusedItem(id, "keyboard");
@@ -93,9 +96,12 @@ const useTreeKeyboard = (input: TreeKeyboardInput) => {
     const headIndex = rangeHead() ? ids.indexOf(rangeHead()!) : -1;
     const continuing = anchorIndex !== -1 && headIndex !== -1 && rangeHead() === current;
     if (!continuing) {
-      tree.setExactSelection(input.canSelect?.(current) === false ? [] : [current]);
+      const selectable = input.canSelect?.(current) !== false;
+
+      tree.setExactSelection(selectable ? [current] : []);
       setRangeAnchor(current);
       setRangeHead(current);
+      setRangeSelectionGroup(selectable ? (input.getSelectionGroup?.(current) ?? null) : null);
       return true;
     }
 
@@ -112,10 +118,13 @@ const useTreeKeyboard = (input: TreeKeyboardInput) => {
     }
 
     setRangeHead(ids[nextIndex]);
+    const selectionGroup = rangeSelectionGroup();
+
     tree.setExactSelection(
       ids
         .slice(Math.min(anchorIndex, nextIndex), Math.max(anchorIndex, nextIndex) + 1)
         .filter((id) => input.canSelect?.(id) ?? true)
+        .filter((id) => !selectionGroup || input.getSelectionGroup?.(id) === selectionGroup)
     );
     return true;
   };

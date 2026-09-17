@@ -1,6 +1,6 @@
 import {
   entries,
-  entryPublications,
+  publishingSnapshotEntries,
   entryVersionContributors,
   entryVersions,
   publishingChannels
@@ -38,17 +38,12 @@ const listEntryPublications = withAuthorization<
     actions: ({ resolved }) => ({
       entries: [{ action: "publishing:read", collectionID: resolved.collectionID }]
     }),
+    includeDeleted: true,
     resolve: async ({ database, input, workspaceID }) => {
       const [entry] = await database
         .select({ collectionID: entries.collectionID })
         .from(entries)
-        .where(
-          and(
-            eq(entries.id, toUUID(input.entryID)),
-            eq(entries.workspaceID, workspaceID),
-            isNull(entries.deletedAt)
-          )
-        );
+        .where(and(eq(entries.id, toUUID(input.entryID)), eq(entries.workspaceID, workspaceID)));
 
       if (!entry) throw new ORPCError("NOT_FOUND", { message: "Entry not found" });
 
@@ -61,26 +56,27 @@ const listEntryPublications = withAuthorization<
     const publications = await database
       .select({
         channel: publishingChannels,
-        publishedAt: entryPublications.updatedAt,
+        publishedAt: publishingSnapshotEntries.publishedAt,
         version: entryVersions
       })
-      .from(entryPublications)
+      .from(publishingChannels)
       .innerJoin(
-        publishingChannels,
+        publishingSnapshotEntries,
         and(
-          eq(publishingChannels.id, entryPublications.channelID),
-          eq(publishingChannels.workspaceID, workspaceID)
+          eq(publishingSnapshotEntries.snapshotID, publishingChannels.currentSnapshotID),
+          eq(publishingSnapshotEntries.workspaceID, workspaceID),
+          eq(publishingSnapshotEntries.entryID, entryID)
         )
       )
       .innerJoin(
         entryVersions,
         and(
-          eq(entryVersions.id, entryPublications.versionID),
+          eq(entryVersions.id, publishingSnapshotEntries.versionID),
           eq(entryVersions.workspaceID, workspaceID)
         )
       )
       .where(
-        and(eq(entryPublications.workspaceID, workspaceID), eq(entryPublications.entryID, entryID))
+        and(eq(publishingChannels.workspaceID, workspaceID), isNull(publishingChannels.deletedAt))
       )
       .orderBy(desc(publishingChannels.builtIn), asc(publishingChannels.name));
     const versionIDs = publications.map(({ version }) => version.id);

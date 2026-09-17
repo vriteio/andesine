@@ -1,5 +1,5 @@
 import { toEntryID, toUUID } from "#backend/lib/primitives";
-import { entries, entryPublications, memberships } from "#backend/db";
+import { entries, memberships } from "#backend/db";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import {
   type EntryAuthorizationSource,
@@ -43,12 +43,6 @@ const deleteEntries = withAuthorization<
         .returning({ id: entries.id });
 
       if (rows.length > 0) {
-        await database.delete(entryPublications).where(
-          inArray(
-            entryPublications.entryID,
-            rows.map(({ id }) => id)
-          )
-        );
         await database
           .update(memberships)
           .set({ currentEntryID: null, updatedAt: new Date() })

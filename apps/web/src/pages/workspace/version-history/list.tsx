@@ -26,7 +26,7 @@ interface VersionHistoryListProps {
   loadingMore: boolean;
   nextCursor: string | null;
   onAssign?(version: VersionHistoryVersion, channel: string): void;
-  onCompare(version: VersionHistoryVersion): void;
+  onCompare?(version: VersionHistoryVersion): void;
   onLoadMore(): void;
   onOpen(version: VersionHistoryVersion): void;
   onRefresh(): void;
@@ -164,7 +164,7 @@ const VersionHistoryList: Component<VersionHistoryListProps> = (props) => {
                       onAssign={
                         props.onAssign ? (channel) => props.onAssign?.(version, channel) : undefined
                       }
-                      onCompare={() => props.onCompare(version)}
+                      onCompare={props.onCompare ? () => props.onCompare?.(version) : undefined}
                       onOpen={() => props.onOpen(version)}
                       onRename={(name) => props.onRename(version, name)}
                       onRevert={

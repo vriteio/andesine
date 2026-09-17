@@ -23,6 +23,7 @@ interface CreateVersionInput {
   sourceVersionID?: string;
 }
 interface CommitCreateVersionInput extends CreateVersionInput {
+  schemaRevisionID?: string | null;
   snapshot: ContentSnapshot;
 }
 interface ResolvedCreateVersion {
@@ -65,6 +66,16 @@ const commitCreateVersion = withAuthorization<
     const entryID = toUUID(input.entryID);
     const inputContributorIDs = input.contributorIDs.map(toUUID);
     const { snapshot } = input;
+    const [content] = await database
+      .select({ hash: contents.hash, schemaRevisionID: contents.schemaRevisionID })
+      .from(contents)
+      .where(eq(contents.entryID, entryID));
+    const schemaRevisionID =
+      input.schemaRevisionID === undefined
+        ? (content?.schemaRevisionID ?? null)
+        : input.schemaRevisionID
+          ? toUUID(input.schemaRevisionID)
+          : null;
     const activityContributors =
       input.reason === "revert"
         ? []
@@ -104,6 +115,7 @@ const commitCreateVersion = withAuthorization<
         hash: snapshot.hash,
         name: input.name,
         reason: input.reason,
+        schemaRevisionID,
         sourceVersionID: input.sourceVersionID ? toUUID(input.sourceVersionID) : null
       })
       .returning();
@@ -127,11 +139,6 @@ const commitCreateVersion = withAuthorization<
         }))
       );
     }
-
-    const [content] = await database
-      .select({ hash: contents.hash })
-      .from(contents)
-      .where(eq(contents.entryID, entryID));
 
     if (content?.hash === snapshot.hash) {
       await database.delete(entryVersionActivity).where(eq(entryVersionActivity.entryID, entryID));

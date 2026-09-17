@@ -19,7 +19,8 @@ type PublicIDPrefix =
   | "sch"
   | "schv"
   | "schr"
-  | "smg";
+  | "smg"
+  | "snp";
 
 const id = (options?: Exclude<Parameters<typeof z.regex>[1], string>) => {
   return z.string().regex(ID_REGEX, { error: "invalid id", ...options });
@@ -74,6 +75,7 @@ const toSchemaID = (value: string) => fromUUID(value, "sch");
 const toSchemaVersionID = (value: string) => fromUUID(value, "schv");
 const toSchemaRevisionID = (value: string) => fromUUID(value, "schr");
 const toSchemaMigrationID = (value: string) => fromUUID(value, "smg");
+const toSnapshotID = (value: string) => fromUUID(value, "snp");
 
 export {
   fromUUID,
@@ -92,6 +94,7 @@ export {
   toSchemaMigrationID,
   toSchemaRevisionID,
   toSchemaVersionID,
+  toSnapshotID,
   toUserID,
   toVersionID,
   toUUID,

@@ -41,15 +41,20 @@ const useVersionPublishing = (input: UseVersionPublishingInput) => {
   const [publicationsRefreshing, startPublicationsRefresh] = useTransition();
   const canRead = () => {
     const entry = content.entries.get({ entryID: input.entryID() });
+    const deletedEntry = publishing.getDeletedEntry(input.entryID());
 
-    return content.canEntry(entry?.collectionID || null, "entry:read");
+    return Boolean(deletedEntry || content.canEntry(entry?.collectionID || null, "entry:read"));
   };
   const publishingEnabled = () => {
+    if (publishing.getDeletedEntry(input.entryID())) return true;
+
     const status = content.getEntryPublishingStatus(input.entryID());
 
     return status !== null && status !== "outside";
   };
   const canManage = () => {
+    if (publishing.getDeletedEntry(input.entryID())) return false;
+
     return (
       (() => {
         const entry = content.entries.get({ entryID: input.entryID() });

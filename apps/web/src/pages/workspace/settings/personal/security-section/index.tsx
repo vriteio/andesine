@@ -1,5 +1,5 @@
-import { Tree, TREE_ROOT_ID } from "#web/components/tree";
-import { Card, IconButton, Skeleton } from "@andesine/components";
+import { Tree, TREE_ROOT_ID, TreeSkeleton } from "#web/components/tree";
+import { Card, IconButton } from "@andesine/components";
 import { type Component, createMemo, Show, Suspense, useTransition } from "solid-js";
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
@@ -144,16 +144,7 @@ const SecuritySection: Component = () => {
         </Setting>
         <div class="w-full flex flex-col relative">
           <Suspense
-            fallback={
-              <div class="flex flex-col">
-                <div class="flex items-center gap-1 h-8 px-1">
-                  <Skeleton class={["h-6 w-6", "h-6 flex-1"]} />
-                </div>
-                <div class="flex items-center gap-1 h-8 px-1">
-                  <Skeleton class={["h-6 w-6", "h-6 flex-1"]} />
-                </div>
-              </div>
-            }
+            fallback={<TreeSkeleton fullWidth itemHeight="2rem" rowCount={2} size="medium" />}
           >
             <PasskeyList
               passkeys={passkeys() || []}

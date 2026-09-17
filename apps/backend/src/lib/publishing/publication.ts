@@ -2,20 +2,21 @@ import { retainVersionAssets } from "#backend/lib/assets/references";
 import {
   contents,
   entries,
-  entryPublications,
   entryVersionActivity,
   entryVersionActivityContributors,
   entryVersionContributors,
-  entryVersions,
-  publishingChannels
+  entryVersions
 } from "#backend/db";
 import type { db } from "#backend/lib/adapters";
+import type { AuthorizedCollectionTree } from "#backend/lib/policy";
 import { hashContentDocument, type ContentNode } from "#backend/lib/content";
 import { mapVersionSummary, type VersionSummary } from "#backend/lib/data/entry-version";
 import { toEntryID, toUUID, toVersionID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
-import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
-import { normalizePublishingChannelCode } from "./channel";
+import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
+import { commitPublishingSnapshot, type CommitPublishingSnapshotResult } from "./snapshot-commit";
+import type { ResolvedCollectionSnapshotChanges } from "./snapshot-collection";
+import { resolveEntrySnapshotChanges, type PublishingEntrySelection } from "./snapshot-entry";
 import type { PublishingEntryStatus } from "./status";
 
 interface PublishEntryTarget {
@@ -23,23 +24,21 @@ interface PublishEntryTarget {
   versionID?: string;
 }
 interface PublishEntriesInput {
+  authorization: AuthorizedCollectionTree;
   workspaceID: string;
   entries: PublishEntryTarget[];
   channel: string;
   contributorIDs: string[];
+  creatorID?: string;
+  snapshotOperations?: ResolvedCollectionSnapshotChanges;
+  subscriptionPlan: string;
 }
 interface PublishEntriesResult {
   createdVersions: VersionSummary[];
   publishingEntries: PublishingEntryStatus[];
   publishedEntries: number;
+  snapshot: CommitPublishingSnapshotResult | null;
 }
-interface PublishingAssignment {
-  channelID: string;
-  entryID: string;
-  versionID: string;
-  workspaceID: string;
-}
-
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const EMPTY_DOCUMENT: ContentNode = { type: "doc", content: [] };
@@ -67,7 +66,6 @@ const publishEntries = async (
   tx: DatabaseTransaction,
   input: PublishEntriesInput
 ): Promise<PublishEntriesResult> => {
-  const channelCode = normalizePublishingChannelCode(input.channel);
   const contributorIDs = [...new Set(input.contributorIDs.map(toUUID))];
   const entryIDs = input.entries.map((entry) => entry.entryID);
   const currentEntryIDs = input.entries.flatMap((entry) => {
@@ -78,24 +76,33 @@ const publishEntries = async (
   });
 
   if (input.entries.length === 0) {
-    return { createdVersions: [], publishingEntries: [], publishedEntries: 0 };
+    let snapshot: CommitPublishingSnapshotResult | null = null;
+
+    if (input.snapshotOperations) {
+      snapshot = await commitPublishingSnapshot(tx, {
+        authorization: input.authorization,
+        workspaceID: input.workspaceID,
+        channelCode: input.channel,
+        collectionChanges: input.snapshotOperations.collectionChanges,
+        collectionRemovals: input.snapshotOperations.collectionRemovals,
+        creatorID: input.creatorID,
+        entryRemovals: input.snapshotOperations.entryRemovals,
+        expectedSnapshotID: input.snapshotOperations.snapshotID,
+        reason: "publish",
+        subscriptionPlan: input.subscriptionPlan
+      });
+    }
+
+    return { createdVersions: [], publishingEntries: [], publishedEntries: 0, snapshot };
   }
 
-  const [channel] = await tx
-    .select({ id: publishingChannels.id })
-    .from(publishingChannels)
-    .where(
-      and(
-        eq(publishingChannels.workspaceID, input.workspaceID),
-        eq(publishingChannels.code, channelCode)
-      )
-    )
-    .for("update");
-
-  if (!channel) throw new ORPCError("NOT_FOUND", { message: "Publishing channel not found" });
-
   const entryRows = await tx
-    .select({ id: entries.id, name: entries.name })
+    .select({
+      id: entries.id,
+      collectionID: entries.collectionID,
+      name: entries.name,
+      rank: entries.rank
+    })
     .from(entries)
     .where(
       and(
@@ -117,8 +124,10 @@ const publishEntries = async (
           .select({
             id: entryVersions.id,
             entryID: entryVersions.entryID,
+            entryName: entryVersions.entryName,
             hash: entryVersions.hash,
-            document: entryVersions.document
+            document: entryVersions.document,
+            schemaRevisionID: entryVersions.schemaRevisionID
           })
           .from(entryVersions)
           .where(
@@ -142,7 +151,12 @@ const publishEntries = async (
   }
 
   const contentRows = await tx
-    .select({ entryID: contents.entryID, document: contents.document, hash: contents.hash })
+    .select({
+      entryID: contents.entryID,
+      document: contents.document,
+      hash: contents.hash,
+      schemaRevisionID: contents.schemaRevisionID
+    })
     .from(contents)
     .where(inArray(contents.entryID, entryIDs));
   const latestVersions =
@@ -151,7 +165,9 @@ const publishEntries = async (
           .selectDistinctOn([entryVersions.entryID], {
             id: entryVersions.id,
             entryID: entryVersions.entryID,
-            hash: entryVersions.hash
+            entryName: entryVersions.entryName,
+            hash: entryVersions.hash,
+            schemaRevisionID: entryVersions.schemaRevisionID
           })
           .from(entryVersions)
           .where(
@@ -179,7 +195,7 @@ const publishEntries = async (
   const targetsByEntryID = new Map(input.entries.map((entry) => [entry.entryID, entry]));
   const activityContributorsByEntryID = new Map<string, string[]>();
   const createdVersions: VersionSummary[] = [];
-  const assignments: PublishingAssignment[] = [];
+  const publishingSelections: PublishingEntrySelection[] = [];
   const publishingEntries: PublishingEntryStatus[] = [];
 
   for (const contributor of activityContributors) {
@@ -196,6 +212,7 @@ const publishEntries = async (
     if (target.versionID) {
       const assignedVersion = providedVersionsByID.get(target.versionID)!;
       const draftHash = content?.hash || hashContentDocument(content?.document || EMPTY_DOCUMENT);
+      const draftSchemaRevisionID = content?.schemaRevisionID || null;
 
       await retainVersionAssets({
         database: tx,
@@ -205,15 +222,18 @@ const publishEntries = async (
         document: assignedVersion.document
       });
 
-      assignments.push({
-        workspaceID: input.workspaceID,
+      publishingSelections.push({
         entryID: entry.id,
-        channelID: channel.id,
-        versionID: target.versionID
+        versionID: target.versionID,
+        collectionID: entry.collectionID,
+        rank: entry.rank
       });
       publishingEntries.push({
         entryID: toEntryID(entry.id),
-        hasUnpublishedChanges: draftHash !== assignedVersion.hash,
+        hasUnpublishedChanges:
+          draftHash !== assignedVersion.hash ||
+          entry.name !== assignedVersion.entryName ||
+          draftSchemaRevisionID !== assignedVersion.schemaRevisionID,
         versionID: toVersionID(target.versionID)
       });
       continue;
@@ -221,6 +241,7 @@ const publishEntries = async (
 
     const document = content?.document || EMPTY_DOCUMENT;
     const hash = content?.hash || hashContentDocument(document);
+    const schemaRevisionID = content?.schemaRevisionID || null;
     const latestVersion = latestVersionByEntryID.get(entry.id);
     let versionID = latestVersion?.id;
 
@@ -239,7 +260,12 @@ const publishEntries = async (
         });
     }
 
-    if (!latestVersion || latestVersion.hash !== hash) {
+    if (
+      !latestVersion ||
+      latestVersion.hash !== hash ||
+      latestVersion.entryName !== entry.name ||
+      latestVersion.schemaRevisionID !== schemaRevisionID
+    ) {
       const [version] = await tx
         .insert(entryVersions)
         .values({
@@ -248,6 +274,7 @@ const publishEntries = async (
           entryName: entry.name,
           document,
           hash,
+          schemaRevisionID,
           reason: "manual"
         })
         .returning();
@@ -280,11 +307,11 @@ const publishEntries = async (
       document
     });
 
-    assignments.push({
-      workspaceID: input.workspaceID,
+    publishingSelections.push({
       entryID: entry.id,
-      channelID: channel.id,
-      versionID
+      versionID,
+      collectionID: entry.collectionID,
+      rank: entry.rank
     });
     publishingEntries.push({
       entryID: toEntryID(entry.id),
@@ -293,13 +320,39 @@ const publishEntries = async (
     });
   }
 
-  await tx
-    .insert(entryPublications)
-    .values(assignments)
-    .onConflictDoUpdate({
-      target: [entryPublications.entryID, entryPublications.channelID],
-      set: { versionID: sql`excluded.version_id`, updatedAt: new Date() }
-    });
+  const snapshotChanges = await resolveEntrySnapshotChanges(tx, {
+    workspaceID: input.workspaceID,
+    channelCode: input.channel,
+    entries: publishingSelections
+  });
+  const collectionChanges = new Map(
+    snapshotChanges.collectionChanges.map((collection) => [collection.collectionID, collection])
+  );
+
+  for (const collection of input.snapshotOperations?.collectionChanges || []) {
+    collectionChanges.set(collection.collectionID, collection);
+  }
+
+  if (
+    input.snapshotOperations &&
+    input.snapshotOperations.snapshotID !== snapshotChanges.snapshotID
+  ) {
+    throw new ORPCError("CONFLICT", { message: "Publishing snapshot changed" });
+  }
+
+  const snapshot = await commitPublishingSnapshot(tx, {
+    authorization: input.authorization,
+    workspaceID: input.workspaceID,
+    channelCode: input.channel,
+    collectionChanges: [...collectionChanges.values()],
+    collectionRemovals: input.snapshotOperations?.collectionRemovals,
+    creatorID: input.creatorID,
+    entryChanges: snapshotChanges.entryChanges,
+    entryRemovals: input.snapshotOperations?.entryRemovals,
+    expectedSnapshotID: input.snapshotOperations?.snapshotID || snapshotChanges.snapshotID,
+    reason: "publish",
+    subscriptionPlan: input.subscriptionPlan
+  });
 
   if (currentEntryIDs.length > 0) {
     await tx
@@ -307,7 +360,7 @@ const publishEntries = async (
       .where(inArray(entryVersionActivity.entryID, currentEntryIDs));
   }
 
-  return { createdVersions, publishingEntries, publishedEntries: entryRows.length };
+  return { createdVersions, publishingEntries, publishedEntries: entryRows.length, snapshot };
 };
 
 export { lockPublishingEntries, publishEntries };

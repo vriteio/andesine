@@ -1,8 +1,8 @@
-import { Card, IconButton, Skeleton } from "@andesine/components";
+import { Card, IconButton } from "@andesine/components";
 import { createAsync, revalidate, useNavigate, useParams } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
 import { type Component, createSignal, Show, Suspense, useTransition } from "solid-js";
-import { Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
+import { Tree, TREE_ROOT_ID, type TreeMap, TreeSkeleton } from "#web/components/tree";
 import {
   ActionConfirmationDialog,
   type AffectedItem
@@ -183,16 +183,7 @@ const GroupsSection: Component = () => {
           }
         >
           <Suspense
-            fallback={
-              <div class="flex flex-col">
-                <div class="flex h-8 items-center gap-1 px-1">
-                  <Skeleton class={["h-6 w-6", "h-6 flex-1"]} />
-                </div>
-                <div class="flex h-8 items-center gap-1 px-1">
-                  <Skeleton class={["h-6 w-6", "h-6 flex-1"]} />
-                </div>
-              </div>
-            }
+            fallback={<TreeSkeleton fullWidth itemHeight="2rem" rowCount={2} size="medium" />}
           >
             <Show
               when={visibleGroups().length > 0}

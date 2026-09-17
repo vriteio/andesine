@@ -8,7 +8,7 @@ import {
   ScrollShadow
 } from "@andesine/components";
 import { createMediaQuery } from "@solid-primitives/media";
-import { createAsync, useNavigate } from "@solidjs/router";
+import { createAsync, useNavigate, useSearchParams } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
 import {
   type Component,
@@ -31,6 +31,7 @@ import {
 } from "./search-filters";
 import { SearchAnswerPanel, type SearchAnswerData } from "./search-answer";
 import { SearchResultNotice, SearchResults, SearchResultsSkeleton } from "./search-results";
+import { withWorkspacePanelParams } from "../panel-navigation";
 
 interface SearchDialogProps {
   opened: boolean;
@@ -53,6 +54,7 @@ const EMPTY_SEARCH_RESPONSE: SearchResponse = { requestKey: "", results: [] };
 
 const SearchDialog: Component<SearchDialogProps> = (props) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { workspaceID } = useWorkspace();
   const md = createMediaQuery("(min-width: 768px)");
   const [inputRef, setInputRef] = createRef<HTMLInputElement | null>(null);
@@ -173,7 +175,9 @@ const SearchDialog: Component<SearchDialogProps> = (props) => {
       }
     };
 
-    navigate(`/${workspaceID()}/${result.entryID}`, { state });
+    navigate(withWorkspacePanelParams(`/${workspaceID()}/${result.entryID}`, searchParams), {
+      state
+    });
     props.onClose();
   };
   const submitQuestion = () => {

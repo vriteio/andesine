@@ -1,93 +1,233 @@
-import { entries } from "@andesine/backend/db/entries";
-import { entryPublications, publishingChannels } from "@andesine/backend/db/publishing";
+import {
+  publishingChannels,
+  publishingSnapshotCollections,
+  publishingSnapshotEntries
+} from "@andesine/backend/db/publishing";
 import { entryVersions } from "@andesine/backend/db/versions";
 import type { PublishedSearchDocumentSource } from "@andesine/backend/lib/search";
-import { toCollectionID, toEntryID, toUUID, toVersionID } from "@andesine/backend/lib/primitives";
-import { and, eq, isNull } from "drizzle-orm";
+import {
+  toCollectionID,
+  toEntryID,
+  toSnapshotID,
+  toUUID,
+  toVersionID
+} from "@andesine/backend/lib/primitives";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "../database";
-import { getCollectionLineage, loadCollections } from "./current-data";
 
+interface PublishedCollectionEntriesInput {
+  collectionID: string;
+  workspaceID: string;
+}
 interface PublishedEntrySourcesInput {
   entryID: string;
   workspaceID: string;
 }
 
+const getSnapshotCollectionKey = (snapshotID: string, collectionID: string): string => {
+  return `${snapshotID}:${collectionID}`;
+};
+const loadPublishedChannelHeadKey = async (workspaceID: string): Promise<string> => {
+  const rows = await db
+    .select({
+      channelID: publishingChannels.id,
+      snapshotID: publishingChannels.currentSnapshotID
+    })
+    .from(publishingChannels)
+    .where(
+      and(
+        eq(publishingChannels.workspaceID, toUUID(workspaceID)),
+        isNull(publishingChannels.deletedAt)
+      )
+    )
+    .orderBy(publishingChannels.id);
+
+  return rows.map((row) => `${row.channelID}:${row.snapshotID || ""}`).join("|");
+};
+const loadPublishedCollectionEntryIDs = async (
+  input: PublishedCollectionEntriesInput
+): Promise<string[]> => {
+  const workspaceID = toUUID(input.workspaceID);
+  const collectionID = toUUID(input.collectionID);
+  const [collectionRows, entryRows] = await Promise.all([
+    db
+      .select({
+        collectionID: publishingSnapshotCollections.collectionID,
+        parentID: publishingSnapshotCollections.parentID,
+        snapshotID: publishingSnapshotCollections.snapshotID
+      })
+      .from(publishingSnapshotCollections)
+      .innerJoin(
+        publishingChannels,
+        and(
+          eq(publishingChannels.workspaceID, workspaceID),
+          eq(publishingChannels.currentSnapshotID, publishingSnapshotCollections.snapshotID),
+          isNull(publishingChannels.deletedAt)
+        )
+      )
+      .where(eq(publishingSnapshotCollections.workspaceID, workspaceID)),
+    db
+      .select({
+        collectionID: publishingSnapshotEntries.collectionID,
+        entryID: publishingSnapshotEntries.entryID,
+        snapshotID: publishingSnapshotEntries.snapshotID
+      })
+      .from(publishingSnapshotEntries)
+      .innerJoin(
+        publishingChannels,
+        and(
+          eq(publishingChannels.workspaceID, workspaceID),
+          eq(publishingChannels.currentSnapshotID, publishingSnapshotEntries.snapshotID),
+          isNull(publishingChannels.deletedAt)
+        )
+      )
+      .where(eq(publishingSnapshotEntries.workspaceID, workspaceID))
+  ]);
+  const subtreeCollectionKeys = new Set(
+    collectionRows
+      .filter((collection) => collection.collectionID === collectionID)
+      .map((collection) => {
+        return getSnapshotCollectionKey(collection.snapshotID, collection.collectionID);
+      })
+  );
+  let changed = true;
+
+  while (changed) {
+    changed = false;
+
+    for (const collection of collectionRows) {
+      if (!collection.parentID) continue;
+
+      const key = getSnapshotCollectionKey(collection.snapshotID, collection.collectionID);
+      const parentKey = getSnapshotCollectionKey(collection.snapshotID, collection.parentID);
+
+      if (!subtreeCollectionKeys.has(key) && subtreeCollectionKeys.has(parentKey)) {
+        subtreeCollectionKeys.add(key);
+        changed = true;
+      }
+    }
+  }
+
+  return [
+    ...new Set(
+      entryRows.flatMap((entry) => {
+        if (!entry.collectionID) return [];
+
+        const key = getSnapshotCollectionKey(entry.snapshotID, entry.collectionID);
+
+        return subtreeCollectionKeys.has(key) ? [toEntryID(entry.entryID)] : [];
+      })
+    )
+  ];
+};
 const loadPublishedEntrySources = async (
   input: PublishedEntrySourcesInput
 ): Promise<PublishedSearchDocumentSource[]> => {
   const workspaceID = toUUID(input.workspaceID);
-  const [collectionRows, publicationRows] = await Promise.all([
-    loadCollections(input.workspaceID),
-    db
-      .select({
-        channelCode: publishingChannels.code,
-        channelID: publishingChannels.id,
-        collectionID: entries.collectionID,
-        document: entryVersions.document,
-        entryID: entries.id,
-        entryName: entryVersions.entryName,
-        publishedAt: entryPublications.updatedAt,
-        versionID: entryVersions.id
-      })
-      .from(entries)
-      .innerJoin(
-        entryPublications,
-        and(
-          eq(entryPublications.entryID, entries.id),
-          eq(entryPublications.workspaceID, workspaceID)
-        )
+  const publicationRows = await db
+    .select({
+      channelCode: publishingChannels.code,
+      channelID: publishingChannels.id,
+      collectionID: publishingSnapshotEntries.collectionID,
+      document: entryVersions.document,
+      entryID: publishingSnapshotEntries.entryID,
+      entryName: entryVersions.entryName,
+      publishedAt: publishingSnapshotEntries.publishedAt,
+      snapshotID: publishingSnapshotEntries.snapshotID,
+      versionID: publishingSnapshotEntries.versionID
+    })
+    .from(publishingSnapshotEntries)
+    .innerJoin(
+      publishingChannels,
+      and(
+        eq(publishingChannels.workspaceID, workspaceID),
+        eq(publishingChannels.currentSnapshotID, publishingSnapshotEntries.snapshotID),
+        isNull(publishingChannels.deletedAt)
       )
-      .innerJoin(
-        publishingChannels,
-        and(
-          eq(publishingChannels.id, entryPublications.channelID),
-          eq(publishingChannels.workspaceID, workspaceID)
-        )
+    )
+    .innerJoin(
+      entryVersions,
+      and(
+        eq(entryVersions.id, publishingSnapshotEntries.versionID),
+        eq(entryVersions.entryID, publishingSnapshotEntries.entryID),
+        eq(entryVersions.workspaceID, workspaceID)
       )
-      .innerJoin(
-        entryVersions,
-        and(
-          eq(entryVersions.id, entryPublications.versionID),
-          eq(entryVersions.workspaceID, workspaceID)
-        )
+    )
+    .where(
+      and(
+        eq(publishingSnapshotEntries.entryID, toUUID(input.entryID)),
+        eq(publishingSnapshotEntries.workspaceID, workspaceID)
       )
-      .where(
-        and(
-          eq(entries.id, toUUID(input.entryID)),
-          eq(entries.workspaceID, workspaceID),
-          isNull(entries.deletedAt)
-        )
+    );
+  const snapshotIDs = [...new Set(publicationRows.map((publication) => publication.snapshotID))];
+
+  if (snapshotIDs.length === 0) return [];
+
+  const collectionRows = await db
+    .select({
+      collectionID: publishingSnapshotCollections.collectionID,
+      name: publishingSnapshotCollections.name,
+      parentID: publishingSnapshotCollections.parentID,
+      snapshotID: publishingSnapshotCollections.snapshotID
+    })
+    .from(publishingSnapshotCollections)
+    .where(
+      and(
+        eq(publishingSnapshotCollections.workspaceID, workspaceID),
+        inArray(publishingSnapshotCollections.snapshotID, snapshotIDs)
       )
-  ]);
-  const root = collectionRows.find((collection) => collection.parentID === null);
+    );
+  const collectionsByKey = new Map(
+    collectionRows.map((collection) => [
+      getSnapshotCollectionKey(collection.snapshotID, collection.collectionID),
+      collection
+    ])
+  );
 
-  if (!root) return [];
+  return publicationRows.flatMap((publication) => {
+    if (!publication.collectionID) return [];
 
-  const collectionByID = new Map(collectionRows.map((collection) => [collection.id, collection]));
+    const lineage: typeof collectionRows = [];
+    const visited = new Set<string>();
+    let collection = collectionsByKey.get(
+      getSnapshotCollectionKey(publication.snapshotID, publication.collectionID)
+    );
 
-  return publicationRows.map((publication) => {
-    const lineage = getCollectionLineage(publication.collectionID, collectionByID, root);
-    const sourceCollection = lineage[lineage.length - 1] || root;
-    const visibleLineage = lineage.filter((collection) => collection.parentID !== null);
+    while (collection) {
+      const key = getSnapshotCollectionKey(collection.snapshotID, collection.collectionID);
 
-    return {
-      scope: "published",
-      workspaceID: input.workspaceID,
-      entryID: toEntryID(publication.entryID),
-      collectionID: toCollectionID(sourceCollection.id),
-      ancestorCollectionIDs: visibleLineage
-        .slice(0, -1)
-        .map((collection) => toCollectionID(collection.id)),
-      restrictedBoundaryIDs: [],
-      collectionPath: visibleLineage.map((collection) => collection.name),
-      title: publication.entryName,
-      content: publication.document,
-      updatedAt: publication.publishedAt,
-      channelID: publication.channelID,
-      channelCode: publication.channelCode,
-      versionID: toVersionID(publication.versionID)
-    };
+      if (visited.has(key)) return [];
+
+      visited.add(key);
+      lineage.unshift(collection);
+      collection = collection.parentID
+        ? collectionsByKey.get(getSnapshotCollectionKey(collection.snapshotID, collection.parentID))
+        : undefined;
+    }
+
+    if (lineage.length === 0) return [];
+
+    return [
+      {
+        scope: "published" as const,
+        workspaceID: input.workspaceID,
+        entryID: toEntryID(publication.entryID),
+        collectionID: toCollectionID(publication.collectionID),
+        ancestorCollectionIDs: lineage.slice(0, -1).map((item) => {
+          return toCollectionID(item.collectionID);
+        }),
+        restrictedBoundaryIDs: [],
+        collectionPath: lineage.map((item) => item.name),
+        title: publication.entryName,
+        content: publication.document,
+        updatedAt: publication.publishedAt,
+        channelID: publication.channelID,
+        channelCode: publication.channelCode,
+        snapshotID: toSnapshotID(publication.snapshotID),
+        versionID: toVersionID(publication.versionID)
+      }
+    ];
   });
 };
 
-export { loadPublishedEntrySources };
+export { loadPublishedChannelHeadKey, loadPublishedCollectionEntryIDs, loadPublishedEntrySources };

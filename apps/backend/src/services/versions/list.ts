@@ -2,7 +2,7 @@ import { entries, entryVersionContributors, entryVersions } from "#backend/db";
 import { mapVersionSummary, type VersionSummary } from "#backend/lib/data";
 import { toUUID, toVersionID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
-import { and, desc, eq, inArray, isNull, lt, or } from "drizzle-orm";
+import { and, desc, eq, inArray, lt, or } from "drizzle-orm";
 import { withAuthorization } from "#backend/lib/policy";
 
 interface ListVersionsInput {
@@ -23,17 +23,12 @@ const listVersions = withAuthorization<
     actions: ({ resolved }) => ({
       entries: [{ action: "version:read", collectionID: resolved.collectionID }]
     }),
+    includeDeleted: true,
     resolve: async ({ database, input, workspaceID }) => {
       const [entry] = await database
         .select({ collectionID: entries.collectionID })
         .from(entries)
-        .where(
-          and(
-            eq(entries.id, toUUID(input.entryID)),
-            eq(entries.workspaceID, workspaceID),
-            isNull(entries.deletedAt)
-          )
-        );
+        .where(and(eq(entries.id, toUUID(input.entryID)), eq(entries.workspaceID, workspaceID)));
 
       if (!entry) throw new ORPCError("NOT_FOUND", { message: "Entry not found" });
 

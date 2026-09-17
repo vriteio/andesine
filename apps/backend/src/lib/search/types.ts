@@ -41,6 +41,7 @@ interface PublishedSearchDocument extends SearchDocumentBase {
   scope: "published";
   channelID: string;
   channelCode: string;
+  snapshotID: string;
   versionID: string;
 }
 
@@ -65,6 +66,7 @@ interface PublishedSearchDocumentSource extends SearchDocumentSourceBase {
   scope: "published";
   channelID: string;
   channelCode: string;
+  snapshotID: string;
   versionID: string;
 }
 

@@ -1,15 +1,7 @@
-import {
-  collections,
-  memberships,
-  publishingChannels,
-  roles,
-  type Permission,
-  users,
-  workspaces
-} from "#backend/db";
+import { collections, memberships, roles, type Permission, users, workspaces } from "#backend/db";
 import { rankBetweenNeighbors, toUUID, toWorkspaceID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
-import { PUBLISHED_CHANNEL_CODE } from "#backend/lib/publishing";
+import { createInitialPublishingChannel, PUBLISHED_CHANNEL_CODE } from "#backend/lib/publishing";
 import { ROOT_COLLECTION_NAME } from "#backend/lib/validation";
 import { eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
@@ -56,11 +48,12 @@ const createWorkspace = async (input: { name: string; userID: string }) => {
       name: ROOT_COLLECTION_NAME,
       rank: rankBetweenNeighbors()
     });
-    await tx.insert(publishingChannels).values({
+    await createInitialPublishingChannel(tx, {
       workspaceID: workspace.id,
       code: PUBLISHED_CHANNEL_CODE,
       name: "Published",
-      builtIn: true
+      builtIn: true,
+      creatorID: userID
     });
     await tx.insert(memberships).values({
       userID,

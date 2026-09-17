@@ -1,4 +1,11 @@
-import { type Card, DropdownArea, DropdownMenu, IconButton, Tooltip } from "@andesine/components";
+import {
+  type Card,
+  DropdownArea,
+  DropdownMenu,
+  IconButton,
+  Spinner,
+  Tooltip
+} from "@andesine/components";
 import { TreeItem, TreeLevel } from "#web/components/tree";
 import clsx from "clsx";
 import { type Component, type ComponentProps, Show } from "solid-js";
@@ -9,6 +16,8 @@ import { EXPLORER_GESTURE_PROPS } from "./explorer-dnd";
 import { usePublishing } from "#web/context/publishing";
 import { useParams } from "@solidjs/router";
 import { ExplorerSchemaMigrationIndicator } from "./explorer-schema-migration";
+import { OverlayCollection } from "./overlay-collection";
+import { OverlayEntry } from "./overlay-entry";
 
 const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
   const publishing = usePublishing();
@@ -33,7 +42,8 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
     treeMap,
     swipe
   } = useExplorerCollection(props);
-  const publishingEnabled = () => content.isCollectionPublishingEnabled(props.collection.id);
+  const reverting = () => publishing.isCollectionReverting(props.collection.id);
+  const publishingEnabledRoot = () => content.isCollectionPublishingRoot(props.collection.id);
   const schema = () => content.schemas.get(props.collection.id);
   const schemaOpened = () => params.slug === schema()?.id;
   const collectionEditorOpened = () => props.collection.id === params.slug || schemaOpened();
@@ -46,6 +56,9 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
   };
   const unpublishedCount = () => {
     return publishing.getCollectionUnpublishedCount(props.collection.id);
+  };
+  const hasUnpublishedStructure = () => {
+    return publishing.hasCollectionUnpublishedChanges(props.collection.id);
   };
   const publishingLabel = () => {
     const count = unpublishedCount();
@@ -60,9 +73,25 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
       return defaultChannel ? "Publishing status unavailable" : `${channelName} status unavailable`;
     }
 
-    if (count === 0) return defaultChannel ? "Published" : `Published to ${channelName}`;
+    if (count === 0 && !hasUnpublishedStructure()) {
+      if (publishingEnabledRoot()) return "Publishing enabled";
 
-    const label = `${count} unpublished ${count === 1 ? "entry" : "entries"}`;
+      return defaultChannel ? "Published" : `Published to ${channelName}`;
+    }
+
+    if (count === 0) {
+      if (publishing.isCollectionNeverPublished(props.collection.id)) {
+        return defaultChannel ? "Not published" : `Not published in ${channelName}`;
+      }
+
+      return defaultChannel
+        ? "Pending structure changes"
+        : `Pending structure changes in ${channelName}`;
+    }
+
+    const label = `Pending changes: ${count} ${count === 1 ? "entry" : "entries"}${
+      hasUnpublishedStructure() ? " and collection structure" : ""
+    }`;
 
     return defaultChannel ? label : `${label} in ${channelName}`;
   };
@@ -110,7 +139,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                 toggleExpanded(props.collection.id);
               }}
               onRename={(name) => {
-                if (content.readOnly(props.collection.id)) return;
+                if (reverting() || content.readOnly(props.collection.id)) return;
 
                 const normalizedName = normalizeCollectionName(name);
 
@@ -135,7 +164,14 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                         : "i-material-symbols:folder-rounded"
                     )}
                   />
-                  <Show when={publishingEnabled()}>
+                  <Show
+                    when={
+                      publishingEnabledRoot() ||
+                      publishing.statusError() ||
+                      unpublishedCount() > 0 ||
+                      hasUnpublishedStructure()
+                    }
+                  >
                     <Tooltip
                       content={publishingLabel()}
                       placement="right"
@@ -151,7 +187,11 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                           class={clsx(
                             "flex justify-center items-center h-2.5 w-2.5 i-lucide:radio",
                             publishing.statusError() && "text-red-500",
-                            !publishing.statusError() && unpublishedCount() > 0 && "text-amber-500"
+                            !publishing.statusError() &&
+                              (unpublishedCount() > 0 || hasUnpublishedStructure()) &&
+                              (publishing.isCollectionNeverPublished(props.collection.id)
+                                ? "text-gray-500"
+                                : "text-amber-500")
                           )}
                         />
                       </div>
@@ -195,7 +235,14 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                 </div>
               }
               actions={
-                <>
+                <Show
+                  when={!reverting()}
+                  fallback={
+                    <div class="flex h-7 w-7 items-center justify-center">
+                      <Spinner class="h-4 w-4" color="primary" />
+                    </div>
+                  }
+                >
                   <DropdownMenu
                     title={props.collection.name}
                     cardProps={
@@ -268,7 +315,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                       <div class="i-lucide:pencil bg-gradient-to-tr h-4 w-4 from-secondary via-primary to-secondary" />
                     </div>
                   </Show>
-                </>
+                </Show>
               }
             />
           </div>
@@ -296,27 +343,55 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
             renderEntryBoundary={() => <BoundaryDropTarget type="entry" />}
             renderLevel={(id) => {
               const collection = () => content.collections.get({ collectionID: id });
+              const collectionOverlay = () => {
+                return (
+                  publishing.getCollectionOverlay(id) ?? publishing.getPendingCollectionOverlay(id)
+                );
+              };
 
               return (
-                <Show when={collection()}>
-                  <ExplorerCollection
-                    collection={collection()!}
-                    onParentDragHighlightChange={setIsChildOrderDraggedOver}
-                  />
+                <Show
+                  when={collection()}
+                  fallback={
+                    <Show when={collectionOverlay()}>
+                      {(overlay) => <OverlayCollection collection={overlay()} />}
+                    </Show>
+                  }
+                >
+                  {(workingCollection) => (
+                    <ExplorerCollection
+                      collection={workingCollection()}
+                      onParentDragHighlightChange={setIsChildOrderDraggedOver}
+                    />
+                  )}
                 </Show>
               );
             }}
             renderItem={(entryID) => {
               const entry = () => content.entries.get({ entryID });
+              const entryOverlay = () => {
+                return (
+                  publishing.getEntryOverlay(entryID) ?? publishing.getPendingEntryOverlay(entryID)
+                );
+              };
 
               return (
-                <Show when={entry()}>
-                  <DropdownArea {...EXPLORER_GESTURE_PROPS}>
-                    <ExplorerEntry
-                      entry={entry()!}
-                      onParentDragHighlightChange={setIsChildOrderDraggedOver}
-                    />
-                  </DropdownArea>
+                <Show
+                  when={entry()}
+                  fallback={
+                    <Show when={entryOverlay()}>
+                      {(overlay) => <OverlayEntry entry={overlay()} />}
+                    </Show>
+                  }
+                >
+                  {(workingEntry) => (
+                    <DropdownArea {...EXPLORER_GESTURE_PROPS}>
+                      <ExplorerEntry
+                        entry={workingEntry()}
+                        onParentDragHighlightChange={setIsChildOrderDraggedOver}
+                      />
+                    </DropdownArea>
+                  )}
                 </Show>
               );
             }}

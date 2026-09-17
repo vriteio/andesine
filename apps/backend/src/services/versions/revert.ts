@@ -1,23 +1,16 @@
-import { config } from "#backend/lib/config";
 import {
   openDocumentContentConnection,
   replaceDocumentContent,
   type ContentConnection
 } from "#backend/collaboration";
-import {
-  entries,
-  entryAssets,
-  entryVersionAssets,
-  entryPublications,
-  entryVersions,
-  publishingChannels
-} from "#backend/db";
+import { entries, entryVersions, publishingChannels, publishingSnapshotEntries } from "#backend/db";
 import type { VersionDetails } from "#backend/lib/data";
 import { PUBLISHED_CHANNEL_CODE, type PublishingEntryStatus } from "#backend/lib/publishing";
 import { withAuthorization } from "#backend/lib/policy";
 import { toUUID, toVersionID } from "#backend/lib/primitives";
+import { retainRevertedVersionAssets } from "#backend/lib/versioning";
 import { ORPCError } from "@orpc/server";
-import { and, eq, isNull, isNotNull } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { commitCreateVersion } from "./create";
 import { getVersion } from "./get";
@@ -33,6 +26,7 @@ interface ResolvedRevertVersion {
   collectionID: string | null;
   publishedHash: string | null;
   publishedVersionID: string | null;
+  targetSchemaRevisionID: string | null;
 }
 interface RevertVersionResult {
   createdVersions: VersionDetails[];
@@ -56,7 +50,8 @@ const commitRevertVersion = withAuthorization<
         .select({
           collectionID: entries.collectionID,
           publishedHash: publishedVersions.hash,
-          publishedVersionID: entryPublications.versionID
+          publishedVersionID: publishingSnapshotEntries.versionID,
+          targetSchemaRevisionID: entryVersions.schemaRevisionID
         })
         .from(entryVersions)
         .innerJoin(
@@ -71,17 +66,18 @@ const commitRevertVersion = withAuthorization<
           publishingChannels,
           and(
             eq(publishingChannels.workspaceID, workspaceID),
-            eq(publishingChannels.code, PUBLISHED_CHANNEL_CODE)
+            eq(publishingChannels.code, PUBLISHED_CHANNEL_CODE),
+            isNull(publishingChannels.deletedAt)
           )
         )
         .leftJoin(
-          entryPublications,
+          publishingSnapshotEntries,
           and(
-            eq(entryPublications.entryID, entryVersions.entryID),
-            eq(entryPublications.channelID, publishingChannels.id)
+            eq(publishingSnapshotEntries.entryID, entryVersions.entryID),
+            eq(publishingSnapshotEntries.snapshotID, publishingChannels.currentSnapshotID)
           )
         )
-        .leftJoin(publishedVersions, eq(publishedVersions.id, entryPublications.versionID))
+        .leftJoin(publishedVersions, eq(publishedVersions.id, publishingSnapshotEntries.versionID))
         .where(
           and(
             eq(entryVersions.id, toUUID(input.versionID)),
@@ -103,36 +99,12 @@ const commitRevertVersion = withAuthorization<
       auth,
       skipAuthorization: authorizationScope
     });
-    const targetImages = await database
-      .select({ assetID: entryVersionAssets.assetID })
-      .from(entryVersionAssets)
-      .where(
-        and(
-          eq(entryVersionAssets.workspaceID, workspaceID),
-          eq(entryVersionAssets.versionID, toUUID(target.id))
-        )
-      );
-    const pendingUntil = new Date(Date.now() + config.ASSET_UPLOAD_EXPIRY_HOURS * 3600_000);
-
     // Only an authorized revert grants historical images to the current document.
     // Collaboration saves wait for this workspace transaction to commit.
-    if (targetImages.length) {
-      await database
-        .insert(entryAssets)
-        .values(
-          targetImages.map(({ assetID }) => ({
-            workspaceID,
-            entryID: toUUID(target.entryID),
-            assetID,
-            pendingUntil
-          }))
-        )
-        .onConflictDoUpdate({
-          target: [entryAssets.entryID, entryAssets.assetID],
-          set: { pendingUntil },
-          setWhere: isNotNull(entryAssets.pendingUntil)
-        });
-    }
+    await retainRevertedVersionAssets(database, workspaceID, {
+      entryID: target.entryID,
+      versionID: target.id
+    });
 
     const previous = await replaceDocumentContent(input.connection, target.document);
     const createdVersions: VersionDetails[] = [];
@@ -168,6 +140,7 @@ const commitRevertVersion = withAuthorization<
         entryID: target.entryID,
         reason: "revert",
         contributorIDs: input.contributorIDs,
+        schemaRevisionID: resolved.targetSchemaRevisionID,
         sourceVersionID: target.id,
         snapshot: {
           document: target.document,

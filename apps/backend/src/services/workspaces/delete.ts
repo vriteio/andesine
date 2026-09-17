@@ -5,6 +5,7 @@ import {
   entries,
   entryAssets,
   entryVersionAssets,
+  entryVersions,
   memberships,
   users,
   workspaces
@@ -15,6 +16,7 @@ import {
 } from "#backend/lib/assets/storage";
 import { toEntryID, toUUID, toWorkspaceID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
+import { deleteWorkspacePublishingSnapshots } from "#backend/lib/publishing";
 import { withAuthorization } from "#backend/lib/policy";
 import { ORPCError } from "@orpc/server";
 import { and, asc, eq, isNull } from "drizzle-orm";
@@ -44,6 +46,9 @@ const deleteWorkspaceOperation = async (input: {
       .select({ id: entries.id })
       .from(entries)
       .where(eq(entries.workspaceID, workspaceID));
+
+    await deleteWorkspacePublishingSnapshots(tx, workspaceID);
+    await tx.delete(entryVersions).where(eq(entryVersions.workspaceID, workspaceID));
 
     // Do not acquire a second workspace lock through the fallback foreign key.
     const affectedUsers = await tx

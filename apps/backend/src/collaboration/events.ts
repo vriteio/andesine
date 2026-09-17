@@ -96,16 +96,19 @@ const registerCollaborationEvents = (collab: Hocuspocus<CollaborationContext>): 
 
   subscribeToCollectionEvents("*", (event) => {
     const changesAccess =
+      event.action === "collection:restore" ||
       (event.action === "collection:move" && event.data.restrictedBoundaryChanged === true) ||
       (event.action === "collection:update" && event.data.restricted !== undefined);
 
     if (!changesAccess) return;
 
     void (async () => {
+      const collectionID =
+        event.action === "collection:restore" ? event.data.collection.id : event.data.id;
       const [collection] = await db
         .select({ workspaceID: collections.workspaceID })
         .from(collections)
-        .where(eq(collections.id, toUUID(event.data.id)));
+        .where(eq(collections.id, toUUID(collectionID)));
 
       if (!collection) return;
 

@@ -17,9 +17,12 @@ import {
 } from "@andesine/backend/lib/search";
 import type { Queue } from "bullmq";
 import type { JobHandler } from "../jobs";
-import { loadCurrentCollectionEntryIDs } from "./current-data";
 import { createEmbeddings } from "./openai-compatible";
-import { loadPublishedEntrySources } from "./published-data";
+import {
+  loadPublishedChannelHeadKey,
+  loadPublishedCollectionEntryIDs,
+  loadPublishedEntrySources
+} from "./published-data";
 
 interface PublishedSearchJobDependencies {
   queue: Queue;
@@ -42,14 +45,28 @@ const createPublishedSearchJobHandlers = (
 
   handlers.set(PUBLISHED_ENTRY_SYNC_JOB_NAME, async (job) => {
     const data = job.data as unknown as PublishedEntrySyncJobData;
+    const channelHeadKey = await loadPublishedChannelHeadKey(data.workspaceID);
     const sources = await loadPublishedEntrySources(data);
     const builtDocuments = sources.flatMap((source) => buildPublishedSearchDocuments(source));
+    const retryIfChannelAdvanced = async (): Promise<boolean> => {
+      const currentChannelHeadKey = await loadPublishedChannelHeadKey(data.workspaceID);
+
+      if (currentChannelHeadKey === channelHeadKey) return false;
+
+      await dependencies.queue.addBulk(
+        createPublishedEntrySyncJobs({ workspaceID: data.workspaceID, entryIDs: [data.entryID] })
+      );
+      return true;
+    };
+
+    if (await retryIfChannelAdvanced()) return;
 
     if (builtDocuments.length === 0) {
       await dependencies.typesense.deleteDocuments(
         PUBLISHED_SEARCH_COLLECTION_ALIAS,
         getEntryFilter(data)
       );
+      await retryIfChannelAdvanced();
       return;
     }
 
@@ -68,10 +85,11 @@ const createPublishedSearchJobHandlers = (
       getEntryFilter(data)
     );
     await dependencies.typesense.importDocuments(PUBLISHED_SEARCH_COLLECTION_ALIAS, documents);
+    await retryIfChannelAdvanced();
   });
   handlers.set(PUBLISHED_COLLECTION_SYNC_JOB_NAME, async (job) => {
     const data = job.data as unknown as PublishedCollectionSyncJobData;
-    const entryIDs = await loadCurrentCollectionEntryIDs(data);
+    const entryIDs = await loadPublishedCollectionEntryIDs(data);
     const jobs = createPublishedEntrySyncJobs({ workspaceID: data.workspaceID, entryIDs });
 
     if (jobs.length > 0) await dependencies.queue.addBulk(jobs);
