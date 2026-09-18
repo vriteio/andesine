@@ -70,6 +70,7 @@ const collectionsRouter = base.prefix("/collections").router({
     }),
   create: authenticatedRoute
     .route({ method: "POST", path: "/" })
+    .meta({ required: { session: true, key: ["collections"] } })
     .input(
       collectionType
         .pick({ id: true, name: true })
@@ -96,6 +97,7 @@ const collectionsRouter = base.prefix("/collections").router({
     }),
   bulkDelete: authenticatedRoute
     .route({ method: "POST", path: "/bulk/delete" })
+    .meta({ required: { session: true, key: ["collections"] } })
     .input(
       z.object({
         ids: z.array(id()).describe("IDs of the collections to delete")
@@ -142,6 +144,7 @@ const collectionsRouter = base.prefix("/collections").router({
     }),
   delete: authenticatedRoute
     .route({ method: "DELETE", path: "/:id" })
+    .meta({ required: { session: true, key: ["collections"] } })
     .input(
       z.object({
         id: id().describe("ID of the collection to delete")
@@ -188,6 +191,7 @@ const collectionsRouter = base.prefix("/collections").router({
     }),
   update: authenticatedRoute
     .route({ method: "PUT", path: "/:id" })
+    .meta({ required: { session: true, key: ["collections"] } })
     .input(
       z.object({
         id: id().describe("ID of the collection to be updated"),
@@ -324,6 +328,7 @@ const collectionsRouter = base.prefix("/collections").router({
     }),
   list: authenticatedRoute
     .route({ method: "GET", path: "/list" })
+    .meta({ required: { session: true, key: ["read:collections"] } })
     .input(
       z.object({
         ancestorID: id().optional().describe("ID of the parent collection"),

@@ -7,6 +7,7 @@ import * as z from "zod";
 const schemaMigrationsRouter = base.router({
   getActive: authenticatedRoute
     .route({ method: "GET", path: "/collections/:collectionID/schema-migration" })
+    .meta({ required: { session: true, key: ["read:collections"] } })
     .input(z.object({ collectionID: id().describe("ID of the affected collection") }))
     .output(schemaMigrationDetailsType.nullable())
     .handler(({ context, input }) => {
@@ -17,6 +18,7 @@ const schemaMigrationsRouter = base.router({
     }),
   get: authenticatedRoute
     .route({ method: "GET", path: "/schema-migrations/:id" })
+    .meta({ required: { session: true, key: ["read:collections"] } })
     .input(z.object({ id: id().describe("ID of the schema migration") }))
     .output(schemaMigrationDetailsType)
     .handler(({ context, input }) => {

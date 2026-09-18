@@ -10,6 +10,7 @@ import * as z from "zod";
 const rolesRouter = base.prefix("/roles").router({
   list: authenticatedRoute
     .route({ method: "GET", path: "/" })
+    .meta({ required: { session: true, key: ["read:roles"] } })
     .output(z.array(roleType))
     .handler(async ({ context }) => {
       const { roles } = await Roles.list({
@@ -20,6 +21,7 @@ const rolesRouter = base.prefix("/roles").router({
     }),
   create: authenticatedRoute
     .route({ method: "POST", path: "/" })
+    .meta({ required: { session: true, key: ["roles"] } })
     .input(
       z.object({
         name: z.string().trim().min(1).max(50).describe("Name of the role"),
@@ -44,6 +46,7 @@ const rolesRouter = base.prefix("/roles").router({
     }),
   update: authenticatedRoute
     .route({ method: "PUT", path: "/:id" })
+    .meta({ required: { session: true, key: ["roles"] } })
     .input(
       z.object({
         id: id().describe("ID of the role to update"),
@@ -79,6 +82,7 @@ const rolesRouter = base.prefix("/roles").router({
     }),
   delete: authenticatedRoute
     .route({ method: "DELETE", path: "/:id" })
+    .meta({ required: { session: true, key: ["roles"] } })
     .input(
       z.object({
         id: id().describe("ID of the role to delete")

@@ -20,6 +20,7 @@ const schemaVersionListType = z.object({
 const schemaVersionsRouter = base.router({
   list: authenticatedRoute
     .route({ method: "GET", path: "/schemas/:schemaID/versions" })
+    .meta({ required: { session: true, key: ["read:collections"] } })
     .input(
       z.object({
         schemaID: id().describe("ID of the local collection schema"),
@@ -46,6 +47,7 @@ const schemaVersionsRouter = base.router({
     }),
   get: authenticatedRoute
     .route({ method: "GET", path: "/schema-versions/:id" })
+    .meta({ required: { session: true, key: ["read:collections"] } })
     .input(z.object({ id: id().describe("ID of the schema version") }))
     .output(schemaVersionDetailsType)
     .handler(({ context, input }) => {
@@ -56,6 +58,7 @@ const schemaVersionsRouter = base.router({
     }),
   revert: authenticatedRoute
     .route({ method: "POST", path: "/schema-versions/:id/revert" })
+    .meta({ required: { session: true, key: ["collections"] } })
     .input(
       z.object({
         id: id().describe("ID of the schema version to restore"),
@@ -111,6 +114,7 @@ const schemaVersionsRouter = base.router({
     }),
   update: authenticatedRoute
     .route({ method: "PATCH", path: "/schema-versions/:id" })
+    .meta({ required: { session: true, key: ["collections"] } })
     .input(
       z.object({
         id: id().describe("ID of the schema version"),

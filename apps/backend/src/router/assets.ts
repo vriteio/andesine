@@ -26,6 +26,7 @@ const assetSearchResultType = z.object({
 const assetsRouter = base.prefix("/assets").router({
   search: authenticatedRoute
     .route({ method: "GET", path: "/search", outputStructure: "detailed" })
+    .meta({ required: { session: true, key: ["read:entries", "read:collections"] } })
     .input(
       z.object({
         query: z.string().trim().max(500).default(""),
@@ -133,6 +134,7 @@ const assetsRouter = base.prefix("/assets").router({
     }),
   importURL: authenticatedRoute
     .route({ method: "POST", path: "/imports", outputStructure: "detailed" })
+    .meta({ required: { session: true, key: ["entries"] } })
     .input(
       z.object({
         assetID: publicID("ast"),
@@ -156,6 +158,7 @@ const assetsRouter = base.prefix("/assets").router({
     })),
   attach: authenticatedRoute
     .route({ method: "POST", path: "/:assetID/attachments", outputStructure: "detailed" })
+    .meta({ required: { session: true, key: ["entries"] } })
     .input(z.object({ assetID: publicID("ast"), entryID: publicID("ent") }))
     .output(z.object({ status: z.literal(204), headers: assetHeadersType }))
     .handler(async ({ context, input }) => {
@@ -164,6 +167,7 @@ const assetsRouter = base.prefix("/assets").router({
     }),
   register: authenticatedRoute
     .route({ method: "POST", path: "/uploads", outputStructure: "detailed" })
+    .meta({ required: { session: true, key: ["entries"] } })
     .input(
       z.object({
         assetID: publicID("ast"),
@@ -203,6 +207,7 @@ const assetsRouter = base.prefix("/assets").router({
     }),
   upload: authenticatedRoute
     .route({ method: "PUT", path: "/:assetID/upload", outputStructure: "detailed" })
+    .meta({ required: { session: true, key: ["entries"] } })
     .input(
       z.object({
         assetID: publicID("ast"),
@@ -220,6 +225,7 @@ const assetsRouter = base.prefix("/assets").router({
     }),
   get: authenticatedRoute
     .route({ method: "GET", path: "/:assetID", outputStructure: "detailed" })
+    .meta({ required: { session: true, key: true } })
     .input(z.object({ assetID: publicID("ast"), entryID: publicID("ent").optional() }))
     .output(
       z.object({

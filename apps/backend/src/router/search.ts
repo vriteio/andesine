@@ -102,13 +102,6 @@ const askResultType = z.object({
     })
   )
 });
-const currentSearchRoute = base
-  .meta({ required: { session: true, key: ["read:entries", "read:collections"] } })
-  .use(authorized);
-const publishedSearchRoute = base
-  .meta({ required: { session: true, key: ["read:publishing"] } })
-  .use(authorized);
-const askRoute = sessionRoute.meta({ trackUsage: true });
 const enforceAskRateLimit = async (key: string, headers?: Headers): Promise<void> => {
   const limit = await consumeRateLimit({
     scope: "ask-ai",
@@ -138,8 +131,10 @@ const enforceSemanticSearchRateLimit = async (key: string, headers?: Headers): P
   });
 };
 const searchRouter = base.prefix("/search").router({
-  current: currentSearchRoute
+  current: base
     .route({ method: "POST", path: "/current" })
+    .meta({ required: { session: true, key: ["read:entries", "read:collections"] } })
+    .use(authorized)
     .input(searchInputType)
     .output(searchResultType)
     .handler(async ({ context, input }) => {
@@ -149,8 +144,10 @@ const searchRouter = base.prefix("/search").router({
 
       return Search.current({ auth: context.auth, ...input });
     }),
-  published: publishedSearchRoute
+  published: base
     .route({ method: "POST", path: "/published" })
+    .meta({ required: { session: true, key: ["read:publishing"] } })
+    .use(authorized)
     .input(publishedSearchInputType)
     .output(searchResultType)
     .handler(async ({ context, input }) => {
@@ -160,8 +157,9 @@ const searchRouter = base.prefix("/search").router({
 
       return Search.published({ auth: context.auth, ...input });
     }),
-  askCurrent: askRoute
+  askCurrent: sessionRoute
     .route({ method: "POST", path: "/current/ask" })
+    .meta({ trackUsage: true })
     .input(askInputType)
     .output(askResultType)
     .handler(async ({ context, input }) => {
@@ -169,8 +167,9 @@ const searchRouter = base.prefix("/search").router({
 
       return Search.askCurrent({ auth: context.auth, ...input });
     }),
-  askPublished: askRoute
+  askPublished: sessionRoute
     .route({ method: "POST", path: "/published/ask" })
+    .meta({ trackUsage: true })
     .input(publishedAskInputType)
     .output(askResultType)
     .handler(async ({ context, input }) => {

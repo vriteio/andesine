@@ -27,6 +27,7 @@ const toVersionSummary = ({ document: _document, ...version }: VersionDetails): 
 const versionsRouter = base.router({
   create: authenticatedRoute
     .route({ method: "POST", path: "/entries/:entryID/versions" })
+    .meta({ required: { session: true, key: ["versions"] } })
     .input(
       z.object({
         entryID: id().describe("ID of the entry to version"),
@@ -53,6 +54,7 @@ const versionsRouter = base.router({
     }),
   list: authenticatedRoute
     .route({ method: "GET", path: "/entries/:entryID/versions" })
+    .meta({ required: { session: true, key: ["read:versions"] } })
     .input(
       z.object({
         entryID: id().describe("ID of the entry whose versions to list"),
@@ -79,6 +81,7 @@ const versionsRouter = base.router({
     }),
   get: authenticatedRoute
     .route({ method: "GET", path: "/versions/:id" })
+    .meta({ required: { session: true, key: ["read:versions"] } })
     .input(z.object({ id: id().describe("ID of the version to get") }))
     .output(versionDetailsType)
     .handler(({ context, input }) => {
@@ -89,6 +92,7 @@ const versionsRouter = base.router({
     }),
   update: authenticatedRoute
     .route({ method: "PATCH", path: "/versions/:id" })
+    .meta({ required: { session: true, key: ["versions"] } })
     .input(
       z.object({
         id: id().describe("ID of the version to update"),
@@ -113,6 +117,7 @@ const versionsRouter = base.router({
     }),
   revert: authenticatedRoute
     .route({ method: "POST", path: "/versions/:id/revert" })
+    .meta({ required: { session: true, key: ["versions"] } })
     .input(z.object({ id: id().describe("ID of the version to restore") }))
     .output(versionDetailsType)
     .handler(async ({ context, input }) => {

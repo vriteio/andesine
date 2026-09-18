@@ -13,6 +13,7 @@ import * as z from "zod";
 const schemasRouter = base.router({
   create: authenticatedRoute
     .route({ method: "POST", path: "/collections/:collectionID/schema" })
+    .meta({ required: { session: true, key: ["collections"] } })
     .input(z.object({ collectionID: id().describe("ID of the collection") }))
     .output(localCollectionSchemaType)
     .handler(async ({ context, input }) => {
@@ -39,6 +40,7 @@ const schemasRouter = base.router({
     }),
   delete: authenticatedRoute
     .route({ method: "DELETE", path: "/schemas/:schemaID" })
+    .meta({ required: { session: true, key: ["collections"] } })
     .input(
       z.object({
         schemaID: id().describe("ID of the local collection schema"),
@@ -84,6 +86,7 @@ const schemasRouter = base.router({
     }),
   get: authenticatedRoute
     .route({ method: "GET", path: "/collections/:collectionID/schema" })
+    .meta({ required: { session: true, key: ["read:collections"] } })
     .input(z.object({ collectionID: id().describe("ID of the collection") }))
     .output(collectionSchemaDetailsType)
     .handler(({ context, input }) => {
@@ -94,6 +97,7 @@ const schemasRouter = base.router({
     }),
   apply: authenticatedRoute
     .route({ method: "POST", path: "/schemas/:schemaID/apply" })
+    .meta({ required: { session: true, key: ["collections"] } })
     .input(
       z.object({
         schemaID: id().describe("ID of the local collection schema"),

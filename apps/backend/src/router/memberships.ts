@@ -54,6 +54,7 @@ const emitUpdatedGroups = (input: {
 const membershipsRouter = base.prefix("/memberships").router({
   list: authenticatedRoute
     .route({ method: "GET", path: "/" })
+    .meta({ required: { session: true, key: ["read:memberships"] } })
     .output(z.array(memberDetailsType))
     .handler(async ({ context }) => {
       const { members } = await Memberships.list({
@@ -64,6 +65,7 @@ const membershipsRouter = base.prefix("/memberships").router({
     }),
   update: authenticatedRoute
     .route({ method: "PATCH", path: "/:id" })
+    .meta({ required: { session: true, key: ["memberships"] } })
     .input(
       z.object({
         id: id().describe("ID of the membership to update"),
@@ -94,6 +96,7 @@ const membershipsRouter = base.prefix("/memberships").router({
     }),
   remove: authenticatedRoute
     .route({ method: "DELETE", path: "/:id" })
+    .meta({ required: { session: true, key: ["memberships"] } })
     .input(
       z.object({
         id: id().describe("ID of the membership to remove")
@@ -123,6 +126,7 @@ const membershipsRouter = base.prefix("/memberships").router({
     }),
   invite: authenticatedRoute
     .route({ method: "POST", path: "/" })
+    .meta({ required: { session: true, key: ["memberships"] } })
     .input(
       z.object({
         email: z.email().describe("Email address of the user to invite"),
@@ -147,6 +151,7 @@ const membershipsRouter = base.prefix("/memberships").router({
     }),
   listInvites: authenticatedRoute
     .route({ method: "GET", path: "/invites" })
+    .meta({ required: { session: true, key: ["memberships"] } })
     .output(z.array(inviteDetailsType))
     .handler(async ({ context }) => {
       const { invites } = await Memberships.listInvites({
@@ -157,6 +162,7 @@ const membershipsRouter = base.prefix("/memberships").router({
     }),
   resendInvite: authenticatedRoute
     .route({ method: "POST", path: "/invites/:id/resend" })
+    .meta({ required: { session: true, key: ["memberships"] } })
     .input(
       z.object({
         id: id().describe("ID of the pending invitation")
@@ -173,6 +179,7 @@ const membershipsRouter = base.prefix("/memberships").router({
     }),
   revokeInvite: authenticatedRoute
     .route({ method: "DELETE", path: "/invites/:id" })
+    .meta({ required: { session: true, key: ["memberships"] } })
     .input(
       z.object({
         id: id().describe("ID of the invite to revoke")

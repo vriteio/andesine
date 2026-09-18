@@ -42,6 +42,7 @@ const entryListType = z.object({
 const entriesRouter = base.prefix("/entries").router({
   create: authenticatedRoute
     .route({ method: "POST", path: "/" })
+    .meta({ required: { session: true, key: ["entries"] } })
     .input(entryType.omit({ order: true }).partial())
     .output(entryType)
     .handler(async ({ context, input }) => {
@@ -70,6 +71,7 @@ const entriesRouter = base.prefix("/entries").router({
     }),
   bulkDelete: authenticatedRoute
     .route({ method: "POST", path: "/bulk/delete" })
+    .meta({ required: { session: true, key: ["entries"] } })
     .input(
       z.object({
         ids: z.array(id()).describe("IDs of the entries to delete")
@@ -100,6 +102,7 @@ const entriesRouter = base.prefix("/entries").router({
     }),
   delete: authenticatedRoute
     .route({ method: "DELETE", path: "/:id" })
+    .meta({ required: { session: true, key: ["entries"] } })
     .input(
       z.object({
         id: id().describe("ID of the entry to delete")
@@ -133,6 +136,7 @@ const entriesRouter = base.prefix("/entries").router({
     }),
   update: authenticatedRoute
     .route({ method: "PUT", path: "/:id" })
+    .meta({ required: { session: true, key: ["entries"] } })
     .input(
       z.object({
         id: id().describe("ID of the entry to be updated"),
@@ -240,6 +244,7 @@ const entriesRouter = base.prefix("/entries").router({
     }),
   get: authenticatedRoute
     .route({ method: "GET", path: "/:id" })
+    .meta({ required: { session: true, key: ["read:entries"] } })
     .input(
       z.object({
         id: id().describe("ID of the entry to get")
@@ -254,6 +259,7 @@ const entriesRouter = base.prefix("/entries").router({
     }),
   list: authenticatedRoute
     .route({ method: "GET", path: "/list" })
+    .meta({ required: { session: true, key: ["read:entries"] } })
     .input(
       z.object({
         collectionID: id().optional().describe("ID of the collection to get entries from"),

@@ -146,6 +146,7 @@ const handlePublishingSnapshotUpdate = async (
 const publishingRouter = base.prefix("/publishing").router({
   setCollection: authenticatedRoute
     .route({ method: "PUT", path: "/collections/:collectionID" })
+    .meta({ required: { session: true, key: ["publishing"] } })
     .input(
       z.object({
         collectionID: id().describe("Collection to configure"),
@@ -207,6 +208,7 @@ const publishingRouter = base.prefix("/publishing").router({
     }),
   bulkSetCollections: authenticatedRoute
     .route({ method: "POST", path: "/collections/bulk/set" })
+    .meta({ required: { session: true, key: ["publishing"] } })
     .input(
       z.object({
         ids: z.array(id()).min(1).describe("IDs of the collections to configure"),
@@ -275,6 +277,7 @@ const publishingRouter = base.prefix("/publishing").router({
     }),
   publishCollection: authenticatedRoute
     .route({ method: "POST", path: "/collections/:collectionID" })
+    .meta({ required: { session: true, key: ["publishing"] } })
     .input(
       channelInput.extend({
         collectionID: id().describe("Collection tree to publish")
@@ -316,6 +319,7 @@ const publishingRouter = base.prefix("/publishing").router({
     }),
   bulkPublishCollections: authenticatedRoute
     .route({ method: "POST", path: "/collections/bulk/publish" })
+    .meta({ required: { session: true, key: ["publishing"] } })
     .input(
       channelInput.extend({
         ids: z.array(id()).min(1).describe("IDs of the collection trees to publish")
@@ -357,6 +361,7 @@ const publishingRouter = base.prefix("/publishing").router({
     }),
   unpublishCollection: authenticatedRoute
     .route({ method: "DELETE", path: "/collections/:collectionID" })
+    .meta({ required: { session: true, key: ["publishing"] } })
     .input(
       channelInput.extend({
         collectionID: id().describe("Collection tree to unpublish")
@@ -391,6 +396,7 @@ const publishingRouter = base.prefix("/publishing").router({
     }),
   bulkUnpublishCollections: authenticatedRoute
     .route({ method: "POST", path: "/collections/bulk/unpublish" })
+    .meta({ required: { session: true, key: ["publishing"] } })
     .input(
       channelInput.extend({
         ids: z.array(id()).min(1).describe("IDs of the collection trees to unpublish")
@@ -425,6 +431,7 @@ const publishingRouter = base.prefix("/publishing").router({
     }),
   publishEntry: authenticatedRoute
     .route({ method: "POST", path: "/entries/:entryID" })
+    .meta({ required: { session: true, key: ["publishing"] } })
     .input(
       channelInput.extend({
         entryID: id().describe("Entry to publish"),
@@ -461,6 +468,7 @@ const publishingRouter = base.prefix("/publishing").router({
     }),
   bulkPublishEntries: authenticatedRoute
     .route({ method: "POST", path: "/entries/bulk/publish" })
+    .meta({ required: { session: true, key: ["publishing"] } })
     .input(
       channelInput.extend({
         entries: z.array(publishEntryTargetType).min(1).describe("Entries and versions to publish")
@@ -496,6 +504,7 @@ const publishingRouter = base.prefix("/publishing").router({
     }),
   unpublishEntry: authenticatedRoute
     .route({ method: "DELETE", path: "/entries/:entryID" })
+    .meta({ required: { session: true, key: ["publishing"] } })
     .input(
       channelInput.extend({
         entryID: id().describe("Entry to unpublish"),
@@ -530,6 +539,7 @@ const publishingRouter = base.prefix("/publishing").router({
     }),
   bulkUnpublishEntries: authenticatedRoute
     .route({ method: "POST", path: "/entries/bulk/unpublish" })
+    .meta({ required: { session: true, key: ["publishing"] } })
     .input(
       channelInput.extend({
         ids: z.array(id()).min(1).describe("IDs of the entries to unpublish")
@@ -558,6 +568,7 @@ const publishingRouter = base.prefix("/publishing").router({
     }),
   revertChanges: authenticatedRoute
     .route({ method: "POST", path: "/changes/revert" })
+    .meta({ required: { session: true, key: ["read:publishing"] } })
     .input(revertPublishingChangesInputType)
     .output(revertPublishingChangesResultType)
     .handler(async ({ context, input }) => {
@@ -745,6 +756,7 @@ const publishingRouter = base.prefix("/publishing").router({
     }),
   getEntryVersion: authenticatedRoute
     .route({ method: "GET", path: "/entries/:entryID/version" })
+    .meta({ required: { session: true, key: ["read:publishing"] } })
     .input(
       channelInput.extend({
         entryID: id().describe("Entry whose published version to get"),
@@ -762,6 +774,7 @@ const publishingRouter = base.prefix("/publishing").router({
     }),
   listEntryPublications: authenticatedRoute
     .route({ method: "GET", path: "/entries/:entryID/publications" })
+    .meta({ required: { session: true, key: ["read:publishing"] } })
     .input(z.object({ entryID: id().describe("Entry whose publications to list") }))
     .output(z.array(entryPublicationType))
     .handler(({ context, input }) => {
@@ -772,6 +785,7 @@ const publishingRouter = base.prefix("/publishing").router({
     }),
   listChannels: authenticatedRoute
     .route({ method: "GET", path: "/channels" })
+    .meta({ required: { session: true, key: ["read:publishing"] } })
     .input(
       z.object({
         includeAssignmentCount: z
@@ -789,6 +803,7 @@ const publishingRouter = base.prefix("/publishing").router({
     }),
   getChannelContent: authenticatedRoute
     .route({ method: "GET", path: "/channels/:channel/content" })
+    .meta({ required: { session: true, key: ["read:publishing"] } })
     .input(
       z.object({
         channel: publishingChannelCodeType,
@@ -805,6 +820,7 @@ const publishingRouter = base.prefix("/publishing").router({
     }),
   createChannel: authenticatedRoute
     .route({ method: "POST", path: "/channels" })
+    .meta({ required: { session: true, key: ["publishing"] } })
     .input(z.object({ name: publishingChannelNameType.describe("Publishing channel label") }))
     .output(publishingChannelType)
     .handler(async ({ context, input }) => {
@@ -823,6 +839,7 @@ const publishingRouter = base.prefix("/publishing").router({
     }),
   deleteChannel: authenticatedRoute
     .route({ method: "DELETE", path: "/channels/:code" })
+    .meta({ required: { session: true, key: ["publishing"] } })
     .input(z.object({ code: publishingChannelCodeType.describe("Publishing channel identifier") }))
     .output(z.void())
     .handler(async ({ context, input }) => {
