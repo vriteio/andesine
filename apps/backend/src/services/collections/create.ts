@@ -1,3 +1,5 @@
+import { loadCurrentContentPaths } from "#backend/lib/content/paths";
+import { getAvailableContentName } from "#backend/lib/content/names";
 import { rankBetweenNeighbors, toCollectionID, toUUID } from "#backend/lib/primitives";
 import { collections, effectiveSchemaRevisions, type Collection } from "#backend/db";
 import { and, desc, eq, isNull } from "drizzle-orm";
@@ -9,7 +11,11 @@ import { normalizeCollectionName, ROOT_COLLECTION_NAME } from "#backend/lib/vali
 interface CreateCollectionInput extends Partial<Pick<Collection, "id" | "name" | "restricted">> {
   parentID?: string;
 }
-const createCollection = withAuthorization<CreateCollectionInput, undefined, Collection>(
+const createCollection = withAuthorization<
+  CreateCollectionInput,
+  undefined,
+  Collection & { path: string }
+>(
   {
     actions: ({ input }) => ({
       collections: [{ action: "collection:create-child", collectionID: input.parentID }]
@@ -20,10 +26,17 @@ const createCollection = withAuthorization<CreateCollectionInput, undefined, Col
     transaction: "locked-workspace"
   },
   async ({ database, input, workspaceID }) => {
-    const name = normalizeCollectionName(input.name ?? "Untitled");
+    const requestedName = normalizeCollectionName(input.name ?? "Untitled");
 
-    if (name === ROOT_COLLECTION_NAME) {
-      throw new ORPCError("BAD_REQUEST", { message: "Reserved collection name" });
+    if (requestedName === ROOT_COLLECTION_NAME) {
+      throw new ORPCError("BAD_REQUEST", {
+        message: "Reserved collection name",
+        data: {
+          hints: [
+            "Choose a collection name other than ~, which is reserved for the workspace root."
+          ]
+        }
+      });
     }
 
     const collectionID = input.id ? toUUID(input.id) : crypto.randomUUID();
@@ -58,6 +71,12 @@ const createCollection = withAuthorization<CreateCollectionInput, undefined, Col
 
     if (!parent) throw new ORPCError("BAD_REQUEST", { message: "Parent collection not found" });
 
+    const name = await getAvailableContentName(database, workspaceID, {
+      kind: "collection",
+      id: collectionID,
+      parentID,
+      name: requestedName
+    });
     const [lastSibling] = await database
       .select({ rank: collections.rank })
       .from(collections)
@@ -122,7 +141,8 @@ const createCollection = withAuthorization<CreateCollectionInput, undefined, Col
     if (!result)
       throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create collection" });
 
-    return result;
+    const paths = await loadCurrentContentPaths(database, workspaceID);
+    return { ...result, path: paths.collectionPath(collectionID) };
   }
 );
 

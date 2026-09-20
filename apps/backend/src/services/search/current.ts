@@ -1,52 +1,9 @@
-import { entries } from "#backend/db";
-import {
-  type AskInput,
-  type AskResult,
-  type SearchDocument,
-  type SearchInput,
-  type SearchResult
-} from "#backend/lib/search";
-import {
-  type AuthorizedCollectionTree,
-  type Database,
-  withAuthorization
-} from "#backend/lib/policy";
-import { toEntryID, toUUID } from "#backend/lib/primitives";
-import { and, eq, inArray, isNull } from "drizzle-orm";
-import { ask, search, type SearchDocumentAuthorizer } from "./core";
-
-const createDocumentAuthorizer = (
-  authorization: AuthorizedCollectionTree,
-  database: Database,
-  workspaceID: string
-): SearchDocumentAuthorizer => {
-  return async (documents: SearchDocument[]): Promise<Set<string>> => {
-    if (documents.length === 0) return new Set();
-
-    const rows = await database
-      .select({ collectionID: entries.collectionID, entryID: entries.id })
-      .from(entries)
-      .where(
-        and(
-          eq(entries.workspaceID, workspaceID),
-          inArray(
-            entries.id,
-            documents.map(({ entryID }) => toUUID(entryID))
-          ),
-          isNull(entries.deletedAt)
-        )
-      );
-    const allowedEntryIDs = new Set(
-      rows
-        .filter(({ collectionID }) => authorization.canEntry(collectionID, "entry:read"))
-        .map(({ entryID }) => toEntryID(entryID))
-    );
-
-    return new Set(
-      documents.filter(({ entryID }) => allowedEntryIDs.has(entryID)).map(({ id }) => id)
-    );
-  };
-};
+import { withAuthorization } from "#backend/lib/policy";
+import { createDocumentAuthorizer } from "#backend/lib/search/current-scope";
+import type { SearchInput, SearchResult } from "#backend/lib/search/query-types";
+import { search } from "#backend/lib/search/retrieval";
+import { loadCurrentContentPaths } from "#backend/lib/content/paths";
+import { toCollectionID } from "#backend/lib/primitives";
 
 const searchCurrent = withAuthorization<SearchInput, undefined, SearchResult>(
   {
@@ -54,12 +11,15 @@ const searchCurrent = withAuthorization<SearchInput, undefined, SearchResult>(
     tree: true
   },
   async ({ authorization, database, input, workspaceID, auth }) => {
-    if (input.collectionID) {
-      authorization.assertCollectionAction(input.collectionID, "collection:read");
-    }
+    const paths = await loadCurrentContentPaths(database, workspaceID);
+    const scopeID = paths.resolveCollection(input, false);
+    const collectionID = scopeID ? toCollectionID(scopeID) : undefined;
+
+    if (scopeID !== undefined) authorization.assertCollectionAction(scopeID, "collection:read");
 
     return search({
       ...input,
+      collectionID,
       authorizeDocuments: createDocumentAuthorizer(authorization, database, workspaceID),
       scope: "current",
       workspaceID: auth.workspaceID,
@@ -67,25 +27,5 @@ const searchCurrent = withAuthorization<SearchInput, undefined, SearchResult>(
     });
   }
 );
-const askCurrent = withAuthorization<AskInput, undefined, AskResult>(
-  {
-    permissions: { session: true },
-    tree: true
-  },
-  async ({ authorization, database, input, workspaceID, auth }) => {
-    if (input.collectionID) {
-      authorization.assertCollectionAction(input.collectionID, "collection:read");
-    }
 
-    return ask({
-      ...input,
-      authorizeDocuments: createDocumentAuthorizer(authorization, database, workspaceID),
-      query: input.question,
-      scope: "current",
-      workspaceID: auth.workspaceID,
-      allowedCollectionIDs: authorization.collections.map((collection) => collection.id)
-    });
-  }
-);
-
-export { askCurrent, searchCurrent };
+export { searchCurrent };

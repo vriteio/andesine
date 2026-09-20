@@ -40,9 +40,13 @@ const getCollectionLineage = (
   root: CollectionDetails
 ): CollectionDetails[] => {
   const lineage: CollectionDetails[] = [];
+  const visited = new Set<string>();
   let collection = collectionID ? collectionByID.get(collectionID) : root;
 
   while (collection) {
+    if (visited.has(collection.id)) return [];
+
+    visited.add(collection.id);
     lineage.unshift(collection);
     collection = collection.parentID ? collectionByID.get(collection.parentID) : undefined;
   }
@@ -81,7 +85,9 @@ const loadCurrentEntrySource = async (
 
   const collectionByID = new Map(collectionRows.map((collection) => [collection.id, collection]));
   const lineage = getCollectionLineage(entry.collectionID, collectionByID, root);
-  const sourceCollection = lineage[lineage.length - 1] || root;
+  if (!lineage.length || lineage[0].id !== root.id) return null;
+
+  const sourceCollection = lineage[lineage.length - 1];
   const visibleLineage = lineage.filter((collection) => collection.parentID !== null);
 
   return {
@@ -96,6 +102,7 @@ const loadCurrentEntrySource = async (
       .filter((collection) => collection.restricted)
       .map((collection) => toCollectionID(collection.id)),
     collectionPath: visibleLineage.map((collection) => collection.name),
+    path: `/${[...visibleLineage.map((collection) => collection.name), entry.name].join("/")}`,
     title: entry.name,
     content: entry.document || { type: "doc", content: [] },
     updatedAt: entry.updatedAt

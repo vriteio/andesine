@@ -27,7 +27,14 @@ const createChannel = withAuthorization<CreateChannelInput, undefined, Publishin
     });
 
     if (!channel) {
-      throw new ORPCError("CONFLICT", { message: "A publishing channel with this code exists" });
+      throw new ORPCError("CONFLICT", {
+        message: "A publishing channel with this code exists",
+        data: {
+          hints: [
+            "Use publishing.listChannels to check existing channels. Choose a name that produces a different channel code."
+          ]
+        }
+      });
     }
 
     return mapPublishingChannel(channel);

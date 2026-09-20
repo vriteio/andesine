@@ -26,9 +26,9 @@ interface SearchCollectionDefinition {
 
 const IMAGE_SEARCH_COLLECTION_ALIAS = "andesine_search_images";
 const CURRENT_SEARCH_COLLECTION_ALIAS = "andesine_search_current";
-const CURRENT_SEARCH_COLLECTION_NAME = "andesine_search_current_v1";
+const CURRENT_SEARCH_COLLECTION_NAME = "andesine_search_current_v2";
 const PUBLISHED_SEARCH_COLLECTION_ALIAS = "andesine_search_published";
-const PUBLISHED_SEARCH_COLLECTION_NAME = "andesine_search_published_v2";
+const PUBLISHED_SEARCH_COLLECTION_NAME = "andesine_search_published_v3";
 const commonFields: TypesenseFieldSchema[] = [
   { name: "scope", type: "string" },
   { name: "workspaceID", type: "string" },
@@ -37,6 +37,8 @@ const commonFields: TypesenseFieldSchema[] = [
   { name: "ancestorCollectionIDs", type: "string[]" },
   { name: "restrictedBoundaryIDs", type: "string[]" },
   { name: "collectionPath", type: "string[]" },
+  { name: "path", type: "string", index: false },
+  { name: "anchor", type: "string", optional: true, index: false },
   { name: "title", type: "string" },
   { name: "heading", type: "string" },
   { name: "headingPath", type: "string[]" },

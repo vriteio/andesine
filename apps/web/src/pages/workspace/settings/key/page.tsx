@@ -21,7 +21,8 @@ import { useWorkspace } from "#web/context/workspace";
 import { apiKeyQuery, useKeyMutations } from "#web/lib/data";
 import { type AccessLevel, createPermissionAccessMapper } from "#web/lib/permissions";
 
-type Resource = "collections" | "entries" | "memberships" | "publishing" | "roles" | "versions";
+type Resource =
+  "ai-answers" | "collections" | "entries" | "memberships" | "publishing" | "roles" | "versions";
 type ResourceAccess = Record<Resource, AccessLevel>;
 
 const resources: Array<{ id: Resource; label: string; description: string }> = [
@@ -30,7 +31,13 @@ const resources: Array<{ id: Resource; label: string; description: string }> = [
   { id: "publishing", label: "Publishing", description: "Published content and channels" },
   { id: "collections", label: "Collections", description: "Collection structure and metadata" },
   { id: "memberships", label: "People", description: "Workspace members and invitations" },
-  { id: "roles", label: "Roles", description: "Workspace roles and permissions" }
+  { id: "roles", label: "Roles", description: "Workspace roles and permissions" },
+  {
+    id: "ai-answers",
+    label: "AI answers",
+    description:
+      "Generate AI answers. Also requires Entries and Collections read access, or Publishing read access."
+  }
 ];
 
 const accessLevels: Array<{ value: AccessLevel; label: string }> = [
@@ -49,7 +56,8 @@ const { accessToPermissions, permissionsToAccess } = createPermissionAccessMappe
     { id: "publishing", read: "read:publishing", write: "publishing" },
     { id: "collections", read: "read:collections", write: "collections" },
     { id: "memberships", read: "read:memberships", write: "memberships" },
-    { id: "roles", read: "read:roles", write: "roles" }
+    { id: "roles", read: "read:roles", write: "roles" },
+    { id: "ai-answers", write: "ai-answers" }
   ]
 });
 
@@ -166,7 +174,13 @@ const KeySettingsPage: Component = () => {
                       [resource.id]: value as AccessLevel
                     }));
                   }}
-                  options={accessLevels.filter(
+                  options={(resource.id === "ai-answers"
+                    ? [
+                        { value: "default" as const, label: "None" },
+                        { value: "write" as const, label: "Allow" }
+                      ]
+                    : accessLevels
+                  ).filter(
                     (option) =>
                       option.value === "default" ||
                       canGrantKeyPermission(

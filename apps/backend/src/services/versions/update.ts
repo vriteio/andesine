@@ -2,7 +2,7 @@ import { entries, entryVersionContributors, entryVersions } from "#backend/db";
 import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
-import { mapVersion, type VersionDetails } from "#backend/lib/data";
+import { mapVersionSummary, type VersionSummary } from "#backend/lib/data";
 import { withAuthorization } from "#backend/lib/policy";
 
 interface UpdateVersionInput {
@@ -13,7 +13,7 @@ interface ResolvedUpdateVersion {
   collectionID: string | null;
 }
 
-const updateVersion = withAuthorization<UpdateVersionInput, ResolvedUpdateVersion, VersionDetails>(
+const updateVersion = withAuthorization<UpdateVersionInput, ResolvedUpdateVersion, VersionSummary>(
   {
     actions: ({ resolved }) => ({
       entries: [{ action: "version:update", collectionID: resolved.collectionID }]
@@ -65,7 +65,7 @@ const updateVersion = withAuthorization<UpdateVersionInput, ResolvedUpdateVersio
         )
       );
 
-    return mapVersion(
+    return mapVersionSummary(
       updated,
       contributors.map(({ membershipID }) => membershipID)
     );

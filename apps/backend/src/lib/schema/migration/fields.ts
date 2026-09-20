@@ -1,5 +1,8 @@
-import type { ContentNode, PropertyType } from "#backend/lib/content";
-import { normalizeResourceName } from "@andesine/editor/normalize-resource-name";
+import type { ContentNode } from "#backend/lib/content";
+import {
+  getContentFieldKey,
+  normalizePropertyType as getPropertyType
+} from "#backend/lib/content/blocks";
 import { SCHEMA_FIELD_ID_ATTRIBUTE, type SchemaField } from "../contract";
 
 interface ExistingSchemaField {
@@ -10,15 +13,6 @@ interface ExistingSchemaField {
   node: ContentNode;
 }
 
-const PROPERTY_TYPES: PropertyType[] = [
-  "text",
-  "number",
-  "checkbox",
-  "date",
-  "url",
-  "select",
-  "multi-select"
-];
 const getUniqueName = (usedNames: Set<string>, baseName: string): string => {
   let name = baseName;
   let suffix = 1;
@@ -29,13 +23,6 @@ const getUniqueName = (usedNames: Set<string>, baseName: string): string => {
   }
 
   return name;
-};
-const getPropertyType = (value: unknown): PropertyType => {
-  if (typeof value === "string" && PROPERTY_TYPES.includes(value as PropertyType)) {
-    return value as PropertyType;
-  }
-
-  return "text";
 };
 const getBoundFieldID = (node: ContentNode): string | undefined => {
   const fieldID = node.attrs?.[SCHEMA_FIELD_ID_ATTRIBUTE];
@@ -54,9 +41,8 @@ const getExistingSchemaFields = (document: ContentNode): ExistingSchemaField[] =
 
     if (kind !== "fragment" && kind !== "property") return;
 
-    const fallback = kind === "fragment" ? "content" : "property";
     const label = kind === "fragment" ? node.attrs?.name : node.attrs?.label;
-    const baseName = normalizeResourceName(String(label || ""), fallback);
+    const baseName = getContentFieldKey(kind, label);
     const apiName = getUniqueName(usedNames[kind], baseName);
 
     usedNames[kind].add(apiName);
@@ -81,8 +67,7 @@ const matchSchemaFields = (
   };
   const apiNames = new Map(
     schemaFields.map((field) => {
-      const fallback = field.kind === "fragment" ? "content" : "property";
-      const baseName = normalizeResourceName(field.label, fallback);
+      const baseName = getContentFieldKey(field.kind, field.label);
       const name = getUniqueName(usedNames[field.kind], baseName);
 
       usedNames[field.kind].add(name);

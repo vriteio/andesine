@@ -572,7 +572,7 @@ header:only-of-type.is-empty:first-child::before,
   :where(blockquote):not(:where(.not-prose, .not-prose *)) {
     @apply border-l-3 pl-5.5 border-solid border-gray-300 not-italic text-gray-500;
   }
-  :where(code):not(:where(.not-prose, .not-prose *)) {
+  :where(code):not(:where(.not-prose, .not-prose *, pre *)) {
     &::after {
       content: unset !important;
     }
@@ -583,6 +583,10 @@ header:only-of-type.is-empty:first-child::before,
     @apply relative bg-gradient-to-tr text-transparent bg-clip-text font-medium py-0.5 px-1 whitespace-pre-wrap z-0;
     font-family: "JetBrainsMonoVariable", monospace !important;
     @apply caret-gray-700;
+  }
+  :where(pre) {
+    @apply rounded-lg my-0;
+    font-family: "JetBrainsMonoVariable", monospace !important;
   }
   :where(mark) {
     @apply text-gray-700;

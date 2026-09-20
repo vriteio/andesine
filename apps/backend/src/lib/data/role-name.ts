@@ -8,7 +8,8 @@ import { ORPCError } from "@orpc/server";
 const duplicateRoleNameError = () => {
   return new ORPCError("ROLE_NAME_DUPLICATE", {
     status: 409,
-    message: "A role with this name already exists"
+    message: "A role with this name already exists",
+    data: { hints: ["Choose a different role name. Names are compared without regard to case."] }
   });
 };
 const normalizeRoleName = (name: string): string => {
@@ -17,7 +18,8 @@ const normalizeRoleName = (name: string): string => {
   if (!normalizedName || normalizedName.length > 50) {
     throw new ORPCError("ROLE_NAME_INVALID", {
       status: 400,
-      message: "Role names must be between 1 and 50 characters"
+      message: "Role names must be between 1 and 50 characters",
+      data: { hints: ["Use 1 to 50 characters after trimming spaces."] }
     });
   }
 

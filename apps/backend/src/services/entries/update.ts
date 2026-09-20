@@ -1,3 +1,4 @@
+import { assertContentNameAvailable } from "#backend/lib/content/names";
 import { toUUID } from "#backend/lib/primitives";
 import { entries, type Entry } from "#backend/db";
 import { and, eq, isNull } from "drizzle-orm";
@@ -36,10 +37,18 @@ const updateEntry = withAuthorization<UpdateEntryInput, ResolvedUpdateEntry>(
     },
     transaction: "locked-workspace"
   },
-  async ({ database, input, workspaceID }) => {
+  async ({ database, input, resolved, workspaceID }) => {
     if (input.name === undefined) return;
 
     const name = normalizeEntryName(input.name);
+
+    await assertContentNameAvailable(database, workspaceID, {
+      kind: "entry",
+      id: toUUID(input.id),
+      parentID: resolved.entry.collectionID,
+      name
+    });
+
     const [updated] = await database
       .update(entries)
       .set({ name, updatedAt: new Date() })

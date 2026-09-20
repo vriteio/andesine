@@ -1,3 +1,4 @@
+import { publishingSnapshotChangedError } from "./errors";
 import {
   collections,
   contents,
@@ -41,7 +42,7 @@ const loadPublishingChangeSet = async (
   });
 
   if (expectedSnapshotID && snapshot.id !== expectedSnapshotID) {
-    throw new ORPCError("CONFLICT", { message: "Publishing snapshot changed" });
+    throw publishingSnapshotChangedError(channel, expectedSnapshotID, snapshot.id);
   }
 
   const [tree, snapshotCollectionRows] = await Promise.all([
@@ -88,7 +89,14 @@ const loadPublishingChangeSet = async (
   );
 
   if (!currentPublishingRoot && !snapshotPublishingCollection) {
-    throw new ORPCError("BAD_REQUEST", { message: "Collection is not a publishing root" });
+    throw new ORPCError("BAD_REQUEST", {
+      message: "Collection is not a publishing root",
+      data: {
+        hints: [
+          "Use a collection that starts a published tree, rather than a collection inside that tree."
+        ]
+      }
+    });
   }
 
   const workingCollectionIDs = new Set(

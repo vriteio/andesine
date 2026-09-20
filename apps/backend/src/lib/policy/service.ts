@@ -126,7 +126,11 @@ const assertPlan = <Input>(
   if (!plan || getEffectivePlan(auth.subscriptionPlan) === plan) return;
 
   throw new ORPCError("FORBIDDEN", {
-    message: "This action requires an Andesine Pro subscription"
+    message: "This action requires an Andesine Pro subscription",
+    data: {
+      requiredPlan: "pro",
+      hints: ["Ask a workspace administrator to check the subscription plan."]
+    }
   });
 };
 const lockWorkspace = async (

@@ -66,7 +66,11 @@ const inviteMemberOperation = async (
       if (existingMember) {
         throw new ORPCError("MEMBERSHIP_ALREADY_EXISTS", {
           status: 409,
-          message: "This user is already a member of the workspace"
+          message: "This user is already a member of the workspace",
+          data: {
+            membershipID: toMembershipID(existingMember.id),
+            hints: ["Use memberships.update to change the existing member role."]
+          }
         });
       }
     }
@@ -85,7 +89,11 @@ const inviteMemberOperation = async (
     if (existingInvite) {
       throw new ORPCError("INVITE_ALREADY_PENDING", {
         status: 409,
-        message: "An invite has already been sent to this email"
+        message: "An invite has already been sent to this email",
+        data: {
+          inviteID: toInviteID(existingInvite.id),
+          hints: ["Use memberships.resendInvite to send the pending invitation again."]
+        }
       });
     }
 

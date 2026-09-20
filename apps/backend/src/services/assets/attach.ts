@@ -32,8 +32,22 @@ const attachAsset = withAuthorization<AttachAssetInput, EntryAuthorizationSource
     });
     const pendingUntil = new Date(Date.now() + config.ASSET_UPLOAD_EXPIRY_HOURS * 3600_000);
 
-    if (asset.status !== "ready")
-      throw new ORPCError("CONFLICT", { message: "Image is not ready" });
+    if (asset.status !== "ready") {
+      throw new ORPCError("CONFLICT", {
+        message: "Image is not ready",
+        data: {
+          assetID: input.assetID,
+          assetStatus: asset.status,
+          hints: [
+            asset.status === "pending"
+              ? "Complete the registered upload with assets.upload, then check assets.get until it is ready."
+              : asset.status === "processing"
+                ? "Check assets.get until processing finishes before attaching the image."
+                : "Check assets.get for failure details and register a new upload if needed."
+          ]
+        }
+      });
+    }
 
     await database
       .update(assets)

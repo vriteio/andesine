@@ -150,6 +150,14 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                   updates: { name: normalizedName }
                 });
               }}
+              validateName={(name) => {
+                return content.validateName({
+                  id: props.collection.id,
+                  parentID: props.collection.ancestors.at(-1),
+                  kind: "collection",
+                  name
+                });
+              }}
               labelMaxLength={MAX_CONTENT_NAME_LENGTH}
               icon={
                 <div class="relative flex justify-center items-center">

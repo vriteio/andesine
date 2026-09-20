@@ -1,3 +1,4 @@
+import { assertContentNameAvailable } from "#backend/lib/content/names";
 import { rankBetweenNeighbors, toEntryID, toUUID } from "#backend/lib/primitives";
 import {
   collections,
@@ -31,6 +32,7 @@ interface MoveEntryResult {
   schemaMigration: EffectiveSchemaChangePlan;
 }
 interface ResolvedMoveEntry {
+  name: string;
   destinationCollectionID: string | null;
   sourceCollectionID: string | null;
   sourceOrder: string;
@@ -46,7 +48,7 @@ const planEntryMove = withAuthorization<MoveEntryInput, ResolvedMoveEntry, MoveE
     }),
     resolve: async ({ database, input, workspaceID }) => {
       const [entry] = await database
-        .select({ collectionID: entries.collectionID, rank: entries.rank })
+        .select({ collectionID: entries.collectionID, rank: entries.rank, name: entries.name })
         .from(entries)
         .where(
           and(
@@ -84,6 +86,7 @@ const planEntryMove = withAuthorization<MoveEntryInput, ResolvedMoveEntry, MoveE
 
       return {
         destinationCollectionID,
+        name: entry.name,
         sourceCollectionID: entry.collectionID,
         sourceOrder: entry.rank
       };
@@ -94,6 +97,13 @@ const planEntryMove = withAuthorization<MoveEntryInput, ResolvedMoveEntry, MoveE
   async ({ auth, authorization, database, input, resolved, workspaceID }) => {
     const entryID = toUUID(input.id);
     const { destinationCollectionID, sourceCollectionID } = resolved;
+
+    await assertContentNameAvailable(database, workspaceID, {
+      kind: "entry",
+      id: entryID,
+      parentID: destinationCollectionID,
+      name: resolved.name
+    });
 
     const publishingTree = await loadPublishingTree(database, workspaceID);
     const wasPublishingEnabled = isCollectionPublishingEnabled(publishingTree, sourceCollectionID);
@@ -220,7 +230,12 @@ const planEntryMove = withAuthorization<MoveEntryInput, ResolvedMoveEntry, MoveE
       } else {
         if (!input.confirmedDataLoss) {
           throw new ORPCError("PRECONDITION_FAILED", {
-            message: "Schema migrations require explicit data-loss confirmation"
+            message: "Schema migrations require explicit data-loss confirmation",
+            data: {
+              hints: [
+                "Review the affected content first. Set confirmedDataLoss to true only after accepting the possible data loss."
+              ]
+            }
           });
         }
 

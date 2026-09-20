@@ -1,3 +1,6 @@
+import { assertRecordedContent } from "#backend/lib/schema/recorded";
+import { storeVersionProperties } from "#backend/lib/versioning/properties";
+import { publishingSnapshotChangedError } from "./errors";
 import { retainVersionAssets } from "#backend/lib/assets/references";
 import {
   contents,
@@ -214,6 +217,25 @@ const publishEntries = async (
       const draftHash = content?.hash || hashContentDocument(content?.document || EMPTY_DOCUMENT);
       const draftSchemaRevisionID = content?.schemaRevisionID || null;
 
+      await assertRecordedContent(
+        tx,
+        input.workspaceID,
+        {
+          document: assignedVersion.document,
+          entryID: entry.id,
+          versionID: assignedVersion.id,
+          schemaRevisionID: assignedVersion.schemaRevisionID
+        },
+        409
+      );
+
+      await storeVersionProperties({
+        database: tx,
+        workspaceID: input.workspaceID,
+        versionID: assignedVersion.id,
+        document: assignedVersion.document
+      });
+
       await retainVersionAssets({
         database: tx,
         workspaceID: input.workspaceID,
@@ -244,6 +266,13 @@ const publishEntries = async (
     const schemaRevisionID = content?.schemaRevisionID || null;
     const latestVersion = latestVersionByEntryID.get(entry.id);
     let versionID = latestVersion?.id;
+
+    await assertRecordedContent(
+      tx,
+      input.workspaceID,
+      { document, entryID: entry.id, schemaRevisionID },
+      409
+    );
 
     if (!content?.document || !content.hash) {
       await tx
@@ -299,6 +328,13 @@ const publishEntries = async (
 
     if (!versionID) throw new Error("Failed to resolve a version for publishing");
 
+    await storeVersionProperties({
+      database: tx,
+      workspaceID: input.workspaceID,
+      versionID,
+      document
+    });
+
     await retainVersionAssets({
       database: tx,
       workspaceID: input.workspaceID,
@@ -337,7 +373,11 @@ const publishEntries = async (
     input.snapshotOperations &&
     input.snapshotOperations.snapshotID !== snapshotChanges.snapshotID
   ) {
-    throw new ORPCError("CONFLICT", { message: "Publishing snapshot changed" });
+    throw publishingSnapshotChangedError(
+      input.channel,
+      input.snapshotOperations.snapshotID,
+      snapshotChanges.snapshotID
+    );
   }
 
   const snapshot = await commitPublishingSnapshot(tx, {

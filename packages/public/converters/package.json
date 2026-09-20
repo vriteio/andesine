@@ -1,0 +1,99 @@
+{
+  "name": "@andesine/converters",
+  "version": "0.1.0",
+  "description": "TypeScript content converters for Andesine",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./markdown": {
+      "types": "./dist/markdown.d.ts",
+      "import": "./dist/markdown.js"
+    },
+    "./mdx": {
+      "types": "./dist/mdx.d.ts",
+      "import": "./dist/mdx.js"
+    },
+    "./markdoc": {
+      "types": "./dist/markdoc.d.ts",
+      "import": "./dist/markdoc.js"
+    },
+    "./html": {
+      "types": "./dist/html.d.ts",
+      "import": "./dist/html.js"
+    },
+    "./text": {
+      "types": "./dist/text.d.ts",
+      "import": "./dist/text.js"
+    },
+    "./anchors": {
+      "types": "./dist/anchors.d.ts",
+      "import": "./dist/anchors.js"
+    }
+  },
+  "scripts": {
+    "build": "rolldown -c rolldown.config.ts",
+    "typecheck": "tsc --noEmit",
+    "prepack": "pnpm run typecheck && pnpm run build && pnpm run lint:package",
+    "lint:package": "publint --strict"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "@types/node": "^26.1.2",
+    "rolldown": "^1.2.2",
+    "publint": "0.3.24",
+    "rolldown-plugin-dts": "^0.28.6"
+  },
+  "dependencies": {
+    "@markdoc/markdoc": "0.5.10",
+    "unified": "11.0.5",
+    "remark-parse": "11.0.0",
+    "remark-stringify": "11.0.0",
+    "remark-gfm": "4.0.1",
+    "remark-mdx": "3.1.1",
+    "hast-util-from-html": "2.0.3",
+    "hast-util-to-html": "9.0.5",
+    "yaml": "2.9.0",
+    "acorn": "8.18.0",
+    "@types/mdast": "^4.0.4",
+    "@types/react": "^19.2.18",
+    "@types/hast": "^3.0.4",
+    "mdast-util-mdx-jsx": "3.2.0"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vriteio/andesine.git",
+    "directory": "packages/public/converters"
+  },
+  "homepage": "https://github.com/vriteio/andesine/tree/andesine/packages/public/converters#readme",
+  "bugs": {
+    "url": "https://github.com/vriteio/andesine/issues"
+  },
+  "keywords": [
+    "andesine",
+    "prosemirror",
+    "markdown",
+    "mdx",
+    "markdoc",
+    "html"
+  ]
+}

@@ -1,27 +1,37 @@
+import { loadCurrentContentPaths, type CollectionSelector } from "#backend/lib/content/paths";
+import { toCollectionID, toUUID } from "#backend/lib/primitives";
+import { DEFAULT_PAGE_SIZE } from "#backend/lib/api/limits";
 import { type Collection } from "#backend/db";
 import { ORPCError } from "@orpc/server";
 import { withAuthorization } from "#backend/lib/policy";
 
-interface ListCollectionsInput {
-  ancestorID?: string;
+interface ListCollectionsInput extends CollectionSelector {
   cursor?: string;
   limit?: number;
 }
 
 const listCollections = withAuthorization<
   ListCollectionsInput,
-  undefined,
-  { collections: Collection[]; nextCursor: string | null }
+  {
+    paths: Awaited<ReturnType<typeof loadCurrentContentPaths>>;
+    scopeID: string | null | undefined;
+  },
+  { collections: Array<Collection & { path: string }>; nextCursor: string | null }
 >(
   {
-    actions: ({ input }) => ({
-      collections: [{ action: "collection:read", collectionID: input.ancestorID }]
+    actions: ({ resolved }) => ({
+      collections: [{ action: "collection:read", collectionID: resolved.scopeID }]
     }),
+    resolve: async ({ database, input, workspaceID }) => {
+      const paths = await loadCurrentContentPaths(database, workspaceID);
+      return { paths, scopeID: paths.resolveCollection(input, false) };
+    },
+    transaction: "atomic",
     tree: true
   },
-  async ({ authorization, input }) => {
-    const limit = input.limit || 50;
-    const parentID = input.ancestorID || authorization.rootID;
+  async ({ authorization, input, resolved }) => {
+    const limit = input.limit ?? DEFAULT_PAGE_SIZE;
+    const parentID = resolved.scopeID ? toCollectionID(resolved.scopeID) : authorization.rootID;
     const collectionsByID = new Map(
       authorization.collections.map((collection) => [collection.id, collection])
     );
@@ -37,7 +47,14 @@ const listCollections = withAuthorization<
       const cursorIndex = siblings.findIndex((collection) => collection.id === input.cursor);
 
       if (cursorIndex === -1) {
-        throw new ORPCError("BAD_REQUEST", { message: "Cursor collection not found" });
+        throw new ORPCError("BAD_REQUEST", {
+          message: "Cursor collection not found",
+          data: {
+            hints: [
+              "Start a new listing without cursor and use pagination.nextCursor from that response. Keep the same filters while paging."
+            ]
+          }
+        });
       }
 
       startIndex = cursorIndex + 1;
@@ -48,7 +65,10 @@ const listCollections = withAuthorization<
     const pageRows = hasMore ? rows.slice(0, limit) : rows;
 
     return {
-      collections: pageRows,
+      collections: pageRows.map((row) => ({
+        ...row,
+        path: resolved.paths.collectionPath(toUUID(row.id))
+      })),
       nextCursor: hasMore ? pageRows[pageRows.length - 1].id : null
     };
   }

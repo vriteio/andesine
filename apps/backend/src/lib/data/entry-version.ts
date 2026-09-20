@@ -1,3 +1,7 @@
+import {
+  contentSchemaMetadataType,
+  type ContentSchemaMetadata
+} from "#backend/lib/schema/contract/recorded";
 import type { entryVersions } from "#backend/db";
 import { contentNodeType, type ContentNode } from "#backend/lib/content";
 import { id, toEntryID, toMembershipID, toVersionID } from "#backend/lib/primitives";
@@ -17,6 +21,7 @@ interface VersionSummary {
 }
 interface VersionDetails extends VersionSummary {
   document: ContentNode;
+  schema: ContentSchemaMetadata | null;
 }
 type VersionReason = "auto" | "manual" | "revert" | "schema-migration";
 type EntryVersionRow = typeof entryVersions.$inferSelect;
@@ -35,6 +40,7 @@ const versionSummaryType = z.object({
   updatedAt: z.iso.datetime().describe("Time when the version name was last updated")
 });
 const versionDetailsType = versionSummaryType.extend({
+  schema: contentSchemaMetadataType.nullable(),
   document: contentNodeType.describe("ProseMirror JSON stored in the version")
 });
 const mapVersionSummary = (row: EntryVersionRow, contributorIDs: string[]): VersionSummary => {
@@ -51,9 +57,14 @@ const mapVersionSummary = (row: EntryVersionRow, contributorIDs: string[]): Vers
     updatedAt: row.updatedAt.toISOString()
   };
 };
-const mapVersion = (row: EntryVersionRow, contributorIDs: string[]): VersionDetails => {
+const mapVersion = (
+  row: EntryVersionRow,
+  contributorIDs: string[],
+  schema: ContentSchemaMetadata | null
+): VersionDetails => {
   return {
     ...mapVersionSummary(row, contributorIDs),
+    schema,
     document: row.document
   };
 };

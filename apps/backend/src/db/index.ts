@@ -17,3 +17,4 @@ export * from "./users";
 export * from "./versions";
 export * from "./workspaces";
 export * from "./asset-uploads";
+export * from "./version-properties";

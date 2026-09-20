@@ -1,3 +1,4 @@
+import { getContentNameError, type ContentNameInput } from "#web/lib/validation/content-name";
 import { pruneCachedImages } from "./image-cache";
 import { Collection as LocalDBCollection } from "@signaldb/core";
 import { createWorkspaceContentOperations } from "./operations";
@@ -878,6 +879,15 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, userID: Accessor<str
   );
 
   return {
+    validateName: (input: ContentNameInput) => {
+      return getContentNameError(
+        {
+          entries: entriesCollection().find().fetch(),
+          collections: collectionsCollection().find().fetch()
+        },
+        input
+      );
+    },
     persistOfflineAccess,
     accessLoading,
     entriesCollection,

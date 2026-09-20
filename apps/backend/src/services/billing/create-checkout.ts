@@ -88,7 +88,8 @@ const createCheckout = async (input: {
     if (hasPendingSubscription) {
       throw new ORPCError("SUBSCRIPTION_SETUP_PENDING", {
         status: 409,
-        message: "Subscription setup is still processing"
+        message: "Subscription setup is still processing",
+        data: { hints: ["Check the subscription status again before starting another checkout."] }
       });
     }
 

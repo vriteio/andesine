@@ -1,3 +1,4 @@
+import { entryVersionProperties } from "./version-properties";
 import { assetStorageDeletions, assetUploads } from "./asset-uploads";
 import { assetAnalyses, assetFiles, assets, entryAssets, entryVersionAssets } from "./assets";
 import { accounts, passkeys, sessions, verifications } from "./auth";
@@ -76,6 +77,7 @@ const schema = {
   contents,
   entryVersions,
   entryVersionAssets,
+  entryVersionProperties,
   entryVersionContributors,
   entryVersionActivity,
   entryVersionActivityContributors,

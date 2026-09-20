@@ -16,11 +16,12 @@ import {
   createMemo,
   createSignal,
   Match,
+  on,
+  onCleanup,
   Show,
   Switch
 } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
-import { client } from "#web/lib/api";
 import { currentSearchQuery, type SearchPropertyFilter } from "#web/lib/data";
 import type { SearchNavigationState } from "#web/lib/search-navigation";
 import {
@@ -32,6 +33,7 @@ import {
 import { SearchAnswerPanel, type SearchAnswerData } from "./search-answer";
 import { SearchResultNotice, SearchResults, SearchResultsSkeleton } from "./search-results";
 import { withWorkspacePanelParams } from "../panel-navigation";
+import { streamSearchAnswer } from "./answer-stream";
 
 interface SearchDialogProps {
   opened: boolean;
@@ -48,6 +50,8 @@ interface SearchRequest {
 }
 interface AskRequest extends SearchRequest {
   requestID: number;
+  signal: AbortSignal;
+  workspaceID: string;
 }
 
 const EMPTY_SEARCH_RESPONSE: SearchResponse = { requestKey: "", results: [] };
@@ -66,6 +70,8 @@ const SearchDialog: Component<SearchDialogProps> = (props) => {
   const [requestPending, setRequestPending] = createSignal(false);
   const [latestRequestID, setLatestRequestID] = createRef(0);
   const [askRequestID, setAskRequestID] = createRef(0);
+  const [askController, setAskController] = createRef<AbortController | undefined>(undefined);
+  const [followAnswer, setFollowAnswer] = createRef(true);
   const scrollShadowController = createScrollShadowController();
   const normalizedQuery = () => query().trim();
   const activeFilters = createMemo(() => getSearchPropertyFilters(filterDrafts()));
@@ -135,35 +141,54 @@ const SearchDialog: Component<SearchDialogProps> = (props) => {
     );
   };
   const askMutation = createMutation(() => ({
-    mutationFn: (request: AskRequest) => {
-      return client.search.askCurrent({
-        question: request.query,
-        filters: request.filters,
-        history: []
-      });
+    retry: false,
+    mutationFn: async (request: AskRequest) => {
+      if (request.signal.aborted) return;
+
+      try {
+        await streamSearchAnswer(
+          { question: request.query, filters: request.filters, history: [] },
+          {
+            signal: request.signal,
+            workspaceID: request.workspaceID,
+            onUpdate: (answer) => {
+              if (request.requestID !== askRequestID()) return;
+
+              setAnswer({ answer, question: request.query });
+            }
+          }
+        );
+      } catch (error) {
+        if (request.signal.aborted) return;
+
+        throw error;
+      } finally {
+        if (request.requestID === askRequestID()) setAskController(undefined);
+      }
     },
-    onSuccess: (answer, request) => {
+    onSuccess: (_answer, request) => {
       if (request.requestID !== askRequestID()) return;
 
-      setAnswer({ answer, question: request.query });
-
-      if (normalizedQuery() === request.query) setQuery("");
       if (props.opened) focusInput();
     }
   }));
-  const setQueryValue = (value: string) => {
-    setQuery(value);
+  const showingAnswer = () =>
+    !normalizedQuery() && Boolean(answer() || askMutation.isPending || askMutation.isError);
+  const cancelAnswer = () => {
     setAskRequestID(askRequestID() + 1);
-    if (value && answer()) setAnswer();
-
-    if (!askMutation.isIdle && !askMutation.isPending) askMutation.reset();
+    askController()?.abort();
+    setAskController(undefined);
+    askMutation.reset();
+  };
+  const setQueryValue = (value: string) => {
+    cancelAnswer();
+    setQuery(value);
+    setAnswer();
   };
   const updateFilterDrafts = (filters: PropertyFilterDraft[]) => {
+    cancelAnswer();
     setFilterDrafts(filters);
     setAnswer();
-    setAskRequestID(askRequestID() + 1);
-
-    if (!askMutation.isIdle) askMutation.reset();
   };
   const openResult = (result: SearchResponse["results"][number]) => {
     const state: SearchNavigationState = {
@@ -182,14 +207,22 @@ const SearchDialog: Component<SearchDialogProps> = (props) => {
   };
   const submitQuestion = () => {
     const question = normalizedQuery();
+    const currentWorkspaceID = workspaceID();
 
-    if (!question || askMutation.isPending) return;
+    if (!question || !currentWorkspaceID || askMutation.isPending) return;
 
-    setAnswer();
+    const controller = new AbortController();
+
+    cancelAnswer();
+    setAskController(controller);
+    setFollowAnswer(true);
+    setAnswer({ question, answer: { answer: "", sources: [], sourcesReceived: false } });
     askMutation.mutate({
       filters: activeFilters(),
       query: question,
-      requestID: askRequestID()
+      requestID: askRequestID(),
+      signal: controller.signal,
+      workspaceID: currentWorkspaceID
     });
     setQuery("");
   };
@@ -204,6 +237,8 @@ const SearchDialog: Component<SearchDialogProps> = (props) => {
   const scrollAnswerToEnd = () => {
     queueMicrotask(() => {
       const container = resultsRef();
+
+      if (!container || !props.opened || !followAnswer()) return;
 
       container.scrollTop = container.scrollHeight;
     });
@@ -220,16 +255,18 @@ const SearchDialog: Component<SearchDialogProps> = (props) => {
       return;
     }
 
+    if (showingAnswer()) return;
+
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      selectResult(Math.min(selectedIndex() + 1, lastResultIndex));
+      selectResult(selectedIndex() >= lastResultIndex ? 0 : selectedIndex() + 1);
 
       return;
     }
 
     if (event.key === "ArrowUp") {
       event.preventDefault();
-      selectResult(Math.max(selectedIndex() - 1, 0));
+      selectResult(selectedIndex() <= 0 ? lastResultIndex : selectedIndex() - 1);
 
       return;
     }
@@ -247,11 +284,20 @@ const SearchDialog: Component<SearchDialogProps> = (props) => {
     }
   };
 
-  createEffect(() => {
-    if (props.opened) {
-      focusInput();
-    }
-  });
+  createEffect(
+    on([() => props.opened, workspaceID], ([opened, currentWorkspaceID], previous) => {
+      const workspaceChanged = currentWorkspaceID !== previous?.[1];
+      const interrupted = askMutation.isPending;
+
+      if (!opened || workspaceChanged) {
+        cancelAnswer();
+        if (interrupted || workspaceChanged) setAnswer();
+      }
+
+      if (opened) focusInput();
+    })
+  );
+  onCleanup(cancelAnswer);
   createEffect(() => {
     searchRequest();
     setSelectedIndex(0);
@@ -285,13 +331,16 @@ const SearchDialog: Component<SearchDialogProps> = (props) => {
           size="small"
           maxLength={500}
           onKeyDown={handleInputKeyDown}
-          role="combobox"
+          role={showingAnswer() ? undefined : "combobox"}
           class="bg-transparent focus:shadow-none"
-          aria-autocomplete="list"
-          aria-controls="workspace-search-results"
-          aria-expanded={props.opened}
+          aria-autocomplete={showingAnswer() ? undefined : "list"}
+          aria-controls={showingAnswer() ? undefined : "workspace-search-results"}
+          aria-expanded={showingAnswer() ? undefined : props.opened}
           aria-activedescendant={
-            !searching() && !response().error && (normalizedQuery() || results().length > 0)
+            !showingAnswer() &&
+            !searching() &&
+            !response().error &&
+            (normalizedQuery() || results().length > 0)
               ? `workspace-search-result-${selectedIndex()}`
               : undefined
           }
@@ -304,16 +353,19 @@ const SearchDialog: Component<SearchDialogProps> = (props) => {
         <div
           id="workspace-search-results"
           ref={setResultsRef}
-          role="listbox"
+          role={showingAnswer() ? "region" : "listbox"}
+          aria-label={showingAnswer() ? "AI answer" : undefined}
           aria-busy={askMutation.isPending || searching()}
+          onScroll={(event) => {
+            const container = event.currentTarget;
+            const remaining = container.scrollHeight - container.scrollTop - container.clientHeight;
+
+            setFollowAnswer(remaining < 48);
+          }}
           class="relative z-0 flex min-h-0 w-full flex-1 flex-col overflow-y-auto px-1 pb-1 md:max-h-[min(60dvh,32rem)]"
         >
           <Switch>
-            <Match
-              when={
-                !normalizedQuery() && (answer() || askMutation.isPending || askMutation.isError)
-              }
-            >
+            <Match when={showingAnswer()}>
               <SearchAnswerPanel
                 data={answer()}
                 loading={askMutation.isPending}

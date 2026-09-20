@@ -106,7 +106,14 @@ const assertRequiredConnections = (
   const connectionsMatch = operations.every(({ entryID }) => connections.has(entryID));
 
   if (!connectionsMatch) {
-    throw new ORPCError("CONFLICT", { message: "Publishing changes changed" });
+    throw new ORPCError("CONFLICT", {
+      message: "Publishing changes changed",
+      data: {
+        hints: [
+          "Read publishing.getChannelContent again and review the current changes before submitting a new revert request."
+        ]
+      }
+    });
   }
 };
 const assertCompatiblePlan = (
@@ -125,7 +132,14 @@ const assertCompatiblePlan = (
   });
 
   if (hasNewSelection || hasNewDependency) {
-    throw new ORPCError("CONFLICT", { message: "Publishing changes changed" });
+    throw new ORPCError("CONFLICT", {
+      message: "Publishing changes changed",
+      data: {
+        hints: [
+          "Read publishing.getChannelContent again and review the current changes before submitting a new revert request."
+        ]
+      }
+    });
   }
 };
 const getTargetsByEntryID = async (
@@ -214,7 +228,14 @@ const commitRevertPublishingChanges = withAuthorization<
           error instanceof ORPCError && ["BAD_REQUEST", "NOT_FOUND"].includes(error.code);
 
         if (staleSelection) {
-          throw new ORPCError("CONFLICT", { message: "Publishing changes changed" });
+          throw new ORPCError("CONFLICT", {
+            message: "Publishing changes changed",
+            data: {
+              hints: [
+                "Read publishing.getChannelContent again and review the current changes before submitting a new revert request."
+              ]
+            }
+          });
         }
 
         throw error;
@@ -279,7 +300,14 @@ const commitRevertPublishingChanges = withAuthorization<
         const target = targetsByEntryID.get(operation.entryID);
 
         if (!target) {
-          throw new ORPCError("CONFLICT", { message: "Published entry version changed" });
+          throw new ORPCError("CONFLICT", {
+            message: "Published entry version changed",
+            data: {
+              hints: [
+                "Read publishing.getChannelContent again and review the current changes before submitting a new revert request."
+              ]
+            }
+          });
         }
 
         await retainRevertedVersionAssets(database, workspaceID, {

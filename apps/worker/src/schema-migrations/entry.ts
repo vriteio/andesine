@@ -1,3 +1,4 @@
+import { storeVersionProperties } from "@andesine/backend/lib/versioning/properties";
 import { workspaces } from "@andesine/backend/db/workspaces";
 import { retainVersionAssets, syncEntryAssets } from "@andesine/backend/lib/assets/references";
 import {
@@ -124,6 +125,13 @@ const processMigrationEntry = async (
         reason: "schema-migration"
       })
       .returning({ id: entryVersions.id });
+
+    await storeVersionProperties({
+      database: transaction,
+      workspaceID: input.workspaceID,
+      versionID: recoveryVersion.id,
+      document: migrated.previousDocument
+    });
 
     await retainVersionAssets({
       database: transaction,

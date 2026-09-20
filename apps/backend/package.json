@@ -12,7 +12,8 @@
     "migrate": "node ./dist/migrate.js",
     "typecheck": "tsc --noEmit",
     "start": "node ./dist/index.js",
-    "dev": "tsx watch ./src/index.ts"
+    "dev": "tsx watch ./src/index.ts",
+    "openapi:export": "tsx scripts/export-openapi.ts"
   },
   "dependencies": {
     "@andesine/editor": "workspace:*",
@@ -27,6 +28,7 @@
     "@hocuspocus/extension-redis": "^4.4.0",
     "@hocuspocus/server": "^4.4.0",
     "@orpc/openapi": "^1.14.14",
+    "@orpc/contract": "^1.14.14",
     "@orpc/server": "^1.14.14",
     "@orpc/zod": "^1.14.14",
     "base-x": "^5.0.1",
@@ -43,7 +45,8 @@
     "stripe": "^22.4.0",
     "y-protocols": "^1.0.7",
     "yjs": "^13.6.32",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "@andesine/converters": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^26.1.2",

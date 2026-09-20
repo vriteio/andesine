@@ -134,6 +134,14 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
               })
               .catch(() => notify({ type: "error", text: "Failed to rename entry" }));
           }}
+          validateName={(name) => {
+            return workspaceContent.validateName({
+              id: props.entry.id,
+              parentID: props.entry.collectionID,
+              kind: "entry",
+              name
+            });
+          }}
           labelMaxLength={MAX_CONTENT_NAME_LENGTH}
           actions={
             <Show

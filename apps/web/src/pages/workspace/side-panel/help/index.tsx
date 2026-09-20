@@ -34,7 +34,7 @@ const menu: HelpMenuSection[] = [
       {
         icon: "i-tabler:brand-github",
         label: "Star on GitHub",
-        href: "https://github.com/vriteio/vrite"
+        href: "https://github.com/vriteio/andesine"
       },
       {
         icon: "i-tabler:brand-discord",

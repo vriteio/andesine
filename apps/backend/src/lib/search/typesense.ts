@@ -179,10 +179,12 @@ class TypesenseClient {
 
   async searchDocuments<TDocument>(
     collection: string,
-    parameters: TypesenseSearchParameters
+    parameters: TypesenseSearchParameters,
+    signal?: AbortSignal
   ): Promise<TypesenseSearchResult<TDocument>> {
     const response = await this.request<TypesenseMultiSearchResponse<TDocument>>("/multi_search", {
       method: "POST",
+      signal,
       body: JSON.stringify({
         searches: [{ collection, ...parameters }]
       })

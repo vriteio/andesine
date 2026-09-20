@@ -90,7 +90,6 @@ interface SchemaMigrationDetails {
   status: SchemaMigrationStatus;
   totalEntries: number;
   processedEntries: number;
-  contentLossEntries: SchemaMigrationContentLossEntry[];
   error: string | null;
   initiatedBy: string | null;
   startedAt: string | null;
@@ -183,7 +182,6 @@ const schemaMigrationDetailsType = z.object({
   status: schemaMigrationStatusType,
   totalEntries: z.number().int().nonnegative(),
   processedEntries: z.number().int().nonnegative(),
-  contentLossEntries: z.array(schemaMigrationContentLossEntryType),
   error: z.string().nullable(),
   initiatedBy: id().nullable(),
   startedAt: z.iso.datetime().nullable(),
@@ -273,17 +271,13 @@ const mapEffectiveCollectionSchema = (
     createdAt: row.createdAt.toISOString()
   };
 };
-const mapSchemaMigration = (
-  row: SchemaMigrationRow,
-  contentLossEntries: SchemaMigrationContentLossEntry[]
-): SchemaMigrationDetails => ({
+const mapSchemaMigration = (row: SchemaMigrationRow): SchemaMigrationDetails => ({
   id: toSchemaMigrationID(row.id),
   schemaID: row.schemaID ? toSchemaID(row.schemaID) : null,
   schemaVersionID: row.schemaVersionID ? toSchemaVersionID(row.schemaVersionID) : null,
   status: row.status,
   totalEntries: row.totalEntries,
   processedEntries: row.processedEntries,
-  contentLossEntries,
   error: row.error,
   initiatedBy: row.initiatedBy ? toMembershipID(row.initiatedBy) : null,
   startedAt: row.startedAt?.toISOString() || null,
@@ -302,6 +296,7 @@ export {
   mapSchemaVersion,
   mapSchemaVersionSummary,
   schemaApplicationResultType,
+  schemaMigrationContentLossEntryType,
   schemaMigrationDetailsType,
   schemaMigrationStatusType,
   schemaVersionDetailsType,

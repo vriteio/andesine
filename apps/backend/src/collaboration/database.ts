@@ -1,3 +1,5 @@
+import { assertContentNameAvailable } from "#backend/lib/content/names";
+import { ORPCError } from "@orpc/server";
 import { normalizeContentElements } from "#backend/lib/content/elements";
 import { syncEntryAssets } from "#backend/lib/assets/references";
 import { config } from "#backend/lib/config";
@@ -263,7 +265,33 @@ const collaborationDatabase = new Database({
 
       if (assetContent.changed) replaceContentDocument(persistedDocument, assetContent.document);
 
+      const proposedTitle = getDocumentTitle(persistedDocument);
+
+      let titleRejected = proposedTitle === null;
+
+      if (proposedTitle !== null && proposedTitle !== entry.name) {
+        try {
+          await assertContentNameAvailable(tx, workspaceID, {
+            kind: "entry",
+            id: entry.id,
+            parentID: entry.collectionID,
+            name: proposedTitle
+          });
+        } catch (error) {
+          if (!(error instanceof ORPCError) || error.code !== "CONTENT_NAME_CONFLICT") throw error;
+
+          titleRejected = true;
+        }
+      }
+
+      // Preserve in-progress title edits in the collaboration state. Correct only the
+      // saved content snapshot; the editor restores invalid titles on blur or selection exit.
       const mergedState = encodeStateAsUpdate(persistedDocument);
+
+      if (titleRejected) {
+        setDocumentTitle(persistedDocument, entry.name);
+      }
+
       const document = serializeContentDocument(persistedDocument);
       const hash = hashContentDocument(document);
       const title = getDocumentTitle(persistedDocument);

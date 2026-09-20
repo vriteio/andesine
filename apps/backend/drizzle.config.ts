@@ -20,6 +20,7 @@ export default defineConfig({
     "./src/db/usage.ts",
     "./src/db/users.ts",
     "./src/db/versions.ts",
+    "./src/db/version-properties.ts",
     "./src/db/workspaces.ts"
   ],
   out: "./drizzle",

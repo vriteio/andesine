@@ -31,14 +31,20 @@ const verifyOTPToken = (input: { token: string }) => {
     const expiresAt = new Date(parsed.expiresAt);
 
     if (expiresAt < new Date()) {
-      throw new ORPCError("UNAUTHORIZED", { message: "OTP token has expired" });
+      throw new ORPCError("UNAUTHORIZED", {
+        message: "OTP token has expired",
+        data: { hints: ["Request a new sign-in or verification email and use its latest code."] }
+      });
     }
 
     return { email: parsed.email, otp: parsed.otp };
   } catch (error) {
     if (error instanceof ORPCError) throw error;
 
-    throw new ORPCError("UNAUTHORIZED", { message: "Invalid OTP token" });
+    throw new ORPCError("UNAUTHORIZED", {
+      message: "Invalid OTP token",
+      data: { hints: ["Use the latest sign-in or verification email or request a new code."] }
+    });
   }
 };
 

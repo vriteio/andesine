@@ -123,7 +123,14 @@ const resolvePublishingSnapshot = async (
     .for("key share", { of: publishingSnapshots });
 
   if (!resolved) {
-    throw new ORPCError("NOT_FOUND", { message: "Publishing snapshot not found or unavailable" });
+    throw new ORPCError("NOT_FOUND", {
+      message: "Publishing snapshot not found or unavailable",
+      data: {
+        hints: [
+          "Check the channel or snapshot ID. If a pinned snapshot is unavailable, read from the channel again and use the new snapshot ID for all related reads."
+        ]
+      }
+    });
   }
 
   return {

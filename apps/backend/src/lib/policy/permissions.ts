@@ -66,10 +66,21 @@ const assertAuthorizationRequirements = (
   const missingPermissions = getMissingAuthorizationPermissions(auth, required);
 
   if (missingPermissions?.length === 0) return;
-  if (!missingPermissions) throw new ORPCError("FORBIDDEN");
+  if (!missingPermissions) {
+    throw new ORPCError("FORBIDDEN", {
+      data: {
+        hints: [
+          auth.type === "key"
+            ? "This action requires a signed-in user session."
+            : "This action is not available with session credentials."
+        ]
+      }
+    });
+  }
 
   throw new ORPCError("FORBIDDEN", {
-    message: `Missing required permissions: ${missingPermissions.join(", ")}`
+    message: `Missing required permissions: ${missingPermissions.join(", ")}`,
+    data: { missingPermissions, hints: ["Use credentials with the required permissions."] }
   });
 };
 const hasAuthPermission = (auth: SessionData, required: KeyPermission | Permission): boolean => {

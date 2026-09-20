@@ -185,12 +185,10 @@ const loadPublishedEntrySources = async (
   );
 
   return publicationRows.flatMap((publication) => {
-    if (!publication.collectionID) return [];
-
     const lineage: typeof collectionRows = [];
     const visited = new Set<string>();
     let collection = collectionsByKey.get(
-      getSnapshotCollectionKey(publication.snapshotID, publication.collectionID)
+      getSnapshotCollectionKey(publication.snapshotID, publication.collectionID || "")
     );
 
     while (collection) {
@@ -205,19 +203,20 @@ const loadPublishedEntrySources = async (
         : undefined;
     }
 
-    if (lineage.length === 0) return [];
+    if (publication.collectionID && (lineage.length === 0 || lineage[0].parentID)) return [];
 
     return [
       {
         scope: "published" as const,
         workspaceID: input.workspaceID,
         entryID: toEntryID(publication.entryID),
-        collectionID: toCollectionID(publication.collectionID),
+        collectionID: publication.collectionID ? toCollectionID(publication.collectionID) : "",
         ancestorCollectionIDs: lineage.slice(0, -1).map((item) => {
           return toCollectionID(item.collectionID);
         }),
         restrictedBoundaryIDs: [],
         collectionPath: lineage.map((item) => item.name),
+        path: `/${[...lineage.map((item) => item.name), publication.entryName].join("/")}`,
         title: publication.entryName,
         content: publication.document,
         updatedAt: publication.publishedAt,

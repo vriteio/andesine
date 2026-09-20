@@ -1,5 +1,6 @@
+import { getVersionDetails } from "#backend/lib/versioning/details";
 import { entries, entryVersionContributors, entryVersions } from "#backend/db";
-import { mapVersion, type VersionDetails } from "#backend/lib/data";
+import { type VersionDetails } from "#backend/lib/data";
 import { type ServiceResolveContext, withAuthorization } from "#backend/lib/policy";
 import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
@@ -7,6 +8,7 @@ import { and, eq, isNull } from "drizzle-orm";
 
 interface GetVersionInput {
   versionID: string;
+  expectedSchemaHash?: string;
   action?: "version:read" | "version:revert";
 }
 
@@ -61,9 +63,11 @@ const getVersion = withAuthorization<GetVersionInput, ResolvedGetVersion, Versio
         )
       );
 
-    return mapVersion(
+    return getVersionDetails(
+      database,
       resolved.version,
-      contributors.map(({ membershipID }) => membershipID)
+      contributors.map(({ membershipID }) => membershipID),
+      input.expectedSchemaHash
     );
   }
 );

@@ -3,6 +3,7 @@ import { Auth } from "#backend/services/auth";
 import { assertAuthorizationRequirements, type SessionData } from "#backend/lib/policy";
 import { ORPCError } from "@orpc/server";
 import { base } from "../orpc";
+import { setErrorResponseHeaders } from "../error";
 import { config } from "#backend/lib/config";
 import { Billing } from "#backend/services/billing";
 const shouldTrackUsage = (sessionData: SessionData, trackUsage?: boolean): boolean => {
@@ -15,7 +16,11 @@ const checkPlanAccess = (sessionData: SessionData, requireProPlan?: boolean): vo
   if (!requireProPlan || getEffectivePlan(sessionData.subscriptionPlan) === "pro") return;
 
   throw new ORPCError("FORBIDDEN", {
-    message: "This action requires an Andesine Pro subscription"
+    message: "This action requires an Andesine Pro subscription",
+    data: {
+      requiredPlan: "pro",
+      hints: ["Ask a workspace administrator to check the subscription plan."]
+    }
   });
 };
 const getUsageAllowance = async (sessionData: SessionData) => {
@@ -40,6 +45,10 @@ const checkUsageAllowance = (
     headers?.set("Retry-After", `${retryAfter}`);
 
     throw new ORPCError("TOO_MANY_REQUESTS", {
+      data: {
+        retryAfterSeconds: retryAfter,
+        hints: ["Wait for the usage limit to reset before trying again."]
+      },
       message: `API request limit reached (${config.INCLUDED_API_CALLS} requests/month on the Free plan). Upgrade to Pro for higher limits.`
     });
   }
@@ -82,30 +91,33 @@ const authorized = base.middleware(async ({ procedure, context, next }) => {
     checkUsageAllowance(sessionData, usage, context.resHeaders);
   }
 
-  const result = await next({
-    context: {
-      auth: sessionData
-    }
-  });
+  let usageRecorded = false;
 
-  if (usage) {
+  const recordRequestUsage = async (): Promise<void> => {
+    if (!usage || usageRecorded) return;
+
+    usageRecorded = true;
     try {
       await recordUsage(sessionData);
       usage = { ...usage, totalUsage: usage.totalUsage + 1 };
     } catch (error) {
-      console.error("Failed to record API usage", {
-        error,
-        workspaceID: sessionData.workspaceID
-      });
+      console.error("Failed to record API usage", { error, workspaceID: sessionData.workspaceID });
     }
-
     setUsageHeaders(context.resHeaders, usage);
+  };
+
+  try {
+    const result = await next({
+      context: { auth: sessionData, recordRequestUsage }
+    });
+
+    if (meta.usageTiming !== "generation") await recordRequestUsage();
+
+    return result;
+  } catch (error) {
+    setErrorResponseHeaders(error, context.resHeaders);
+    throw error;
   }
-
-  return result;
 });
-const authenticatedRoute = base.meta({ required: true }).use(authorized);
-const sessionRoute = base.meta({ required: { session: true } }).use(authorized);
-
-export { authenticatedRoute, authorized, sessionRoute };
+export { authorized };
 export type { SessionData };

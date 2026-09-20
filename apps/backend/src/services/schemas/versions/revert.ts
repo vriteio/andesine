@@ -83,7 +83,16 @@ const planSchemaVersionRevert = withAuthorization<
       )
       .for("update");
 
-    if (!schema) throw new ORPCError("CONFLICT", { message: "Schema is not enabled" });
+    if (!schema) {
+      throw new ORPCError("CONFLICT", {
+        message: "Schema is not enabled",
+        data: {
+          hints: [
+            "Use schemas.get to check the current local and inherited schemas before choosing a schema version to restore."
+          ]
+        }
+      });
+    }
 
     const [{ nextVersion: latestVersion }] = await database
       .select({ nextVersion: max(schemaVersions.version) })
@@ -210,7 +219,12 @@ const planSchemaVersionRevert = withAuthorization<
 
     if (!input.confirmedDataLoss) {
       throw new ORPCError("BAD_REQUEST", {
-        message: "Schema migrations require explicit data-loss confirmation"
+        message: "Schema migrations require explicit data-loss confirmation",
+        data: {
+          hints: [
+            "Review the affected content first. Set confirmedDataLoss to true only after accepting the possible data loss."
+          ]
+        }
       });
     }
 

@@ -12,7 +12,9 @@ const keyPermissionRequirements: Record<KeyPermission, Permission[]> = {
   "memberships": ["memberships"],
   "read:memberships": [],
   "roles": ["roles"],
-  "read:roles": []
+  "read:roles": [],
+  // All session users can ask AI; key management still requires api_keys.
+  "ai-answers": []
 };
 
 export { keyPermissionRequirements };

@@ -1,3 +1,4 @@
+import { assertPublishingSnapshot } from "#backend/lib/publishing/precondition";
 import { collections, publishingChannels } from "#backend/db";
 import {
   assertEntrySnapshotsSynced,
@@ -31,6 +32,7 @@ interface SetCollectionPublishingResult {
 interface SetCollectionsPublishingInput {
   collectionIDs: string[];
   enabled: boolean;
+  expectedSnapshots?: Record<string, string>;
   publish?: boolean;
   contributorIDs: string[];
 }
@@ -115,6 +117,12 @@ const commitCollectionsPublishing = withAuthorization<
     transaction: "locked-workspace"
   },
   async ({ auth, authorization, authorizationScope, database, input, workspaceID }) => {
+    for (const [channel, snapshotID] of Object.entries(input.expectedSnapshots || {}).sort(
+      ([a], [b]) => a.localeCompare(b)
+    )) {
+      await assertPublishingSnapshot(database, workspaceID, channel, snapshotID);
+    }
+
     const collectionIDs = [...new Set(input.collectionIDs.map(toUUID))];
 
     const currentCollections = await database
@@ -184,7 +192,12 @@ const commitCollectionsPublishing = withAuthorization<
 
       if (input.enabled && !wasEnabled && input.publish === undefined) {
         throw new ORPCError("BAD_REQUEST", {
-          message: "Choose whether to publish the latest entry versions"
+          message: "Choose whether to publish the latest entry versions",
+          data: {
+            hints: [
+              "Set publish to false to enable publishing without publishing content, or true to publish the latest entry versions."
+            ]
+          }
         });
       }
 
@@ -357,6 +370,7 @@ const setCollectionsPublishing = async (
   return commitCollectionsPublishing({
     collectionIDs: input.collectionIDs,
     enabled: input.enabled,
+    expectedSnapshots: input.expectedSnapshots,
     publish: input.publish,
     contributorIDs: input.contributorIDs,
     snapshotEntryIDs,

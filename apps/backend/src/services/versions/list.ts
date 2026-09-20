@@ -1,3 +1,4 @@
+import { DEFAULT_PAGE_SIZE } from "#backend/lib/api/limits";
 import { entries, entryVersionContributors, entryVersions } from "#backend/db";
 import { mapVersionSummary, type VersionSummary } from "#backend/lib/data";
 import { toUUID, toVersionID } from "#backend/lib/primitives";
@@ -36,7 +37,7 @@ const listVersions = withAuthorization<
     }
   },
   async ({ database, input, workspaceID }) => {
-    const limit = input.limit || 50;
+    const limit = input.limit ?? DEFAULT_PAGE_SIZE;
     const entryID = toUUID(input.entryID);
     const filters = [
       eq(entryVersions.workspaceID, workspaceID),
@@ -56,7 +57,16 @@ const listVersions = withAuthorization<
           )
         );
 
-      if (!cursor) throw new ORPCError("BAD_REQUEST", { message: "Cursor version not found" });
+      if (!cursor) {
+        throw new ORPCError("BAD_REQUEST", {
+          message: "Cursor version not found",
+          data: {
+            hints: [
+              "Start a new listing without cursor and use pagination.nextCursor from that response. Keep the same filters while paging."
+            ]
+          }
+        });
+      }
 
       filters.push(
         or(

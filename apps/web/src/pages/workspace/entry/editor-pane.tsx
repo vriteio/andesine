@@ -99,6 +99,15 @@ const EditorPane: Component = () => {
           if (editorInstance() === editor) setEditorInstance(null);
         };
       }}
+      initialTitle={content.entries.get({ entryID: availableEntryID() || "" })?.name}
+      validateTitle={(title, entryID) => {
+        return content.validateName({
+          id: entryID,
+          parentID: content.entries.get({ entryID })?.collectionID,
+          kind: "entry",
+          name: title
+        });
+      }}
       onTitleChange={(title, entryID) => {
         const entries = content.entriesCollection();
         const entry = entries.findOne({ id: entryID }, { reactive: false });

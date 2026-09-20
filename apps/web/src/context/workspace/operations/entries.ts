@@ -1,3 +1,4 @@
+import { getAvailableContentName } from "#web/lib/validation/content-name";
 import { type Entry, client } from "#web/lib/api";
 import { generateUUID, toEntryID } from "#web/lib/primitives";
 import { LexoRank } from "lexorank";
@@ -91,7 +92,13 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
       order: firstSibling
         ? `${LexoRank.parse(firstSibling.order).genNext()}`
         : `${LexoRank.middle()}`,
-      name: "Untitled",
+      name: getAvailableContentName(
+        {
+          entries: input.entriesCollection().find().fetch(),
+          collections: input.collectionsCollection().find().fetch()
+        },
+        { kind: "entry", parentID: collectionID, name: "Untitled" }
+      ),
       collectionID
     };
 
@@ -99,6 +106,8 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
 
     const createRequest = client.entries.create(entry).then((createdEntry) => {
       const current = entriesCollection().findOne({ id: entry.id });
+
+      if (current?.name === entry.name) applyEntryUpdate(entry.id, { name: createdEntry.name });
 
       if (current?.order === entry.order && current.collectionID === entry.collectionID) {
         applyEntryUpdate(entry.id, { order: createdEntry.order });

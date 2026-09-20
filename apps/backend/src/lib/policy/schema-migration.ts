@@ -1,3 +1,4 @@
+import { toSchemaMigrationID } from "#backend/lib/primitives";
 import { collections, schemaMigrationCollections, schemaMigrations } from "#backend/db";
 import { toUUID } from "#backend/lib/primitives";
 import { and, eq, inArray, sql } from "drizzle-orm";
@@ -93,7 +94,12 @@ const assertNoActiveSchemaMigration = async (
     .limit(1);
 
   if (activeMigration) {
-    throw new ORPCError("CONFLICT", {
+    throw new ORPCError("SCHEMA_MIGRATION_IN_PROGRESS", {
+      status: 409,
+      data: {
+        migrationID: toSchemaMigrationID(activeMigration.id),
+        hints: ["Use schemaMigrations.get with migrationID to check progress before trying again."]
+      },
       message: "This collection is read-only while its schema migration is in progress"
     });
   }

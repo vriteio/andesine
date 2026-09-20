@@ -75,7 +75,14 @@ const resolvePublishingRevertDependencies = <Operation extends RevertDependencyP
   ];
 
   if (revertedCollectionIDs.some(hasInvalidFinalPath)) {
-    throw new ORPCError("CONFLICT", { message: "Collection structure changed" });
+    throw new ORPCError("CONFLICT", {
+      message: "Collection structure changed",
+      data: {
+        hints: [
+          "Read publishing.getChannelContent again and review the current changes before submitting a new revert request."
+        ]
+      }
+    });
   }
 };
 

@@ -46,16 +46,38 @@ const importAssetURL = withAuthorization<
       limit: { max: 10, window: 60 }
     });
     const workspace = await loadAssetWorkspace(database, workspaceID);
-    const availableBytes =
-      getAssetStorageLimit(workspace.subscriptionPlan) -
-      (await getAssetStorageUsage(database, workspaceID));
+    const limitBytes = getAssetStorageLimit(workspace.subscriptionPlan);
+    const usedBytes = await getAssetStorageUsage(database, workspaceID);
+    const availableBytes = limitBytes - usedBytes;
 
-    if (!limit.allowed || activeDownloads >= PROCESS_DOWNLOAD_LIMIT)
+    if (!limit.allowed) {
       throw new ORPCError("TOO_MANY_REQUESTS", {
-        message: "Too many image imports; try again shortly"
+        message: "Too many image imports; try again shortly",
+        data: {
+          retryAfterSeconds: limit.retryAfter,
+          hints: ["Wait at least retryAfterSeconds before importing another image."]
+        }
       });
-    if (availableBytes <= 0 && !input.checkDuplicates)
-      throw new ORPCError("FORBIDDEN", { message: "Workspace image storage limit reached" });
+    }
+
+    if (activeDownloads >= PROCESS_DOWNLOAD_LIMIT) {
+      throw new ORPCError("TOO_MANY_REQUESTS", {
+        message: "Too many image imports are in progress",
+        data: { hints: ["Reduce concurrent image imports and wait for active imports to finish."] }
+      });
+    }
+    if (availableBytes <= 0 && !input.checkDuplicates) {
+      throw new ORPCError("FORBIDDEN", {
+        message: "Workspace image storage limit reached",
+        data: {
+          limitBytes,
+          usedBytes,
+          hints: [
+            "Ask a workspace administrator to review image storage usage and limits before importing another image."
+          ]
+        }
+      });
+    }
 
     activeDownloads++;
     try {

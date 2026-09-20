@@ -61,7 +61,14 @@ const getPublishedCollectionPath = (
   }
 
   if (publishedRootIndex === -1) {
-    throw new ORPCError("BAD_REQUEST", { message: "Publishing is not enabled for this entry" });
+    throw new ORPCError("BAD_REQUEST", {
+      message: "Publishing is not enabled for this entry",
+      data: {
+        hints: [
+          "Enable publishing on a containing collection with publishing.setCollection before publishing the entry."
+        ]
+      }
+    });
   }
 
   return path.slice(0, publishedRootIndex + 1).reverse();

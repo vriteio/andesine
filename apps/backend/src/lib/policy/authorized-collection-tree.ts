@@ -478,7 +478,15 @@ class AuthorizedCollectionTree {
 
     if (this.canCollection(collectionID, action)) return;
 
-    throw new ORPCError("FORBIDDEN", { message: `Action is not allowed: ${action}` });
+    throw new ORPCError("FORBIDDEN", {
+      message: `Action is not allowed: ${action}`,
+      data: {
+        action,
+        hints: [
+          "Ask a workspace administrator to check your role and collection access for this action."
+        ]
+      }
+    });
   }
 
   assertCollectionSources(collectionIDs: string[], action: CollectionAction): void {
@@ -495,7 +503,12 @@ class AuthorizedCollectionTree {
     if (this.fullyVisibleCollectionIDs.has(resolvedCollectionID)) return;
 
     throw new ORPCError("FORBIDDEN", {
-      message: "Full collection tree visibility is required"
+      message: "Full collection tree visibility is required",
+      data: {
+        hints: [
+          "Use credentials that can access the entire affected collection tree, including restricted descendants."
+        ]
+      }
     });
   }
 
@@ -504,7 +517,15 @@ class AuthorizedCollectionTree {
 
     if (this.canEntry(collectionID, action)) return;
 
-    throw new ORPCError("FORBIDDEN", { message: `Action is not allowed: ${action}` });
+    throw new ORPCError("FORBIDDEN", {
+      message: `Action is not allowed: ${action}`,
+      data: {
+        action,
+        hints: [
+          "Ask a workspace administrator to check your role and collection access for this action."
+        ]
+      }
+    });
   }
 
   assertEntrySources(sources: EntryAuthorizationSource[], action: EntryAction): void {

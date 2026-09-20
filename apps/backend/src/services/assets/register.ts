@@ -62,7 +62,12 @@ const registerAsset = withAuthorization<
         existing.asset.status === "pending";
       if (!matchesUpload) {
         throw new ORPCError("CONFLICT", {
-          message: "This asset ID cannot be used for this upload"
+          message: "This asset ID cannot be used for this upload",
+          data: {
+            hints: [
+              "Register the upload with a new assetID. Reusing an ID requires the same entry, filename, size, checksum, and an unexpired pending upload."
+            ]
+          }
         });
       }
       expiresAt = existing.upload!.expiresAt;
@@ -71,7 +76,17 @@ const registerAsset = withAuthorization<
       const usedBytes = await getAssetStorageUsage(database, workspaceID);
 
       if (usedBytes + reservedBytes > getAssetStorageLimit(workspace.subscriptionPlan)) {
-        throw new ORPCError("FORBIDDEN", { message: "Workspace image storage limit reached" });
+        throw new ORPCError("FORBIDDEN", {
+          message: "Workspace image storage limit reached",
+          data: {
+            limitBytes: getAssetStorageLimit(workspace.subscriptionPlan),
+            usedBytes,
+            requiredBytes: reservedBytes,
+            hints: [
+              "Use a smaller image or ask a workspace administrator to review image storage usage and limits. Uploads reserve space for processed variants."
+            ]
+          }
+        });
       }
 
       await database.insert(assets).values({ id: assetID, workspaceID, filename });

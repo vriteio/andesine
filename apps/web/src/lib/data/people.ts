@@ -17,8 +17,28 @@ interface RoleMutationsInput {
   setDuplicateNameError(message: string): void;
 }
 
-const membershipsQuery = query(() => client.memberships.list(), "memberships");
-const invitesQuery = query(() => client.memberships.listInvites(), "invites");
+const collectPages = async <T>(
+  getPage: (cursor?: string) => Promise<{ data: T[]; pagination: { nextCursor: string | null } }>
+): Promise<T[]> => {
+  const data: T[] = [];
+  let cursor: string | undefined;
+
+  do {
+    const page = await getPage(cursor);
+    data.push(...page.data);
+    cursor = page.pagination.nextCursor ?? undefined;
+  } while (cursor);
+
+  return data;
+};
+const membershipsQuery = query(
+  () => collectPages((cursor) => client.memberships.list({ cursor, limit: 100 })),
+  "memberships"
+);
+const invitesQuery = query(
+  () => collectPages((cursor) => client.memberships.listInvites({ cursor, limit: 100 })),
+  "invites"
+);
 const rolesQuery = query(() => client.roles.list(), "roles");
 const groupsQuery = query(() => client.groups.list(), "groups");
 const restrictedAssignmentsQuery = query((input: RestrictedAssignmentsQueryInput) => {

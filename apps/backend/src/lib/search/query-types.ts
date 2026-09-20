@@ -1,36 +1,16 @@
+import type {
+  BooleanPropertyFilter as SearchBooleanPropertyFilter,
+  DatePropertyFilter as SearchDatePropertyFilter,
+  NumberPropertyFilter as SearchNumberPropertyFilter,
+  PropertyFilter as SearchPropertyFilter,
+  TextPropertyFilter as SearchTextPropertyFilter
+} from "#backend/lib/content/properties";
 import type { SearchPropertyValue } from "./types";
 
-interface SearchTextPropertyFilter {
-  kind: "text";
-  key: string;
-  operator: "all" | "any" | "none";
-  values: string[];
-}
-
-interface SearchNumberPropertyFilter {
-  kind: "number";
-  key: string;
-  operator:
-    "equals" | "greaterThan" | "greaterThanOrEqual" | "lessThan" | "lessThanOrEqual" | "notEquals";
-  value: number;
-}
-
-interface SearchBooleanPropertyFilter {
-  kind: "boolean";
-  key: string;
-  value: boolean;
-}
-
-interface SearchDatePropertyFilter {
-  kind: "date";
-  key: string;
-  operator:
-    "equals" | "greaterThan" | "greaterThanOrEqual" | "lessThan" | "lessThanOrEqual" | "notEquals";
-  value: string;
-}
-
 interface SearchInput {
+  signal?: AbortSignal;
   collectionID?: string;
+  collectionPath?: string;
   filters: SearchPropertyFilter[];
   limit: number;
   query: string;
@@ -47,7 +27,9 @@ interface AskHistoryMessage {
 }
 
 interface AskInput {
+  signal?: AbortSignal;
   collectionID?: string;
+  collectionPath?: string;
   filters: SearchPropertyFilter[];
   history: AskHistoryMessage[];
   question: string;
@@ -58,6 +40,9 @@ interface PublishedAskInput extends AskInput {
 }
 
 interface SearchResultItem {
+  path: string;
+  anchor?: string;
+  snapshotID?: string;
   channel?: string;
   collectionID?: string;
   collectionPath: string[];
@@ -79,18 +64,33 @@ interface AskSource extends SearchResultItem {
   relevance: number;
 }
 
+interface PublishedSearchResultItem extends SearchResultItem {
+  channel: string;
+  snapshotID: string;
+  versionID: string;
+}
+interface PublishedSearchResult {
+  results: PublishedSearchResultItem[];
+}
+interface PublishedAskSource extends PublishedSearchResultItem {
+  id: number;
+  relevance: number;
+}
+interface PublishedAskResult {
+  answer: string;
+  sources: PublishedAskSource[];
+}
+
 interface AskResult {
   answer: string;
   sources: AskSource[];
 }
 
-type SearchPropertyFilter =
-  | SearchBooleanPropertyFilter
-  | SearchDatePropertyFilter
-  | SearchNumberPropertyFilter
-  | SearchTextPropertyFilter;
-
 export type {
+  PublishedSearchResultItem,
+  PublishedSearchResult,
+  PublishedAskSource,
+  PublishedAskResult,
   AskHistoryMessage,
   AskInput,
   AskResult,

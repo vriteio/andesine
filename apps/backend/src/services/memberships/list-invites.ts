@@ -1,3 +1,5 @@
+import { DEFAULT_PAGE_SIZE } from "#backend/lib/api/limits";
+import { toPage, type Page, type PageInput } from "#backend/lib/api/pagination";
 import {
   toInviteID,
   toMembershipID,
@@ -9,7 +11,7 @@ import { db } from "#backend/lib/adapters";
 import { type Invite, invitations } from "#backend/db";
 import { createInviteLink } from "#backend/lib/messaging";
 import { withAuthorization } from "#backend/lib/policy";
-import { and, eq, gt, lt } from "drizzle-orm";
+import { and, asc, eq, gt, lt } from "drizzle-orm";
 
 interface InviteDetails extends Invite {
   inviteLink: string;
@@ -17,10 +19,13 @@ interface InviteDetails extends Invite {
   invitedBy?: string;
 }
 
-const listInvitesOperation = async (input: {
-  workspaceID: string;
-}): Promise<{ invites: InviteDetails[] }> => {
+const listInvitesOperation = async (
+  input: PageInput & {
+    workspaceID: string;
+  }
+): Promise<Page<InviteDetails>> => {
   const workspaceID = toUUID(input.workspaceID);
+  const limit = input.limit ?? DEFAULT_PAGE_SIZE;
   await db
     .update(invitations)
     .set({ status: "expired" })
@@ -38,12 +43,15 @@ const listInvitesOperation = async (input: {
       and(
         eq(invitations.workspaceID, workspaceID),
         eq(invitations.status, "pending"),
-        gt(invitations.expiresAt, new Date())
+        gt(invitations.expiresAt, new Date()),
+        input.cursor ? gt(invitations.id, toUUID(input.cursor)) : undefined
       )
-    );
+    )
+    .orderBy(asc(invitations.id))
+    .limit(limit + 1);
 
-  return {
-    invites: rows.map((invite) => {
+  return toPage(
+    rows.map((invite) => {
       const id = toInviteID(invite.id);
 
       return {
@@ -57,16 +65,13 @@ const listInvitesOperation = async (input: {
         createdAt: invite.createdAt.toISOString(),
         expiresAt: invite.expiresAt.toISOString()
       };
-    })
-  };
+    }),
+    limit
+  );
 };
-const listInvites = withAuthorization<
-  Record<never, never>,
-  undefined,
-  { invites: InviteDetails[] }
->(
+const listInvites = withAuthorization<PageInput, undefined, Page<InviteDetails>>(
   { permissions: { session: ["memberships"], key: ["memberships"] }, plan: "pro" },
-  async ({ workspaceID }) => listInvitesOperation({ workspaceID })
+  async ({ workspaceID, input }) => listInvitesOperation({ workspaceID, ...input })
 );
 
 export { listInvites };

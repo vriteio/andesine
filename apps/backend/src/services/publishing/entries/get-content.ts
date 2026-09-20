@@ -1,14 +1,20 @@
-import { getDeliveryFiles, type assetDeliveryVariants } from "#backend/lib/assets/files";
-import { assetFiles, entryVersionAssets } from "#backend/db";
-import { config } from "#backend/lib/config";
-import { toAssetID, toEntryID, toSnapshotID, toUUID, toWorkspaceID } from "#backend/lib/primitives";
-import { and, eq } from "drizzle-orm";
+import { loadPublishedAssets } from "#backend/lib/publishing/content-assets";
+import type { PublishedEntrySelector } from "#backend/lib/content/paths";
+import type { assetDeliveryVariants } from "#backend/lib/assets/files";
+import type { assetFiles } from "#backend/db";
+import { toCollectionID, toEntryID, toSnapshotID } from "#backend/lib/primitives";
 import { getContentBlocks, type ContentBlocks, type ContentNode } from "#backend/lib/content";
 import type { VersionSummary } from "#backend/lib/data";
 import { withPublicWorkspace } from "#backend/lib/policy";
-import { loadPublishedEntryVersion } from "./get-version";
+import { loadPublishedEntryVersion } from "#backend/lib/publishing/entry-version";
+import { getVersionDetails } from "#backend/lib/versioning/details";
+import type { ContentSchemaMetadata } from "#backend/lib/schema/contract/recorded";
 
 interface PublishedEntryContent {
+  id: string;
+  path: string;
+  collectionID: string | null;
+  schema: ContentSchemaMetadata | null;
   channel: string;
   assets: Array<{
     assetID: string;
@@ -28,8 +34,8 @@ interface PublishedEntryContent {
   version: VersionSummary;
 }
 
-interface PublishedEntryContentInput {
-  entryID: string;
+interface PublishedEntryContentInput extends PublishedEntrySelector {
+  expectedSchemaHash?: string;
   channel?: string;
   snapshotID?: string;
 }
@@ -39,38 +45,28 @@ const getPublishedEntryContent = withPublicWorkspace<
   PublishedEntryContent
 >({ transaction: "atomic" }, async ({ database, input, workspaceID }) => {
   const source = await loadPublishedEntryVersion(database, workspaceID, input);
-  const { document, ...version } = source.version;
+  const { document, schema, ...version } = await getVersionDetails(
+    database,
+    source.version,
+    source.contributorIDs,
+    input.expectedSchemaHash
+  );
   const { fragments, properties } = getContentBlocks(document);
-  const entryID = toEntryID(toUUID(input.entryID));
+  const entryID = toEntryID(source.version.entryID);
   const snapshotID = toSnapshotID(source.snapshot.id);
 
-  const files = await database
-    .select({
-      assetID: assetFiles.assetID,
-      variant: assetFiles.variant,
-      format: assetFiles.format,
-      width: assetFiles.width,
-      height: assetFiles.height,
-      byteSize: assetFiles.byteSize
-    })
-    .from(entryVersionAssets)
-    .innerJoin(assetFiles, eq(assetFiles.assetID, entryVersionAssets.assetID))
-    .where(
-      and(
-        eq(entryVersionAssets.workspaceID, workspaceID),
-        eq(entryVersionAssets.versionID, toUUID(version.id))
-      )
-    )
-    .orderBy(assetFiles.assetID, assetFiles.variant);
+  const assets = await loadPublishedAssets(database, workspaceID, source.snapshot.id, [
+    source.version
+  ]);
 
   return {
+    id: entryID,
+    path: source.path,
+    collectionID: source.collectionID ? toCollectionID(source.collectionID) : null,
     channel: source.snapshot.channelCode,
-    assets: getDeliveryFiles(files).map((file) => ({
-      ...file,
-      assetID: toAssetID(file.assetID),
-      url: `${config.PUBLIC_API_URL}/content/assets/${toWorkspaceID(workspaceID)}/${snapshotID}/${entryID}/${toAssetID(file.assetID)}/${file.variant}`
-    })),
+    assets: assets.get(source.version.id) || [],
     content: document,
+    schema,
     expiresAt: source.snapshot.expiresAt,
     fragments,
     name: version.entryName,

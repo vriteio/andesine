@@ -7,7 +7,8 @@ const publishingChannelCodeType = z
   .trim()
   .min(1)
   .max(50)
-  .transform((code) => normalizeResourceName(code, "channel"));
+  .transform((code) => normalizeResourceName(code, "channel"))
+  .pipe(z.string());
 const publishingChannelNameType = z.string().trim().min(1).max(50);
 const normalizePublishingChannelCode = (code: string): string => {
   const result = publishingChannelCodeType.safeParse(code);

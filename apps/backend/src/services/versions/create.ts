@@ -1,3 +1,5 @@
+import { getVersionDetails } from "#backend/lib/versioning/details";
+import { storeVersionProperties } from "#backend/lib/versioning/properties";
 import { retainVersionAssets } from "#backend/lib/assets/references";
 import { getCurrentDocumentContent, type ContentSnapshot } from "#backend/collaboration";
 import {
@@ -9,7 +11,7 @@ import {
   entryVersions
 } from "#backend/db";
 import { getContentTitle } from "#backend/lib/content";
-import { mapVersion, type VersionDetails, type VersionReason } from "#backend/lib/data";
+import { type VersionDetails, type VersionReason } from "#backend/lib/data";
 import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
@@ -120,6 +122,13 @@ const commitCreateVersion = withAuthorization<
       })
       .returning();
 
+    await storeVersionProperties({
+      database,
+      workspaceID,
+      versionID: created.id,
+      document: snapshot.document
+    });
+
     await retainVersionAssets({
       database,
       workspaceID,
@@ -144,7 +153,7 @@ const commitCreateVersion = withAuthorization<
       await database.delete(entryVersionActivity).where(eq(entryVersionActivity.entryID, entryID));
     }
 
-    return mapVersion(created, contributorIDs);
+    return getVersionDetails(database, created, contributorIDs);
   }
 );
 

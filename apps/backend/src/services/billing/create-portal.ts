@@ -25,7 +25,10 @@ const createPortal = async (input: {
   }
 
   if (!workspace.customerID) {
-    throw new ORPCError("BAD_REQUEST", { message: "Workspace has no billing account" });
+    throw new ORPCError("BAD_REQUEST", {
+      message: "Workspace has no billing account",
+      data: { hints: ["Start a subscription checkout before opening the billing portal."] }
+    });
   }
 
   const session = await stripe.billingPortal.sessions.create({

@@ -1,3 +1,5 @@
+import { assertSnapshotNames } from "./snapshot-names";
+import { publishingSnapshotChangedError } from "./errors";
 import {
   publishingChannels,
   publishingSnapshotCollections,
@@ -134,7 +136,11 @@ const commitPublishingSnapshot = async (
   }
 
   if (expectedSnapshotID && expectedSnapshotID !== channel.currentSnapshotID) {
-    throw new ORPCError("CONFLICT", { message: "Publishing snapshot changed" });
+    throw publishingSnapshotChangedError(
+      channelCode,
+      expectedSnapshotID,
+      channel.currentSnapshotID
+    );
   }
 
   const [currentSnapshot] = await database
@@ -225,6 +231,7 @@ const commitPublishingSnapshot = async (
   const nextEntries = [...entriesByID.values()];
 
   assertManifestStructure(nextCollections, nextEntries);
+  await assertSnapshotNames(database, input.workspaceID, nextCollections, nextEntries);
   await assertChangedResources(
     database,
     input.workspaceID,

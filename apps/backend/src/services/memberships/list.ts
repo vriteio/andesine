@@ -1,8 +1,10 @@
+import { DEFAULT_PAGE_SIZE } from "#backend/lib/api/limits";
+import { toPage, type Page, type PageInput } from "#backend/lib/api/pagination";
 import { toMembershipID, toRoleID, toUUID, toUserID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { type Membership, memberships, roles, type UserProfile, users } from "#backend/db";
 import { withAuthorization } from "#backend/lib/policy";
-import { eq } from "drizzle-orm";
+import { and, asc, eq, gt } from "drizzle-orm";
 
 interface MemberDetails extends Membership {
   roleName?: string;
@@ -10,9 +12,12 @@ interface MemberDetails extends Membership {
   profile: UserProfile;
 }
 
-const listMembersOperation = async (input: {
-  workspaceID: string;
-}): Promise<{ members: MemberDetails[] }> => {
+const listMembersOperation = async (
+  input: PageInput & {
+    workspaceID: string;
+  }
+): Promise<Page<MemberDetails>> => {
+  const limit = input.limit ?? DEFAULT_PAGE_SIZE;
   const rows = await db
     .select({
       id: memberships.id,
@@ -27,10 +32,17 @@ const listMembersOperation = async (input: {
     .from(memberships)
     .innerJoin(users, eq(users.id, memberships.userID))
     .innerJoin(roles, eq(roles.id, memberships.roleID))
-    .where(eq(memberships.workspaceID, toUUID(input.workspaceID)));
+    .where(
+      and(
+        eq(memberships.workspaceID, toUUID(input.workspaceID)),
+        input.cursor ? gt(memberships.id, toUUID(input.cursor)) : undefined
+      )
+    )
+    .orderBy(asc(memberships.id))
+    .limit(limit + 1);
 
-  return {
-    members: rows.map((row) => ({
+  return toPage(
+    rows.map((row) => ({
       id: toMembershipID(row.id),
       userID: toUserID(row.userID),
       roleID: toRoleID(row.roleID),
@@ -42,15 +54,13 @@ const listMembersOperation = async (input: {
         email: row.userEmail,
         ...(row.userImage && { image: row.userImage })
       }
-    }))
-  };
+    })),
+    limit
+  );
 };
-const listMembers = withAuthorization<
-  Record<never, never>,
-  undefined,
-  { members: MemberDetails[] }
->({ permissions: { session: true, key: ["read:memberships"] } }, async ({ workspaceID }) =>
-  listMembersOperation({ workspaceID })
+const listMembers = withAuthorization<PageInput, undefined, Page<MemberDetails>>(
+  { permissions: { session: true, key: ["read:memberships"] } },
+  async ({ workspaceID, input }) => listMembersOperation({ workspaceID, ...input })
 );
 
 export { listMembers };

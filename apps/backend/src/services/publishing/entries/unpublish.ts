@@ -1,3 +1,4 @@
+import { assertPublishingSnapshot } from "#backend/lib/publishing/precondition";
 import { publishingSnapshotEntries } from "#backend/db";
 import {
   commitPublishingSnapshot,
@@ -16,6 +17,7 @@ import {
 interface UnpublishEntryInput {
   entryIDs: string[];
   channel: string;
+  expectedSnapshotID?: string;
   versionID?: string;
 }
 interface UnpublishEntryResult {
@@ -49,6 +51,8 @@ const unpublishEntry = withAuthorization<
     transaction: "locked-workspace"
   },
   async ({ auth, authorization, database, input, resolved, workspaceID }) => {
+    await assertPublishingSnapshot(database, workspaceID, input.channel, input.expectedSnapshotID);
+
     const entryIDs = [...new Set(input.entryIDs.map(toUUID))];
     const versionID = input.versionID ? toUUID(input.versionID) : null;
     const snapshot = await resolvePublishingSnapshot(database, workspaceID, {

@@ -6,24 +6,33 @@ const ROOT_COLLECTION_NAME = "~";
 const CONTENT_NAME_TOO_LONG_MESSAGE = `Name cannot exceed ${MAX_CONTENT_NAME_LENGTH} characters`;
 const COLLECTION_NAME_REQUIRED_MESSAGE = "Collection name cannot be empty";
 
-const entryName = () =>
-  z
+const validName = () => {
+  return z
     .string()
+    .normalize("NFC")
     .trim()
     .max(MAX_CONTENT_NAME_LENGTH, { error: CONTENT_NAME_TOO_LONG_MESSAGE })
-    .transform((name) => name || "Untitled");
-const collectionName = () =>
-  z
-    .string()
-    .trim()
-    .min(1, { error: COLLECTION_NAME_REQUIRED_MESSAGE })
-    .max(MAX_CONTENT_NAME_LENGTH, { error: CONTENT_NAME_TOO_LONG_MESSAGE });
+    .refine((name) => !name.includes("/") && name !== "." && name !== "..", {
+      error: "Name cannot contain / or be . or .."
+    });
+};
+const entryName = () => {
+  return validName()
+    .transform((name) => name || "Untitled")
+    .pipe(z.string());
+};
+const collectionName = () => {
+  return validName().min(1, { error: COLLECTION_NAME_REQUIRED_MESSAGE });
+};
 
 const normalizeEntryName = (name: string) => {
   const result = entryName().safeParse(name);
 
   if (!result.success) {
-    throw new ORPCError("BAD_REQUEST", { message: result.error.issues[0]?.message });
+    throw new ORPCError("BAD_REQUEST", {
+      message: result.error.issues[0]?.message,
+      data: { issues: result.error.issues }
+    });
   }
 
   return result.data;
@@ -32,7 +41,10 @@ const normalizeCollectionName = (name: string) => {
   const result = collectionName().safeParse(name);
 
   if (!result.success) {
-    throw new ORPCError("BAD_REQUEST", { message: result.error.issues[0]?.message });
+    throw new ORPCError("BAD_REQUEST", {
+      message: result.error.issues[0]?.message,
+      data: { issues: result.error.issues }
+    });
   }
 
   return result.data;

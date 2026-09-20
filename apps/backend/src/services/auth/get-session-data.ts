@@ -38,7 +38,11 @@ const getSessionData = async (input: GetSessionDataInput): Promise<SessionData> 
 
   if (data.workspaceID && data.session && !data.session.admin && subscriptionPlan !== "pro") {
     throw new ORPCError("FORBIDDEN", {
-      message: "This workspace is only available to admins while it is on the Free plan"
+      message: "This workspace is only available to admins while it is on the Free plan",
+      data: {
+        requiredPlan: "pro",
+        hints: ["Ask a workspace administrator to review the subscription plan."]
+      }
     });
   }
 

@@ -52,7 +52,17 @@ const commitProfileImage = withAuthorization<
     if (owner.workspaceID) {
       const usedBytes = await getAssetStorageUsage(database, owner.workspaceID);
       if (usedBytes + reservedBytes > getAssetStorageLimit(profile.subscriptionPlan)) {
-        throw new ORPCError("FORBIDDEN", { message: "Workspace image storage limit reached" });
+        throw new ORPCError("FORBIDDEN", {
+          message: "Workspace image storage limit reached",
+          data: {
+            limitBytes: getAssetStorageLimit(profile.subscriptionPlan),
+            usedBytes,
+            requiredBytes: reservedBytes,
+            hints: [
+              "Use a smaller image or ask a workspace administrator to review image storage usage and limits."
+            ]
+          }
+        });
       }
     }
 

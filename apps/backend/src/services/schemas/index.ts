@@ -1,3 +1,4 @@
+import { getSchemaRevision } from "./get-revision";
 import { createCollectionSchema } from "./create";
 import { deleteCollectionSchema } from "./delete";
 import { getCollectionSchema } from "./get";
@@ -8,6 +9,7 @@ const Schema = {
   create: createCollectionSchema,
   delete: deleteCollectionSchema,
   get: getCollectionSchema,
+  getRevision: getSchemaRevision,
   Migrations,
   Versions
 };

@@ -1,3 +1,5 @@
+import { getHeadingAnchors } from "@andesine/converters/anchors";
+import { normalizeProperty } from "#backend/lib/content/properties";
 import { getElementData, getElementSearchText } from "@andesine/editor/element";
 import { getContentBlocks, type ContentProperty } from "#backend/lib/content/blocks";
 import type { ContentNode } from "#backend/lib/content/document";
@@ -18,15 +20,18 @@ import {
 } from "./query";
 
 interface SearchContentBlock {
+  anchor?: string;
   headingLevel?: number;
   resetHeading?: boolean;
   text: string;
 }
 interface SearchContentSection {
+  anchor?: string;
   blocks: string[];
   headingPath: string[];
 }
 interface SearchContentChunk {
+  anchor?: string;
   content: string;
   headingPath: string[];
   sectionChunkIndex: number;
@@ -94,63 +99,50 @@ const getHeadingLevel = (node: ContentNode): number => {
     ? level
     : 1;
 };
-const getSearchContentBlocks = (node: ContentNode): SearchContentBlock[] => {
+const getSearchContentBlocks = (
+  node: ContentNode,
+  anchors: Map<string, { text: string; anchor: string }>,
+  headingParents: Set<string>,
+  path: number[] = []
+): SearchContentBlock[] => {
+  const children = () => {
+    return (node.content || []).flatMap((child, index) => {
+      return getSearchContentBlocks(child, anchors, headingParents, [...path, index]);
+    });
+  };
   if (node.type === "property" || node.type === "title") return [];
 
   if (node.type === "heading") {
-    const text = normalizeText(getNodeText(node));
+    const heading = anchors.get(path.join("."));
 
-    return text ? [{ headingLevel: getHeadingLevel(node), text }] : [];
+    return heading
+      ? [
+          {
+            headingLevel: getHeadingLevel(node),
+            text: normalizeText(getNodeText(node)),
+            anchor: heading.anchor
+          }
+        ]
+      : [];
   }
 
   if (node.type === "element") {
-    return [
-      { text: getElementSearchText(getElementData(node.attrs || {})) },
-      ...(node.content || []).flatMap(getSearchContentBlocks)
-    ];
+    return [{ text: getElementSearchText(getElementData(node.attrs || {})) }, ...children()];
   }
 
   if (node.type === "fragment") {
-    return [
-      { resetHeading: true, text: "" },
-      ...(node.content || []).flatMap(getSearchContentBlocks),
-      { resetHeading: true, text: "" }
-    ];
+    return [{ resetHeading: true, text: "" }, ...children(), { resetHeading: true, text: "" }];
   }
 
   if (node.type === "doc") {
-    return (node.content || []).flatMap(getSearchContentBlocks);
+    return children();
   }
+
+  if (headingParents.has(path.join("."))) return children();
 
   const text = normalizeText(getNodeText(node));
 
   return text ? [{ text }] : [];
-};
-const getDateValue = (value: string): number | undefined => {
-  const timestamp = Date.parse(value);
-
-  return Number.isNaN(timestamp) ? undefined : Math.floor(timestamp / 1000);
-};
-const getPropertyValue = (key: string, property: ContentProperty): SearchPropertyValue => {
-  const searchProperty: SearchPropertyValue = {
-    key,
-    name: property.name,
-    type: property.type
-  };
-
-  if (property.type === "number" && typeof property.value === "number") {
-    searchProperty.numberValue = property.value;
-  } else if (property.type === "checkbox" && typeof property.value === "boolean") {
-    searchProperty.booleanValue = property.value;
-  } else if (property.type === "date" && typeof property.value === "string") {
-    searchProperty.dateValue = getDateValue(property.value);
-  } else if (Array.isArray(property.value)) {
-    searchProperty.textValue = property.value;
-  } else if (typeof property.value === "string") {
-    searchProperty.textValue = [property.value];
-  }
-
-  return searchProperty;
 };
 const formatPropertyText = (property: ContentProperty): string => {
   const value = Array.isArray(property.value) ? property.value.join(", ") : property.value;
@@ -158,7 +150,7 @@ const formatPropertyText = (property: ContentProperty): string => {
   return value === null || value === "" ? property.name : `${property.name}: ${String(value)}`;
 };
 const getPropertyFilterFields = (
-  properties: Array<[string, ContentProperty]>
+  properties: SearchPropertyValue[]
 ): SearchPropertyFilterDetails => {
   const fields: Record<string, boolean | number | string[]> = {};
   const presence: string[] = [];
@@ -171,41 +163,19 @@ const getPropertyFilterFields = (
     presence.push(getPropertyFilterPresenceValue(kind, key));
   };
 
-  for (const [key, property] of properties) {
-    if (property.type === "number") {
-      if (typeof property.value === "number") {
-        setField("number", key, property.value);
-      }
-
-      continue;
+  for (const property of properties) {
+    if (property.numberValue !== undefined) {
+      setField("number", property.key, property.numberValue);
+    } else if (property.booleanValue !== undefined) {
+      setField("boolean", property.key, property.booleanValue);
+    } else if (property.dateValue !== undefined) {
+      setField("date", property.key, property.dateValue);
+    } else if (property.textValue !== undefined) {
+      setField("text", property.key, [
+        "present:",
+        ...property.textValue.map(getTextPropertyFilterValue)
+      ]);
     }
-
-    if (property.type === "checkbox") {
-      if (typeof property.value === "boolean") {
-        setField("boolean", key, property.value);
-      }
-
-      continue;
-    }
-
-    if (property.type === "date") {
-      if (typeof property.value !== "string") continue;
-
-      const value = getDateValue(property.value);
-
-      if (value !== undefined) setField("date", key, value);
-
-      continue;
-    }
-
-    const values = Array.isArray(property.value) ? property.value : [property.value];
-
-    setField("text", key, [
-      "present:",
-      ...values
-        .filter((value): value is string => typeof value === "string")
-        .map(getTextPropertyFilterValue)
-    ]);
   }
 
   return { fields, presence };
@@ -216,14 +186,15 @@ const getSearchDocumentDetails = (
 ): SearchDocumentDetails => {
   const properties = sourceProperties || getContentBlocks(content).properties;
   const propertyEntries = Object.entries(properties);
-  const propertyFilterDetails = getPropertyFilterFields(propertyEntries);
+  const propertyValues = propertyEntries.map(([key, property]) => normalizeProperty(key, property));
+  const propertyFilterDetails = getPropertyFilterFields(propertyValues);
 
   return {
     chunks: getSearchContentChunks(content),
     propertyFilterFields: propertyFilterDetails.fields,
     propertyFilterPresence: propertyFilterDetails.presence,
     propertyText: propertyEntries.map(([, property]) => formatPropertyText(property)),
-    propertyValues: propertyEntries.map(([key, property]) => getPropertyValue(key, property))
+    propertyValues
   };
 };
 const findChunkEnd = (content: string, start: number): number => {
@@ -263,14 +234,21 @@ const splitSearchContent = (content: string): string[] => {
   return chunks.length > 0 ? chunks : [""];
 };
 const getSearchContentSections = (content: ContentNode): SearchContentSection[] => {
-  const contentBlocks = getSearchContentBlocks(content);
+  const headings = getHeadingAnchors(content);
+  const anchors = new Map(headings.map((heading) => [heading.path.join("."), heading]));
+  const headingParents = new Set(
+    headings.flatMap(({ path }) => {
+      return path.map((_, index) => path.slice(0, index).join("."));
+    })
+  );
+  const contentBlocks = getSearchContentBlocks(content, anchors, headingParents);
   const headingPath: SearchHeading[] = [];
   const sections: SearchContentSection[] = [];
   let section: SearchContentSection = { blocks: [], headingPath: [] };
 
   for (const block of contentBlocks) {
     if (block.resetHeading) {
-      if (section.blocks.length > 0) sections.push(section);
+      if (section.blocks.length > 0 || section.anchor) sections.push(section);
 
       headingPath.length = 0;
       section = { blocks: [], headingPath: [] };
@@ -278,7 +256,7 @@ const getSearchContentSections = (content: ContentNode): SearchContentSection[] 
     }
 
     if (block.headingLevel) {
-      if (section.blocks.length > 0) sections.push(section);
+      if (section.blocks.length > 0 || section.anchor) sections.push(section);
 
       while (
         headingPath.length > 0 &&
@@ -288,7 +266,11 @@ const getSearchContentSections = (content: ContentNode): SearchContentSection[] 
       }
 
       headingPath.push({ level: block.headingLevel, text: block.text });
-      section = { blocks: [], headingPath: headingPath.map(({ text }) => text) };
+      section = {
+        blocks: [],
+        headingPath: headingPath.map(({ text }) => text),
+        anchor: block.anchor
+      };
       continue;
     }
 
@@ -305,6 +287,7 @@ const getSearchContentChunks = (content: ContentNode): SearchContentChunk[] => {
   return getSearchContentSections(content).flatMap((section, sectionIndex) => {
     return splitSearchContent(section.blocks.join("\n")).map((chunk, sectionChunkIndex) => ({
       content: chunk,
+      anchor: section.anchor,
       headingPath: section.headingPath,
       sectionChunkIndex,
       sectionIndex
@@ -344,6 +327,8 @@ const buildSearchDocuments = <TDocument extends SearchDocument>(
     const heading = chunk.headingPath[chunk.headingPath.length - 1] || "";
     const baseDocument = {
       id: getSearchDocumentID(source, chunkIndex),
+      path: source.path,
+      ...(chunk.anchor ? { anchor: chunk.anchor } : {}),
       workspaceID: source.workspaceID,
       entryID: source.entryID,
       collectionID: source.collectionID,

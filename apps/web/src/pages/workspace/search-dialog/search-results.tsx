@@ -23,6 +23,7 @@ interface SearchResultNoticeProps extends SearchResultContentProps {
 interface SearchResultLinkProps {
   icon: string | JSX.Element;
   label: string;
+  sublabel?: string;
   onClick(): void;
 }
 interface SearchResultsSkeletonProps {
@@ -182,7 +183,7 @@ const SearchResultLink: Component<SearchResultLinkProps> = (props) => (
     )}
     onClick={props.onClick}
   >
-    <SearchResultContent icon={props.icon} label={props.label} />
+    <SearchResultContent icon={props.icon} label={props.label} sublabel={props.sublabel} />
   </button>
 );
 const SearchResultNotice: Component<SearchResultNoticeProps> = (props) => (

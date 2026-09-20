@@ -1,3 +1,4 @@
+import { assertSchemaFieldKeys } from "#backend/lib/schema/errors";
 import {
   collectionSchemas,
   collections,
@@ -73,11 +74,17 @@ const createSchemaApplicationPlan = withAuthorization<
     transaction: "locked-workspace"
   },
   async ({ auth, database, input, resolved, workspaceID }) => {
+    assertSchemaFieldKeys(input.definition.fields);
+
     const parsedDefinition = schemaDefinitionType.safeParse(input.definition);
 
     if (!parsedDefinition.success) {
       throw new ORPCError("BAD_REQUEST", {
-        message: parsedDefinition.error.issues[0]?.message || "Schema is invalid"
+        message: parsedDefinition.error.issues[0]?.message || "Schema is invalid",
+        data: {
+          issues: parsedDefinition.error.issues,
+          hints: ["Correct the schema draft fields listed in issues, then apply the schema again."]
+        }
       });
     }
 

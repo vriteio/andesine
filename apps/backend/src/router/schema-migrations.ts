@@ -1,32 +1,30 @@
-import { schemaMigrationDetailsType } from "#backend/lib/data";
-import { id } from "#backend/lib/primitives";
-import { authenticatedRoute, base } from "#backend/lib/transport";
+import { authorized } from "#backend/lib/transport/middleware/authorized";
 import { Schema } from "#backend/services/schemas";
-import * as z from "zod";
+import { api } from "./implement";
 
-const schemaMigrationsRouter = base.router({
-  getActive: authenticatedRoute
-    .route({ method: "GET", path: "/collections/:collectionID/schema-migration" })
-    .meta({ required: { session: true, key: ["read:collections"] } })
-    .input(z.object({ collectionID: id().describe("ID of the affected collection") }))
-    .output(schemaMigrationDetailsType.nullable())
-    .handler(({ context, input }) => {
-      return Schema.Migrations.getActive({
-        auth: context.auth,
-        collectionID: input.collectionID
-      });
-    }),
-  get: authenticatedRoute
-    .route({ method: "GET", path: "/schema-migrations/:id" })
-    .meta({ required: { session: true, key: ["read:collections"] } })
-    .input(z.object({ id: id().describe("ID of the schema migration") }))
-    .output(schemaMigrationDetailsType)
-    .handler(({ context, input }) => {
-      return Schema.Migrations.get({
-        auth: context.auth,
-        migrationID: input.id
-      });
+const handlers = api.schemaMigrations;
+const authorizedHandlers = handlers.use(authorized);
+const schemaMigrationsRouter = handlers.router({
+  listContentLossEntries: authorizedHandlers.listContentLossEntries.handler(({ context, input }) =>
+    Schema.Migrations.listContentLossEntries({
+      auth: context.auth,
+      migrationID: input.id,
+      cursor: input.cursor,
+      limit: input.limit
     })
+  ),
+  getActive: authorizedHandlers.getActive.handler(({ context, input }) => {
+    return Schema.Migrations.getActive({
+      auth: context.auth,
+      collectionID: input.collectionID
+    });
+  }),
+  get: authorizedHandlers.get.handler(({ context, input }) => {
+    return Schema.Migrations.get({
+      auth: context.auth,
+      migrationID: input.id
+    });
+  })
 });
 
 export { schemaMigrationsRouter };

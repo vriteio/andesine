@@ -1,7 +1,7 @@
 import { mergeAttributes, Node } from "@tiptap/core";
 
 const MAX_ENTRY_TITLE_LENGTH = 300;
-const normalizeEntryTitle = (title: string) => title.trim() || "Untitled";
+const normalizeEntryTitle = (title: string) => title.normalize("NFC").trim() || "Untitled";
 
 const Title = Node.create({
   name: "title",

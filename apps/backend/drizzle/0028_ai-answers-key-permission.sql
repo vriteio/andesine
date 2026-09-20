@@ -1,0 +1,1 @@
+ALTER TYPE "public"."key_permission" ADD VALUE 'ai-answers';

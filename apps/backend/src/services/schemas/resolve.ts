@@ -31,7 +31,10 @@ const resolveSchemaCollection = async ({
 };
 const resolveLocalCollectionSchema = async (
   context: ServiceResolveContext<CollectionSchemaInput>
-) => {
+): Promise<{
+  collection: { id: string };
+  schema: typeof collectionSchemas.$inferSelect | null;
+}> => {
   const collection = await resolveSchemaCollection(context);
   const [schema] = await context.database
     .select()

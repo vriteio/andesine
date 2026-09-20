@@ -1,17 +1,10 @@
-import type { ContentProperty, PropertyType } from "#backend/lib/content/blocks";
+import type { TypedPropertyValue as SearchPropertyValue } from "#backend/lib/content/properties";
+import type { ContentProperty } from "#backend/lib/content/blocks";
 import type { ContentNode } from "#backend/lib/content/document";
 
-interface SearchPropertyValue {
-  key: string;
-  name: string;
-  type: PropertyType;
-  textValue?: string[];
-  numberValue?: number;
-  booleanValue?: boolean;
-  dateValue?: number;
-}
-
 interface SearchDocumentBase {
+  path: string;
+  anchor?: string;
   id: string;
   workspaceID: string;
   entryID: string;
@@ -46,6 +39,7 @@ interface PublishedSearchDocument extends SearchDocumentBase {
 }
 
 interface SearchDocumentSourceBase {
+  path: string;
   workspaceID: string;
   entryID: string;
   collectionID: string;

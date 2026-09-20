@@ -1,6 +1,7 @@
 import { findDisallowedElementBlock } from "@andesine/editor/element";
 import { contentNodeType, type ContentNode, type PropertyType } from "#backend/lib/content";
 import * as z from "zod";
+import { getSchemaFieldKeyConflicts } from "./keys";
 
 interface SchemaProperty {
   id: string;
@@ -157,13 +158,25 @@ const schemaDraftDefinitionType: z.ZodType<SchemaDefinition> = z
       fieldIDs.add(field.id);
     });
   });
-const schemaDefinitionType: z.ZodType<SchemaDefinition> = schemaDraftDefinitionType.refine(
-  (definition) => definition.fields.length > 0,
-  {
+const schemaDefinitionType: z.ZodType<SchemaDefinition> = schemaDraftDefinitionType
+  .refine((definition) => definition.fields.length > 0, {
     message: "Schemas must contain at least one property or fragment",
     path: ["fields"]
-  }
-);
+  })
+  .superRefine((definition, context) => {
+    for (const conflict of getSchemaFieldKeyConflicts(definition.fields)) {
+      definition.fields.forEach((field, index) => {
+        if (!conflict.fieldIDs.includes(field.id)) return;
+
+        context.addIssue({
+          code: "custom",
+          message: `Schema ${conflict.kind} key "${conflict.key}" is duplicated; change the field labels`,
+          path: ["fields", index, "label"],
+          params: { ...conflict }
+        });
+      });
+    }
+  });
 
 const createEmptySchemaDefinition = (): SchemaDefinition => ({ formatVersion: 1, fields: [] });
 
@@ -177,7 +190,8 @@ export {
   schemaDraftDefinitionType,
   schemaFieldType,
   schemaFragmentType,
-  schemaPropertyType
+  schemaPropertyType,
+  schemaPropertyValueType
 };
 export type {
   SchemaBlockType,

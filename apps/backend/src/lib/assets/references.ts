@@ -115,7 +115,12 @@ const retainVersionAssets = async ({
 
   if (available.length !== requestedIDs.length) {
     throw new ORPCError("CONFLICT", {
-      message: "Version contains an unavailable or unauthorized image"
+      message: "Version contains an unavailable or unauthorized image",
+      data: {
+        hints: [
+          "Check the images with assets.get and confirm that each image is ready and attached to the entry before creating or publishing a version."
+        ]
+      }
     });
   }
 

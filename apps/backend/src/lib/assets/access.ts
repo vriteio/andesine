@@ -41,7 +41,14 @@ const loadAssetUpload = async ({
     .where(and(eq(assets.id, toUUID(input.assetID)), eq(assets.workspaceID, workspaceID)));
 
   if (!row || row.upload.expiresAt <= new Date() || row.asset.status === "deleting") {
-    throw new ORPCError("NOT_FOUND", { message: "Upload is not available" });
+    throw new ORPCError("NOT_FOUND", {
+      message: "Upload is not available",
+      data: {
+        hints: [
+          "Check the assetID and entry access. If the upload expired, register a new upload with a new assetID."
+        ]
+      }
+    });
   }
   return row;
 };

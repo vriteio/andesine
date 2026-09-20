@@ -1,3 +1,4 @@
+import { TitleValidation, titleValidationKey } from "./extensions/title-validation";
 import { createCodeBlockNavigation } from "./ui/views/code-block-view/navigation";
 import { formatCodeBlock, getCodeFormatParser } from "./lib/code-format";
 import { Element } from "./schema/blocks/element";
@@ -129,7 +130,14 @@ const ClientEditor: Component<EditorProps> = (props) => {
     const schemaExtensions = [SchemaConstraints.configure({ mode: editorMode })];
     const titleExtensions =
       editorMode === "entry"
-        ? [Title, NodeCharacterLimit.configure({ limits: { title: MAX_ENTRY_TITLE_LENGTH } })]
+        ? [
+            Title,
+            TitleValidation.configure({
+              validate: (title) => untrack(() => props.validateTitle?.(title)),
+              initialTitle: () => untrack(() => props.initialTitle || "Untitled")
+            }),
+            NodeCharacterLimit.configure({ limits: { title: MAX_ENTRY_TITLE_LENGTH } })
+          ]
         : [];
     const extensions = [
       // Basic
@@ -271,12 +279,36 @@ const ClientEditor: Component<EditorProps> = (props) => {
         }
       },
       onUpdate: ({ editor }) => {
-        const titleNode = editor.state.doc.firstChild;
+        // Collaboration can emit updates during editor creation. Keep title data out of
+        // the editor memo's dependencies so typing does not recreate the editor.
+        untrack(() => {
+          const titleNode = editor.state.doc.firstChild;
 
-        if (titleNode?.type.name === "title") {
-          props.onTitleChange?.(normalizeEntryTitle(titleNode.textContent));
-        }
+          if (titleNode?.type.name !== "title") return;
+
+          const title = normalizeEntryTitle(titleNode.textContent);
+
+          if (!props.validateTitle?.(title)) props.onTitleChange?.(title);
+        });
       }
+    });
+  });
+
+  createEffect(() => {
+    const currentEditor = editor();
+
+    if (!currentEditor || !props.validateTitle) return;
+
+    const error = props.validateTitle(
+      normalizeEntryTitle(currentEditor.state.doc.firstChild?.textContent || "")
+    );
+
+    if (error === titleValidationKey.getState(currentEditor.state)?.error) return;
+
+    untrack(() => {
+      return currentEditor.view.dispatch(
+        currentEditor.state.tr.setMeta(titleValidationKey, "validate")
+      );
     });
   });
 

@@ -1,3 +1,4 @@
+import { storeVersionProperties } from "#backend/lib/versioning/properties";
 import { retainVersionAssets } from "#backend/lib/assets/references";
 import {
   contents,
@@ -116,6 +117,13 @@ const processActivity = async (candidate: ActivityCandidate): Promise<void> => {
           reason: "auto"
         })
         .returning();
+
+      await storeVersionProperties({
+        database: tx,
+        workspaceID: candidate.workspaceID,
+        versionID: version.id,
+        document: content.document
+      });
       await retainVersionAssets({
         database: tx,
         workspaceID: candidate.workspaceID,

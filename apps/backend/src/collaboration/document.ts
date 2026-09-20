@@ -3,7 +3,7 @@ import {
   serializeContentDocument,
   normalizeContentElements
 } from "#backend/lib/content";
-import { MAX_CONTENT_NAME_LENGTH } from "#backend/lib/validation";
+import { entryName } from "#backend/lib/validation";
 import { type Doc, XmlElement, XmlText } from "yjs";
 import type { ContentSnapshot } from "./types";
 
@@ -22,9 +22,9 @@ const getDocumentTitle = (document: Doc): string | null => {
       .join("")
       .trim() || "";
 
-  if (title.length > MAX_CONTENT_NAME_LENGTH) return null;
+  const result = entryName().safeParse(title);
 
-  return title || "Untitled";
+  return result.success ? result.data : null;
 };
 const getContentSnapshot = (document: Doc): ContentSnapshot => {
   const content = normalizeContentElements(serializeContentDocument(document));

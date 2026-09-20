@@ -62,7 +62,14 @@ const loadVersionRevertTargets = async (
     );
 
   if (rows.length !== targets.length) {
-    throw new ORPCError("CONFLICT", { message: "Published entry version changed" });
+    throw new ORPCError("CONFLICT", {
+      message: "Published entry version changed",
+      data: {
+        hints: [
+          "Read publishing.getChannelContent again and review the current changes before submitting a new revert request."
+        ]
+      }
+    });
   }
 
   return rows;

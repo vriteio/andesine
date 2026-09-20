@@ -1,14 +1,20 @@
+import {
+  matchesPropertyFilters,
+  normalizePropertyDate,
+  normalizePropertyText
+} from "#backend/lib/content/properties";
 import { createHash } from "node:crypto";
 import type {
   SearchDatePropertyFilter,
   SearchNumberPropertyFilter,
   SearchPropertyFilter
 } from "./query-types";
-import type { SearchDocument, SearchPropertyValue } from "./types";
+import type { SearchDocument } from "./types";
 
 interface SearchFilterInput {
   allowedCollectionIDs?: string[];
   channel?: string;
+  snapshotID?: string;
   collectionID?: string;
   filters: SearchPropertyFilter[];
   workspaceID: string;
@@ -56,7 +62,7 @@ const getPropertyFilterPresenceValue = (kind: SearchPropertyFilterKind, key: str
   return `${kind}:${keyHash}`;
 };
 const getTextPropertyFilterValue = (value: string): string => {
-  return `value:${value.toLowerCase()}`;
+  return `value:${normalizePropertyText(value)}`;
 };
 const withPropertyFilterPresence = (
   kind: SearchPropertyFilterKind,
@@ -87,7 +93,7 @@ const getPropertyFilter = (filter: SearchPropertyFilter): string => {
   }
 
   if (filter.kind === "date") {
-    const value = Math.floor(new Date(filter.value).getTime() / 1000);
+    const value = normalizePropertyDate(filter.value)!;
 
     return withPropertyFilterPresence(
       filter.kind,
@@ -102,54 +108,11 @@ const getPropertyFilter = (filter: SearchPropertyFilter): string => {
     getComparisonFilter(field, filter, filter.value)
   );
 };
-const comparePropertyValue = (
-  actual: number,
-  expected: number,
-  operator: SearchDatePropertyFilter["operator"] | SearchNumberPropertyFilter["operator"]
-): boolean => {
-  if (operator === "equals") return actual === expected;
-  if (operator === "notEquals") return actual !== expected;
-  if (operator === "greaterThan") return actual > expected;
-  if (operator === "greaterThanOrEqual") return actual >= expected;
-  if (operator === "lessThan") return actual < expected;
-
-  return actual <= expected;
-};
-const matchesPropertyFilter = (
-  properties: SearchPropertyValue[],
-  filter: SearchPropertyFilter
-): boolean => {
-  const property = properties.find(({ key }) => key === filter.key);
-
-  if (!property) return false;
-
-  if (filter.kind === "text") {
-    if (!property.textValue) return false;
-
-    const propertyValues = new Set(property.textValue.map((value) => value.toLowerCase()));
-    const matches = filter.values.map((value) => {
-      return propertyValues.has(value.toLowerCase());
-    });
-
-    if (filter.operator === "all") return matches.every(Boolean);
-    if (filter.operator === "none") return matches.every((match) => !match);
-
-    return matches.some(Boolean);
-  }
-
-  if (filter.kind === "boolean") return property.booleanValue === filter.value;
-
-  const value = filter.kind === "date" ? property.dateValue : property.numberValue;
-  const expected =
-    filter.kind === "date" ? Math.floor(new Date(filter.value).getTime() / 1000) : filter.value;
-
-  return typeof value === "number" && comparePropertyValue(value, expected, filter.operator);
-};
 const matchesSearchFilters = (
   document: SearchDocument,
   filters: SearchPropertyFilter[]
 ): boolean => {
-  return filters.every((filter) => matchesPropertyFilter(document.propertyValues, filter));
+  return matchesPropertyFilters(document.propertyValues, filters);
 };
 const buildSearchFilter = (input: SearchFilterInput): string => {
   const filters = [`workspaceID:=${escapeFilterValue(input.workspaceID)}`];
@@ -157,6 +120,8 @@ const buildSearchFilter = (input: SearchFilterInput): string => {
   if (input.channel) {
     filters.push(`channelCode:=${escapeFilterValue(input.channel)}`);
   }
+
+  if (input.snapshotID) filters.push(`snapshotID:=${escapeFilterValue(input.snapshotID)}`);
 
   if (input.allowedCollectionIDs) {
     filters.push(`collectionID:=${getArrayFilterValue(input.allowedCollectionIDs)}`);

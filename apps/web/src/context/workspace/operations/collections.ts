@@ -1,3 +1,4 @@
+import { getAvailableContentName } from "#web/lib/validation/content-name";
 import { type Collection, client } from "#web/lib/api";
 import { fromUUID, generateUUID } from "#web/lib/primitives";
 import { type WorkspaceContentOperationsInput } from "./types";
@@ -59,7 +60,13 @@ const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
     const parent = collectionID ? getCollection(collectionID) : getRootCollection();
     const collection: Collection = {
       id: fromUUID(generateUUID(), "coll"),
-      name: "Untitled",
+      name: getAvailableContentName(
+        {
+          entries: input.entriesCollection().find().fetch(),
+          collections: input.collectionsCollection().find().fetch()
+        },
+        { kind: "collection", parentID: collectionID, name: "Untitled" }
+      ),
       restricted: false,
       descendants: [],
       ancestors: collectionID ? [...(parent?.ancestors || []), collectionID] : []
@@ -75,6 +82,9 @@ const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
       })
       .then((createdCollection) => {
         applyCollectionCreate(createdCollection);
+        if (getCollection(collection.id)?.name === collection.name) {
+          applyCollectionUpdate(collection.id, { name: createdCollection.name });
+        }
       });
 
     pendingCreates.set(collection.id, createRequest);

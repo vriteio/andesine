@@ -1,3 +1,4 @@
+import { DEFAULT_PAGE_SIZE } from "#backend/lib/api/limits";
 import { schemaVersionContributors, schemaVersions } from "#backend/db";
 import { mapSchemaVersionSummary, type SchemaVersionSummary } from "#backend/lib/data";
 import { withAuthorization } from "#backend/lib/policy";
@@ -29,7 +30,7 @@ const listSchemaVersions = withAuthorization<
     resolve: resolveSchemaVersionList
   },
   async ({ database, input, resolved, workspaceID }) => {
-    const limit = input.limit || 50;
+    const limit = input.limit ?? DEFAULT_PAGE_SIZE;
     const filters = [
       eq(schemaVersions.workspaceID, workspaceID),
       eq(schemaVersions.schemaID, resolved.schema.id)
@@ -48,7 +49,16 @@ const listSchemaVersions = withAuthorization<
           )
         );
 
-      if (!cursor) throw new ORPCError("BAD_REQUEST", { message: "Cursor version not found" });
+      if (!cursor) {
+        throw new ORPCError("BAD_REQUEST", {
+          message: "Cursor version not found",
+          data: {
+            hints: [
+              "Start a new listing without cursor and use pagination.nextCursor from that response. Keep the same filters while paging."
+            ]
+          }
+        });
+      }
 
       filters.push(
         or(

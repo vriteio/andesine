@@ -74,6 +74,8 @@ interface EditorProps {
   onProviderSetupError?(error: unknown, provider: EditorProvider): void;
   onEditor?(editor: EditorInstance): EditorCleanup;
   onScrollContainer?(container: HTMLElement | null): void;
+  validateTitle?(title: string): string | undefined;
+  initialTitle?: string;
   onTitleChange?(title: string): void;
 }
 

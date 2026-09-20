@@ -1,52 +1,19 @@
-import { billingRouter } from "./billing";
-import { assetsRouter } from "./assets";
-import { collectionsRouter } from "./collections";
-import { contentRouter } from "./content";
-import { entriesRouter } from "./entries";
-import { groupsRouter } from "./groups";
-import { syncRouter } from "./sync";
-import { keysRouter } from "./keys";
-import { rolesRouter } from "./roles";
-import { schemasRouter } from "./schemas";
-import { schemaMigrationsRouter } from "./schema-migrations";
-import { schemaVersionsRouter } from "./schema-versions";
-import { searchRouter } from "./search";
-import { membershipsRouter } from "./memberships";
-import { publishingRouter } from "./publishing";
-import { workspacesRouter } from "./workspaces";
-import { versionsRouter } from "./versions";
-import { authRouter } from "./auth";
-import { type FastifyPluginAsync, type FastifyReply, type FastifyRequest } from "fastify";
-import { OpenAPIGenerator } from "@orpc/openapi";
+import { commonErrors } from "#backend/contracts/errors";
+import { validateORPCError } from "@orpc/contract";
+import { withErrorHints } from "#backend/lib/transport/error";
+import { generateOpenAPI } from "#backend/contracts/openapi";
+import { config } from "#backend/lib/config";
+import { consumeRateLimit, RATE_LIMITS } from "#backend/lib/security";
+import { Auth } from "#backend/services/auth";
 import { OpenAPIHandler } from "@orpc/openapi/fastify";
-import { RequestHeadersPlugin, ResponseHeadersPlugin } from "@orpc/server/plugins";
 import { onError, ORPCError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fastify";
-import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
-import { RATE_LIMITS, consumeRateLimit } from "#backend/lib/security";
-import { config } from "#backend/lib/config";
-import { Auth } from "#backend/services/auth";
+import { RequestHeadersPlugin, ResponseHeadersPlugin } from "@orpc/server/plugins";
+import { experimental_ZodSmartCoercionPlugin } from "@orpc/zod/zod4";
+import { type FastifyPluginAsync, type FastifyReply, type FastifyRequest } from "fastify";
+import { router } from "./routes";
+import { apiContract } from "./implement";
 
-const router = {
-  assets: assetsRouter,
-  auth: authRouter,
-  entries: entriesRouter,
-  groups: groupsRouter,
-  collections: collectionsRouter,
-  content: contentRouter,
-  billing: billingRouter,
-  keys: keysRouter,
-  roles: rolesRouter,
-  search: searchRouter,
-  schemas: schemasRouter,
-  schemaMigrations: schemaMigrationsRouter,
-  schemaVersions: schemaVersionsRouter,
-  memberships: membershipsRouter,
-  publishing: publishingRouter,
-  workspaces: workspacesRouter,
-  versions: versionsRouter,
-  sync: syncRouter
-};
 const routerPlugin: FastifyPluginAsync = async (app) => {
   const method = ["GET", "HEAD", "PUT", "POST", "DELETE", "PATCH"];
   const limitInviteAcceptance = async (req: FastifyRequest, reply: FastifyReply) => {
@@ -84,10 +51,15 @@ const routerPlugin: FastifyPluginAsync = async (app) => {
     console.error(error, { options });
   };
   const openAPIHandler = new OpenAPIHandler(router, {
-    plugins: [new RequestHeadersPlugin(), new ResponseHeadersPlugin()],
+    plugins: [
+      new RequestHeadersPlugin(),
+      new ResponseHeadersPlugin(),
+      new experimental_ZodSmartCoercionPlugin()
+    ],
     interceptors: [
       onError((error, options) => {
         logORPCError(error, options);
+        throw withErrorHints(error);
       })
     ]
   });
@@ -99,27 +71,7 @@ const routerPlugin: FastifyPluginAsync = async (app) => {
       })
     ]
   });
-  const openAPIDocument = await new OpenAPIGenerator({
-    schemaConverters: [new ZodToJsonSchemaConverter()]
-  }).generate(router, {
-    filter: ({ contract }) => Boolean(contract["~orpc"].meta.required?.key),
-    info: {
-      title: "Andesine API",
-      version: "1.0.0"
-    },
-    servers: [{ url: config.PUBLIC_API_URL }],
-    security: [{ apiKey: [] }],
-    components: {
-      securitySchemes: {
-        apiKey: {
-          type: "http",
-          scheme: "bearer",
-          bearerFormat: "Andesine API key",
-          description: "Use an Andesine API key as a Bearer token"
-        }
-      }
-    }
-  });
+  const openAPIDocument = await generateOpenAPI(apiContract, config.PUBLIC_API_URL);
 
   app.removeAllContentTypeParsers();
   // Authenticate multipart requests before Fastify buffers files. ORPC checks entry access later.
@@ -148,13 +100,19 @@ const routerPlugin: FastifyPluginAsync = async (app) => {
         reply.header("Retry-After", limit.retryAfter);
 
         throw new ORPCError("TOO_MANY_REQUESTS", {
+          data: {
+            retryAfterSeconds: limit.retryAfter,
+            hints: ["Wait at least retryAfterSeconds before trying again."]
+          },
           message: "Too many image uploads; try again shortly"
         });
       }
     } catch (error) {
       if (!(error instanceof ORPCError)) throw error;
 
-      return reply.status(error.status).send({ code: error.code, message: error.message });
+      const apiError = await validateORPCError(commonErrors, withErrorHints(error) as typeof error);
+
+      return reply.status(apiError.status).send(apiError.toJSON());
     }
   });
   app.addContentTypeParser(

@@ -1,3 +1,4 @@
+import { assertContentTreeNames } from "#backend/lib/content/names";
 import { collections, entries, memberships } from "#backend/db";
 import type { db } from "#backend/lib/adapters";
 import { createEffectiveSchemaChange } from "#backend/lib/schema/migration/effective-change";
@@ -252,6 +253,7 @@ const applyPublishingRevertStructure = async (
     ...new Set([...directlyDeletedEntryIDs, ...deletedCollections.entryIDs])
   ];
 
+  await assertContentTreeNames(database, workspaceID);
   await clearDeletedCurrentEntries(database, workspaceID, deletedEntryIDs);
 
   if (schemaRootCollectionIDs.length > 0) {

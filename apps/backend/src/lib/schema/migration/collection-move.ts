@@ -1,3 +1,4 @@
+import { assertContentTreeNames } from "#backend/lib/content/names";
 import { collections } from "#backend/db/collections";
 import { schemaMigrations } from "#backend/db/content-schemas";
 import { contents } from "#backend/db/contents";
@@ -60,6 +61,8 @@ const restoreSchemaCollectionMove = async (
     .update(collections)
     .set({ parentID: move.sourceParentID, rank: order, updatedAt: new Date() })
     .where(and(eq(collections.id, move.collectionID), eq(collections.workspaceID, workspaceID)));
+
+  await assertContentTreeNames(database, workspaceID);
 
   const contentRows =
     move.entryIDs.length > 0

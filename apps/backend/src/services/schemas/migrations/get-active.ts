@@ -39,7 +39,7 @@ const getActiveSchemaMigration = withAuthorization<
       .orderBy(desc(schemaMigrations.createdAt))
       .limit(1);
 
-    return migration ? mapSchemaMigration(migration.migration, []) : null;
+    return migration ? mapSchemaMigration(migration.migration) : null;
   }
 );
 

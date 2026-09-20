@@ -1,3 +1,4 @@
+import { assertSchemaFieldKeys } from "../errors";
 import {
   schemaDefinitionType,
   schemaFieldType,
@@ -46,29 +47,33 @@ const resolvedSchemaFieldType: z.ZodType<ResolvedSchemaField> = z.intersection(
   schemaFieldType,
   z.object({ source: schemaFieldSourceType })
 );
-const resolvedSchemaDefinitionType: z.ZodType<ResolvedSchemaDefinition> = z.object({
-  formatVersion: z.literal(1),
-  fields: z.array(resolvedSchemaFieldType).min(1),
-  sourceVersionIDs: z.array(z.string())
-});
+const resolvedSchemaDefinitionType: z.ZodType<ResolvedSchemaDefinition> = z
+  .object({
+    formatVersion: z.literal(1),
+    fields: z.array(resolvedSchemaFieldType).min(1),
+    sourceVersionIDs: z.array(z.string())
+  })
+  .superRefine((definition, context) => {
+    const result = schemaDefinitionType.safeParse(definition);
+
+    if (!result.success) {
+      for (const issue of result.error.issues) context.addIssue({ ...issue });
+    }
+  });
 
 const resolveEffectiveSchema = (
   input: ResolveEffectiveSchemaInput
 ): ResolvedSchemaDefinition | null => {
   if (input.sources.length === 0) return null;
 
-  const fieldIDs = new Set<string>();
   const fields: Array<ResolvedSchemaField> = [];
+
+  assertSchemaFieldKeys(input.sources.flatMap(({ definition }) => definition.fields));
 
   for (const source of input.sources) {
     const definition = schemaDefinitionType.parse(source.definition);
 
     for (const field of definition.fields) {
-      if (fieldIDs.has(field.id)) {
-        throw new Error(`Schema field ID "${field.id}" is duplicated`);
-      }
-
-      fieldIDs.add(field.id);
       fields.push({
         ...field,
         source: {
@@ -81,11 +86,11 @@ const resolveEffectiveSchema = (
     }
   }
 
-  return {
+  return resolvedSchemaDefinitionType.parse({
     formatVersion: 1,
     fields,
     sourceVersionIDs: input.sources.map(({ versionID }) => versionID)
-  };
+  });
 };
 const getResolvedSchemaDefinition = (resolved: ResolvedSchemaDefinition): SchemaDefinition => ({
   formatVersion: 1,

@@ -43,10 +43,16 @@ const commitProfileImage = withAuthorization<SetProfileImageInput>(
           gt(assetUploads.expiresAt, new Date())
         )
       );
-    if (!asset)
+    if (!asset) {
       throw new ORPCError("CONFLICT", {
-        message: "This image is unavailable or its upload was replaced"
+        message: "This image is unavailable or its upload was replaced",
+        data: {
+          hints: [
+            "Check the profile upload status. Wait until the current upload is ready, or start a new upload if it expired or was replaced."
+          ]
+        }
       });
+    }
 
     if (owner.workspaceID) {
       await database

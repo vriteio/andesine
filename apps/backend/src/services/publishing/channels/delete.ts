@@ -1,3 +1,4 @@
+import { assertPublishingSnapshot } from "#backend/lib/publishing/precondition";
 import { publishingChannels, publishingSnapshots } from "#backend/db";
 import { withAuthorization } from "#backend/lib/policy";
 import {
@@ -9,6 +10,7 @@ import { and, eq, isNull } from "drizzle-orm";
 
 interface DeleteChannelInput {
   code: string;
+  expectedSnapshotID?: string;
 }
 interface DeleteChannelResult {
   channelID: string;
@@ -20,6 +22,8 @@ const deleteChannel = withAuthorization<DeleteChannelInput, undefined, DeleteCha
     transaction: "atomic"
   },
   async ({ auth, database, input, workspaceID }) => {
+    await assertPublishingSnapshot(database, workspaceID, input.code, input.expectedSnapshotID);
+
     const code = normalizePublishingChannelCode(input.code);
     const now = new Date();
     const expiresAt = getPublishingSnapshotExpiry(auth.subscriptionPlan, now);

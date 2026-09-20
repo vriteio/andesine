@@ -33,6 +33,8 @@ interface CollaborativeEditorPaneProps {
   onBack(): void;
   onEditor?(editor: EditorInstance): (() => void) | void;
   onLoadStateChange?(state: DocumentLoadState): void;
+  validateTitle?(title: string, documentID: string): string | undefined;
+  initialTitle?: string;
   onTitleChange?(title: string, documentID: string): void;
 }
 
@@ -240,6 +242,8 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
                       markEditorNotReady();
                     };
                   }}
+                  initialTitle={props.initialTitle}
+                  validateTitle={(title) => props.validateTitle?.(title, documentID)}
                   onTitleChange={(title) => props.onTitleChange?.(title, documentID)}
                 />
               </div>

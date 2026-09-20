@@ -23,11 +23,22 @@ const acceptInvite = async (input: {
   if (input.expires * 1000 <= Date.now()) {
     throw new ORPCError("INVITE_EXPIRED", {
       status: 400,
-      message: "This invitation has expired"
+      message: "This invitation has expired",
+      data: {
+        hints: ["Ask a workspace member who can manage invitations to send a new invitation."]
+      }
     });
   }
   if (!verifyInviteLink(input)) {
-    throw new ORPCError("INVITE_INVALID", { status: 400, message: "Invalid invitation link" });
+    throw new ORPCError("INVITE_INVALID", {
+      status: 400,
+      message: "Invalid invitation link",
+      data: {
+        hints: [
+          "Use the complete link from the latest invitation email, or request a new invitation."
+        ]
+      }
+    });
   }
 
   const invitationID = toUUID(input.id);
@@ -39,7 +50,15 @@ const acceptInvite = async (input: {
       .where(eq(invitations.id, invitationID));
 
     if (!inviteWorkspace) {
-      throw new ORPCError("INVITE_INVALID", { status: 400, message: "Invalid invitation link" });
+      throw new ORPCError("INVITE_INVALID", {
+        status: 400,
+        message: "Invalid invitation link",
+        data: {
+          hints: [
+            "Use the complete link from the latest invitation email, or request a new invitation."
+          ]
+        }
+      });
     }
 
     const [workspace] = await tx
@@ -60,13 +79,27 @@ const acceptInvite = async (input: {
 
     if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
     if (!invite) {
-      throw new ORPCError("INVITE_INVALID", { status: 400, message: "Invalid invitation link" });
+      throw new ORPCError("INVITE_INVALID", {
+        status: 400,
+        message: "Invalid invitation link",
+        data: {
+          hints: [
+            "Use the complete link from the latest invitation email, or request a new invitation."
+          ]
+        }
+      });
     }
 
     if (!user) throw new ORPCError("UNAUTHORIZED", { message: "User not found" });
     if (getEffectivePlan(workspace.subscriptionPlan) !== "pro") {
       throw new ORPCError("FORBIDDEN", {
-        message: "This workspace must upgrade to Andesine Pro before you can accept the invite"
+        message: "This workspace must upgrade to Andesine Pro before you can accept the invite",
+        data: {
+          requiredPlan: "pro",
+          hints: [
+            "Ask a workspace administrator to review the subscription plan before accepting the invitation."
+          ]
+        }
       });
     }
     if (user.email.trim().toLowerCase() !== invite.email.trim().toLowerCase()) {
@@ -91,7 +124,10 @@ const acceptInvite = async (input: {
       }
       throw new ORPCError("INVITE_EXPIRED", {
         status: 400,
-        message: "This invitation has expired"
+        message: "This invitation has expired",
+        data: {
+          hints: ["Ask a workspace member who can manage invitations to send a new invitation."]
+        }
       });
     }
 

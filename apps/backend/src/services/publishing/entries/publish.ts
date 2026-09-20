@@ -1,3 +1,4 @@
+import { assertPublishingSnapshot } from "#backend/lib/publishing/precondition";
 import {
   isCollectionPublishingEnabled,
   loadPublishingTree,
@@ -16,6 +17,7 @@ import { ORPCError } from "@orpc/server";
 interface PublishEntryInput {
   entries: PublishEntryTarget[];
   channel: string;
+  expectedSnapshotID?: string;
   contributorIDs: string[];
 }
 interface ResolvedPublishEntry {
@@ -68,6 +70,8 @@ const commitPublishEntry = withAuthorization<
     transaction: "locked-workspace"
   },
   async ({ auth, authorization, database, input, resolved, workspaceID }) => {
+    await assertPublishingSnapshot(database, workspaceID, input.channel, input.expectedSnapshotID);
+
     const { entrySources, publishingEntries } = resolved;
 
     const tree = await loadPublishingTree(database, workspaceID);
@@ -75,7 +79,14 @@ const commitPublishEntry = withAuthorization<
     if (
       entrySources.some((entry) => !isCollectionPublishingEnabled(tree, entry.collectionID || null))
     ) {
-      throw new ORPCError("BAD_REQUEST", { message: "Publishing is not enabled for this entry" });
+      throw new ORPCError("BAD_REQUEST", {
+        message: "Publishing is not enabled for this entry",
+        data: {
+          hints: [
+            "Enable publishing on a containing collection with publishing.setCollection before publishing the entry."
+          ]
+        }
+      });
     }
 
     return publishEntries(database, {

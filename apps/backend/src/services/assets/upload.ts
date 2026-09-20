@@ -39,7 +39,19 @@ const commitAssetUpload = withAuthorization<
       input.body.length !== resolved.upload.byteSize ||
       checksum !== resolved.upload.expectedChecksum
     ) {
-      throw new ORPCError("BAD_REQUEST", { message: "Image bytes do not match the upload" });
+      throw new ORPCError("BAD_REQUEST", {
+        message: "Image bytes do not match the upload",
+        data: {
+          assetID: input.assetID,
+          expectedByteSize: resolved.upload.byteSize,
+          actualByteSize: input.body.length,
+          expectedChecksum: resolved.upload.expectedChecksum,
+          actualChecksum: checksum,
+          hints: [
+            "Upload the exact bytes registered with assets.register. If the file changed, register a new upload first."
+          ]
+        }
+      });
     }
 
     // Retrying the same bytes is safe, but processing and ready files cannot be overwritten.

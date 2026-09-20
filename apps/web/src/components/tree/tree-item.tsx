@@ -32,6 +32,7 @@ interface TreeItemProps {
   ref?: (el: HTMLElement) => void;
   onClick?: (event: MouseEvent) => void;
   onSelectionChange?(selected: boolean): void;
+  validateName?(name: string): string | undefined;
   onRename?: (name: string) => void;
   renderLabel?: (label: JSX.Element) => JSX.Element;
 }
@@ -44,6 +45,7 @@ const TreeItem: Component<TreeItemProps> = (props) => {
     { setFocusedItem, setSelection, setRenaming }
   ] = useTree();
   const [currentName, setCurrentName] = createSignal("");
+  const [lastValidName, setLastValidName] = createSignal(props.label);
   const [cancelledRef, setCancelledRef] = createRef(false);
   const selected = () => {
     return props.selectionState !== undefined
@@ -144,10 +146,14 @@ const TreeItem: Component<TreeItemProps> = (props) => {
     if (isRenaming(props.id)) {
       setCancelledRef(false);
       setCurrentName(props.label);
+      setLastValidName(props.label);
     }
   });
+  const renameError = () => props.validateName?.(currentName());
   const submitRename = () => {
-    props.onRename?.(currentName());
+    const name = renameError() ? lastValidName() : currentName();
+
+    if (!props.validateName?.(name)) props.onRename?.(name);
     setSelection([]);
     setRenaming("");
   };
@@ -270,10 +276,16 @@ const TreeItem: Component<TreeItemProps> = (props) => {
                 type="text"
                 value={currentName()}
                 maxLength={props.labelMaxLength}
+                aria-invalid={Boolean(renameError())}
+                title={renameError()}
                 class="min-w-0 w-0 flex-1 cursor-text select-text overflow-hidden whitespace-nowrap bg-transparent outline-none"
                 style={{ "-webkit-touch-callout": "default" }}
                 onInput={(e) => {
-                  setCurrentName(e.currentTarget.value);
+                  const name = e.currentTarget.value;
+
+                  setCurrentName(name);
+
+                  if (!props.validateName?.(name)) setLastValidName(name);
                 }}
                 onBlur={() => {
                   if (cancelledRef()) return;
@@ -305,6 +317,14 @@ const TreeItem: Component<TreeItemProps> = (props) => {
         )}
       >
         {props.children}
+      </Show>
+      <Show when={isRenaming(props.id) && renameError()}>
+        <span
+          role="img"
+          aria-label={renameError()}
+          title={renameError()}
+          class="h-4 w-4 shrink-0 text-red-500 i-lucide:circle-alert"
+        />
       </Show>
       {props.actions}
     </div>

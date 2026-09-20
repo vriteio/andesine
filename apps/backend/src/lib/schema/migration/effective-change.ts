@@ -1,3 +1,4 @@
+import { toSchemaMigrationID } from "#backend/lib/primitives";
 import {
   collectionSchemas,
   collections,
@@ -21,6 +22,7 @@ import {
 } from "../inheritance";
 import { ORPCError } from "@orpc/server";
 import { and, eq, inArray, isNull } from "drizzle-orm";
+import { ZodError } from "zod";
 
 interface CreateEffectiveSchemaChangeInput {
   database: Database;
@@ -86,7 +88,12 @@ const createEffectiveSchemaChange = async (
     .limit(1);
 
   if (activeMigration) {
-    throw new ORPCError("CONFLICT", {
+    throw new ORPCError("SCHEMA_MIGRATION_IN_PROGRESS", {
+      status: 409,
+      data: {
+        migrationID: toSchemaMigrationID(activeMigration.id),
+        hints: ["Use schemaMigrations.get with migrationID to check progress before trying again."]
+      },
       message: "A schema migration is already in progress for this collection"
     });
   }
@@ -136,10 +143,27 @@ const createEffectiveSchemaChange = async (
   const plannedRevisions: PlannedCollectionRevision[] = [];
 
   for (const collectionID of affectedCollectionIDs) {
-    const definition = resolveEffectiveSchema({
-      collectionID,
-      sources: getCollectionSourceChain(collectionID, collectionsByID, sourcesByCollectionID)
-    });
+    let definition: ResolvedSchemaDefinition | null;
+
+    try {
+      definition = resolveEffectiveSchema({
+        collectionID,
+        sources: getCollectionSourceChain(collectionID, collectionsByID, sourcesByCollectionID)
+      });
+    } catch (error) {
+      if (!(error instanceof ZodError)) throw error;
+
+      throw new ORPCError("BAD_REQUEST", {
+        message: error.issues[0]?.message || "Effective schema is invalid",
+        data: {
+          issues: error.issues,
+          hints: [
+            "Check the local and inherited schema fields. Each field must have a unique ID and each field kind must have unique derived keys."
+          ]
+        }
+      });
+    }
+
     const currentRevision = currentRevisionByCollectionID.get(collectionID);
     const revisionChanged = definition
       ? !currentRevision ||

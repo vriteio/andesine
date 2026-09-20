@@ -82,7 +82,12 @@ const planCollectionSchemaDeletion = withAuthorization<
 
     if (plan.migrationID && !input.confirmedDataLoss) {
       throw new ORPCError("BAD_REQUEST", {
-        message: "Schema migrations require explicit data-loss confirmation"
+        message: "Schema migrations require explicit data-loss confirmation",
+        data: {
+          hints: [
+            "Review the affected content first. Set confirmedDataLoss to true only after accepting the possible data loss."
+          ]
+        }
       });
     }
 

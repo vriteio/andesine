@@ -27,6 +27,11 @@ const PROPERTY_TYPES: PropertyType[] = [
   "select",
   "multi-select"
 ];
+const getContentFieldKey = (kind: "fragment" | "property", label: unknown): string => {
+  const fallback = kind === "fragment" ? "Content" : "Property";
+
+  return normalizeResourceName(normalizeSourceName(label, fallback), fallback.toLowerCase());
+};
 const getUniqueBlockName = (record: Record<string, unknown>, name: string): string => {
   let uniqueName = name;
   let suffix = 1;
@@ -45,12 +50,18 @@ const normalizePropertyValue = (node: ContentNode): PropertyValue => {
   if (type === "checkbox") return value === true;
 
   if (type === "number") {
+    if (typeof value !== "string" && typeof value !== "number") return null;
+
     const numberValue = Number(value);
 
     return value === "" || !Number.isFinite(numberValue) ? null : numberValue;
   }
 
-  if (type === "multi-select") return Array.isArray(value) ? value : [];
+  if (type === "multi-select") {
+    return Array.isArray(value)
+      ? value.filter((item): item is string => typeof item === "string")
+      : [];
+  }
 
   return typeof value === "string" ? value : "";
 };
@@ -68,7 +79,7 @@ const getContentBlocks = (content: ContentNode): ContentBlocks => {
   for (const node of content.content || []) {
     if (node.type === "fragment") {
       const sourceName = normalizeSourceName(node.attrs?.name, "Content");
-      const normalizedName = normalizeResourceName(sourceName, "content");
+      const normalizedName = getContentFieldKey("fragment", sourceName);
       const name = getUniqueBlockName(fragments, normalizedName);
 
       fragments[name] = {
@@ -80,7 +91,7 @@ const getContentBlocks = (content: ContentNode): ContentBlocks => {
     if (node.type === "property") {
       const sourceName = normalizeSourceName(node.attrs?.label, "Property");
       const type = normalizePropertyType(node.attrs?.type);
-      const normalizedName = normalizeResourceName(sourceName, "property");
+      const normalizedName = getContentFieldKey("property", sourceName);
       const name = getUniqueBlockName(properties, normalizedName);
 
       properties[name] = {
@@ -99,8 +110,8 @@ const getContentTitle = (content: ContentNode): string => {
   };
   const title = content.content?.find(({ type }) => type === "title");
 
-  return title ? getText(title).trim() || "Untitled" : "Untitled";
+  return title ? getText(title).normalize("NFC").trim() || "Untitled" : "Untitled";
 };
 
-export { getContentBlocks, getContentTitle };
+export { getContentBlocks, getContentFieldKey, getContentTitle, normalizePropertyType };
 export type { ContentBlocks, ContentFragment, ContentProperty, PropertyType, PropertyValue };

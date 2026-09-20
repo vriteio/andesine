@@ -1,5 +1,5 @@
 > [!IMPORTANT]
-> This is a WIP branch for _Andesine_ (the v2 rewrite of Vrite). For the latest stable version of Vrite, please check out the [main branch](https://github.com/vriteio/vrite/tree/main)
+> This is a WIP branch for _Andesine_ (the v2 rewrite of Vrite). For the latest stable version of Vrite, please check out the [main branch](https://github.com/vriteio/andesine/tree/main)
 
 <p align="center">
     <a href="https://vrite.io">
@@ -13,8 +13,8 @@
   <a href="https://app.vrite.io">Vrite Cloud</a>
 </h4>
 <p align="center">
-  <a href="https://github.com/vriteio/vrite/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/vriteio/vrite" alt="Vrite is available under the AGPL-3.0 license." />
+  <a href="https://github.com/vriteio/andesine/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/vriteio/andesine" alt="Vrite is available under the AGPL-3.0 license." />
   </a>
   <a href="https://discord.gg/yYqDWyKnqE">
     <img src="https://img.shields.io/badge/chat-on%20discord-7289DA.svg" alt="Discord Chat" />
@@ -39,8 +39,8 @@ Learn more about all the features of Vrite and how to use them from the [officia
 - 🔥 [**Try out Vrite**](https://app.vrite.io)
 - ℹ️ [**Usage guide**](https://docs.vrite.io)
 - 🚀 [**Blog**](https://vrite.io/blog)
-- 📝 [**Report a bug**](https://github.com/vriteio/vrite/issues)
-- 🙋‍♀️ [**Request a feature**](https://github.com/vriteio/vrite/discussions)
+- 📝 [**Report a bug**](https://github.com/vriteio/andesine/issues)
+- 🙋‍♀️ [**Request a feature**](https://github.com/vriteio/andesine/discussions)
 - 💬 [**Join Discord**](https://discord.gg/yYqDWyKnqE)
 - 🐦 [**Follow on Twitter**](https://twitter.com/vriteio)
 - 💼 [**Follow on LinkedIn**](https://www.linkedin.com/company/vrite)

@@ -1,0 +1,70 @@
+{
+  "name": "@andesine/sdk",
+  "version": "0.1.0",
+  "description": "TypeScript API client for Andesine",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md",
+    "openapi.json"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./streaming": {
+      "types": "./dist/streaming.d.ts",
+      "import": "./dist/streaming.js"
+    }
+  },
+  "scripts": {
+    "build": "rolldown -c rolldown.config.ts",
+    "typecheck": "tsc --noEmit && tsc -p scripts/tsconfig.json",
+    "generate": "tsx scripts/generate.ts",
+    "prepack": "pnpm run typecheck && pnpm run build && pnpm run lint:package",
+    "lint:package": "publint --strict"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "openapi-typescript": "7.13.0",
+    "prettier": "^3.9.6",
+    "publint": "0.3.24",
+    "rolldown": "^1.2.2",
+    "rolldown-plugin-dts": "^0.28.6",
+    "tsx": "^4.23.5",
+    "typescript": "6.0.3"
+  },
+  "dependencies": {
+    "@orpc/standard-server": "1.14.14",
+    "openapi-fetch": "0.17.0"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vriteio/andesine.git",
+    "directory": "packages/public/sdk"
+  },
+  "homepage": "https://github.com/vriteio/andesine/tree/andesine/packages/public/sdk#readme",
+  "bugs": {
+    "url": "https://github.com/vriteio/andesine/issues"
+  },
+  "keywords": [
+    "andesine",
+    "typescript",
+    "sdk",
+    "openapi"
+  ]
+}

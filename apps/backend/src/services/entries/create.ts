@@ -1,3 +1,5 @@
+import { loadCurrentContentPaths } from "#backend/lib/content/paths";
+import { getAvailableContentName } from "#backend/lib/content/names";
 import { rankBetweenNeighbors, toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
 import { collections, contents, effectiveSchemaRevisions, entries, type Entry } from "#backend/db";
 import type { ContentNode } from "#backend/lib/content";
@@ -9,7 +11,7 @@ import type { PublishingEntryStatus } from "#backend/lib/publishing";
 import { getResolvedSchemaDefinition, migrateSchemaContentState } from "#backend/lib/schema";
 
 interface CreateEntryResult {
-  entry: Entry;
+  entry: Entry & { path: string };
   publishingEntries: PublishingEntryStatus[];
 }
 
@@ -35,7 +37,12 @@ const createEntry = withAuthorization<Partial<Entry>, undefined, CreateEntryResu
   async ({ authorization, database, input, workspaceID }) => {
     const entryID = input.id ? toUUID(input.id) : crypto.randomUUID();
     const collectionID = input.collectionID ? toUUID(input.collectionID) : null;
-    const name = normalizeEntryName(input.name ?? "Untitled");
+    const name = await getAvailableContentName(database, workspaceID, {
+      kind: "entry",
+      id: entryID,
+      parentID: collectionID,
+      name: normalizeEntryName(input.name ?? "Untitled")
+    });
 
     const entry = await (async () => {
       if (collectionID) {
@@ -140,9 +147,11 @@ const createEntry = withAuthorization<Partial<Entry>, undefined, CreateEntryResu
       return created;
     })();
 
+    const paths = await loadCurrentContentPaths(database, workspaceID);
     const mappedEntry = {
       id: toEntryID(entry.id),
       name: entry.name,
+      path: paths.entryPath(entry.collectionID, entry.name),
       order: entry.rank,
       collectionID: entry.collectionID ? toCollectionID(entry.collectionID) : undefined
     };

@@ -16,7 +16,8 @@ const keyPermissionEnum = pgEnum("key_permission", [
   "memberships",
   "read:memberships",
   "roles",
-  "read:roles"
+  "read:roles",
+  "ai-answers"
 ]);
 const keyPermissionType = z.enum([
   "entries",
@@ -30,7 +31,8 @@ const keyPermissionType = z.enum([
   "memberships",
   "read:memberships",
   "roles",
-  "read:roles"
+  "read:roles",
+  "ai-answers"
 ]);
 const keyType = z.object({
   id: id().describe("The ID of the API key"),

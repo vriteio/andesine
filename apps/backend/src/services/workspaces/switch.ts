@@ -25,7 +25,11 @@ const switchWorkspace = async (input: {
 
   if (membership.baseRole !== "admin" && getEffectivePlan(membership.subscriptionPlan) !== "pro") {
     throw new ORPCError("FORBIDDEN", {
-      message: "This workspace is only available to admins while it is on the Free plan"
+      message: "This workspace is only available to admins while it is on the Free plan",
+      data: {
+        requiredPlan: "pro",
+        hints: ["Ask a workspace administrator to review the subscription plan."]
+      }
     });
   }
 

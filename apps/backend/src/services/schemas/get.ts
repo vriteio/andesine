@@ -1,3 +1,6 @@
+import { loadCurrentContentPaths, type CollectionSelector } from "#backend/lib/content/paths";
+import { toCollectionID } from "#backend/lib/primitives";
+import { ORPCError } from "@orpc/server";
 import { effectiveSchemaRevisions, schemaVersionContributors, schemaVersions } from "#backend/db";
 import {
   mapEffectiveCollectionSchema,
@@ -7,20 +10,39 @@ import {
 } from "#backend/lib/data";
 import { withAuthorization } from "#backend/lib/policy";
 import { and, eq } from "drizzle-orm";
-import { type CollectionSchemaInput, resolveLocalCollectionSchema } from "./resolve";
+import { resolveLocalCollectionSchema } from "./resolve";
 
-type ResolvedCollectionSchema = Awaited<ReturnType<typeof resolveLocalCollectionSchema>>;
+type ResolvedCollectionSchema = Awaited<ReturnType<typeof resolveLocalCollectionSchema>> & {
+  scopeID: string | null;
+};
 
 const getCollectionSchema = withAuthorization<
-  CollectionSchemaInput,
+  CollectionSelector,
   ResolvedCollectionSchema,
   CollectionSchemaDetails
 >(
   {
-    actions: ({ input }) => ({
-      collections: [{ action: "collection:read", collectionID: input.collectionID }]
+    actions: ({ resolved }) => ({
+      collections: [{ action: "collection:read", collectionID: resolved.scopeID }]
     }),
-    resolve: resolveLocalCollectionSchema
+    transaction: "atomic",
+    resolve: async (context) => {
+      const paths = await loadCurrentContentPaths(context.database, context.workspaceID);
+      const scopeID = paths.resolveCollection(context.input) ?? null;
+
+      if (!scopeID) {
+        if (!paths.rootID) throw new ORPCError("NOT_FOUND");
+        return { collection: { id: paths.rootID }, schema: null, scopeID };
+      }
+
+      return {
+        ...(await resolveLocalCollectionSchema({
+          ...context,
+          input: { collectionID: toCollectionID(scopeID) }
+        })),
+        scopeID
+      };
+    }
   },
   async ({ database, resolved, workspaceID }) => {
     const [effectiveRevision] = await database

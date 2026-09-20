@@ -1,3 +1,4 @@
+import { assertContentTreeNames } from "#backend/lib/content/names";
 import { entries } from "#backend/db/entries";
 import { schemaMigrations } from "#backend/db/content-schemas";
 import { workspaces } from "#backend/db/workspaces";
@@ -62,6 +63,8 @@ const restoreSchemaEntryMove = async (
     .update(entries)
     .set({ collectionID: move.sourceCollectionID, rank: order, updatedAt: new Date() })
     .where(and(eq(entries.id, move.entryID), eq(entries.workspaceID, workspaceID)));
+
+  await assertContentTreeNames(database, workspaceID);
 
   const [content] = await database
     .select({ hash: contents.hash, publishedHash: entryVersions.hash })

@@ -78,7 +78,12 @@ const getPublishedPath = (
 
   if (publishedRootIndex === -1) {
     throw new ORPCError("BAD_REQUEST", {
-      message: "Publishing is not enabled for this collection"
+      message: "Publishing is not enabled for this collection",
+      data: {
+        hints: [
+          "Use publishing.setCollection to enable publishing on this collection or an ancestor before publishing it."
+        ]
+      }
     });
   }
 

@@ -1,3 +1,4 @@
+import { assertPublishingSnapshot } from "#backend/lib/publishing/precondition";
 import { collections } from "#backend/db";
 import {
   assertEntrySnapshotsSynced,
@@ -20,6 +21,7 @@ import { filterAuthorizedEntryIDs, withAuthorization } from "#backend/lib/policy
 interface PublishCollectionInput {
   collectionIDs: string[];
   channel: string;
+  expectedSnapshotID?: string;
   contributorIDs: string[];
 }
 interface PublishCollectionResult {
@@ -63,7 +65,12 @@ const preparePublishCollection = withAuthorization<PublishCollectionInput, undef
 
     if (collectionIDs.some((id) => !isCollectionPublishingEnabled(tree, id))) {
       throw new ORPCError("BAD_REQUEST", {
-        message: "Publishing is not enabled for this collection"
+        message: "Publishing is not enabled for this collection",
+        data: {
+          hints: [
+            "Use publishing.setCollection to enable publishing on this collection or an ancestor before publishing it."
+          ]
+        }
       });
     }
 
@@ -102,6 +109,8 @@ const commitPublishCollection = withAuthorization<
     transaction: "locked-workspace"
   },
   async ({ auth, authorization, authorizationScope, database, input, workspaceID }) => {
+    await assertPublishingSnapshot(database, workspaceID, input.channel, input.expectedSnapshotID);
+
     const entryIDs = await preparePublishCollection({
       ...input,
       auth,
@@ -145,6 +154,7 @@ const publishCollection = async (
   return commitPublishCollection({
     collectionIDs: input.collectionIDs,
     channel: input.channel,
+    expectedSnapshotID: input.expectedSnapshotID,
     contributorIDs: input.contributorIDs,
     snapshotEntryIDs,
     auth: input.auth

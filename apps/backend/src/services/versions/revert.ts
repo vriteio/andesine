@@ -1,3 +1,5 @@
+import { assertContentNameAvailable } from "#backend/lib/content/names";
+import { normalizeEntryName } from "#backend/lib/validation/content-name";
 import {
   openDocumentContentConnection,
   replaceDocumentContent,
@@ -98,6 +100,17 @@ const commitRevertVersion = withAuthorization<
       action: "version:revert",
       auth,
       skipAuthorization: authorizationScope
+    });
+    const title = target.document.content?.find((node) => node.type === "title");
+    const name = normalizeEntryName(
+      title?.content?.map((node) => node.text || "").join("") || target.entryName
+    );
+
+    await assertContentNameAvailable(database, workspaceID, {
+      kind: "entry",
+      id: toUUID(target.entryID),
+      parentID: resolved.collectionID,
+      name
     });
     // Only an authorized revert grants historical images to the current document.
     // Collaboration saves wait for this workspace transaction to commit.

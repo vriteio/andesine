@@ -1,0 +1,82 @@
+name: Publish public package
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: Package to publish
+        type: choice
+        options: [sdk, converters]
+        required: true
+      version:
+        description: Exact version already committed in the package.json
+        type: string
+        required: true
+      tag:
+        description: npm distribution tag
+        type: choice
+        options: [latest, next]
+        required: true
+        default: latest
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-public-${{ inputs.package }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      PACKAGE_NAME: ${{ inputs.package }}
+      PACKAGE_VERSION: ${{ inputs.version }}
+      PACKAGE_TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - uses: pnpm/action-setup@v6
+      - name: Check release version
+        run: |
+          actual_version="$(jq -r '.version' "packages/public/$PACKAGE_NAME/package.json")"
+          if [ "$actual_version" != "$PACKAGE_VERSION" ]; then
+            echo "Expected $PACKAGE_VERSION, found $actual_version. Commit the version change first."
+            exit 1
+          fi
+          if [[ "$PACKAGE_TAG" == "latest" && "$actual_version" == *-* ]]; then
+            echo "Publish prerelease versions with the next tag."
+            exit 1
+          fi
+      - run: pnpm install --frozen-lockfile
+      - name: Check source
+        run: |
+          pnpm exec eslint "packages/public/$PACKAGE_NAME"
+          pnpm exec prettier --check "packages/public/$PACKAGE_NAME"
+      - name: Check generated API files
+        if: inputs.package == 'sdk'
+        run: |
+          pnpm --filter @andesine/backend openapi:export
+          pnpm --filter @andesine/sdk generate
+          git diff --exit-code -- packages/public/sdk/openapi.json packages/public/sdk/src/generated
+      - name: Build, check, and pack
+        run: |
+          mkdir -p "$RUNNER_TEMP/packages"
+          pnpm --filter "@andesine/$PACKAGE_NAME" pack --pack-destination "$RUNNER_TEMP/packages"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: andesine-${{ inputs.package }}-${{ inputs.version }}
+          path: ${{ runner.temp }}/packages/*.tgz
+          if-no-files-found: error
+      - name: Publish checked tarball
+        run: npm publish "$RUNNER_TEMP/packages/andesine-$PACKAGE_NAME-$PACKAGE_VERSION.tgz" --access public --provenance --tag "$PACKAGE_TAG"

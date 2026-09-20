@@ -1,3 +1,4 @@
+import { assertContentNameAvailable } from "#backend/lib/content/names";
 import { rankBetweenNeighbors, toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
 import {
   collections,
@@ -124,6 +125,13 @@ const planCollectionMove = withAuthorization<MoveCollectionInput, undefined, Mov
       });
     }
 
+    await assertContentNameAvailable(database, workspaceID, {
+      kind: "collection",
+      id: collectionID,
+      parentID,
+      name: collection.name
+    });
+
     const publishingTree = await loadPublishingTree(database, workspaceID);
     const wasPublishingEnabled = isCollectionPublishingEnabled(publishingTree, collectionID);
     const parentPublishingEnabled = isCollectionPublishingEnabled(publishingTree, parentID);
@@ -209,7 +217,12 @@ const planCollectionMove = withAuthorization<MoveCollectionInput, undefined, Mov
 
     if (schemaMigration.migrationID && !input.confirmedDataLoss) {
       throw new ORPCError("PRECONDITION_FAILED", {
-        message: "Schema migrations require explicit data-loss confirmation"
+        message: "Schema migrations require explicit data-loss confirmation",
+        data: {
+          hints: [
+            "Review the affected content first. Set confirmedDataLoss to true only after accepting the possible data loss."
+          ]
+        }
       });
     }
 

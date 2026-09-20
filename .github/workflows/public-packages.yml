@@ -1,0 +1,61 @@
+name: Check public packages
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "packages/public/**"
+      - "apps/backend/**"
+      - "packages/private/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "eslint.config.mjs"
+      - ".github/workflows/*public-package*.yml"
+  push:
+    branches: [andesine]
+    paths:
+      - "packages/public/**"
+      - "apps/backend/**"
+      - "packages/private/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "eslint.config.mjs"
+      - ".github/workflows/*public-package*.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - uses: pnpm/action-setup@v6
+      - run: pnpm install --frozen-lockfile
+      - name: Check source
+        run: |
+          pnpm exec eslint packages/public apps/backend/scripts
+          pnpm exec prettier --check packages/public .github/workflows/public-packages.yml .github/workflows/publish-public-package.yml
+      - name: Check generated API files
+        run: |
+          pnpm --filter @andesine/backend openapi:export
+          pnpm --filter @andesine/sdk generate
+          git diff --exit-code -- packages/public/sdk/openapi.json packages/public/sdk/src/generated
+      - name: Build, check, and pack
+        run: |
+          mkdir -p "$RUNNER_TEMP/packages"
+          pnpm --filter @andesine/sdk pack --pack-destination "$RUNNER_TEMP/packages"
+          pnpm --filter @andesine/converters pack --pack-destination "$RUNNER_TEMP/packages"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: public-packages
+          path: ${{ runner.temp }}/packages/*.tgz
+          if-no-files-found: error
