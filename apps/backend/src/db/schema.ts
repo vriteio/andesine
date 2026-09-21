@@ -2,6 +2,7 @@ import { entryVersionProperties } from "./version-properties";
 import { assetStorageDeletions, assetUploads } from "./asset-uploads";
 import { assetAnalyses, assetFiles, assets, entryAssets, entryVersionAssets } from "./assets";
 import { accounts, passkeys, sessions, verifications } from "./auth";
+import * as oauth from "./oauth";
 import { collections } from "./collections";
 import {
   collectionSchemas,
@@ -44,6 +45,7 @@ import {
 import { workspaces } from "./workspaces";
 
 const schema = {
+  ...oauth,
   users,
   sessions,
   accounts,

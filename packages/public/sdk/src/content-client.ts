@@ -2,8 +2,11 @@ import type { APIResources } from "./generated/resources";
 import type { ContentListOutput } from "./content-list";
 import type { OperationInput, OperationOutput, RequestOptions } from "./operation";
 import { paginatePages, type Page } from "./paginate";
+import type { WorkspaceTypeMap } from "./workspace";
 
-interface ContentClient extends ContentResources {
+interface ContentClient<
+  Workspace extends WorkspaceTypeMap = WorkspaceTypeMap
+> extends ContentResources<Workspace> {
   /**
    * Iterate published entries, automatically keeping the first page's snapshot.
    *
@@ -20,7 +23,7 @@ interface ContentClient extends ContentResources {
   paginateEntries<const Input extends EntryListInput = Record<string, never>>(
     input?: Input,
     options?: ContentPaginationOptions
-  ): AsyncGenerator<ContentListOutput<Input>["data"][number]>;
+  ): AsyncGenerator<ContentListOutput<Input, Workspace>["data"][number]>;
   /**
    * Iterate entry pages while retaining snapshot metadata and resume cursors.
    *
@@ -34,7 +37,7 @@ interface ContentClient extends ContentResources {
   paginateEntryPages<const Input extends EntryListInput = Record<string, never>>(
     input?: Input,
     options?: ContentPaginationOptions
-  ): AsyncGenerator<ContentListOutput<Input>>;
+  ): AsyncGenerator<ContentListOutput<Input, Workspace>>;
   /**
    * Iterate published collections using the first page's snapshot for all later pages.
    *
@@ -69,7 +72,8 @@ interface SnapshotPage extends Page<unknown> {
   snapshotID: string;
 }
 
-type ContentResources = APIResources["content"];
+type ContentResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> =
+  APIResources<Workspace>["content"];
 type EntryListInput = OperationInput<"content.listEntries">;
 type ContentPaginationOptions = RequestOptions & { response?: "data" };
 
@@ -99,12 +103,14 @@ const paginateSnapshotPages = async function* <
   );
 };
 
-const createContentClient = (content: ContentResources): ContentClient => {
+const createContentClient = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
+  content: ContentResources<Workspace>
+): ContentClient<Workspace> => {
   const paginateEntryPages = <const Input extends EntryListInput = Record<string, never>>(
     input: Input = {} as Input,
     options?: ContentPaginationOptions
   ) =>
-    paginateSnapshotPages<Input, ContentListOutput<Input>>(
+    paginateSnapshotPages<Input, ContentListOutput<Input, Workspace>>(
       (query, requestOptions) => content.listEntries(query, requestOptions),
       input,
       options

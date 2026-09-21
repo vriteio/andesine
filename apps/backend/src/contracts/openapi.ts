@@ -2,7 +2,7 @@ import { API_VERSION } from "#backend/lib/api/limits";
 import { OpenAPIGenerator } from "@orpc/openapi";
 import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
 import { publicSchemas } from "./schemas/public";
-import type { ORPCMeta } from "./base";
+import { isPublicAPI, type ORPCMeta } from "./base";
 import type { APIContract } from "./index";
 
 const generateOpenAPI = async (contract: APIContract, baseURL: string) => {
@@ -13,9 +13,7 @@ const generateOpenAPI = async (contract: APIContract, baseURL: string) => {
     filter: ({ contract, path }) => {
       const meta = contract["~orpc"].meta;
       const name = path.join(".");
-      const isPublic =
-        Boolean(meta.required && meta.required !== true && meta.required.key) ||
-        name === "content.getAsset";
+      const isPublic = isPublicAPI(meta) || name === "content.getAsset";
 
       if (isPublic) metadata.set(name, meta);
 
@@ -28,9 +26,16 @@ const generateOpenAPI = async (contract: APIContract, baseURL: string) => {
       license: { name: "MIT", identifier: "MIT" }
     },
     servers: [{ url: baseURL }],
-    security: [{ apiKey: [] }],
+    security: [{ apiKey: [] }, { oauth: [] }],
     components: {
       securitySchemes: {
+        oauth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "Andesine OAuth access token",
+          description:
+            "Use an OAuth access token with andesine:api scope. Send x-workspace-id for workspace operations. Current user permissions apply."
+        },
         apiKey: {
           type: "http",
           scheme: "bearer",
@@ -49,6 +54,24 @@ const generateOpenAPI = async (contract: APIContract, baseURL: string) => {
       const meta = metadata.get(operation.operationId || "");
       const permissions = meta?.required && meta.required !== true ? meta.required.key : undefined;
       const example = meta?.example;
+      const required = meta?.required;
+      const oauthOnly = required && required !== true && required.oauth && !required.key;
+
+      if (oauthOnly) operation.security = [{ oauth: [] }];
+
+      if (meta?.requireWorkspace !== false && operation.operationId !== "content.getAsset") {
+        operation.parameters = [
+          ...(operation.parameters || []),
+          {
+            name: "x-workspace-id",
+            in: "header",
+            required: false,
+            schema: { type: "string" },
+            description:
+              "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ];
+      }
 
       if (Array.isArray(permissions)) {
         operation.description += `\n\nRequired API key permissions: ${permissions.join(", ")}. Write permissions also grant read access for the same resource.`;

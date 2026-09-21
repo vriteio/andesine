@@ -1,5 +1,6 @@
 export * from "./assets";
 export * from "./auth";
+export * from "./oauth";
 export * from "./collections";
 export * from "./content-schemas";
 export * from "./contents";

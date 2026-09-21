@@ -1,3 +1,4 @@
+import { getUserAuthorization } from "#backend/lib/policy";
 import { assertSchemaFieldKeys } from "#backend/lib/schema/errors";
 import {
   collectionSchemas,
@@ -115,7 +116,9 @@ const createSchemaApplicationPlan = withAuthorization<
       .select({ nextVersion: max(schemaVersions.version) })
       .from(schemaVersions)
       .where(eq(schemaVersions.schemaID, resolved.id));
-    const appliedBy = auth.session?.memberID ? toUUID(auth.session.memberID) : null;
+    const appliedBy = getUserAuthorization(auth)?.memberID
+      ? toUUID(getUserAuthorization(auth)!.memberID)
+      : null;
     const [createdVersion] = await database
       .insert(schemaVersions)
       .values({

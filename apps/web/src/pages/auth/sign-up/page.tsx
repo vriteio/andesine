@@ -114,7 +114,11 @@ const SignUpPage: Component = () => {
             variant="outlined"
             iconProps={{ class: "h-5.5 w-5.5 text-gray-400" }}
             icon="i-fluent:mail-16-filled"
-            link={appendRedirectTo("/auth/email?mode=sign-up", redirectTo())}
+            link={appendRedirectTo(
+              "/auth/email?mode=sign-up",
+              redirectTo(),
+              searchParams.addAccount === "true"
+            )}
           />
         </div>
       </div>
@@ -126,7 +130,7 @@ const SignUpPage: Component = () => {
           text="primary"
           color="primary"
           size="small"
-          link={appendRedirectTo("/auth/sign-in", redirectTo())}
+          link={appendRedirectTo("/auth/sign-in", redirectTo(), searchParams.addAccount === "true")}
           label={() => <span>Sign in</span>}
           iconProps={{ class: "w-4 h-4" }}
           hover="underline"

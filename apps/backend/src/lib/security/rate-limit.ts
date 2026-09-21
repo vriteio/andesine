@@ -5,6 +5,8 @@ const RATE_LIMITS = {
   authentication: { max: 20, window: 60 },
   signIn: { max: 3, window: 10 },
   otp: { max: 3, window: 60 },
+  oauthDevice: { max: 10, window: 60 },
+  oauthToken: { max: 30, window: 60 },
   inviteAcceptance: { max: 20, window: 60 },
   collaboration: { max: 30, window: 60 },
   semanticSearch: { max: 30, window: 60 },

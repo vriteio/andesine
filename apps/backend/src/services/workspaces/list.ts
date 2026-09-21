@@ -64,7 +64,7 @@ const listWorkspaces = async (input: {
         isNull(entries.deletedAt)
       )
     )
-    .where(inArray(memberships.userID, userIDs));
+    .where(and(inArray(memberships.userID, userIDs), isNull(workspaces.deletingAt)));
 
   const availableRows = rows.filter((row) => {
     return row.baseRole === "admin" || getEffectivePlan(row.subscriptionPlan) === "pro";

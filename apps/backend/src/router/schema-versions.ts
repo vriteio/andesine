@@ -1,3 +1,4 @@
+import { getUserAuthorization } from "#backend/lib/policy";
 import { emitSchemaEvent, emitSchemaVersionEvent } from "#backend/events";
 import { toSchemaVersionSummary } from "#backend/lib/data";
 import { authorized } from "#backend/lib/transport/middleware/authorized";
@@ -45,7 +46,7 @@ const schemaVersionsRouter = handlers.router({
       emitSchemaVersionEvent(context.auth.workspaceID, {
         action: "schema-version:create",
         data: toSchemaVersionSummary(version),
-        memberID: context.auth.session?.memberID
+        memberID: getUserAuthorization(context.auth)?.memberID
       });
     }
     emitSchemaEvent(context.auth.workspaceID, {
@@ -57,7 +58,7 @@ const schemaVersionsRouter = handlers.router({
         hasActiveVersion: true,
         hasUnappliedChanges: Boolean(result.application.migrationID)
       },
-      memberID: context.auth.session?.memberID
+      memberID: getUserAuthorization(context.auth)?.memberID
     });
     emitSchemaEvent(context.auth.workspaceID, {
       action: "schema:content-reset",
@@ -82,7 +83,7 @@ const schemaVersionsRouter = handlers.router({
     emitSchemaVersionEvent(context.auth.workspaceID, {
       action: "schema-version:update",
       data: toSchemaVersionSummary(version),
-      memberID: context.auth.session?.memberID
+      memberID: getUserAuthorization(context.auth)?.memberID
     });
   })
 });

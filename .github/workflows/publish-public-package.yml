@@ -6,7 +6,7 @@ on:
       package:
         description: Package to publish
         type: choice
-        options: [sdk, converters]
+        options: [sdk, converters, cli]
         required: true
       version:
         description: Exact version already committed in the package.json
@@ -49,6 +49,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - name: Check release version
         run: |
+          case "$PACKAGE_NAME" in sdk|converters|cli) ;; *) exit 1 ;; esac
           actual_version="$(jq -r '.version' "packages/public/$PACKAGE_NAME/package.json")"
           if [ "$actual_version" != "$PACKAGE_VERSION" ]; then
             echo "Expected $PACKAGE_VERSION, found $actual_version. Commit the version change first."
@@ -58,13 +59,28 @@ jobs:
             echo "Publish prerelease versions with the next tag."
             exit 1
           fi
+          archive_name="$(jq -r '.name | ltrimstr("@") | gsub("/"; "-")' "packages/public/$PACKAGE_NAME/package.json")"
+          echo "PACKAGE_ARCHIVE=$archive_name-$actual_version.tgz" >> "$GITHUB_ENV"
       - run: pnpm install --frozen-lockfile
+      - name: Prepare CLI SDK dependency
+        if: inputs.package == 'cli'
+        run: |
+          sdk_version="$(jq -r '.version' packages/public/sdk/package.json)"
+          published_version="$(npm view "@andesine/sdk@$sdk_version" version)" || {
+            echo "Publish @andesine/sdk@$sdk_version before the CLI."
+            exit 1
+          }
+          if [ "$published_version" != "$sdk_version" ]; then
+            echo "Publish @andesine/sdk@$sdk_version before the CLI."
+            exit 1
+          fi
+          pnpm --filter @andesine/sdk build
       - name: Check source
         run: |
           pnpm exec eslint "packages/public/$PACKAGE_NAME"
           pnpm exec prettier --check "packages/public/$PACKAGE_NAME"
       - name: Check generated API files
-        if: inputs.package == 'sdk'
+        if: inputs.package == 'sdk' || inputs.package == 'cli'
         run: |
           pnpm --filter @andesine/backend openapi:export
           pnpm --filter @andesine/sdk generate
@@ -72,11 +88,14 @@ jobs:
       - name: Build, check, and pack
         run: |
           mkdir -p "$RUNNER_TEMP/packages"
-          pnpm --filter "@andesine/$PACKAGE_NAME" pack --pack-destination "$RUNNER_TEMP/packages"
+          pnpm --filter "./packages/public/$PACKAGE_NAME" pack --pack-destination "$RUNNER_TEMP/packages"
+      - name: Check generated CLI bindings
+        if: inputs.package == 'cli'
+        run: git diff --exit-code -- packages/public/cli/src/api/manifest.ts packages/public/cli/src/api/bindings.ts
       - uses: actions/upload-artifact@v4
         with:
           name: andesine-${{ inputs.package }}-${{ inputs.version }}
           path: ${{ runner.temp }}/packages/*.tgz
           if-no-files-found: error
       - name: Publish checked tarball
-        run: npm publish "$RUNNER_TEMP/packages/andesine-$PACKAGE_NAME-$PACKAGE_VERSION.tgz" --access public --provenance --tag "$PACKAGE_TAG"
+        run: npm publish "$RUNNER_TEMP/packages/$PACKAGE_ARCHIVE" --access public --provenance --tag "$PACKAGE_TAG"

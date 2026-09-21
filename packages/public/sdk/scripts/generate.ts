@@ -141,12 +141,12 @@ for (const [path, item] of Object.entries(document.paths || {})) {
     resourceTypes
       .get(resource)!
       .push(
-        `${comment}${JSON.stringify(name)}: Operation<${JSON.stringify(operation.operationId)}>;`
+        `${comment}${JSON.stringify(name)}: Operation<${JSON.stringify(operation.operationId)}, Workspace>;`
       );
     resources
       .get(resource)!
       .push(
-        `${JSON.stringify(name)}: operation<${JSON.stringify(operation.operationId)}>(request, ${JSON.stringify(definition)})`
+        `${JSON.stringify(name)}: operation<${JSON.stringify(operation.operationId)}, Workspace>(request, ${JSON.stringify(definition)})`
       );
   }
 }
@@ -170,7 +170,7 @@ await writeFile(
   await format(
     "/* eslint-disable max-lines */\n" +
       header +
-      `import { operation, type Operation, type Requester } from "../operation";\n\ninterface APIResources {\n${[...resourceTypes].map(([name, methods]) => `${JSON.stringify(name)}: {\n${methods.join("\n")}\n}`).join("\n")}\n}\n\nconst createResources = (request: Requester): APIResources => ({\n${[...resources].map(([name, methods]) => `${JSON.stringify(name)}: {\n${methods.join(",\n")}\n}`).join(",\n")}\n});\n\nexport { createResources };\nexport type { APIResources };\n`,
+      `import { operation, type Operation, type Requester } from "../operation";\nimport type { WorkspaceTypeMap } from "../workspace";\n\ninterface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {\n${[...resourceTypes].map(([name, methods]) => `${JSON.stringify(name)}: {\n${methods.join("\n")}\n}`).join("\n")}\n}\n\nconst createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(request: Requester): APIResources<Workspace> => ({\n${[...resources].map(([name, methods]) => `${JSON.stringify(name)}: {\n${methods.join(",\n")}\n}`).join(",\n")}\n});\n\nexport { createResources };\nexport type { APIResources };\n`,
     formatting
   )
 );

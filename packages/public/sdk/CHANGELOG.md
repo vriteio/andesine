@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0
+
+- Add type-only workspace maps through `createClient<Workspace>()`, with selector-aware
+  content types, revision unions, optional entry/tree bindings, and typed content helpers.
+- Add bulk current/published type metadata with effective schema revisions,
+  optional entries/tree, consistent source reads, and stable fingerprints.
+- Explicit OAuth access tokens without API-key environment fallback, plus credential identity and user workspace discovery.
+
 ## 0.1.0
 
 - Initial public TypeScript client generated from the Andesine OpenAPI document.

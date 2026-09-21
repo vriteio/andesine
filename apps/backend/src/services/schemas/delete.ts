@@ -1,3 +1,4 @@
+import { getUserAuthorization } from "#backend/lib/policy";
 import { collectionSchemas, collections, schemaVersions } from "#backend/db";
 import {
   withAuthorization,
@@ -73,7 +74,9 @@ const planCollectionSchemaDeletion = withAuthorization<
     const plan = await createEffectiveSchemaChange({
       database,
       excludedSchemaIDs: [resolved.schemaID],
-      initiatedBy: auth.session?.memberID ? toUUID(auth.session.memberID) : null,
+      initiatedBy: getUserAuthorization(auth)?.memberID
+        ? toUUID(getUserAuthorization(auth)!.memberID)
+        : null,
       rootCollectionIDs: [resolved.collectionID],
       schemaID: resolved.schemaID,
       schemaVersionID: null,

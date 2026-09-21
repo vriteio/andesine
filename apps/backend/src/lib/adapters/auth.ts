@@ -1,4 +1,4 @@
-import { deleteUserImages } from "#backend/services/assets/profile/delete-user";
+import { Asset } from "#backend/services/assets";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { emailOTP, multiSession } from "better-auth/plugins";
@@ -14,6 +14,8 @@ import { createOTPToken } from "#backend/lib/security";
 import { add } from "date-fns";
 import { APIError } from "better-auth/api";
 import { RATE_LIMITS } from "#backend/lib/security";
+import { createOAuthPlugins, OAUTH_DISABLED_PATHS } from "#backend/lib/auth/oauth";
+import { Auth } from "#backend/services/auth";
 
 const OTP_EXPIRY_SECONDS = 300;
 
@@ -23,6 +25,7 @@ const auth = betterAuth({
   secret: config.SECRET,
   basePath: "/auth",
   disabledPaths: [
+    ...OAUTH_DISABLED_PATHS,
     // Email + password (authentication is entirely passwordless, so these are unsupported)
     "/sign-up/email",
     "/sign-in/email",
@@ -47,6 +50,11 @@ const auth = betterAuth({
     ...RATE_LIMITS.authentication,
     customRules: {
       "/sign-in/*": RATE_LIMITS.signIn,
+      "/device/code": RATE_LIMITS.oauthDevice,
+      "/device": RATE_LIMITS.oauthDevice,
+      "/device/approve": RATE_LIMITS.oauthDevice,
+      "/device/deny": RATE_LIMITS.oauthDevice,
+      "/oauth2/token": RATE_LIMITS.oauthToken,
       "/email-otp/*": RATE_LIMITS.otp
     }
   },
@@ -84,6 +92,9 @@ const auth = betterAuth({
     },
     delete: async (key) => {
       await redis.del(`auth:${key}`);
+    },
+    getAndDelete: async (key) => {
+      return await redis.getDel(`auth:${key}`);
     },
     increment: async (key, ttl) => {
       const result = await incrementWithExpiry(redis, `auth:${key}`, ttl);
@@ -131,7 +142,7 @@ const auth = betterAuth({
     user: {
       delete: {
         before: async (user) => {
-          await deleteUserImages({ userID: user.id });
+          await Asset.Profile.deleteUser({ userID: toUserID(user.id) });
         }
       },
       create: {
@@ -172,6 +183,13 @@ const auth = betterAuth({
   },
   emailVerification: { autoSignInAfterVerification: true },
   plugins: [
+    ...createOAuthPlugins({ apiURL: config.PUBLIC_API_URL, appURL: config.PUBLIC_APP_URL }),
+    {
+      id: "andesine-oauth-client",
+      init: async (): Promise<void> => {
+        await Auth.OAuth.provision();
+      }
+    },
     emailOTP({
       async sendVerificationOTP({ email, otp, type }, ctx) {
         if (type === "forget-password" || type === "change-email") {

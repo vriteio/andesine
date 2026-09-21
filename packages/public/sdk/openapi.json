@@ -5,9 +5,15 @@
     "license": { "name": "MIT", "identifier": "MIT" }
   },
   "servers": [{ "url": "https://api.andesine.app" }],
-  "security": [{ "apiKey": [] }],
+  "security": [{ "apiKey": [] }, { "oauth": [] }],
   "components": {
     "securitySchemes": {
+      "oauth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Andesine OAuth access token",
+        "description": "Use an OAuth access token with andesine:api scope. Send x-workspace-id for workspace operations. Current user permissions apply."
+      },
       "apiKey": {
         "type": "http",
         "scheme": "bearer",
@@ -16,6 +22,212 @@
       }
     },
     "schemas": {
+      "TypeMetadata": {
+        "type": "object",
+        "properties": {
+          "formatVersion": { "const": 1 },
+          "workspaceID": { "type": "string", "pattern": "^ws_[A-Za-z\\d]{1,22}$" },
+          "source": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": { "kind": { "const": "current" } },
+                "required": ["kind"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": { "const": "published" },
+                  "channel": { "$ref": "#/components/schemas/PublishingChannelCode" },
+                  "snapshotID": { "type": "string", "pattern": "^snp_[A-Za-z\\d]{1,22}$" },
+                  "expiresAt": {
+                    "anyOf": [
+                      { "type": "string", "format": "date-time", "x-native-type": "date" },
+                      { "type": "null" }
+                    ]
+                  }
+                },
+                "required": ["kind", "channel", "snapshotID", "expiresAt"]
+              }
+            ]
+          },
+          "fingerprint": {
+            "type": "string",
+            "pattern": "^[a-f\\d]{64}$",
+            "description": "Deterministic hash of returned type metadata and source kind. Excludes publication snapshot IDs, expiry, content bodies, and unrequested entry/tree data."
+          },
+          "collections": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TypeMetadataCollection" }
+          },
+          "revisions": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SchemaRevision" },
+            "description": "Distinct effective definitions, including inherited fields, referenced by collections or entries."
+          },
+          "entries": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TypeMetadataEntry" }
+          },
+          "tree": { "type": "array", "items": { "$ref": "#/components/schemas/TypeMetadataTree" } }
+        },
+        "required": [
+          "formatVersion",
+          "workspaceID",
+          "source",
+          "fingerprint",
+          "collections",
+          "revisions"
+        ]
+      },
+      "TypeMetadataCollection": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "anyOf": [
+              { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+              { "type": "null" }
+            ],
+            "description": "Null identifies the virtual root at /."
+          },
+          "parentID": {
+            "anyOf": [
+              { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+              { "type": "null" }
+            ]
+          },
+          "name": { "type": "string" },
+          "path": { "type": "string" },
+          "schemaRevisionIDs": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                { "type": "string", "pattern": "^schr_[A-Za-z\\d]{1,22}$" },
+                { "type": "null" }
+              ]
+            },
+            "description": "Effective schema revisions for this collection. Null represents schema-free content. An empty array has no recorded schema evidence; use a general type without a warning."
+          }
+        },
+        "required": ["id", "parentID", "name", "path", "schemaRevisionIDs"]
+      },
+      "TypeMetadataEntry": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "pattern": "^ent_[A-Za-z\\d]{1,22}$" },
+          "collectionID": {
+            "anyOf": [
+              { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+              { "type": "null" }
+            ]
+          },
+          "name": { "type": "string" },
+          "path": { "type": "string" },
+          "schemaRevisionID": {
+            "anyOf": [
+              { "type": "string", "pattern": "^schr_[A-Za-z\\d]{1,22}$" },
+              { "type": "null" }
+            ]
+          }
+        },
+        "required": ["id", "collectionID", "name", "path", "schemaRevisionID"]
+      },
+      "TypeMetadataTree": {
+        "type": "object",
+        "properties": {
+          "collectionID": {
+            "anyOf": [
+              { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+              { "type": "null" }
+            ]
+          },
+          "collectionIDs": {
+            "type": "array",
+            "items": { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+            "description": "Selected direct children in display order."
+          },
+          "entryIDs": {
+            "type": "array",
+            "items": { "type": "string", "pattern": "^ent_[A-Za-z\\d]{1,22}$" },
+            "description": "Direct entries in display order."
+          }
+        },
+        "required": ["collectionID", "collectionIDs", "entryIDs"]
+      },
+      "Identity": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": { "const": "key" },
+              "keyID": { "type": "string", "pattern": "^(?:\\w+?_[A-Za-z\\d]{1,22})$" },
+              "workspaceID": { "type": "string", "pattern": "^(?:\\w+?_[A-Za-z\\d]{1,22})$" }
+            },
+            "required": ["type", "keyID", "workspaceID"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": { "enum": ["oauth", "session"], "type": "string" },
+              "user": { "$ref": "#/components/schemas/UserProfile" }
+            },
+            "required": ["type", "user"]
+          }
+        ]
+      },
+      "WorkspaceListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
+            "description": "ID of the workspace"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "description": "Name of the workspace"
+          },
+          "logo": { "type": "string", "description": "Public workspace logo URL" },
+          "userID": {
+            "type": "string",
+            "pattern": "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
+            "description": "ID of the user associated with this workspace membership"
+          },
+          "currentEntryID": {
+            "type": "string",
+            "pattern": "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
+            "description": "ID of the member's latest active entry"
+          },
+          "permissions": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Permission" },
+            "description": "Permissions granted to the current member"
+          },
+          "admin": {
+            "type": "boolean",
+            "description": "Whether the current member has the system admin role"
+          },
+          "subscriptionPlan": {
+            "type": "string",
+            "description": "Effective feature plan identifier"
+          },
+          "billingEnabled": {
+            "type": "boolean",
+            "description": "Whether cloud billing is configured"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "userID",
+          "permissions",
+          "admin",
+          "subscriptionPlan",
+          "billingEnabled"
+        ]
+      },
       "AnswerEvent": {
         "anyOf": [
           {
@@ -2518,6 +2730,13 @@
             "allowEmptyValue": true,
             "allowReserved": true,
             "example": 10
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -3151,6 +3370,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
         "x-sdk-example": {
           "assetID": "ast_example",
           "entryID": "ent_example",
@@ -3172,6 +3400,13 @@
             "required": true,
             "schema": { "type": "string", "pattern": "^ast_[A-Za-z\\d]{1,22}$" },
             "example": "ast_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "requestBody": {
@@ -3826,6 +4061,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
         "x-sdk-example": {
           "assetID": "ast_example",
           "entryID": "ent_example",
@@ -3848,6 +4092,13 @@
             "required": true,
             "schema": { "type": "string", "pattern": "^ast_[A-Za-z\\d]{1,22}$" },
             "example": "ast_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "requestBody": {
@@ -4192,6 +4443,13 @@
             "allowEmptyValue": true,
             "allowReserved": true,
             "example": "ent_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -4472,6 +4730,286 @@
         "x-sdk-example": { "assetID": "ast_example", "entryID": "ent_example" }
       }
     },
+    "/identity": {
+      "get": {
+        "operationId": "auth.getIdentity",
+        "summary": "Get credential identity",
+        "description": "Returns the authenticated user for OAuth or browser credentials, or the key and workspace IDs for an API key. Does not require a workspace selection and does not count toward API usage.",
+        "tags": ["auth"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Identity" } }
+            }
+          },
+          "400": {
+            "description": "400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "BAD_REQUEST" },
+                        "status": { "const": 400 },
+                        "message": { "type": "string", "default": "Bad Request" },
+                        "data": { "$ref": "#/components/schemas/ValidationErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "UNAUTHORIZED" },
+                        "status": { "const": 401 },
+                        "message": { "type": "string", "default": "Unauthorized" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "FORBIDDEN" },
+                        "status": { "const": 403 },
+                        "message": { "type": "string", "default": "Forbidden" },
+                        "data": { "$ref": "#/components/schemas/ForbiddenErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "NOT_FOUND" },
+                        "status": { "const": 404 },
+                        "message": { "type": "string", "default": "Not Found" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "CONFLICT" },
+                        "status": { "const": 409 },
+                        "message": { "type": "string", "default": "Conflict" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "TOO_MANY_REQUESTS" },
+                        "status": { "const": 429 },
+                        "message": { "type": "string", "default": "Too Many Requests" },
+                        "data": { "$ref": "#/components/schemas/RateLimitErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "INTERNAL_SERVER_ERROR" },
+                        "status": { "const": 500 },
+                        "message": { "type": "string", "default": "Internal Server Error" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "SERVICE_UNAVAILABLE" },
+                        "status": { "const": 503 },
+                        "message": { "type": "string", "default": "Service Unavailable" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/instance": {
       "get": {
         "operationId": "instance.get",
@@ -4750,6 +5288,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
         "x-sdk-example": {}
       }
     },
@@ -5095,6 +5642,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
         "x-sdk-example": { "name": "Getting started", "collectionID": "coll_example" }
       }
     },
@@ -5422,6 +5978,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
         "x-sdk-example": { "ids": ["ent_example"] }
       }
     },
@@ -5442,6 +6007,13 @@
               "description": "ID of the entry to delete"
             },
             "example": "ent_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -5759,6 +6331,13 @@
               "description": "ID of the entry to be updated"
             },
             "example": "ent_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "requestBody": {
@@ -6125,6 +6704,13 @@
             },
             "allowEmptyValue": true,
             "allowReserved": true
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -6472,6 +7058,13 @@
             "allowEmptyValue": true,
             "allowReserved": true,
             "example": 20
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -7108,6 +7701,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
         "x-sdk-example": { "name": "Documentation", "parentID": "coll_example" }
       }
     },
@@ -7435,6 +8037,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
         "x-sdk-example": { "ids": ["coll_example"] }
       }
     },
@@ -7455,6 +8066,13 @@
               "description": "ID of the collection to delete"
             },
             "example": "coll_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -7772,6 +8390,13 @@
               "description": "ID of the collection to be updated"
             },
             "example": "coll_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "requestBody": {
@@ -8152,6 +8777,13 @@
             "allowEmptyValue": true,
             "allowReserved": true,
             "example": 20
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -8498,6 +9130,13 @@
             "schema": { "type": "string", "pattern": "^snp_[A-Za-z\\d]{1,22}$" },
             "allowEmptyValue": true,
             "allowReserved": true
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -8880,6 +9519,13 @@
             "explode": true,
             "allowEmptyValue": true,
             "allowReserved": true
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -9235,6 +9881,13 @@
             "schema": { "type": "string", "pattern": "^snp_[A-Za-z\\d]{1,22}$" },
             "allowEmptyValue": true,
             "allowReserved": true
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -9914,6 +10567,13 @@
             },
             "allowEmptyValue": true,
             "allowReserved": true
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -10272,6 +10932,13 @@
             },
             "allowEmptyValue": true,
             "allowReserved": true
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -10840,6 +11507,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
         "x-sdk-example": {}
       },
       "post": {
@@ -11164,6 +11840,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
         "x-sdk-example": { "name": "Editor", "permissions": ["content"] }
       }
     },
@@ -11184,6 +11869,13 @@
               "description": "ID of the role to update"
             },
             "example": "rl_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "requestBody": {
@@ -11522,6 +12214,13 @@
               "description": "ID of the role to delete"
             },
             "example": "rl_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -12109,6 +12808,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
         "x-sdk-example": { "query": "installation", "limit": 10 }
       }
     },
@@ -12439,6 +13147,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
         "x-sdk-example": { "query": "installation", "channel": "published", "limit": 10 }
       }
     },
@@ -12752,6 +13469,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
         "x-sdk-example": { "question": "How do I install Andesine?" }
       }
     },
@@ -13071,6 +13797,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
         "x-sdk-example": { "question": "How do I install Andesine?", "channel": "published" }
       }
     },
@@ -13417,7 +14152,16 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ]
       }
     },
     "/search/published/ask/stream": {
@@ -13769,7 +14513,16 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ]
       }
     },
     "/collections/{collectionID}/schema": {
@@ -13789,6 +14542,13 @@
               "description": "ID of the collection"
             },
             "example": "coll_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -14110,6 +14870,13 @@
               "description": "ID of the local collection schema"
             },
             "example": "sch_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "requestBody": {
@@ -14461,6 +15228,13 @@
             "required": true,
             "schema": { "type": "string", "pattern": "^schr_[A-Za-z\\d]{1,22}$" },
             "example": "schr_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -14762,6 +15536,13 @@
             },
             "allowEmptyValue": true,
             "allowReserved": true
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -15056,6 +15837,13 @@
               "description": "ID of the local collection schema"
             },
             "example": "sch_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "requestBody": {
@@ -15420,6 +16208,13 @@
             "allowEmptyValue": true,
             "allowReserved": true,
             "example": 20
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -15726,6 +16521,13 @@
               "description": "ID of the affected collection"
             },
             "example": "coll_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -16024,6 +16826,13 @@
               "description": "ID of the schema migration"
             },
             "example": "smg_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -16342,6 +17151,13 @@
             "allowEmptyValue": true,
             "allowReserved": true,
             "example": 20
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -16648,6 +17464,13 @@
               "description": "ID of the schema version"
             },
             "example": "schv_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -16940,6 +17763,13 @@
               "description": "ID of the schema version"
             },
             "example": "schv_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "requestBody": {
@@ -17280,6 +18110,13 @@
               "description": "ID of the schema version to restore"
             },
             "example": "schv_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "requestBody": {
@@ -17632,6 +18469,13 @@
             "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 50 },
             "allowEmptyValue": true,
             "allowReserved": true
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -18245,6 +19089,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
         "x-sdk-example": { "email": "editor@example.com", "roleID": "rl_example" }
       }
     },
@@ -18265,6 +19118,13 @@
               "description": "ID of the membership to update"
             },
             "example": "ms_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "requestBody": {
@@ -18576,6 +19436,13 @@
               "description": "ID of the membership to remove"
             },
             "example": "ms_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -18877,6 +19744,13 @@
             "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 50 },
             "allowEmptyValue": true,
             "allowReserved": true
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -19180,6 +20054,13 @@
               "description": "ID of the pending invitation"
             },
             "example": "inv_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -19476,6 +20357,13 @@
               "description": "ID of the invite to revoke"
             },
             "example": "inv_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -19770,6 +20658,13 @@
               "description": "Collection to configure"
             },
             "example": "coll_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "requestBody": {
@@ -20128,6 +21023,13 @@
               "description": "Collection tree to publish"
             },
             "example": "coll_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "requestBody": {
@@ -20480,6 +21382,13 @@
               "description": "Collection tree to unpublish"
             },
             "example": "coll_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "requestBody": {
@@ -21157,6 +22066,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
         "x-sdk-example": { "ids": ["coll_example"], "enabled": true, "publish": false }
       }
     },
@@ -21506,6 +22424,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
         "x-sdk-example": { "ids": ["coll_example"], "channel": "published" }
       }
     },
@@ -21844,6 +22771,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
         "x-sdk-example": { "ids": ["coll_example"], "channel": "published" }
       }
     },
@@ -21864,6 +22800,13 @@
               "description": "Entry to publish"
             },
             "example": "ent_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "requestBody": {
@@ -22219,6 +23162,13 @@
               "description": "Entry to unpublish"
             },
             "example": "ent_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "requestBody": {
@@ -22896,6 +23846,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
         "x-sdk-example": { "entries": [{ "entryID": "ent_example" }], "channel": "published" }
       }
     },
@@ -23232,6 +24191,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
         "x-sdk-example": { "ids": ["ent_example"], "channel": "published" }
       }
     },
@@ -23636,6 +24604,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
         "x-sdk-example": {
           "collectionID": "coll_example",
           "snapshotID": "snp_example",
@@ -23697,6 +24674,13 @@
             },
             "allowEmptyValue": true,
             "allowReserved": true
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -24013,6 +24997,13 @@
               "description": "Entry whose publications to list"
             },
             "example": "ent_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -24312,6 +25303,13 @@
             "allowEmptyValue": true,
             "allowReserved": true,
             "example": true
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -24912,6 +25910,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
         "x-sdk-example": { "name": "Preview" }
       }
     },
@@ -24941,6 +25948,13 @@
             "allowEmptyValue": true,
             "allowReserved": true,
             "example": "coll_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -25236,6 +26250,13 @@
               "description": "Publishing channel identifier"
             },
             "example": "preview"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "requestBody": {
@@ -25553,6 +26574,292 @@
         "x-sdk-example": { "code": "preview" }
       }
     },
+    "/workspaces": {
+      "get": {
+        "operationId": "workspaces.list",
+        "summary": "List available workspaces",
+        "description": "Lists workspaces available to the OAuth user, with current role permissions and plan access. Browser sessions can list workspaces across signed-in accounts. Does not require workspace selection and does not count toward API usage.",
+        "tags": ["workspaces"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/WorkspaceListItem" }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "BAD_REQUEST" },
+                        "status": { "const": 400 },
+                        "message": { "type": "string", "default": "Bad Request" },
+                        "data": { "$ref": "#/components/schemas/ValidationErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "UNAUTHORIZED" },
+                        "status": { "const": 401 },
+                        "message": { "type": "string", "default": "Unauthorized" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "FORBIDDEN" },
+                        "status": { "const": 403 },
+                        "message": { "type": "string", "default": "Forbidden" },
+                        "data": { "$ref": "#/components/schemas/ForbiddenErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "NOT_FOUND" },
+                        "status": { "const": 404 },
+                        "message": { "type": "string", "default": "Not Found" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "CONFLICT" },
+                        "status": { "const": 409 },
+                        "message": { "type": "string", "default": "Conflict" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "TOO_MANY_REQUESTS" },
+                        "status": { "const": 429 },
+                        "message": { "type": "string", "default": "Too Many Requests" },
+                        "data": { "$ref": "#/components/schemas/RateLimitErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "INTERNAL_SERVER_ERROR" },
+                        "status": { "const": 500 },
+                        "message": { "type": "string", "default": "Internal Server Error" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "SERVICE_UNAVAILABLE" },
+                        "status": { "const": 503 },
+                        "message": { "type": "string", "default": "Service Unavailable" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "oauth": [] }]
+      }
+    },
     "/entries/{entryID}/versions": {
       "post": {
         "operationId": "versions.create",
@@ -25570,6 +26877,13 @@
               "description": "ID of the entry to version"
             },
             "example": "ent_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "requestBody": {
@@ -25916,6 +27230,13 @@
             "allowEmptyValue": true,
             "allowReserved": true,
             "example": 20
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -26233,6 +27554,13 @@
             },
             "allowEmptyValue": true,
             "allowReserved": true
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -26547,6 +27875,13 @@
               "description": "ID of the version to update"
             },
             "example": "ver_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "requestBody": {
@@ -26862,6 +28197,13 @@
               "description": "ID of the version to restore"
             },
             "example": "ver_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
         "responses": {
@@ -27184,6 +28526,689 @@
           }
         },
         "x-sdk-example": { "id": "ver_example" }
+      }
+    },
+    "/type-metadata/current": {
+      "post": {
+        "operationId": "typeMetadata.getCurrent",
+        "summary": "Get current content type metadata",
+        "description": "Read-only bulk metadata for type generation. Returns one consistent database snapshot of accessible collections and their active effective schemas, including inheritance. Optional entry/tree data requires read:entries in addition to read:collections. Explicit unavailable collection selectors fail. Active schema migrations in the selected collections return a conflict. No entry content is loaded. Schema-free collections use general types without warnings.\n\nRequired API key permissions: read:collections. Write permissions also grant read access for the same resource.",
+        "tags": ["type-metadata"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "collections": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "items": {
+                      "anyOf": [
+                        { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+                        {
+                          "type": "string",
+                          "description": "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+                        }
+                      ]
+                    },
+                    "default": [],
+                    "description": "Collection IDs or paths. Includes selected subtrees; empty selects all accessible collections."
+                  },
+                  "includeEntries": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Include entry IDs, names, paths, and schema associations."
+                  },
+                  "includeTree": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Include ordered child IDs for each collection. Also includes entry metadata."
+                  }
+                }
+              },
+              "example": { "collections": ["/Tutorials"], "includeEntries": false }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/TypeMetadata" } }
+            }
+          },
+          "400": {
+            "description": "400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "BAD_REQUEST" },
+                        "status": { "const": 400 },
+                        "message": { "type": "string", "default": "Bad Request" },
+                        "data": { "$ref": "#/components/schemas/ValidationErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "UNAUTHORIZED" },
+                        "status": { "const": 401 },
+                        "message": { "type": "string", "default": "Unauthorized" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "FORBIDDEN" },
+                        "status": { "const": 403 },
+                        "message": { "type": "string", "default": "Forbidden" },
+                        "data": { "$ref": "#/components/schemas/ForbiddenErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "NOT_FOUND" },
+                        "status": { "const": 404 },
+                        "message": { "type": "string", "default": "Not Found" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "CONFLICT" },
+                        "status": { "const": 409 },
+                        "message": { "type": "string", "default": "Conflict" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "SCHEMA_FIELD_KEY_CONFLICT" },
+                        "status": { "const": 409 },
+                        "message": { "type": "string", "default": "SCHEMA_FIELD_KEY_CONFLICT" },
+                        "data": { "$ref": "#/components/schemas/SchemaFieldKeyConflictErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message", "data"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "SCHEMA_MIGRATION_IN_PROGRESS" },
+                        "status": { "const": 409 },
+                        "message": {
+                          "type": "string",
+                          "default": "A schema migration is in progress for this collection"
+                        },
+                        "data": { "$ref": "#/components/schemas/SchemaMigrationErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message", "data"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "TOO_MANY_REQUESTS" },
+                        "status": { "const": 429 },
+                        "message": { "type": "string", "default": "Too Many Requests" },
+                        "data": { "$ref": "#/components/schemas/RateLimitErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "INTERNAL_SERVER_ERROR" },
+                        "status": { "const": 500 },
+                        "message": { "type": "string", "default": "Internal Server Error" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "SERVICE_UNAVAILABLE" },
+                        "status": { "const": 503 },
+                        "message": { "type": "string", "default": "Service Unavailable" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
+        "x-sdk-example": { "collections": ["/Tutorials"], "includeEntries": false }
+      }
+    },
+    "/type-metadata/published": {
+      "post": {
+        "operationId": "typeMetadata.getPublished",
+        "summary": "Get published content type metadata",
+        "description": "Read-only bulk metadata for type generation. Resolves a channel once (published by default), or reads a retained snapshot. Uses publication paths, names, and exact entry-version schema revisions; never substitutes current schemas. Supports mixed revisions and schema-free entries. Empty collections use general types without warnings. Includes selected subtrees; no selectors means all published collections and root entries. Publication-access rules match content.get. No entry content is loaded. Reuse source.snapshotID for related reads. The fingerprint changes only when returned type metadata changes, not when content-only publication creates a new snapshot.\n\nRequired API key permissions: read:publishing. Write permissions also grant read access for the same resource.",
+        "tags": ["type-metadata"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "collections": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "items": {
+                      "anyOf": [
+                        { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+                        {
+                          "type": "string",
+                          "description": "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+                        }
+                      ]
+                    },
+                    "default": [],
+                    "description": "Collection IDs or paths. Includes selected subtrees; empty selects all accessible collections."
+                  },
+                  "includeEntries": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Include entry IDs, names, paths, and schema associations."
+                  },
+                  "includeTree": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Include ordered child IDs for each collection. Also includes entry metadata."
+                  },
+                  "channel": { "type": "string", "minLength": 1, "maxLength": 50 },
+                  "snapshotID": { "type": "string", "pattern": "^snp_[A-Za-z\\d]{1,22}$" }
+                }
+              },
+              "example": { "channel": "published", "collections": ["/Tutorials"] }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/TypeMetadata" } }
+            }
+          },
+          "400": {
+            "description": "400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "BAD_REQUEST" },
+                        "status": { "const": 400 },
+                        "message": { "type": "string", "default": "Bad Request" },
+                        "data": { "$ref": "#/components/schemas/ValidationErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "UNAUTHORIZED" },
+                        "status": { "const": 401 },
+                        "message": { "type": "string", "default": "Unauthorized" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "FORBIDDEN" },
+                        "status": { "const": 403 },
+                        "message": { "type": "string", "default": "Forbidden" },
+                        "data": { "$ref": "#/components/schemas/ForbiddenErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "NOT_FOUND" },
+                        "status": { "const": 404 },
+                        "message": { "type": "string", "default": "Not Found" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "CONFLICT" },
+                        "status": { "const": 409 },
+                        "message": { "type": "string", "default": "Conflict" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "TOO_MANY_REQUESTS" },
+                        "status": { "const": 429 },
+                        "message": { "type": "string", "default": "Too Many Requests" },
+                        "data": { "$ref": "#/components/schemas/RateLimitErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "INTERNAL_SERVER_ERROR" },
+                        "status": { "const": 500 },
+                        "message": { "type": "string", "default": "Internal Server Error" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "SERVICE_UNAVAILABLE" },
+                        "status": { "const": 503 },
+                        "message": { "type": "string", "default": "Service Unavailable" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
+        "x-sdk-example": { "channel": "published", "collections": ["/Tutorials"] }
       }
     }
   }

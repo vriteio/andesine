@@ -3,13 +3,15 @@ import { Auth } from "#backend/services/auth";
 import { assertAuthorizationRequirements, type SessionData } from "#backend/lib/policy";
 import { ORPCError } from "@orpc/server";
 import { base } from "../orpc";
+import { isPublicAPI } from "#backend/contracts/base";
 import { setErrorResponseHeaders } from "../error";
 import { config } from "#backend/lib/config";
 import { Billing } from "#backend/services/billing";
 const shouldTrackUsage = (sessionData: SessionData, trackUsage?: boolean): boolean => {
+  const usesAPICredentials = sessionData.type === "key" || sessionData.type === "oauth";
+
   return (
-    config.BILLING_ENABLED &&
-    ((sessionData.type === "key" && trackUsage !== false) || trackUsage === true)
+    config.BILLING_ENABLED && ((usesAPICredentials && trackUsage !== false) || trackUsage === true)
   );
 };
 const checkPlanAccess = (sessionData: SessionData, requireProPlan?: boolean): void => {
@@ -79,6 +81,13 @@ const authorized = base.middleware(async ({ procedure, context, next }) => {
     headers: context.reqHeaders!,
     requireWorkspace: meta.requireWorkspace !== false
   });
+
+  if (sessionData.type === "oauth" && !isPublicAPI(meta)) {
+    throw new ORPCError("FORBIDDEN", {
+      message: "OAuth credentials can only access public API operations",
+      data: { hints: ["Use the Andesine app for this browser-only operation."] }
+    });
+  }
 
   assertAuthorizationRequirements(sessionData, meta.required);
   checkPlanAccess(sessionData, meta.requireProPlan);

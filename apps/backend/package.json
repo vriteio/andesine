@@ -20,8 +20,8 @@
     "@andesine/templates": "workspace:*",
     "@aws-sdk/client-s3": "^3.1127.0",
     "@aws-sdk/s3-request-presigner": "^3.1127.0",
-    "@better-auth/drizzle-adapter": "^1.6.25",
-    "@better-auth/passkey": "^1.6.25",
+    "@better-auth/drizzle-adapter": "1.7.5",
+    "@better-auth/passkey": "1.7.5",
     "@fastify/cors": "^11.3.0",
     "@fastify/websocket": "^11.3.0",
     "@hocuspocus/extension-database": "^4.4.0",
@@ -32,7 +32,7 @@
     "@orpc/server": "^1.14.14",
     "@orpc/zod": "^1.14.14",
     "base-x": "^5.0.1",
-    "better-auth": "^1.6.25",
+    "better-auth": "1.7.5",
     "bullmq": "^6.3.1",
     "date-fns": "^4.4.0",
     "drizzle-orm": "^0.45.2",
@@ -46,7 +46,8 @@
     "y-protocols": "^1.0.7",
     "yjs": "^13.6.32",
     "zod": "^4.4.3",
-    "@andesine/converters": "workspace:*"
+    "@andesine/converters": "workspace:*",
+    "@better-auth/oauth-provider": "1.7.5"
   },
   "devDependencies": {
     "@types/node": "^26.1.2",

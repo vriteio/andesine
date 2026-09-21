@@ -1,10 +1,13 @@
+import { getUserAuthorization, type SessionData } from "#backend/lib/policy";
 import { emitPublishingEntryUpdates, emitVersionEvent } from "#backend/events";
 import { type VersionDetails, type VersionSummary } from "#backend/lib/data";
 import { authorized } from "#backend/lib/transport/middleware/authorized";
 import { Versions } from "#backend/services/versions";
 import { api } from "./implement";
-const getContributorIDs = (auth: { session?: { memberID: string } }): string[] => {
-  return auth.session ? [auth.session.memberID] : [];
+const getContributorIDs = (auth: SessionData): string[] => {
+  const memberID = getUserAuthorization(auth)?.memberID;
+
+  return memberID ? [memberID] : [];
 };
 const toVersionSummary = ({
   document: _document,
@@ -28,7 +31,7 @@ const versionsRouter = handlers.router({
     emitVersionEvent(context.auth.workspaceID, {
       action: "version:create",
       data: toVersionSummary(version),
-      memberID: context.auth.session?.memberID
+      memberID: getUserAuthorization(context.auth)?.memberID
     });
 
     return version;
@@ -66,7 +69,7 @@ const versionsRouter = handlers.router({
     emitVersionEvent(context.auth.workspaceID, {
       action: "version:update",
       data: version,
-      memberID: context.auth.session?.memberID
+      memberID: getUserAuthorization(context.auth)?.memberID
     });
   }),
   revert: authorizedHandlers.revert.handler(async ({ context, input }) => {
@@ -80,14 +83,14 @@ const versionsRouter = handlers.router({
       emitVersionEvent(context.auth.workspaceID, {
         action: "version:create",
         data: toVersionSummary(version),
-        memberID: context.auth.session?.memberID
+        memberID: getUserAuthorization(context.auth)?.memberID
       });
     }
 
     emitPublishingEntryUpdates({
       workspaceID: context.auth.workspaceID,
       entries: result.publishingEntries,
-      memberID: context.auth.session?.memberID
+      memberID: getUserAuthorization(context.auth)?.memberID
     });
 
     return result.version;

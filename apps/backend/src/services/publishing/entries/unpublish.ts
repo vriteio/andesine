@@ -1,3 +1,4 @@
+import { getUserAuthorization } from "#backend/lib/policy";
 import { assertPublishingSnapshot } from "#backend/lib/publishing/precondition";
 import { publishingSnapshotEntries } from "#backend/db";
 import {
@@ -77,7 +78,7 @@ const unpublishEntry = withAuthorization<
       authorization,
       workspaceID,
       channelCode: input.channel,
-      creatorID: auth.session?.userID,
+      creatorID: getUserAuthorization(auth)?.userID,
       entryRemovals,
       expectedSnapshotID: snapshot.id,
       reason: "unpublish",

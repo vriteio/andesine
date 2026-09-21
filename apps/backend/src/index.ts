@@ -4,6 +4,7 @@ import { type router, routerPlugin } from "#backend/router";
 import "./events";
 import { collab, shutdownCollaboration } from "#backend/collaboration";
 import { config } from "#backend/lib/config";
+import { authPlugin } from "#backend/lib/transport/auth";
 import Fastify, { type FastifyRequest } from "fastify";
 import corsPlugin from "@fastify/cors";
 import websocketPlugin from "@fastify/websocket";
@@ -149,30 +150,7 @@ app.get(
     });
   }
 );
-app.route({
-  method: ["GET", "POST"],
-  url: "/auth/*",
-  handler: async (request, reply) => {
-    try {
-      const webRequest = createWebRequest(request);
-      const webResponse = await auth.handler(webRequest);
-
-      reply.status(webResponse.status);
-
-      for (const [key, value] of webResponse.headers) {
-        reply.header(key, value);
-      }
-
-      return reply.send(webResponse.body ? webResponse.body : null);
-    } catch (error) {
-      console.error("Authentication error:", error);
-      return reply.status(500).send({
-        error: "Internal authentication error",
-        code: "AUTH_FAILURE"
-      });
-    }
-  }
-});
+app.register(authPlugin, { baseURL: config.PUBLIC_API_URL, handler: auth.handler });
 app.register(webhooksPlugin);
 app.register(routerPlugin);
 

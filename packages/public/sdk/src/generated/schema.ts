@@ -131,6 +131,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/identity": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get credential identity
+     * @description Returns the authenticated user for OAuth or browser credentials, or the key and workspace IDs for an API key. Does not require a workspace selection and does not count toward API usage.
+     */
+    get: operations["auth.getIdentity"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/instance": {
     parameters: {
       query?: never;
@@ -1359,6 +1379,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/workspaces": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List available workspaces
+     * @description Lists workspaces available to the OAuth user, with current role permissions and plan access. Browser sessions can list workspaces across signed-in accounts. Does not require workspace selection and does not count toward API usage.
+     */
+    get: operations["workspaces.list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/entries/{entryID}/versions": {
     parameters: {
       query?: never;
@@ -1437,10 +1477,133 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/type-metadata/current": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Get current content type metadata
+     * @description Read-only bulk metadata for type generation. Returns one consistent database snapshot of accessible collections and their active effective schemas, including inheritance. Optional entry/tree data requires read:entries in addition to read:collections. Explicit unavailable collection selectors fail. Active schema migrations in the selected collections return a conflict. No entry content is loaded. Schema-free collections use general types without warnings.
+     *
+     *     Required API key permissions: read:collections. Write permissions also grant read access for the same resource.
+     */
+    post: operations["typeMetadata.getCurrent"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/type-metadata/published": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Get published content type metadata
+     * @description Read-only bulk metadata for type generation. Resolves a channel once (published by default), or reads a retained snapshot. Uses publication paths, names, and exact entry-version schema revisions; never substitutes current schemas. Supports mixed revisions and schema-free entries. Empty collections use general types without warnings. Includes selected subtrees; no selectors means all published collections and root entries. Publication-access rules match content.get. No entry content is loaded. Reuse source.snapshotID for related reads. The fingerprint changes only when returned type metadata changes, not when content-only publication creates a new snapshot.
+     *
+     *     Required API key permissions: read:publishing. Write permissions also grant read access for the same resource.
+     */
+    post: operations["typeMetadata.getPublished"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    TypeMetadata: {
+      /** @constant */
+      formatVersion: 1;
+      workspaceID: string;
+      source:
+        | {
+            /** @constant */
+            kind: "current";
+          }
+        | {
+            /** @constant */
+            kind: "published";
+            channel: components["schemas"]["PublishingChannelCode"];
+            snapshotID: string;
+            expiresAt: string | null;
+          };
+      /** @description Deterministic hash of returned type metadata and source kind. Excludes publication snapshot IDs, expiry, content bodies, and unrequested entry/tree data. */
+      fingerprint: string;
+      collections: components["schemas"]["TypeMetadataCollection"][];
+      /** @description Distinct effective definitions, including inherited fields, referenced by collections or entries. */
+      revisions: components["schemas"]["SchemaRevision"][];
+      entries?: components["schemas"]["TypeMetadataEntry"][];
+      tree?: components["schemas"]["TypeMetadataTree"][];
+    };
+    TypeMetadataCollection: {
+      /** @description Null identifies the virtual root at /. */
+      id: string | null;
+      parentID: string | null;
+      name: string;
+      path: string;
+      /** @description Effective schema revisions for this collection. Null represents schema-free content. An empty array has no recorded schema evidence; use a general type without a warning. */
+      schemaRevisionIDs: (string | null)[];
+    };
+    TypeMetadataEntry: {
+      id: string;
+      collectionID: string | null;
+      name: string;
+      path: string;
+      schemaRevisionID: string | null;
+    };
+    TypeMetadataTree: {
+      collectionID: string | null;
+      /** @description Selected direct children in display order. */
+      collectionIDs: string[];
+      /** @description Direct entries in display order. */
+      entryIDs: string[];
+    };
+    Identity:
+      | {
+          /** @constant */
+          type: "key";
+          keyID: string;
+          workspaceID: string;
+        }
+      | {
+          /** @enum {string} */
+          type: "oauth" | "session";
+          user: components["schemas"]["UserProfile"];
+        };
+    WorkspaceListItem: {
+      /** @description ID of the workspace */
+      id: string;
+      /** @description Name of the workspace */
+      name: string;
+      /** @description Public workspace logo URL */
+      logo?: string;
+      /** @description ID of the user associated with this workspace membership */
+      userID: string;
+      /** @description ID of the member's latest active entry */
+      currentEntryID?: string;
+      /** @description Permissions granted to the current member */
+      permissions: components["schemas"]["Permission"][];
+      /** @description Whether the current member has the system admin role */
+      admin: boolean;
+      /** @description Effective feature plan identifier */
+      subscriptionPlan: string;
+      /** @description Whether cloud billing is configured */
+      billingEnabled: boolean;
+    };
     AnswerEvent:
       | {
           /** @constant */
@@ -2606,6 +2769,12 @@ export interface components {
   headers: never;
   pathItems: never;
 }
+export type TypeMetadata = components["schemas"]["TypeMetadata"];
+export type TypeMetadataCollection = components["schemas"]["TypeMetadataCollection"];
+export type TypeMetadataEntry = components["schemas"]["TypeMetadataEntry"];
+export type TypeMetadataTree = components["schemas"]["TypeMetadataTree"];
+export type Identity = components["schemas"]["Identity"];
+export type WorkspaceListItem = components["schemas"]["WorkspaceListItem"];
 export type AnswerEvent = components["schemas"]["AnswerEvent"];
 export type PublishedAnswerEvent = components["schemas"]["PublishedAnswerEvent"];
 export type AnswerSource = components["schemas"]["AnswerSource"];
@@ -2732,7 +2901,10 @@ export interface operations {
         /** @example 10 */
         limit?: number;
       };
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -2977,7 +3149,10 @@ export interface operations {
   "assets.importURL": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -3269,7 +3444,10 @@ export interface operations {
   "assets.attach": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example ast_example */
         assetID: string;
@@ -3548,7 +3726,10 @@ export interface operations {
   "assets.register": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -3835,7 +4016,10 @@ export interface operations {
   "assets.upload": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example ast_example */
         assetID: string;
@@ -4125,7 +4309,10 @@ export interface operations {
         /** @example ent_example */
         entryID?: string;
       };
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example ast_example */
         assetID: string;
@@ -4370,10 +4557,257 @@ export interface operations {
       };
     };
   };
-  "instance.get": {
+  "auth.getIdentity": {
     parameters: {
       query?: never;
       header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Identity"];
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "instance.get": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -4617,7 +5051,10 @@ export interface operations {
   "entries.create": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -4911,7 +5348,10 @@ export interface operations {
   "entries.bulkDelete": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -5191,7 +5631,10 @@ export interface operations {
   "entries.update": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example ent_example */
         id: string;
@@ -5483,7 +5926,10 @@ export interface operations {
   "entries.delete": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example ent_example */
         id: string;
@@ -5757,7 +6203,10 @@ export interface operations {
         path?: string;
         expectedSchemaHash?: string;
       };
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -6030,7 +6479,10 @@ export interface operations {
         /** @example 20 */
         limit?: number;
       };
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -6277,7 +6729,10 @@ export interface operations {
   "collections.create": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -6573,7 +7028,10 @@ export interface operations {
   "collections.bulkDelete": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -6853,7 +7311,10 @@ export interface operations {
   "collections.update": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example coll_example */
         id: string;
@@ -7145,7 +7606,10 @@ export interface operations {
   "collections.delete": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example coll_example */
         id: string;
@@ -7421,7 +7885,10 @@ export interface operations {
         /** @example 20 */
         limit?: number;
       };
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -7677,7 +8144,10 @@ export interface operations {
         channel?: string;
         snapshotID?: string;
       };
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -7939,7 +8409,10 @@ export interface operations {
         includeContent?: boolean;
         filters?: components["schemas"]["PropertyFilter"][];
       };
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -8209,7 +8682,10 @@ export interface operations {
         channel?: string;
         snapshotID?: string;
       };
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -8730,7 +9206,10 @@ export interface operations {
         channel?: string;
         snapshotID?: string;
       };
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -9014,7 +9493,10 @@ export interface operations {
         channel?: string;
         snapshotID?: string;
       };
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -9269,7 +9751,10 @@ export interface operations {
   "roles.list": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -9513,7 +9998,10 @@ export interface operations {
   "roles.create": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -9796,7 +10284,10 @@ export interface operations {
   "roles.update": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example rl_example */
         id: string;
@@ -10079,7 +10570,10 @@ export interface operations {
   "roles.delete": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example rl_example */
         id: string;
@@ -10326,7 +10820,10 @@ export interface operations {
   "search.current": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -10594,7 +11091,10 @@ export interface operations {
   "search.published": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -10867,7 +11367,10 @@ export interface operations {
   "search.askCurrent": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -11129,7 +11632,10 @@ export interface operations {
   "search.askPublished": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -11394,7 +11900,10 @@ export interface operations {
   "search.askCurrentStream": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -11672,7 +12181,10 @@ export interface operations {
   "search.askPublishedStream": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -11952,7 +12464,10 @@ export interface operations {
   "schemas.create": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example coll_example */
         collectionID: string;
@@ -12221,7 +12736,10 @@ export interface operations {
   "schemas.delete": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example sch_example */
         schemaID: string;
@@ -12509,7 +13027,10 @@ export interface operations {
   "schemas.getRevision": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example schr_example */
         revisionID: string;
@@ -12760,7 +13281,10 @@ export interface operations {
         collectionID?: string;
         collectionPath?: string;
       };
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -13004,7 +13528,10 @@ export interface operations {
   "schemas.apply": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example sch_example */
         schemaID: string;
@@ -13295,7 +13822,10 @@ export interface operations {
         /** @example 20 */
         limit?: number;
       };
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example smg_example */
         id: string;
@@ -13545,7 +14075,10 @@ export interface operations {
   "schemaMigrations.getActive": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example coll_example */
         collectionID: string;
@@ -13792,7 +14325,10 @@ export interface operations {
   "schemaMigrations.get": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example smg_example */
         id: string;
@@ -14043,7 +14579,10 @@ export interface operations {
         /** @example 20 */
         limit?: number;
       };
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example sch_example */
         schemaID: string;
@@ -14293,7 +14832,10 @@ export interface operations {
   "schemaVersions.get": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example schv_example */
         id: string;
@@ -14540,7 +15082,10 @@ export interface operations {
   "schemaVersions.update": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example schv_example */
         id: string;
@@ -14821,7 +15366,10 @@ export interface operations {
   "schemaVersions.revert": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example schv_example */
         id: string;
@@ -15110,7 +15658,10 @@ export interface operations {
         cursor?: string;
         limit?: number;
       };
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -15357,7 +15908,10 @@ export interface operations {
   "memberships.invite": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -15641,7 +16195,10 @@ export interface operations {
   "memberships.remove": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example ms_example */
         id: string;
@@ -15888,7 +16445,10 @@ export interface operations {
   "memberships.update": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example ms_example */
         id: string;
@@ -16150,7 +16710,10 @@ export interface operations {
         cursor?: string;
         limit?: number;
       };
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -16397,7 +16960,10 @@ export interface operations {
   "memberships.resendInvite": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example inv_example */
         id: string;
@@ -16644,7 +17210,10 @@ export interface operations {
   "memberships.revokeInvite": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example inv_example */
         id: string;
@@ -16891,7 +17460,10 @@ export interface operations {
   "publishing.setCollection": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example coll_example */
         collectionID: string;
@@ -17190,7 +17762,10 @@ export interface operations {
   "publishing.publishCollection": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example coll_example */
         collectionID: string;
@@ -17487,7 +18062,10 @@ export interface operations {
   "publishing.unpublishCollection": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example coll_example */
         collectionID: string;
@@ -17773,7 +18351,10 @@ export interface operations {
   "publishing.bulkSetCollections": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -18074,7 +18655,10 @@ export interface operations {
   "publishing.bulkPublishCollections": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -18373,7 +18957,10 @@ export interface operations {
   "publishing.bulkUnpublishCollections": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -18661,7 +19248,10 @@ export interface operations {
   "publishing.publishEntry": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example ent_example */
         entryID: string;
@@ -18960,7 +19550,10 @@ export interface operations {
   "publishing.unpublishEntry": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example ent_example */
         entryID: string;
@@ -19249,7 +19842,10 @@ export interface operations {
   "publishing.bulkPublishEntries": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -19550,7 +20146,10 @@ export interface operations {
   "publishing.bulkUnpublishEntries": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -19838,7 +20437,10 @@ export interface operations {
   "publishing.revertChanges": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -20183,7 +20785,10 @@ export interface operations {
         expectedSchemaHash?: string;
         snapshotID?: string;
       };
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example ent_example */
         entryID: string;
@@ -20452,7 +21057,10 @@ export interface operations {
   "publishing.listEntryPublications": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example ent_example */
         entryID: string;
@@ -20702,7 +21310,10 @@ export interface operations {
         /** @example true */
         includeAssignmentCount?: boolean;
       };
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -20946,7 +21557,10 @@ export interface operations {
   "publishing.createChannel": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -21227,7 +21841,10 @@ export interface operations {
         /** @example coll_example */
         collectionID: string;
       };
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example published */
         channel: string;
@@ -21474,7 +22091,10 @@ export interface operations {
   "publishing.deleteChannel": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example preview */
         code: string;
@@ -21748,6 +22368,250 @@ export interface operations {
       };
     };
   };
+  "workspaces.list": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkspaceListItem"][];
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
   "versions.list": {
     parameters: {
       query?: {
@@ -21755,7 +22619,10 @@ export interface operations {
         /** @example 20 */
         limit?: number;
       };
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example ent_example */
         entryID: string;
@@ -22005,7 +22872,10 @@ export interface operations {
   "versions.create": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example ent_example */
         entryID: string;
@@ -22277,7 +23147,10 @@ export interface operations {
       query?: {
         expectedSchemaHash?: string;
       };
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example ver_example */
         id: string;
@@ -22546,7 +23419,10 @@ export interface operations {
   "versions.update": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example ver_example */
         id: string;
@@ -22805,7 +23681,10 @@ export interface operations {
   "versions.revert": {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
       path: {
         /** @example ver_example */
         id: string;
@@ -23052,6 +23931,580 @@ export interface operations {
                 /** @default CONTENT_SCHEMA_INVALID */
                 message: string;
                 data: components["schemas"]["ContentSchemaInvalidErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "typeMetadata.getCurrent": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        /**
+         * @example {
+         *       "collections": [
+         *         "/Tutorials"
+         *       ],
+         *       "includeEntries": false
+         *     }
+         */
+        "application/json": {
+          /**
+           * @description Collection IDs or paths. Includes selected subtrees; empty selects all accessible collections.
+           * @default []
+           */
+          collections?: string[];
+          /**
+           * @description Include entry IDs, names, paths, and schema associations.
+           * @default false
+           */
+          includeEntries?: boolean;
+          /**
+           * @description Include ordered child IDs for each collection. Also includes entry metadata.
+           * @default false
+           */
+          includeTree?: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TypeMetadata"];
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SCHEMA_FIELD_KEY_CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default SCHEMA_FIELD_KEY_CONFLICT */
+                message: string;
+                data: components["schemas"]["SchemaFieldKeyConflictErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SCHEMA_MIGRATION_IN_PROGRESS";
+                /** @constant */
+                status: 409;
+                /** @default A schema migration is in progress for this collection */
+                message: string;
+                data: components["schemas"]["SchemaMigrationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "typeMetadata.getPublished": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        /**
+         * @example {
+         *       "channel": "published",
+         *       "collections": [
+         *         "/Tutorials"
+         *       ]
+         *     }
+         */
+        "application/json": {
+          /**
+           * @description Collection IDs or paths. Includes selected subtrees; empty selects all accessible collections.
+           * @default []
+           */
+          collections?: string[];
+          /**
+           * @description Include entry IDs, names, paths, and schema associations.
+           * @default false
+           */
+          includeEntries?: boolean;
+          /**
+           * @description Include ordered child IDs for each collection. Also includes entry metadata.
+           * @default false
+           */
+          includeTree?: boolean;
+          channel?: string;
+          snapshotID?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TypeMetadata"];
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
               }
             | {
                 /** @constant */

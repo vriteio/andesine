@@ -1,3 +1,4 @@
+import { getUserAuthorization } from "#backend/lib/policy";
 import { emitSchemaEvent, emitSchemaVersionEvent } from "#backend/events";
 import { toSchemaVersionSummary } from "#backend/lib/data";
 import { toCollectionID, toSchemaID, toSchemaMigrationID } from "#backend/lib/primitives";
@@ -17,7 +18,7 @@ const schemasRouter = handlers.router({
     if (result.changed) {
       emitSchemaEvent(context.auth.workspaceID, {
         action: "schema:create",
-        memberID: context.auth.session?.memberID,
+        memberID: getUserAuthorization(context.auth)?.memberID,
         data: {
           id: result.schema.id,
           collectionID: result.schema.collectionID,
@@ -40,7 +41,7 @@ const schemasRouter = handlers.router({
     if (!result.migrationID) {
       emitSchemaEvent(context.auth.workspaceID, {
         action: "schema:delete",
-        memberID: context.auth.session?.memberID,
+        memberID: getUserAuthorization(context.auth)?.memberID,
         data: {
           id: toSchemaID(result.schemaID),
           collectionID: toCollectionID(result.collectionID),
@@ -84,7 +85,7 @@ const schemasRouter = handlers.router({
       emitSchemaVersionEvent(context.auth.workspaceID, {
         action: "schema-version:create",
         data: toSchemaVersionSummary(version),
-        memberID: context.auth.session?.memberID
+        memberID: getUserAuthorization(context.auth)?.memberID
       });
     }
 

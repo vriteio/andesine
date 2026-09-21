@@ -1,3 +1,4 @@
+import { getUserAuthorization, type SessionData } from "#backend/lib/policy";
 import {
   emitCollectionEvent,
   emitEntryEvent,
@@ -24,8 +25,10 @@ interface PublishingSnapshotUpdateInput {
   snapshot: CommitPublishingSnapshotResult | null;
   workspaceID: string;
 }
-const getContributorIDs = (auth: { session?: { memberID: string } }): string[] => {
-  return auth.session ? [auth.session.memberID] : [];
+const getContributorIDs = (auth: SessionData): string[] => {
+  const memberID = getUserAuthorization(auth)?.memberID;
+
+  return memberID ? [memberID] : [];
 };
 const handlePublishingSnapshotUpdate = async (
   input: PublishingSnapshotUpdateInput
@@ -65,26 +68,26 @@ const publishingRouter = handlers.router({
       emitPublishingEvent(context.auth.workspaceID, {
         action: "publishing:collection-update",
         data: { id: input.collectionID, enabled: input.enabled },
-        memberID: context.auth.session?.memberID
+        memberID: getUserAuthorization(context.auth)?.memberID
       });
     }
 
     emitPublishingEntryUpdates({
       workspaceID: context.auth.workspaceID,
       entries: result.publishingEntries,
-      memberID: context.auth.session?.memberID
+      memberID: getUserAuthorization(context.auth)?.memberID
     });
     emitVersionCreationEvents(
       context.auth.workspaceID,
       result.createdVersions,
-      context.auth.session?.memberID
+      getUserAuthorization(context.auth)?.memberID
     );
     await Promise.all(
       result.snapshots.map(({ channel, snapshot }) =>
         handlePublishingSnapshotUpdate({
           workspaceID: context.auth.workspaceID,
           channel,
-          memberID: context.auth.session?.memberID,
+          memberID: getUserAuthorization(context.auth)?.memberID,
           snapshot
         })
       )
@@ -110,19 +113,19 @@ const publishingRouter = handlers.router({
         emitPublishingEvent(context.auth.workspaceID, {
           action: "publishing:collection-update",
           data: { id: result.collectionID, enabled: input.enabled },
-          memberID: context.auth.session?.memberID
+          memberID: getUserAuthorization(context.auth)?.memberID
         });
       }
 
       emitPublishingEntryUpdates({
         workspaceID: context.auth.workspaceID,
         entries: result.publishingEntries,
-        memberID: context.auth.session?.memberID
+        memberID: getUserAuthorization(context.auth)?.memberID
       });
       emitVersionCreationEvents(
         context.auth.workspaceID,
         result.createdVersions,
-        context.auth.session?.memberID
+        getUserAuthorization(context.auth)?.memberID
       );
     }
     await Promise.all(
@@ -132,7 +135,7 @@ const publishingRouter = handlers.router({
           return handlePublishingSnapshotUpdate({
             workspaceID: context.auth.workspaceID,
             channel,
-            memberID: context.auth.session?.memberID,
+            memberID: getUserAuthorization(context.auth)?.memberID,
             snapshot
           });
         })
@@ -153,18 +156,18 @@ const publishingRouter = handlers.router({
       workspaceID: context.auth.workspaceID,
       entries: result.publishingEntries,
       channel: input.channel,
-      memberID: context.auth.session?.memberID
+      memberID: getUserAuthorization(context.auth)?.memberID
     });
 
     emitVersionCreationEvents(
       context.auth.workspaceID,
       result.createdVersions,
-      context.auth.session?.memberID
+      getUserAuthorization(context.auth)?.memberID
     );
     await handlePublishingSnapshotUpdate({
       workspaceID: context.auth.workspaceID,
       channel: input.channel,
-      memberID: context.auth.session?.memberID,
+      memberID: getUserAuthorization(context.auth)?.memberID,
       snapshot: result.snapshot
     });
 
@@ -184,18 +187,18 @@ const publishingRouter = handlers.router({
         workspaceID: context.auth.workspaceID,
         entries: result.publishingEntries,
         channel: input.channel,
-        memberID: context.auth.session?.memberID
+        memberID: getUserAuthorization(context.auth)?.memberID
       });
 
       emitVersionCreationEvents(
         context.auth.workspaceID,
         result.createdVersions,
-        context.auth.session?.memberID
+        getUserAuthorization(context.auth)?.memberID
       );
       await handlePublishingSnapshotUpdate({
         workspaceID: context.auth.workspaceID,
         channel: input.channel,
-        memberID: context.auth.session?.memberID,
+        memberID: getUserAuthorization(context.auth)?.memberID,
         snapshot: result.snapshot
       });
 
@@ -215,12 +218,12 @@ const publishingRouter = handlers.router({
         workspaceID: context.auth.workspaceID,
         entries: result.publishingEntries,
         channel: input.channel,
-        memberID: context.auth.session?.memberID
+        memberID: getUserAuthorization(context.auth)?.memberID
       });
       await handlePublishingSnapshotUpdate({
         workspaceID: context.auth.workspaceID,
         channel: input.channel,
-        memberID: context.auth.session?.memberID,
+        memberID: getUserAuthorization(context.auth)?.memberID,
         snapshot: result.snapshot
       });
 
@@ -240,12 +243,12 @@ const publishingRouter = handlers.router({
         workspaceID: context.auth.workspaceID,
         entries: result.publishingEntries,
         channel: input.channel,
-        memberID: context.auth.session?.memberID
+        memberID: getUserAuthorization(context.auth)?.memberID
       });
       await handlePublishingSnapshotUpdate({
         workspaceID: context.auth.workspaceID,
         channel: input.channel,
-        memberID: context.auth.session?.memberID,
+        memberID: getUserAuthorization(context.auth)?.memberID,
         snapshot: result.snapshot
       });
 
@@ -265,18 +268,18 @@ const publishingRouter = handlers.router({
       workspaceID: context.auth.workspaceID,
       entries: result.publishingEntries,
       channel: input.channel,
-      memberID: context.auth.session?.memberID
+      memberID: getUserAuthorization(context.auth)?.memberID
     });
 
     emitVersionCreationEvents(
       context.auth.workspaceID,
       result.createdVersions,
-      context.auth.session?.memberID
+      getUserAuthorization(context.auth)?.memberID
     );
     await handlePublishingSnapshotUpdate({
       workspaceID: context.auth.workspaceID,
       channel: input.channel,
-      memberID: context.auth.session?.memberID,
+      memberID: getUserAuthorization(context.auth)?.memberID,
       snapshot: result.snapshot
     });
   }),
@@ -293,18 +296,18 @@ const publishingRouter = handlers.router({
       workspaceID: context.auth.workspaceID,
       entries: result.publishingEntries,
       channel: input.channel,
-      memberID: context.auth.session?.memberID
+      memberID: getUserAuthorization(context.auth)?.memberID
     });
 
     emitVersionCreationEvents(
       context.auth.workspaceID,
       result.createdVersions,
-      context.auth.session?.memberID
+      getUserAuthorization(context.auth)?.memberID
     );
     await handlePublishingSnapshotUpdate({
       workspaceID: context.auth.workspaceID,
       channel: input.channel,
-      memberID: context.auth.session?.memberID,
+      memberID: getUserAuthorization(context.auth)?.memberID,
       snapshot: result.snapshot
     });
   }),
@@ -332,12 +335,12 @@ const publishingRouter = handlers.router({
       workspaceID: context.auth.workspaceID,
       entries: result.publishingEntries,
       channel: input.channel,
-      memberID: context.auth.session?.memberID
+      memberID: getUserAuthorization(context.auth)?.memberID
     });
     await handlePublishingSnapshotUpdate({
       workspaceID: context.auth.workspaceID,
       channel: input.channel,
-      memberID: context.auth.session?.memberID,
+      memberID: getUserAuthorization(context.auth)?.memberID,
       snapshot: result.snapshot
     });
   }),
@@ -354,12 +357,12 @@ const publishingRouter = handlers.router({
         workspaceID: context.auth.workspaceID,
         entries: result.publishingEntries,
         channel: input.channel,
-        memberID: context.auth.session?.memberID
+        memberID: getUserAuthorization(context.auth)?.memberID
       });
       await handlePublishingSnapshotUpdate({
         workspaceID: context.auth.workspaceID,
         channel: input.channel,
-        memberID: context.auth.session?.memberID,
+        memberID: getUserAuthorization(context.auth)?.memberID,
         snapshot: result.snapshot
       });
     }
@@ -371,7 +374,7 @@ const publishingRouter = handlers.router({
       contributorIDs: getContributorIDs(context.auth)
     });
     const workspaceID = context.auth.workspaceID;
-    const memberID = context.auth.session?.memberID;
+    const memberID = getUserAuthorization(context.auth)?.memberID;
     const collectionStatesByID = new Map(
       result.collectionStates.map((state) => [state.collection.id, state])
     );
@@ -584,7 +587,7 @@ const publishingRouter = handlers.router({
     emitPublishingEvent(context.auth.workspaceID, {
       action: "publishing:channel-create",
       data: channel,
-      memberID: context.auth.session?.memberID
+      memberID: getUserAuthorization(context.auth)?.memberID
     });
 
     return channel;
@@ -603,7 +606,7 @@ const publishingRouter = handlers.router({
     emitPublishingEvent(context.auth.workspaceID, {
       action: "publishing:channel-delete",
       data: { code: input.code },
-      memberID: context.auth.session?.memberID
+      memberID: getUserAuthorization(context.auth)?.memberID
     });
   })
 });

@@ -54,6 +54,9 @@ jobs:
           mkdir -p "$RUNNER_TEMP/packages"
           pnpm --filter @andesine/sdk pack --pack-destination "$RUNNER_TEMP/packages"
           pnpm --filter @andesine/converters pack --pack-destination "$RUNNER_TEMP/packages"
+          pnpm --filter ./packages/public/cli pack --pack-destination "$RUNNER_TEMP/packages"
+      - name: Check generated CLI bindings
+        run: git diff --exit-code -- packages/public/cli/src/api/manifest.ts packages/public/cli/src/api/bindings.ts
       - uses: actions/upload-artifact@v4
         with:
           name: public-packages

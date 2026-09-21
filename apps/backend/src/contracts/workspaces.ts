@@ -17,9 +17,19 @@ const workspaceListItemType = workspaceSummaryType.extend({
   billingEnabled: z.boolean().describe("Whether cloud billing is configured")
 });
 const workspacesContract = baseContract.router({
-  list: sessionContract
+  list: baseContract
+    .route({
+      method: "GET",
+      path: "/workspaces",
+      summary: "List available workspaces",
+      description:
+        "Lists workspaces available to the OAuth user, with current role permissions and plan access. Browser sessions can list workspaces across signed-in accounts. Does not require workspace selection and does not count toward API usage.",
+      tags: ["workspaces"]
+    })
     .meta({
-      requireWorkspace: false
+      required: { session: true, oauth: true },
+      requireWorkspace: false,
+      trackUsage: false
     })
     .output(z.array(workspaceListItemType)),
   create: sessionContract
@@ -56,4 +66,4 @@ const workspacesContract = baseContract.router({
     .output(z.void())
 });
 
-export { workspacesContract };
+export { workspacesContract, workspaceListItemType };

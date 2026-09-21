@@ -1,3 +1,4 @@
+import { getUserAuthorization } from "#backend/lib/policy";
 import { mapPublishingChannel, type PublishingChannel } from "#backend/lib/data";
 import { withAuthorization } from "#backend/lib/policy";
 import {
@@ -23,7 +24,7 @@ const createChannel = withAuthorization<CreateChannelInput, undefined, Publishin
       workspaceID,
       code,
       name,
-      creatorID: auth.session?.userID
+      creatorID: getUserAuthorization(auth)?.userID
     });
 
     if (!channel) {

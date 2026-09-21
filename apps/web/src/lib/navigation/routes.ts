@@ -22,6 +22,7 @@ import APISettingsPage from "../../pages/workspace/settings/api/page";
 import KeySettingsPage from "../../pages/workspace/settings/key/page";
 
 const AuthLayout = lazy(() => import("../../pages/auth/layout"));
+const DevicePage = lazy(() => import("../../pages/auth/device/page"));
 const EmailPage = lazy(() => import("../../pages/auth/email/page"));
 const SignInPage = lazy(() => import("../../pages/auth/sign-in/page"));
 const SignUpPage = lazy(() => import("../../pages/auth/sign-up/page"));
@@ -113,7 +114,8 @@ const routes: RouteDefinition[] = [
     children: [
       { path: "/sign-in", component: SignInPage },
       { path: "/sign-up", component: SignUpPage },
-      { path: "/email", component: EmailPage }
+      { path: "/email", component: EmailPage },
+      { path: "/device", component: DevicePage }
     ]
   },
   { path: "/invite", component: InvitePage },

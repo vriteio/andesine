@@ -22,3 +22,11 @@ export { paginate, paginatePages } from "./paginate";
 export type { Page, PaginateOptions } from "./paginate";
 export { toStructuredContent } from "./structured-content";
 export type { StructuredContent, StructuredContentSource } from "./structured-content";
+export type {
+  WorkspaceTypeMap,
+  WorkspaceCollection,
+  WorkspaceSchema,
+  WorkspaceEntry,
+  SchemaContent
+} from "./workspace";
+export type { ContentListOutput } from "./content-list";

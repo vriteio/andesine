@@ -25,9 +25,26 @@ const published = await client.content.get({
 });
 ```
 
-`baseURL` is required. A trailing slash is optional; path prefixes are preserved.
+`baseURL` defaults to `https://api.andesine.app`. A trailing slash is optional; path prefixes are preserved.
 Each client has its own configuration. You can supply `fetch` and default
 `headers` for proxies, instrumentation, or other authentication arrangements.
+
+For OAuth credentials, use `accessToken` instead of `apiKey`. This disables the
+`ANDESINE_API_KEY` fallback. The SDK does not log in or refresh tokens.
+
+```ts
+const client = createClient({ accessToken });
+const identity = await client.auth.getIdentity();
+const workspaces = await client.workspaces.list();
+const workspaceClient = createClient({
+  accessToken,
+  headers: { "x-workspace-id": selectedWorkspaceID }
+});
+```
+
+Select a workspace explicitly for OAuth workspace operations. The server checks
+current user permissions on each request. Browser-only operations remain excluded.
+API keys keep their workspace binding and cannot list a user's workspaces.
 
 Resource methods are generated from the checked-in OpenAPI document. They cover
 assets, entries, collections, content delivery, roles, search, schemas, schema
@@ -589,6 +606,119 @@ on publication, with issue paths and available entry, version, and revision IDs.
 `SCHEMA_FIELD_KEY_CONFLICT` (409) identifies conflicting derived field keys.
 Use `error.is(code)` to read the generated error data types. Schema definitions
 remain readable when their associated document is invalid.
+
+## Type-generation metadata
+
+Read collection/schema metadata in bulk without fetching content bodies:
+
+```ts
+const published = await client.typeMetadata.getPublished({
+  collections: ["/Tutorials"],
+  channel: "published",
+  includeEntries: true
+});
+const current = await client.typeMetadata.getCurrent({
+  collections: ["/Tutorials"],
+  includeTree: true
+});
+```
+
+Selectors accept IDs or decoded paths and include descendant collections. An
+empty list selects all accessible collections. Each response is one consistent
+database snapshot; published metadata also returns its publication snapshot ID
+for related reads. Published paths and schemas come from the assigned versions,
+including mixed revisions and schema-free entries. A collection without recorded
+schemas uses a general type without a warning. Current metadata uses active
+effective schemas and rejects selected collections with an active schema migration.
+
+`revisions` contains the referenced effective definitions, including inherited
+fields. Each collection lists its `schemaRevisionIDs`: `null` means schema-free
+content, while an empty array means there is no recorded schema evidence.
+`includeEntries` adds entry identifiers, names, paths, and revision associations;
+`includeTree` also includes entries and adds child IDs in display order. Current
+entry/tree metadata requires `read:entries` in addition to `read:collections`.
+Published metadata follows the existing `read:publishing` access rules.
+
+The `fingerprint` changes with the returned type metadata. It excludes content
+bodies, snapshot IDs, expiry, and entry/tree data that was not requested. These
+endpoints provide metadata only; `andesine types generate` creates project declarations.
+
+## Workspace content types
+
+`createClient<Workspace>()` accepts a type-only workspace map. Generate it with
+`andesine types generate`. A small map can also be defined directly:
+
+```ts
+import {
+  createClient,
+  toStructuredContent,
+  type EntryFragment,
+  type WorkspaceCollection,
+  type WorkspaceTypeMap
+} from "@andesine/sdk";
+
+interface Tutorials extends WorkspaceCollection {
+  id: "coll_tutorials";
+  path: "/Tutorials";
+  schemaRevisionIDs: readonly ["schr_tutorial"];
+  descendants: readonly [];
+}
+
+interface Workspace extends WorkspaceTypeMap {
+  source: { kind: "published"; channel: "published" };
+  collections: { "coll_tutorials": Tutorials; "/Tutorials": Tutorials };
+  schemas: {
+    schr_tutorial: {
+      hash: "RECORDED_SCHEMA_HASH";
+      properties: {
+        title: { name: "Title"; type: "text"; value: string };
+        duration?: { name: "Duration"; type: "number"; value: number | null };
+      };
+      fragments: { body: EntryFragment };
+    };
+  };
+}
+
+const client = createClient<Workspace>();
+
+for await (const entry of client.content.paginateEntries({
+  collectionPath: "/Tutorials",
+  channel: "published",
+  includeContent: true
+})) {
+  const tutorial = toStructuredContent(entry);
+  const title: string = tutorial.properties.title;
+  const duration: number | null | undefined = tutorial.properties.duration;
+}
+```
+
+Replace the example IDs, hash, and fields with the recorded metadata. Collections
+can have several revision IDs; results then preserve each revision's fields as a
+union. `null` represents schema-free content. An empty revision tuple uses general
+content types. `descendants` contains all descendant collection keys; recursive
+lists include their shapes. If the hierarchy is incomplete, recursive results
+also retain the general content type.
+
+Exact entry reads narrow only when the map has an `entries` binding for the given
+ID or path. Each binding supplies `collection` and `schemaRevisionID`. Optional
+`tree` bindings supply published tree shapes by collection selector. Unknown keys
+and dynamic strings keep general SDK types. Current maps apply to `entries.get`;
+published maps apply to content delivery. Summary lists do not gain content fields.
+Snapshots, full responses, pagination, and `toStructuredContent` preserve the map.
+
+`SchemaContent<Workspace, "schr_tutorial">` exposes one revision's content fields.
+`OperationOutput<"content.get", Workspace, { path: "/Tutorials/First" }>` exposes
+a full result when that entry path is bound. For mixed revisions, TypeScript does
+not narrow the parent entry after a nested `entry.schema.revisionID` check. Use a
+type predicate with `Extract<Result, { schema: { revisionID: "schr_tutorial" } }>`
+to narrow the entry. Collection lists can also narrow on their top-level
+`collectionID` when the collections have distinct IDs.
+
+The map makes no requests and changes no request options. Supply the workspace,
+channel, and snapshot through the usual runtime options. The types assume those
+options and the server content match the map; they do not validate responses or
+detect stale generated types. Different clients can use different maps without
+module augmentation. Plain `createClient()` keeps the general SDK types.
 
 ## Operation documentation and error hints
 

@@ -1,3 +1,4 @@
+import { getUserAuthorization } from "#backend/lib/policy";
 import {
   collectionSchemas,
   schemaDraftContributors,
@@ -85,13 +86,13 @@ const createCollectionSchema = withAuthorization<
       changed = true;
     }
 
-    if (auth.session?.memberID) {
+    if (getUserAuthorization(auth)?.memberID) {
       await database
         .insert(schemaDraftContributors)
         .values({
           workspaceID,
           schemaID: schema.id,
-          membershipID: toUUID(auth.session.memberID)
+          membershipID: toUUID(getUserAuthorization(auth)!.memberID)
         })
         .onConflictDoNothing();
     }

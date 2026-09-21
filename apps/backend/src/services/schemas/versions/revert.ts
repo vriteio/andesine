@@ -1,3 +1,4 @@
+import { getUserAuthorization } from "#backend/lib/policy";
 import {
   collectionSchemas,
   schemaDraftContributors,
@@ -98,7 +99,9 @@ const planSchemaVersionRevert = withAuthorization<
       .select({ nextVersion: max(schemaVersions.version) })
       .from(schemaVersions)
       .where(eq(schemaVersions.schemaID, schema.id));
-    const appliedBy = auth.session?.memberID ? toUUID(auth.session.memberID) : null;
+    const appliedBy = getUserAuthorization(auth)?.memberID
+      ? toUUID(getUserAuthorization(auth)!.memberID)
+      : null;
     const draftContributors = await database
       .select({ membershipID: schemaDraftContributors.membershipID })
       .from(schemaDraftContributors)

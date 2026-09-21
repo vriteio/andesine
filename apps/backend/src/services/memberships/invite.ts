@@ -1,3 +1,4 @@
+import { getUserAuthorization } from "#backend/lib/policy";
 import { assertRoleDelegation } from "#backend/lib/policy/delegation";
 import type { SessionData } from "#backend/lib/policy/session";
 import { toInviteID, toMembershipID, toRoleID, toUUID } from "#backend/lib/primitives";
@@ -140,7 +141,7 @@ const inviteMember = withAuthorization<
     return inviteMemberOperation({
       ...input,
       auth,
-      inviterID: auth.session?.memberID,
+      inviterID: getUserAuthorization(auth)?.memberID,
       workspaceID
     });
   }

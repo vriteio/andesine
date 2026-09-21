@@ -1,3 +1,4 @@
+import { getUserAuthorization } from "#backend/lib/policy";
 import { updateDocumentTitle } from "#backend/collaboration";
 import { emitEntryEvent, emitPublishingEntryUpdates } from "#backend/events";
 import { toSchemaMigrationID } from "#backend/lib/primitives";
@@ -18,14 +19,14 @@ const entriesRouter = handlers.router({
 
     emitEntryEvent(context.auth.workspaceID, {
       action: "entry:create",
-      memberID: context.auth.session?.memberID,
+      memberID: getUserAuthorization(context.auth)?.memberID,
       data: newEntry
     });
 
     emitPublishingEntryUpdates({
       workspaceID: context.auth.workspaceID,
       entries: publishingEntries,
-      memberID: context.auth.session?.memberID
+      memberID: getUserAuthorization(context.auth)?.memberID
     });
     await enqueueCurrentEntrySync({
       workspaceID: context.auth.workspaceID,
@@ -43,7 +44,7 @@ const entriesRouter = handlers.router({
     emitEntryEvent(context.auth.workspaceID, {
       action: "entry:delete",
       data: { ids: entryIDs },
-      memberID: context.auth.session?.memberID
+      memberID: getUserAuthorization(context.auth)?.memberID
     });
     await Promise.all([
       enqueueCurrentEntrySync({
@@ -95,14 +96,14 @@ const entriesRouter = handlers.router({
         input.id,
         name,
         context.auth.workspaceID,
-        context.auth.session?.memberID
+        getUserAuthorization(context.auth)?.memberID
       );
     }
 
     emitEntryEvent(context.auth.workspaceID, {
       action: "entry:update",
       data: { id: input.id, name },
-      memberID: context.auth.session?.memberID
+      memberID: getUserAuthorization(context.auth)?.memberID
     });
 
     if (name !== undefined) {
@@ -128,7 +129,7 @@ const entriesRouter = handlers.router({
         collectionID: input.collectionID,
         restrictedBoundaryChanged: result.restrictedBoundaryChanged
       },
-      memberID: context.auth.session?.memberID
+      memberID: getUserAuthorization(context.auth)?.memberID
     });
 
     if (input.collectionID !== undefined) {
@@ -148,7 +149,7 @@ const entriesRouter = handlers.router({
       emitPublishingEntryUpdates({
         workspaceID: context.auth.workspaceID,
         entries: result.publishingEntries,
-        memberID: context.auth.session?.memberID
+        memberID: getUserAuthorization(context.auth)?.memberID
       });
     }
 

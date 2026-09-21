@@ -95,7 +95,11 @@ const SignInPage: Component = () => {
             hover="underline"
             color="primary"
             class="px-0"
-            link={appendRedirectTo("/auth/email?mode=sign-in", redirectTo())}
+            link={appendRedirectTo(
+              "/auth/email?mode=sign-in",
+              redirectTo(),
+              searchParams.addAccount === "true"
+            )}
           >
             continue with email
           </Button>
@@ -151,7 +155,7 @@ const SignInPage: Component = () => {
           text="primary"
           color="primary"
           size="small"
-          link={appendRedirectTo("/auth/sign-up", redirectTo())}
+          link={appendRedirectTo("/auth/sign-up", redirectTo(), searchParams.addAccount === "true")}
           label={() => <span>Sign up</span>}
           hover="underline"
           class="flex-row-reverse gap-1 inline-flex font-medium px-0 -mt-1"

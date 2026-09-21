@@ -17,6 +17,7 @@ import { schemasContract } from "./schemas";
 import { searchContract } from "./search";
 import { syncContract } from "./sync";
 import { versionsContract } from "./versions";
+import { typeMetadataContract } from "./type-metadata";
 import { workspacesContract } from "./workspaces";
 
 interface APIContractOptions {
@@ -44,6 +45,7 @@ const createAPIContract = (options: APIContractOptions = {}) => ({
   publishing: publishingContract,
   workspaces: workspacesContract,
   versions: versionsContract,
+  typeMetadata: typeMetadataContract,
   sync: syncContract
 });
 

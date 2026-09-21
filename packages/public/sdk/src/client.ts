@@ -6,9 +6,12 @@ import { AndesineAPIError } from "./error";
 import { createResources, type APIResources } from "./generated/resources";
 import { fetchWithRetries } from "./retry";
 import type { OperationDefinition, RequestOptions } from "./operation";
+import type { WorkspaceTypeMap } from "./workspace";
 
-interface AndesineClient extends APIResources {
-  content: ContentClient;
+interface AndesineClient<
+  Workspace extends WorkspaceTypeMap = WorkspaceTypeMap
+> extends APIResources<Workspace> {
+  content: ContentClient<Workspace>;
   /**
    * Bind published-content reads and pagination to an existing snapshot.
    * @param snapshotID - Snapshot ID returned by a published-content response.
@@ -16,7 +19,7 @@ interface AndesineClient extends APIResources {
    * No request is made until a method is called or an iterator is consumed.
    * @throws TypeError if a later request supplies a channel or a different snapshot ID.
    */
-  atSnapshot(snapshotID: string): ContentClient;
+  atSnapshot(snapshotID: string): ContentClient<Workspace>;
 }
 interface ClientOptions {
   /** HTTP(S) API root, including any deployment prefix. Defaults to https://api.andesine.app. */
@@ -27,9 +30,13 @@ interface ClientOptions {
    * the key is omitted on anonymous operations.
    */
   apiKey?: string;
+  /** OAuth access token. Disables the API-key environment fallback. Cannot be combined with apiKey.
+   * Supply x-workspace-id through headers for workspace operations. The SDK does not refresh tokens.
+   */
+  accessToken?: string;
   /** Fetch implementation to use instead of globalThis.fetch. */
   fetch?: typeof fetch;
-  /** Default headers. Request headers override these; apiKey supplies Authorization. */
+  /** Default headers. Request headers override these; the configured credential supplies Authorization. */
   headers?: HeadersInit;
   /** Timeout in milliseconds, including stream consumption. Defaults to 30,000; 0 disables it. */
   timeout?: number;
@@ -55,21 +62,32 @@ type RuntimePaths = Record<
  *
  * Methods return response data by default. Use response: "full" for status and headers,
  * including conditional reads that can return 304. Creation does not make a request.
+ * An optional Workspace type map narrows known content selectors at compile time only.
+ * It does not choose credentials, a workspace, a channel, or a snapshot, or check response schemas.
  * @param config - Optional API root, credentials, transport, and request defaults.
  * Defaults to https://api.andesine.app and process.env.ANDESINE_API_KEY when available.
  * Runtimes without process.env use no default key. No environment files are loaded.
  * @returns API resources and helpers for published-content snapshots and pagination.
- * @throws TypeError if baseURL is not HTTP(S) or includes credentials, a query, or a fragment.
+ * @throws TypeError if both credential options are set, or if baseURL is not HTTP(S) or includes credentials, a query, or a fragment.
  * Request failures throw AndesineAPIError; abort and timeout reasons are preserved.
  * @example
  * const client = createClient();
  * const page = await client.content.get({ path: "/Docs/Welcome" });
  */
-const createClient = (config: ClientOptions = {}): AndesineClient => {
+const createClient = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
+  config: ClientOptions = {}
+): AndesineClient<Workspace> => {
   const baseURL = (config.baseURL ?? "https://api.andesine.app").replace(/\/+$/, "");
-  const apiKey = config.apiKey ?? (globalThis as RuntimeEnvironment).process?.env?.ANDESINE_API_KEY;
+  const credential =
+    config.accessToken ??
+    config.apiKey ??
+    (globalThis as RuntimeEnvironment).process?.env?.ANDESINE_API_KEY;
   const url = new URL(baseURL);
   const fetcher = config.fetch ?? globalThis.fetch;
+
+  if (config.accessToken !== undefined && config.apiKey !== undefined) {
+    throw new TypeError("Use either accessToken or apiKey, not both");
+  }
 
   if (
     !["http:", "https:"].includes(url.protocol) ||
@@ -124,8 +142,8 @@ const createClient = (config: ClientOptions = {}): AndesineClient => {
       headers.set("Accept", "text/event-stream");
     }
 
-    if (apiKey && !definition.anonymous) {
-      headers.set("Authorization", `Bearer ${apiKey}`);
+    if (credential && !definition.anonymous) {
+      headers.set("Authorization", `Bearer ${credential}`);
     }
 
     const timer =
@@ -205,14 +223,14 @@ const createClient = (config: ClientOptions = {}): AndesineClient => {
       if (!streamOwnsRequest && timer !== undefined) clearTimeout(timer);
     }
   };
-  const resources = createResources(request);
+  const resources = createResources<Workspace>(request);
 
   return {
     ...resources,
-    content: createContentClient(resources.content),
+    content: createContentClient<Workspace>(resources.content),
     atSnapshot(snapshotID: string) {
-      return createContentClient(
-        createResources((definition, input, options) => {
+      return createContentClient<Workspace>(
+        createResources<Workspace>((definition, input, options) => {
           const pinned =
             definition.path.startsWith("/content/") &&
             definition.queryParams.includes("snapshotID");

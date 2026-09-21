@@ -1,3 +1,5 @@
+import { identityType } from "../auth";
+import { workspaceListItemType } from "../workspaces";
 import {
   answerEventType,
   publishedAnswerEventType,
@@ -134,8 +136,21 @@ import {
   searchResultType
 } from "./search";
 
+import {
+  typeMetadataType,
+  typeMetadataCollectionType,
+  typeMetadataEntryType,
+  typeMetadataTreeType
+} from "./type-metadata";
+
 // Names in this registry become public SDK type names.
 const publicSchemas = {
+  TypeMetadata: { schema: typeMetadataType, strategy: "output" },
+  TypeMetadataCollection: { schema: typeMetadataCollectionType, strategy: "output" },
+  TypeMetadataEntry: { schema: typeMetadataEntryType, strategy: "output" },
+  TypeMetadataTree: { schema: typeMetadataTreeType, strategy: "output" },
+  Identity: { schema: identityType, strategy: "output" },
+  WorkspaceListItem: { schema: workspaceListItemType, strategy: "output" },
   AnswerEvent: { schema: answerEventType, strategy: "output" },
   PublishedAnswerEvent: { schema: publishedAnswerEventType, strategy: "output" },
   AnswerSource: { schema: answerSourceType, strategy: "output" },

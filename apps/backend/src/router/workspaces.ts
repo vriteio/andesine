@@ -1,3 +1,4 @@
+import { getUserAuthorization } from "#backend/lib/policy";
 import { emitWorkspaceStateEvent } from "#backend/events";
 import { auth } from "#backend/lib/adapters";
 import { toUserID, toUUID } from "#backend/lib/primitives";
@@ -16,14 +17,23 @@ const handlers = api.workspaces;
 const authorizedHandlers = handlers.use(authorized);
 const workspacesRouter = handlers.router({
   list: authorizedHandlers.list.handler(async ({ context }) => {
-    const sessions = await auth.api.listDeviceSessions({
-      headers: new Headers({ cookie: context.reqHeaders?.get("cookie") || "" })
-    });
+    const userID = getUserAuthorization(context.auth)!.userID;
+    const sessions =
+      context.auth.type === "oauth"
+        ? []
+        : await auth.api.listDeviceSessions({
+            headers: new Headers({ cookie: context.reqHeaders?.get("cookie") || "" })
+          });
 
     const { workspaces } = await Workspaces.list({
-      activeUserID: context.auth.session!.userID,
-      userIDs: sessions.map((session) => toUserID(toUUID(session.user.id)))
+      activeUserID: userID,
+      userIDs:
+        context.auth.type === "oauth"
+          ? [userID]
+          : sessions.map((session) => toUserID(toUUID(session.user.id)))
     });
+
+    context.resHeaders?.set("Cache-Control", "private, no-store");
 
     return workspaces;
   }),
@@ -56,7 +66,7 @@ const workspacesRouter = handlers.router({
 
     emitWorkspaceStateEvent(context.auth.workspaceID, {
       action: "workspace:update",
-      memberID: context.auth.session?.memberID,
+      memberID: getUserAuthorization(context.auth)?.memberID,
       data: {
         id: context.auth.workspaceID,
         name: input.name
@@ -87,7 +97,7 @@ const workspacesRouter = handlers.router({
 
     emitWorkspaceStateEvent(context.auth.workspaceID, {
       action: "workspace:delete",
-      memberID: context.auth.session?.memberID,
+      memberID: getUserAuthorization(context.auth)?.memberID,
       data: {
         id: context.auth.workspaceID,
         entryIDs

@@ -6,6 +6,7 @@ export default defineConfig({
     "./src/db/asset-uploads.ts",
     "./src/db/assets.ts",
     "./src/db/auth.ts",
+    "./src/db/oauth.ts",
     "./src/db/collections.ts",
     "./src/db/content-schemas.ts",
     "./src/db/contents.ts",

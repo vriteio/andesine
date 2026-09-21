@@ -167,7 +167,8 @@ const EmailPage: Component = () => {
               class="px-0"
               link={appendRedirectTo(
                 mode() === "sign-in" ? "/auth/sign-in" : "/auth/sign-up",
-                redirectTo()
+                redirectTo(),
+                searchParams.addAccount === "true"
               )}
             >
               {mode() === "sign-in" ? "sign in with other methods" : "sign up with other methods"}
@@ -206,7 +207,11 @@ const EmailPage: Component = () => {
                   text="primary"
                   color="primary"
                   size="small"
-                  link={appendRedirectTo("/auth/sign-up", redirectTo())}
+                  link={appendRedirectTo(
+                    "/auth/sign-up",
+                    redirectTo(),
+                    searchParams.addAccount === "true"
+                  )}
                   label={() => <span>Sign up</span>}
                   hover="underline"
                   class="flex-row-reverse gap-1 inline-flex font-medium px-0 -mt-1"
@@ -222,7 +227,11 @@ const EmailPage: Component = () => {
                   text="primary"
                   color="primary"
                   size="small"
-                  link={appendRedirectTo("/auth/sign-in", redirectTo())}
+                  link={appendRedirectTo(
+                    "/auth/sign-in",
+                    redirectTo(),
+                    searchParams.addAccount === "true"
+                  )}
                   label={() => <span>Sign in</span>}
                   iconProps={{ class: "w-4 h-4" }}
                   hover="underline"

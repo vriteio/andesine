@@ -50,6 +50,7 @@ export type {
   EntryVersionSummary,
   ErrorData,
   ForbiddenErrorData,
+  Identity,
   InstanceInfo,
   Invite,
   InviteDeliveryResult,
@@ -108,11 +109,16 @@ export type {
   SearchResult,
   SearchResults,
   TextPropertyFilter,
+  TypeMetadata,
+  TypeMetadataCollection,
+  TypeMetadataEntry,
+  TypeMetadataTree,
   UnpublishedEntriesResult,
   UserProfile,
   ValidationErrorData,
   ValidationIssue,
-  VersionReason
+  VersionReason,
+  WorkspaceListItem
 } from "./schema";
 
 export type AssetsAttachError = OperationError<"assets.attach">;
@@ -133,6 +139,9 @@ export type AssetsSearchOutput = OperationOutput<"assets.search">;
 export type AssetsUploadError = OperationError<"assets.upload">;
 export type AssetsUploadInput = OperationInput<"assets.upload">;
 export type AssetsUploadOutput = OperationOutput<"assets.upload">;
+export type AuthGetIdentityError = OperationError<"auth.getIdentity">;
+export type AuthGetIdentityInput = OperationInput<"auth.getIdentity">;
+export type AuthGetIdentityOutput = OperationOutput<"auth.getIdentity">;
 export type CollectionsBulkDeleteError = OperationError<"collections.bulkDelete">;
 export type CollectionsBulkDeleteInput = OperationInput<"collections.bulkDelete">;
 export type CollectionsBulkDeleteOutput = OperationOutput<"collections.bulkDelete">;
@@ -338,6 +347,12 @@ export type SearchCurrentOutput = OperationOutput<"search.current">;
 export type SearchPublishedError = OperationError<"search.published">;
 export type SearchPublishedInput = OperationInput<"search.published">;
 export type SearchPublishedOutput = OperationOutput<"search.published">;
+export type TypeMetadataGetCurrentError = OperationError<"typeMetadata.getCurrent">;
+export type TypeMetadataGetCurrentInput = OperationInput<"typeMetadata.getCurrent">;
+export type TypeMetadataGetCurrentOutput = OperationOutput<"typeMetadata.getCurrent">;
+export type TypeMetadataGetPublishedError = OperationError<"typeMetadata.getPublished">;
+export type TypeMetadataGetPublishedInput = OperationInput<"typeMetadata.getPublished">;
+export type TypeMetadataGetPublishedOutput = OperationOutput<"typeMetadata.getPublished">;
 export type VersionsCreateError = OperationError<"versions.create">;
 export type VersionsCreateInput = OperationInput<"versions.create">;
 export type VersionsCreateOutput = OperationOutput<"versions.create">;
@@ -353,3 +368,6 @@ export type VersionsRevertOutput = OperationOutput<"versions.revert">;
 export type VersionsUpdateError = OperationError<"versions.update">;
 export type VersionsUpdateInput = OperationInput<"versions.update">;
 export type VersionsUpdateOutput = OperationOutput<"versions.update">;
+export type WorkspacesListError = OperationError<"workspaces.list">;
+export type WorkspacesListInput = OperationInput<"workspaces.list">;
+export type WorkspacesListOutput = OperationOutput<"workspaces.list">;

@@ -1,6 +1,8 @@
-import type { ContentListOperation } from "./content-list";
+import type { ContentListOperation, ContentListOutput } from "./content-list";
 import type { WithSelectors } from "./selectors";
 import type { operations } from "./generated/schema";
+import type { WorkspaceTypeMap } from "./workspace";
+import type { WorkspaceOperationOutput } from "./workspace-output";
 
 interface RequestOptions {
   /** Cancel the request or stream, preserving the signal's abort reason. */
@@ -9,7 +11,7 @@ interface RequestOptions {
   timeout?: number;
   /** Override GET retry attempts. Defaults to the client setting; other methods never retry. */
   retries?: number;
-  /** Headers merged over client headers. The configured API key supplies Authorization. */
+  /** Headers merged over client headers. The configured credential supplies Authorization. */
   headers?: HeadersInit;
   /** Return data by default, or status/headers/data with "full". Required for possible 304s. */
   response?: "data" | "full";
@@ -44,16 +46,16 @@ interface Requester {
     options?: RequestOptions
   ): Promise<unknown>;
 }
-interface StandardOperation<K extends keyof operations> {
-  (
-    input: OperationInput<K>,
+interface StandardOperation<K extends keyof operations, Workspace extends WorkspaceTypeMap> {
+  <const Input extends OperationInput<K>>(
+    input: Input,
     options: RequestOptions & { response: "full" }
-  ): Promise<APIResponse<OperationOutput<K>> | NotModifiedResponse>;
-  (
+  ): Promise<APIResponse<OperationOutput<K, Workspace, Input>> | NotModifiedResponse>;
+  <const Input extends OperationInput<K> = OperationInput<K>>(
     ...args: Record<string, never> extends OperationInput<K>
-      ? [input?: OperationInput<K>, options?: RequestOptions & { response?: "data" }]
-      : [input: OperationInput<K>, options?: RequestOptions & { response?: "data" }]
-  ): Promise<OperationOutput<K>>;
+      ? [input?: Input, options?: RequestOptions & { response?: "data" }]
+      : [input: Input, options?: RequestOptions & { response?: "data" }]
+  ): Promise<OperationOutput<K, Workspace, Input>>;
 }
 
 interface StreamOperation<K extends keyof operations> {
@@ -75,10 +77,13 @@ type StreamContent<K extends keyof operations> = Responses<K>[Extract<
   : never;
 type StreamEvent<K extends keyof operations> =
   Extract<StreamContent<K>, { event: "message" }> extends { data: infer Event } ? Event : never;
-type Operation<K extends keyof operations> = [StreamContent<K>] extends [never]
+type Operation<
+  K extends keyof operations,
+  Workspace extends WorkspaceTypeMap = WorkspaceTypeMap
+> = [StreamContent<K>] extends [never]
   ? K extends "content.listEntries"
-    ? ContentListOperation
-    : StandardOperation<K>
+    ? ContentListOperation<Workspace>
+    : StandardOperation<K, Workspace>
   : StreamOperation<K>;
 
 type Content<T> = T extends { content: infer C } ? C[keyof C] : never;
@@ -108,19 +113,29 @@ type OperationError<K extends keyof operations> = K extends keyof operations
 type APIErrorBody = OperationError<keyof operations>;
 type APIErrorCode = APIErrorBody["code"];
 type APIErrorData<C extends APIErrorCode> = Extract<APIErrorBody, { code: C }>["data"];
-type OperationOutput<K extends keyof operations> = [StreamContent<K>] extends [never]
+type RawOperationOutput<K extends keyof operations> = [StreamContent<K>] extends [never]
   ? [SuccessContent<K>] extends [never]
     ? void
     : SuccessContent<K>
   : AsyncIterableIterator<StreamEvent<K>>;
+type OperationOutput<
+  K extends keyof operations,
+  Workspace extends WorkspaceTypeMap = WorkspaceTypeMap,
+  Input = OperationInput<K>
+> = K extends "content.listEntries"
+  ? ContentListOutput<Input, Workspace>
+  : WorkspaceOperationOutput<K, RawOperationOutput<K>, Workspace, Input>;
 
-const operation = <K extends keyof operations>(
+const operation = <
+  K extends keyof operations,
+  Workspace extends WorkspaceTypeMap = WorkspaceTypeMap
+>(
   request: Requester,
   definition: OperationDefinition
-): Operation<K> => {
+): Operation<K, Workspace> => {
   return ((input: Record<string, unknown>, options?: RequestOptions) => {
     return request(definition, input || {}, options);
-  }) as Operation<K>;
+  }) as Operation<K, Workspace>;
 };
 
 export { operation };
@@ -135,6 +150,7 @@ export type {
   OperationDefinition,
   OperationInput,
   OperationOutput,
+  RawOperationOutput,
   Requester,
   RequestOptions
 };

@@ -15,7 +15,7 @@ import { and, eq } from "drizzle-orm";
 import type { CollectionAccess, CollectionAction, EntryAction } from "./actions";
 import type { EntryAuthorizationSource } from "./authorized-entry-sources";
 import { hasAuthPermission, hasPermission, isAdminAuthorization } from "./permissions";
-import type { SessionData } from "./session";
+import { getUserAuthorization, type SessionData } from "./session";
 
 interface AuthorizedCollectionNode {
   collectionActions: CollectionAction[];
@@ -87,26 +87,26 @@ const isCollectionVisible = (
   permissionsByBoundaryID: Map<string, Permission[]>
 ): boolean => {
   if (canReadAllRestrictedCollections(auth) || boundaryIDs.length === 0) return true;
-  if (auth.type !== "session" || !auth.session) return false;
+  if (!getUserAuthorization(auth)) return false;
 
   return boundaryIDs.every((boundaryID) => permissionsByBoundaryID.has(boundaryID));
 };
-const getSessionCollectionPermissions = (
+const getUserCollectionPermissions = (
   auth: SessionData,
   boundaryIDs: string[],
   permissionsByBoundaryID: Map<string, Permission[]>
 ): Permission[] => {
-  if (auth.type !== "session" || !auth.session) return [];
+  if (!getUserAuthorization(auth)) return [];
   if (canReadAllRestrictedCollections(auth) || boundaryIDs.length === 0) {
-    return auth.session.permissions;
+    return getUserAuthorization(auth)!.permissions;
   }
 
   const nearestBoundaryID = boundaryIDs[boundaryIDs.length - 1];
 
   return permissionsByBoundaryID.get(nearestBoundaryID) || [];
 };
-const getSessionActions = (auth: SessionData, permissions: Permission[]): CollectionAccess => {
-  if (auth.type !== "session" || !auth.session) {
+const getUserActions = (auth: SessionData, permissions: Permission[]): CollectionAccess => {
+  if (!getUserAuthorization(auth)) {
     return { collectionActions: [], entryActions: [] };
   }
 
@@ -269,9 +269,9 @@ const createAuthorizedCollectionTree = (
     const access =
       input.auth.type === "key"
         ? getKeyActions(input.auth)
-        : getSessionActions(
+        : getUserActions(
             input.auth,
-            getSessionCollectionPermissions(input.auth, boundaryIDs, input.permissionsByBoundaryID)
+            getUserCollectionPermissions(input.auth, boundaryIDs, input.permissionsByBoundaryID)
           );
 
     if (collection.id === root.id) {
@@ -328,12 +328,12 @@ const loadAssignedBoundaryPermissions = async (
 ): Promise<Map<string, Permission[]>> => {
   const permissionsByBoundaryID = new Map<string, Permission[]>();
 
-  if (auth.type !== "session" || !auth.session || canReadAllRestrictedCollections(auth)) {
+  if (!getUserAuthorization(auth) || canReadAllRestrictedCollections(auth)) {
     return permissionsByBoundaryID;
   }
 
   const workspaceID = toUUID(auth.workspaceID);
-  const membershipID = toUUID(auth.session.memberID);
+  const membershipID = toUUID(getUserAuthorization(auth)!.memberID);
   const [directAssignments, groupAssignments] = await Promise.all([
     database
       .select({

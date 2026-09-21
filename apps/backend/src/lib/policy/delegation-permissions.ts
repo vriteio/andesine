@@ -16,7 +16,7 @@ const canGrantKeyPermission = (auth: SessionData, permission: KeyPermission): bo
   );
 };
 const canGrantRolePermission = (auth: SessionData, permission: Permission): boolean => {
-  if (auth.type === "session") return hasAuthPermission(auth, permission);
+  if (auth.type !== "key") return hasAuthPermission(auth, permission);
 
   const required = rolePermissionRequirements[permission];
 

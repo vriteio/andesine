@@ -1,0 +1,68 @@
+{
+  "name": "andesine",
+  "version": "0.1.0",
+  "description": "Command-line tools for Andesine",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "andesine": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "exports": {
+    "./config.schema.json": "./dist/config.schema.json"
+  },
+  "scripts": {
+    "build": "rolldown -c rolldown.config.ts",
+    "typecheck": "tsc --noEmit",
+    "prepack": "pnpm run build && pnpm run typecheck && pnpm run lint:package",
+    "lint:package": "publint --strict",
+    "generate:api": "tsx scripts/generate-api.ts"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "dependencies": {
+    "@clack/prompts": "1.7.0",
+    "@commander-js/extra-typings": "15.0.0",
+    "commander": "15.0.0",
+    "zod": "4.5.4",
+    "@andesine/sdk": "workspace:*",
+    "open": "11.0.0",
+    "proper-lockfile": "4.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "publint": "0.3.24",
+    "rolldown": "^1.2.2",
+    "typescript": "6.0.3",
+    "@types/proper-lockfile": "4.1.4",
+    "tsx": "^4.23.5",
+    "prettier": "^3.9.6"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vriteio/andesine.git",
+    "directory": "packages/public/cli"
+  },
+  "homepage": "https://github.com/vriteio/andesine/tree/andesine/packages/public/cli#readme",
+  "bugs": {
+    "url": "https://github.com/vriteio/andesine/issues"
+  },
+  "keywords": [
+    "andesine",
+    "cli",
+    "typescript"
+  ],
+  "optionalDependencies": {
+    "@napi-rs/keyring": "2.1.0"
+  }
+}

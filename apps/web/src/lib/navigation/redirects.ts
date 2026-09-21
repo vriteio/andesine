@@ -12,14 +12,15 @@ const normalizeRedirectTo = (value?: string | null): string | null => {
   return redirectTo;
 };
 
-const appendRedirectTo = (path: string, redirectTo?: string | null) => {
+const appendRedirectTo = (path: string, redirectTo?: string | null, addAccount = false) => {
   const normalizedRedirectTo = normalizeRedirectTo(redirectTo);
 
-  if (!normalizedRedirectTo) return path;
+  if (!normalizedRedirectTo && !addAccount) return path;
 
   const url = new URL(path, config.PUBLIC_APP_URL);
 
-  url.searchParams.set("redirectTo", normalizedRedirectTo);
+  if (normalizedRedirectTo) url.searchParams.set("redirectTo", normalizedRedirectTo);
+  if (addAccount) url.searchParams.set("addAccount", "true");
 
   return `${url.pathname}${url.search}`;
 };

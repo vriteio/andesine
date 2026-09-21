@@ -204,6 +204,13 @@
       "when": 1789935248839,
       "tag": "0028_ai-answers-key-permission",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1789987022411,
+      "tag": "0029_cli-oauth-provider",
+      "breakpoints": true
     }
   ]
 }

@@ -8,21 +8,35 @@ import {
 import type { WorkspaceEvent } from "#backend/events";
 import * as z from "zod";
 
+interface UserAuthorization {
+  memberID: string;
+  userID: string;
+  roleID: string;
+  permissions: Permission[];
+  admin?: boolean;
+}
+
 interface SessionData {
   id: string;
-  type: "key" | "session";
+  type: "key" | "session" | "oauth";
   workspaceID: string;
   subscriptionPlan: string;
   customerID?: string;
-  session?: {
-    memberID: string;
-    userID: string;
-    roleID: string;
-    permissions: Permission[];
-    admin?: boolean;
-  };
+  session?: UserAuthorization;
+  oauth?: UserAuthorization & { clientID: string };
   key?: { keyID: string; permissions: KeyPermission[] };
 }
+
+const userAuthorizationType = z.object({
+  memberID: z.string(),
+  userID: z.string(),
+  roleID: z.string(),
+  permissions: z.array(permissionType),
+  admin: z.boolean().optional()
+});
+const getUserAuthorization = (auth: SessionData): UserAuthorization | undefined => {
+  return auth.type === "oauth" ? auth.oauth : auth.session;
+};
 
 const sessionDataBaseType = z.object({
   id: z.string(),
@@ -33,13 +47,11 @@ const sessionDataBaseType = z.object({
 const sessionDataType: z.ZodType<SessionData> = z.discriminatedUnion("type", [
   sessionDataBaseType.extend({
     type: z.literal("session"),
-    session: z.object({
-      memberID: z.string(),
-      userID: z.string(),
-      roleID: z.string(),
-      permissions: z.array(permissionType),
-      admin: z.boolean().optional()
-    })
+    session: userAuthorizationType
+  }),
+  sessionDataBaseType.extend({
+    type: z.literal("oauth"),
+    oauth: userAuthorizationType.extend({ clientID: z.string() })
   }),
   sessionDataBaseType.extend({
     type: z.literal("key"),
@@ -86,5 +98,11 @@ const isSessionAuthorizationEvent = (auth: SessionData, event: WorkspaceEvent): 
   );
 };
 
-export { getUserSessionCacheKey, isSessionAuthorizationEvent, parseSessionData, sessionDataType };
-export type { SessionData };
+export {
+  getUserAuthorization,
+  getUserSessionCacheKey,
+  isSessionAuthorizationEvent,
+  parseSessionData,
+  sessionDataType
+};
+export type { SessionData, UserAuthorization };

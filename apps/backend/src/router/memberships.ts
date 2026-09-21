@@ -1,3 +1,4 @@
+import { getUserAuthorization } from "#backend/lib/policy";
 import { emitGroupEvent, emitMembershipEvent } from "#backend/events";
 import { authorized } from "#backend/lib/transport/middleware/authorized";
 import { Auth } from "#backend/services/auth";
@@ -42,7 +43,7 @@ const membershipsRouter = handlers.router({
 
     emitMembershipEvent(context.auth.workspaceID, {
       action: "membership:update",
-      memberID: context.auth.session?.memberID,
+      memberID: getUserAuthorization(context.auth)?.memberID,
       data: {
         id: input.id,
         roleID: input.roleID
@@ -62,7 +63,7 @@ const membershipsRouter = handlers.router({
 
     emitMembershipEvent(context.auth.workspaceID, {
       action: "membership:remove",
-      memberID: context.auth.session?.memberID,
+      memberID: getUserAuthorization(context.auth)?.memberID,
       data: {
         id: input.id
       }
@@ -79,7 +80,7 @@ const membershipsRouter = handlers.router({
 
     emitMembershipEvent(context.auth.workspaceID, {
       action: "invite:create",
-      memberID: context.auth.session?.memberID,
+      memberID: getUserAuthorization(context.auth)?.memberID,
       data: newInviteDetails.invite
     });
 
@@ -104,14 +105,14 @@ const membershipsRouter = handlers.router({
 
     emitMembershipEvent(context.auth.workspaceID, {
       action: "invite:revoke",
-      memberID: context.auth.session?.memberID,
+      memberID: getUserAuthorization(context.auth)?.memberID,
       data: {
         id: input.id
       }
     });
     emitUpdatedGroups({
       groups: updatedGroups,
-      memberID: context.auth.session?.memberID,
+      memberID: getUserAuthorization(context.auth)?.memberID,
       workspaceID: context.auth.workspaceID
     });
   }),

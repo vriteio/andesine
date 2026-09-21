@@ -1,3 +1,4 @@
+import { getUserAuthorization } from "#backend/lib/policy";
 import {
   emitCollectionEvent,
   emitEntryEvent,
@@ -39,7 +40,7 @@ const collectionsRouter = handlers.router({
       emitGroupEvent(context.auth.workspaceID, {
         action: "restricted-assignments:update",
         affectedUserIDs,
-        memberID: context.auth.session?.memberID,
+        memberID: getUserAuthorization(context.auth)?.memberID,
         data: { collectionID: input.id }
       });
     }
@@ -52,7 +53,7 @@ const collectionsRouter = handlers.router({
 
     emitCollectionEvent(context.auth.workspaceID, {
       action: "collection:create",
-      memberID: context.auth.session?.memberID,
+      memberID: getUserAuthorization(context.auth)?.memberID,
       data: newCollection
     });
 
@@ -67,14 +68,14 @@ const collectionsRouter = handlers.router({
     emitCollectionEvent(context.auth.workspaceID, {
       action: "collection:delete",
       data: { ids: deleted.collectionIDs },
-      memberID: context.auth.session?.memberID
+      memberID: getUserAuthorization(context.auth)?.memberID
     });
 
     for (const collectionID of deleted.collectionIDs) {
       emitPublishingEvent(context.auth.workspaceID, {
         action: "publishing:collection-update",
         data: { id: collectionID, enabled: false },
-        memberID: context.auth.session?.memberID
+        memberID: getUserAuthorization(context.auth)?.memberID
       });
     }
 
@@ -82,7 +83,7 @@ const collectionsRouter = handlers.router({
       emitEntryEvent(context.auth.workspaceID, {
         action: "entry:delete",
         data: { ids: deleted.entryIDs },
-        memberID: context.auth.session?.memberID
+        memberID: getUserAuthorization(context.auth)?.memberID
       });
       await Promise.all([
         enqueueCurrentEntrySync({
@@ -105,14 +106,14 @@ const collectionsRouter = handlers.router({
     emitCollectionEvent(context.auth.workspaceID, {
       action: "collection:delete",
       data: { ids: deleted.collectionIDs },
-      memberID: context.auth.session?.memberID
+      memberID: getUserAuthorization(context.auth)?.memberID
     });
 
     for (const collectionID of deleted.collectionIDs) {
       emitPublishingEvent(context.auth.workspaceID, {
         action: "publishing:collection-update",
         data: { id: collectionID, enabled: false },
-        memberID: context.auth.session?.memberID
+        memberID: getUserAuthorization(context.auth)?.memberID
       });
     }
 
@@ -120,7 +121,7 @@ const collectionsRouter = handlers.router({
       emitEntryEvent(context.auth.workspaceID, {
         action: "entry:delete",
         data: { ids: deleted.entryIDs },
-        memberID: context.auth.session?.memberID
+        memberID: getUserAuthorization(context.auth)?.memberID
       });
       await Promise.all([
         enqueueCurrentEntrySync({
@@ -144,7 +145,7 @@ const collectionsRouter = handlers.router({
     emitCollectionEvent(context.auth.workspaceID, {
       action: "collection:update",
       data: { id: input.id, name: input.name },
-      memberID: context.auth.session?.memberID
+      memberID: getUserAuthorization(context.auth)?.memberID
     });
 
     if (input.name !== undefined) {
@@ -170,7 +171,7 @@ const collectionsRouter = handlers.router({
     emitCollectionEvent(context.auth.workspaceID, {
       action: "collection:update",
       data: { id: input.id, restricted: input.restricted },
-      memberID: context.auth.session?.memberID
+      memberID: getUserAuthorization(context.auth)?.memberID
     });
     await enqueueCurrentCollectionSync({
       workspaceID: context.auth.workspaceID,
@@ -194,7 +195,7 @@ const collectionsRouter = handlers.router({
         index: result.index,
         restrictedBoundaryChanged: result.restrictedBoundaryChanged
       },
-      memberID: context.auth.session?.memberID
+      memberID: getUserAuthorization(context.auth)?.memberID
     });
 
     if (input.newParentID !== undefined) {
@@ -214,7 +215,7 @@ const collectionsRouter = handlers.router({
       emitPublishingEntryUpdates({
         workspaceID: context.auth.workspaceID,
         entries: result.publishingEntries,
-        memberID: context.auth.session?.memberID
+        memberID: getUserAuthorization(context.auth)?.memberID
       });
     }
 

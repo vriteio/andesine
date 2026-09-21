@@ -1,8 +1,9 @@
 /* eslint-disable max-lines */
 // Generated from openapi.json. Do not edit.
 import { operation, type Operation, type Requester } from "../operation";
+import type { WorkspaceTypeMap } from "../workspace";
 
-interface APIResources {
+interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
   assets: {
     /**
      * Search assets
@@ -17,7 +18,7 @@ interface APIResources {
      *   "limit": 10
      * });
      */
-    search: Operation<"assets.search">;
+    search: Operation<"assets.search", Workspace>;
     /**
      * Import an image URL
      *
@@ -33,7 +34,7 @@ interface APIResources {
      *   "checkDuplicates": true
      * });
      */
-    importURL: Operation<"assets.importURL">;
+    importURL: Operation<"assets.importURL", Workspace>;
     /**
      * Attach an asset
      *
@@ -47,7 +48,7 @@ interface APIResources {
      *   "entryID": "ent_example"
      * });
      */
-    attach: Operation<"assets.attach">;
+    attach: Operation<"assets.attach", Workspace>;
     /**
      * Register an image upload
      *
@@ -64,7 +65,7 @@ interface APIResources {
      *   "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
      * });
      */
-    register: Operation<"assets.register">;
+    register: Operation<"assets.register", Workspace>;
     /**
      * Upload registered image bytes
      *
@@ -78,7 +79,7 @@ interface APIResources {
      *   "file": new Blob([imageBytes], { type: "image/png" })
      * });
      */
-    upload: Operation<"assets.upload">;
+    upload: Operation<"assets.upload", Workspace>;
     /**
      * Get asset status and details
      *
@@ -90,7 +91,15 @@ interface APIResources {
      *   "entryID": "ent_example"
      * });
      */
-    get: Operation<"assets.get">;
+    get: Operation<"assets.get", Workspace>;
+  };
+  auth: {
+    /**
+     * Get credential identity
+     *
+     * Returns the authenticated user for OAuth or browser credentials, or the key and workspace IDs for an API key. Does not require a workspace selection and does not count toward API usage.
+     */
+    getIdentity: Operation<"auth.getIdentity", Workspace>;
   };
   instance: {
     /**
@@ -101,7 +110,7 @@ interface APIResources {
      * @example
      * await client.instance.get({});
      */
-    get: Operation<"instance.get">;
+    get: Operation<"instance.get", Workspace>;
   };
   entries: {
     /**
@@ -117,7 +126,7 @@ interface APIResources {
      *   "collectionID": "coll_example"
      * });
      */
-    create: Operation<"entries.create">;
+    create: Operation<"entries.create", Workspace>;
     /**
      * Delete entries
      *
@@ -132,7 +141,7 @@ interface APIResources {
      *   ]
      * });
      */
-    bulkDelete: Operation<"entries.bulkDelete">;
+    bulkDelete: Operation<"entries.bulkDelete", Workspace>;
     /**
      * Delete an entry
      *
@@ -145,7 +154,7 @@ interface APIResources {
      *   "id": "ent_example"
      * });
      */
-    delete: Operation<"entries.delete">;
+    delete: Operation<"entries.delete", Workspace>;
     /**
      * Rename an entry
      *
@@ -159,7 +168,7 @@ interface APIResources {
      *   "name": "Installation"
      * });
      */
-    update: Operation<"entries.update">;
+    update: Operation<"entries.update", Workspace>;
     /**
      * Get an entry
      *
@@ -172,7 +181,7 @@ interface APIResources {
      *   "id": "ent_example"
      * });
      */
-    get: Operation<"entries.get">;
+    get: Operation<"entries.get", Workspace>;
     /**
      * List entries
      *
@@ -186,7 +195,7 @@ interface APIResources {
      *   "limit": 20
      * });
      */
-    list: Operation<"entries.list">;
+    list: Operation<"entries.list", Workspace>;
   };
   collections: {
     /**
@@ -202,7 +211,7 @@ interface APIResources {
      *   "parentID": "coll_example"
      * });
      */
-    create: Operation<"collections.create">;
+    create: Operation<"collections.create", Workspace>;
     /**
      * Delete collection trees
      *
@@ -217,7 +226,7 @@ interface APIResources {
      *   ]
      * });
      */
-    bulkDelete: Operation<"collections.bulkDelete">;
+    bulkDelete: Operation<"collections.bulkDelete", Workspace>;
     /**
      * Delete a collection tree
      *
@@ -230,7 +239,7 @@ interface APIResources {
      *   "id": "coll_example"
      * });
      */
-    delete: Operation<"collections.delete">;
+    delete: Operation<"collections.delete", Workspace>;
     /**
      * Rename a collection
      *
@@ -244,7 +253,7 @@ interface APIResources {
      *   "name": "Guides"
      * });
      */
-    update: Operation<"collections.update">;
+    update: Operation<"collections.update", Workspace>;
     /**
      * List collections
      *
@@ -258,7 +267,7 @@ interface APIResources {
      *   "limit": 20
      * });
      */
-    list: Operation<"collections.list">;
+    list: Operation<"collections.list", Workspace>;
   };
   content: {
     /**
@@ -274,7 +283,7 @@ interface APIResources {
      *   "limit": 20
      * });
      */
-    listCollections: Operation<"content.listCollections">;
+    listCollections: Operation<"content.listCollections", Workspace>;
     /**
      * List published entries
      *
@@ -288,7 +297,7 @@ interface APIResources {
      *   "limit": 20
      * });
      */
-    listEntries: Operation<"content.listEntries">;
+    listEntries: Operation<"content.listEntries", Workspace>;
     /**
      * Get a published entry schema
      *
@@ -302,7 +311,7 @@ interface APIResources {
      *   "channel": "published"
      * });
      */
-    getSchema: Operation<"content.getSchema">;
+    getSchema: Operation<"content.getSchema", Workspace>;
     /**
      * Download a published asset
      *
@@ -317,7 +326,7 @@ interface APIResources {
      *   "variant": "display"
      * });
      */
-    getAsset: Operation<"content.getAsset">;
+    getAsset: Operation<"content.getAsset", Workspace>;
     /**
      * Get published entry content
      *
@@ -331,7 +340,7 @@ interface APIResources {
      *   "channel": "published"
      * });
      */
-    get: Operation<"content.get">;
+    get: Operation<"content.get", Workspace>;
     /**
      * Get a published collection tree
      *
@@ -345,7 +354,7 @@ interface APIResources {
      *   "channel": "published"
      * });
      */
-    getTree: Operation<"content.getTree">;
+    getTree: Operation<"content.getTree", Workspace>;
   };
   roles: {
     /**
@@ -358,7 +367,7 @@ interface APIResources {
      * @example
      * await client.roles.list({});
      */
-    list: Operation<"roles.list">;
+    list: Operation<"roles.list", Workspace>;
     /**
      * Create a role
      *
@@ -374,7 +383,7 @@ interface APIResources {
      *   ]
      * });
      */
-    create: Operation<"roles.create">;
+    create: Operation<"roles.create", Workspace>;
     /**
      * Update a role
      *
@@ -388,7 +397,7 @@ interface APIResources {
      *   "name": "Content editor"
      * });
      */
-    update: Operation<"roles.update">;
+    update: Operation<"roles.update", Workspace>;
     /**
      * Delete a role
      *
@@ -401,7 +410,7 @@ interface APIResources {
      *   "id": "rl_example"
      * });
      */
-    delete: Operation<"roles.delete">;
+    delete: Operation<"roles.delete", Workspace>;
   };
   search: {
     /**
@@ -417,7 +426,7 @@ interface APIResources {
      *   "limit": 10
      * });
      */
-    current: Operation<"search.current">;
+    current: Operation<"search.current", Workspace>;
     /**
      * Search published content
      *
@@ -432,7 +441,7 @@ interface APIResources {
      *   "limit": 10
      * });
      */
-    published: Operation<"search.published">;
+    published: Operation<"search.published", Workspace>;
     /**
      * Ask AI about current content
      *
@@ -445,7 +454,7 @@ interface APIResources {
      *   "question": "How do I install Andesine?"
      * });
      */
-    askCurrent: Operation<"search.askCurrent">;
+    askCurrent: Operation<"search.askCurrent", Workspace>;
     /**
      * Ask AI about published content
      *
@@ -459,7 +468,7 @@ interface APIResources {
      *   "channel": "published"
      * });
      */
-    askPublished: Operation<"search.askPublished">;
+    askPublished: Operation<"search.askPublished", Workspace>;
     /**
      * Stream an AI answer about current content
      *
@@ -467,7 +476,7 @@ interface APIResources {
      *
      * Required API key permissions: ai-answers, read:entries, read:collections. Write permissions also grant read access for the same resource.
      */
-    askCurrentStream: Operation<"search.askCurrentStream">;
+    askCurrentStream: Operation<"search.askCurrentStream", Workspace>;
     /**
      * Stream an AI answer about published content
      *
@@ -475,7 +484,7 @@ interface APIResources {
      *
      * Required API key permissions: ai-answers, read:publishing. Write permissions also grant read access for the same resource.
      */
-    askPublishedStream: Operation<"search.askPublishedStream">;
+    askPublishedStream: Operation<"search.askPublishedStream", Workspace>;
   };
   schemas: {
     /**
@@ -490,7 +499,7 @@ interface APIResources {
      *   "collectionID": "coll_example"
      * });
      */
-    create: Operation<"schemas.create">;
+    create: Operation<"schemas.create", Workspace>;
     /**
      * Delete a local schema
      *
@@ -504,7 +513,7 @@ interface APIResources {
      *   "confirmedDataLoss": false
      * });
      */
-    delete: Operation<"schemas.delete">;
+    delete: Operation<"schemas.delete", Workspace>;
     /**
      * Get an exact schema revision
      *
@@ -517,7 +526,7 @@ interface APIResources {
      *   "revisionID": "schr_example"
      * });
      */
-    getRevision: Operation<"schemas.getRevision">;
+    getRevision: Operation<"schemas.getRevision", Workspace>;
     /**
      * Get collection schemas
      *
@@ -530,7 +539,7 @@ interface APIResources {
      *   "collectionID": "coll_example"
      * });
      */
-    get: Operation<"schemas.get">;
+    get: Operation<"schemas.get", Workspace>;
     /**
      * Apply a schema draft
      *
@@ -545,7 +554,7 @@ interface APIResources {
      *   "name": "Reviewed schema"
      * });
      */
-    apply: Operation<"schemas.apply">;
+    apply: Operation<"schemas.apply", Workspace>;
   };
   schemaMigrations: {
     /**
@@ -561,7 +570,7 @@ interface APIResources {
      *   "limit": 20
      * });
      */
-    listContentLossEntries: Operation<"schemaMigrations.listContentLossEntries">;
+    listContentLossEntries: Operation<"schemaMigrations.listContentLossEntries", Workspace>;
     /**
      * Get the active schema migration
      *
@@ -574,7 +583,7 @@ interface APIResources {
      *   "collectionID": "coll_example"
      * });
      */
-    getActive: Operation<"schemaMigrations.getActive">;
+    getActive: Operation<"schemaMigrations.getActive", Workspace>;
     /**
      * Get schema migration status
      *
@@ -587,7 +596,7 @@ interface APIResources {
      *   "id": "smg_example"
      * });
      */
-    get: Operation<"schemaMigrations.get">;
+    get: Operation<"schemaMigrations.get", Workspace>;
   };
   schemaVersions: {
     /**
@@ -603,7 +612,7 @@ interface APIResources {
      *   "limit": 20
      * });
      */
-    list: Operation<"schemaVersions.list">;
+    list: Operation<"schemaVersions.list", Workspace>;
     /**
      * Get a schema version
      *
@@ -616,7 +625,7 @@ interface APIResources {
      *   "id": "schv_example"
      * });
      */
-    get: Operation<"schemaVersions.get">;
+    get: Operation<"schemaVersions.get", Workspace>;
     /**
      * Rename a schema version
      *
@@ -630,7 +639,7 @@ interface APIResources {
      *   "name": "Reviewed schema"
      * });
      */
-    update: Operation<"schemaVersions.update">;
+    update: Operation<"schemaVersions.update", Workspace>;
     /**
      * Restore a schema version
      *
@@ -644,7 +653,7 @@ interface APIResources {
      *   "confirmedDataLoss": true
      * });
      */
-    revert: Operation<"schemaVersions.revert">;
+    revert: Operation<"schemaVersions.revert", Workspace>;
   };
   memberships: {
     /**
@@ -657,7 +666,7 @@ interface APIResources {
      * @example
      * await client.memberships.list({});
      */
-    list: Operation<"memberships.list">;
+    list: Operation<"memberships.list", Workspace>;
     /**
      * Invite a workspace member
      *
@@ -671,7 +680,7 @@ interface APIResources {
      *   "roleID": "rl_example"
      * });
      */
-    invite: Operation<"memberships.invite">;
+    invite: Operation<"memberships.invite", Workspace>;
     /**
      * Change a member role
      *
@@ -685,7 +694,7 @@ interface APIResources {
      *   "roleID": "rl_example"
      * });
      */
-    update: Operation<"memberships.update">;
+    update: Operation<"memberships.update", Workspace>;
     /**
      * Remove a workspace member
      *
@@ -698,7 +707,7 @@ interface APIResources {
      *   "id": "ms_example"
      * });
      */
-    remove: Operation<"memberships.remove">;
+    remove: Operation<"memberships.remove", Workspace>;
     /**
      * List invitations
      *
@@ -709,7 +718,7 @@ interface APIResources {
      * @example
      * await client.memberships.listInvites({});
      */
-    listInvites: Operation<"memberships.listInvites">;
+    listInvites: Operation<"memberships.listInvites", Workspace>;
     /**
      * Resend an invitation
      *
@@ -722,7 +731,7 @@ interface APIResources {
      *   "id": "inv_example"
      * });
      */
-    resendInvite: Operation<"memberships.resendInvite">;
+    resendInvite: Operation<"memberships.resendInvite", Workspace>;
     /**
      * Revoke an invitation
      *
@@ -735,7 +744,7 @@ interface APIResources {
      *   "id": "inv_example"
      * });
      */
-    revokeInvite: Operation<"memberships.revokeInvite">;
+    revokeInvite: Operation<"memberships.revokeInvite", Workspace>;
   };
   publishing: {
     /**
@@ -752,7 +761,7 @@ interface APIResources {
      *   "publish": false
      * });
      */
-    setCollection: Operation<"publishing.setCollection">;
+    setCollection: Operation<"publishing.setCollection", Workspace>;
     /**
      * Publish a collection tree
      *
@@ -766,7 +775,7 @@ interface APIResources {
      *   "channel": "published"
      * });
      */
-    publishCollection: Operation<"publishing.publishCollection">;
+    publishCollection: Operation<"publishing.publishCollection", Workspace>;
     /**
      * Unpublish a collection tree
      *
@@ -780,7 +789,7 @@ interface APIResources {
      *   "channel": "published"
      * });
      */
-    unpublishCollection: Operation<"publishing.unpublishCollection">;
+    unpublishCollection: Operation<"publishing.unpublishCollection", Workspace>;
     /**
      * Configure publishing for collections
      *
@@ -797,7 +806,7 @@ interface APIResources {
      *   "publish": false
      * });
      */
-    bulkSetCollections: Operation<"publishing.bulkSetCollections">;
+    bulkSetCollections: Operation<"publishing.bulkSetCollections", Workspace>;
     /**
      * Publish collection trees
      *
@@ -813,7 +822,7 @@ interface APIResources {
      *   "channel": "published"
      * });
      */
-    bulkPublishCollections: Operation<"publishing.bulkPublishCollections">;
+    bulkPublishCollections: Operation<"publishing.bulkPublishCollections", Workspace>;
     /**
      * Unpublish collection trees
      *
@@ -829,7 +838,7 @@ interface APIResources {
      *   "channel": "published"
      * });
      */
-    bulkUnpublishCollections: Operation<"publishing.bulkUnpublishCollections">;
+    bulkUnpublishCollections: Operation<"publishing.bulkUnpublishCollections", Workspace>;
     /**
      * Publish an entry
      *
@@ -843,7 +852,7 @@ interface APIResources {
      *   "channel": "published"
      * });
      */
-    publishEntry: Operation<"publishing.publishEntry">;
+    publishEntry: Operation<"publishing.publishEntry", Workspace>;
     /**
      * Unpublish an entry
      *
@@ -858,7 +867,7 @@ interface APIResources {
      *   "versionID": "ver_example"
      * });
      */
-    unpublishEntry: Operation<"publishing.unpublishEntry">;
+    unpublishEntry: Operation<"publishing.unpublishEntry", Workspace>;
     /**
      * Publish entries
      *
@@ -876,7 +885,7 @@ interface APIResources {
      *   "channel": "published"
      * });
      */
-    bulkPublishEntries: Operation<"publishing.bulkPublishEntries">;
+    bulkPublishEntries: Operation<"publishing.bulkPublishEntries", Workspace>;
     /**
      * Unpublish entries
      *
@@ -892,7 +901,7 @@ interface APIResources {
      *   "channel": "published"
      * });
      */
-    bulkUnpublishEntries: Operation<"publishing.bulkUnpublishEntries">;
+    bulkUnpublishEntries: Operation<"publishing.bulkUnpublishEntries", Workspace>;
     /**
      * Revert pending publishing changes
      *
@@ -910,7 +919,7 @@ interface APIResources {
      *   "channel": "published"
      * });
      */
-    revertChanges: Operation<"publishing.revertChanges">;
+    revertChanges: Operation<"publishing.revertChanges", Workspace>;
     /**
      * Get a published entry version
      *
@@ -924,7 +933,7 @@ interface APIResources {
      *   "channel": "published"
      * });
      */
-    getEntryVersion: Operation<"publishing.getEntryVersion">;
+    getEntryVersion: Operation<"publishing.getEntryVersion", Workspace>;
     /**
      * List entry publications
      *
@@ -937,7 +946,7 @@ interface APIResources {
      *   "entryID": "ent_example"
      * });
      */
-    listEntryPublications: Operation<"publishing.listEntryPublications">;
+    listEntryPublications: Operation<"publishing.listEntryPublications", Workspace>;
     /**
      * List publishing channels
      *
@@ -950,7 +959,7 @@ interface APIResources {
      *   "includeAssignmentCount": true
      * });
      */
-    listChannels: Operation<"publishing.listChannels">;
+    listChannels: Operation<"publishing.listChannels", Workspace>;
     /**
      * Create a publishing channel
      *
@@ -963,7 +972,7 @@ interface APIResources {
      *   "name": "Preview"
      * });
      */
-    createChannel: Operation<"publishing.createChannel">;
+    createChannel: Operation<"publishing.createChannel", Workspace>;
     /**
      * Get channel content and pending changes
      *
@@ -977,7 +986,7 @@ interface APIResources {
      *   "collectionID": "coll_example"
      * });
      */
-    getChannelContent: Operation<"publishing.getChannelContent">;
+    getChannelContent: Operation<"publishing.getChannelContent", Workspace>;
     /**
      * Delete a publishing channel
      *
@@ -990,7 +999,15 @@ interface APIResources {
      *   "code": "preview"
      * });
      */
-    deleteChannel: Operation<"publishing.deleteChannel">;
+    deleteChannel: Operation<"publishing.deleteChannel", Workspace>;
+  };
+  workspaces: {
+    /**
+     * List available workspaces
+     *
+     * Lists workspaces available to the OAuth user, with current role permissions and plan access. Browser sessions can list workspaces across signed-in accounts. Does not require workspace selection and does not count toward API usage.
+     */
+    list: Operation<"workspaces.list", Workspace>;
   };
   versions: {
     /**
@@ -1006,7 +1023,7 @@ interface APIResources {
      *   "name": "Before release"
      * });
      */
-    create: Operation<"versions.create">;
+    create: Operation<"versions.create", Workspace>;
     /**
      * List entry versions
      *
@@ -1020,7 +1037,7 @@ interface APIResources {
      *   "limit": 20
      * });
      */
-    list: Operation<"versions.list">;
+    list: Operation<"versions.list", Workspace>;
     /**
      * Get an entry version
      *
@@ -1033,7 +1050,7 @@ interface APIResources {
      *   "id": "ver_example"
      * });
      */
-    get: Operation<"versions.get">;
+    get: Operation<"versions.get", Workspace>;
     /**
      * Rename an entry version
      *
@@ -1047,7 +1064,7 @@ interface APIResources {
      *   "name": "Release candidate"
      * });
      */
-    update: Operation<"versions.update">;
+    update: Operation<"versions.update", Workspace>;
     /**
      * Restore an entry version
      *
@@ -1060,13 +1077,49 @@ interface APIResources {
      *   "id": "ver_example"
      * });
      */
-    revert: Operation<"versions.revert">;
+    revert: Operation<"versions.revert", Workspace>;
+  };
+  typeMetadata: {
+    /**
+     * Get current content type metadata
+     *
+     * Read-only bulk metadata for type generation. Returns one consistent database snapshot of accessible collections and their active effective schemas, including inheritance. Optional entry/tree data requires read:entries in addition to read:collections. Explicit unavailable collection selectors fail. Active schema migrations in the selected collections return a conflict. No entry content is loaded. Schema-free collections use general types without warnings.
+     *
+     * Required API key permissions: read:collections. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.typeMetadata.getCurrent({
+     *   "collections": [
+     *     "/Tutorials"
+     *   ],
+     *   "includeEntries": false
+     * });
+     */
+    getCurrent: Operation<"typeMetadata.getCurrent", Workspace>;
+    /**
+     * Get published content type metadata
+     *
+     * Read-only bulk metadata for type generation. Resolves a channel once (published by default), or reads a retained snapshot. Uses publication paths, names, and exact entry-version schema revisions; never substitutes current schemas. Supports mixed revisions and schema-free entries. Empty collections use general types without warnings. Includes selected subtrees; no selectors means all published collections and root entries. Publication-access rules match content.get. No entry content is loaded. Reuse source.snapshotID for related reads. The fingerprint changes only when returned type metadata changes, not when content-only publication creates a new snapshot.
+     *
+     * Required API key permissions: read:publishing. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.typeMetadata.getPublished({
+     *   "channel": "published",
+     *   "collections": [
+     *     "/Tutorials"
+     *   ]
+     * });
+     */
+    getPublished: Operation<"typeMetadata.getPublished", Workspace>;
   };
 }
 
-const createResources = (request: Requester): APIResources => ({
+const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
+  request: Requester
+): APIResources<Workspace> => ({
   assets: {
-    search: operation<"assets.search">(request, {
+    search: operation<"assets.search", Workspace>(request, {
       method: "get",
       path: "/assets/search",
       pathParams: [],
@@ -1076,7 +1129,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    importURL: operation<"assets.importURL">(request, {
+    importURL: operation<"assets.importURL", Workspace>(request, {
       method: "post",
       path: "/assets/imports",
       pathParams: [],
@@ -1086,7 +1139,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    attach: operation<"assets.attach">(request, {
+    attach: operation<"assets.attach", Workspace>(request, {
       method: "post",
       path: "/assets/{assetID}/attachments",
       pathParams: ["assetID"],
@@ -1096,7 +1149,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    register: operation<"assets.register">(request, {
+    register: operation<"assets.register", Workspace>(request, {
       method: "post",
       path: "/assets/uploads",
       pathParams: [],
@@ -1106,7 +1159,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    upload: operation<"assets.upload">(request, {
+    upload: operation<"assets.upload", Workspace>(request, {
       method: "put",
       path: "/assets/{assetID}/upload",
       pathParams: ["assetID"],
@@ -1116,7 +1169,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    get: operation<"assets.get">(request, {
+    get: operation<"assets.get", Workspace>(request, {
       method: "get",
       path: "/assets/{assetID}",
       pathParams: ["assetID"],
@@ -1127,8 +1180,20 @@ const createResources = (request: Requester): APIResources => ({
       anonymous: false
     })
   },
+  auth: {
+    getIdentity: operation<"auth.getIdentity", Workspace>(request, {
+      method: "get",
+      path: "/identity",
+      pathParams: [],
+      queryParams: [],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    })
+  },
   instance: {
-    get: operation<"instance.get">(request, {
+    get: operation<"instance.get", Workspace>(request, {
       method: "get",
       path: "/instance",
       pathParams: [],
@@ -1140,7 +1205,7 @@ const createResources = (request: Requester): APIResources => ({
     })
   },
   entries: {
-    create: operation<"entries.create">(request, {
+    create: operation<"entries.create", Workspace>(request, {
       method: "post",
       path: "/entries",
       pathParams: [],
@@ -1150,7 +1215,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    bulkDelete: operation<"entries.bulkDelete">(request, {
+    bulkDelete: operation<"entries.bulkDelete", Workspace>(request, {
       method: "post",
       path: "/entries/bulk/delete",
       pathParams: [],
@@ -1160,7 +1225,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    delete: operation<"entries.delete">(request, {
+    delete: operation<"entries.delete", Workspace>(request, {
       method: "delete",
       path: "/entries/{id}",
       pathParams: ["id"],
@@ -1170,7 +1235,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    update: operation<"entries.update">(request, {
+    update: operation<"entries.update", Workspace>(request, {
       method: "put",
       path: "/entries/{id}",
       pathParams: ["id"],
@@ -1180,7 +1245,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    get: operation<"entries.get">(request, {
+    get: operation<"entries.get", Workspace>(request, {
       method: "get",
       path: "/entries/get",
       pathParams: [],
@@ -1190,7 +1255,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    list: operation<"entries.list">(request, {
+    list: operation<"entries.list", Workspace>(request, {
       method: "get",
       path: "/entries/list",
       pathParams: [],
@@ -1202,7 +1267,7 @@ const createResources = (request: Requester): APIResources => ({
     })
   },
   collections: {
-    create: operation<"collections.create">(request, {
+    create: operation<"collections.create", Workspace>(request, {
       method: "post",
       path: "/collections",
       pathParams: [],
@@ -1212,7 +1277,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    bulkDelete: operation<"collections.bulkDelete">(request, {
+    bulkDelete: operation<"collections.bulkDelete", Workspace>(request, {
       method: "post",
       path: "/collections/bulk/delete",
       pathParams: [],
@@ -1222,7 +1287,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    delete: operation<"collections.delete">(request, {
+    delete: operation<"collections.delete", Workspace>(request, {
       method: "delete",
       path: "/collections/{id}",
       pathParams: ["id"],
@@ -1232,7 +1297,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    update: operation<"collections.update">(request, {
+    update: operation<"collections.update", Workspace>(request, {
       method: "put",
       path: "/collections/{id}",
       pathParams: ["id"],
@@ -1242,7 +1307,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    list: operation<"collections.list">(request, {
+    list: operation<"collections.list", Workspace>(request, {
       method: "get",
       path: "/collections/list",
       pathParams: [],
@@ -1254,7 +1319,7 @@ const createResources = (request: Requester): APIResources => ({
     })
   },
   content: {
-    listCollections: operation<"content.listCollections">(request, {
+    listCollections: operation<"content.listCollections", Workspace>(request, {
       method: "get",
       path: "/content/collections",
       pathParams: [],
@@ -1264,7 +1329,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    listEntries: operation<"content.listEntries">(request, {
+    listEntries: operation<"content.listEntries", Workspace>(request, {
       method: "get",
       path: "/content/entries",
       pathParams: [],
@@ -1284,7 +1349,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    getSchema: operation<"content.getSchema">(request, {
+    getSchema: operation<"content.getSchema", Workspace>(request, {
       method: "get",
       path: "/content/entries/schema",
       pathParams: [],
@@ -1294,7 +1359,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    getAsset: operation<"content.getAsset">(request, {
+    getAsset: operation<"content.getAsset", Workspace>(request, {
       method: "get",
       path: "/content/assets/{workspaceID}/{snapshotID}/{entryID}/{assetID}/{variant}",
       pathParams: ["workspaceID", "snapshotID", "entryID", "assetID", "variant"],
@@ -1304,7 +1369,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: true,
       anonymous: true
     }),
-    get: operation<"content.get">(request, {
+    get: operation<"content.get", Workspace>(request, {
       method: "get",
       path: "/content/entries/get",
       pathParams: [],
@@ -1314,7 +1379,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    getTree: operation<"content.getTree">(request, {
+    getTree: operation<"content.getTree", Workspace>(request, {
       method: "get",
       path: "/content/tree",
       pathParams: [],
@@ -1326,7 +1391,7 @@ const createResources = (request: Requester): APIResources => ({
     })
   },
   roles: {
-    list: operation<"roles.list">(request, {
+    list: operation<"roles.list", Workspace>(request, {
       method: "get",
       path: "/roles",
       pathParams: [],
@@ -1336,7 +1401,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    create: operation<"roles.create">(request, {
+    create: operation<"roles.create", Workspace>(request, {
       method: "post",
       path: "/roles",
       pathParams: [],
@@ -1346,7 +1411,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    update: operation<"roles.update">(request, {
+    update: operation<"roles.update", Workspace>(request, {
       method: "put",
       path: "/roles/{id}",
       pathParams: ["id"],
@@ -1356,7 +1421,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    delete: operation<"roles.delete">(request, {
+    delete: operation<"roles.delete", Workspace>(request, {
       method: "delete",
       path: "/roles/{id}",
       pathParams: ["id"],
@@ -1368,7 +1433,7 @@ const createResources = (request: Requester): APIResources => ({
     })
   },
   search: {
-    current: operation<"search.current">(request, {
+    current: operation<"search.current", Workspace>(request, {
       method: "post",
       path: "/search/current",
       pathParams: [],
@@ -1378,7 +1443,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    published: operation<"search.published">(request, {
+    published: operation<"search.published", Workspace>(request, {
       method: "post",
       path: "/search/published",
       pathParams: [],
@@ -1388,7 +1453,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    askCurrent: operation<"search.askCurrent">(request, {
+    askCurrent: operation<"search.askCurrent", Workspace>(request, {
       method: "post",
       path: "/search/current/ask",
       pathParams: [],
@@ -1398,7 +1463,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    askPublished: operation<"search.askPublished">(request, {
+    askPublished: operation<"search.askPublished", Workspace>(request, {
       method: "post",
       path: "/search/published/ask",
       pathParams: [],
@@ -1408,7 +1473,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    askCurrentStream: operation<"search.askCurrentStream">(request, {
+    askCurrentStream: operation<"search.askCurrentStream", Workspace>(request, {
       streaming: true,
       method: "post",
       path: "/search/current/ask/stream",
@@ -1419,7 +1484,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    askPublishedStream: operation<"search.askPublishedStream">(request, {
+    askPublishedStream: operation<"search.askPublishedStream", Workspace>(request, {
       streaming: true,
       method: "post",
       path: "/search/published/ask/stream",
@@ -1432,7 +1497,7 @@ const createResources = (request: Requester): APIResources => ({
     })
   },
   schemas: {
-    create: operation<"schemas.create">(request, {
+    create: operation<"schemas.create", Workspace>(request, {
       method: "post",
       path: "/collections/{collectionID}/schema",
       pathParams: ["collectionID"],
@@ -1442,7 +1507,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    delete: operation<"schemas.delete">(request, {
+    delete: operation<"schemas.delete", Workspace>(request, {
       method: "delete",
       path: "/schemas/{schemaID}",
       pathParams: ["schemaID"],
@@ -1452,7 +1517,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    getRevision: operation<"schemas.getRevision">(request, {
+    getRevision: operation<"schemas.getRevision", Workspace>(request, {
       method: "get",
       path: "/schema-revisions/{revisionID}",
       pathParams: ["revisionID"],
@@ -1462,7 +1527,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    get: operation<"schemas.get">(request, {
+    get: operation<"schemas.get", Workspace>(request, {
       method: "get",
       path: "/schemas/collection",
       pathParams: [],
@@ -1472,7 +1537,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    apply: operation<"schemas.apply">(request, {
+    apply: operation<"schemas.apply", Workspace>(request, {
       method: "post",
       path: "/schemas/{schemaID}/apply",
       pathParams: ["schemaID"],
@@ -1484,17 +1549,20 @@ const createResources = (request: Requester): APIResources => ({
     })
   },
   schemaMigrations: {
-    listContentLossEntries: operation<"schemaMigrations.listContentLossEntries">(request, {
-      method: "get",
-      path: "/schema-migrations/{id}/content-loss-entries",
-      pathParams: ["id"],
-      queryParams: ["cursor", "limit"],
-      body: false,
-      multipart: false,
-      binary: false,
-      anonymous: false
-    }),
-    getActive: operation<"schemaMigrations.getActive">(request, {
+    listContentLossEntries: operation<"schemaMigrations.listContentLossEntries", Workspace>(
+      request,
+      {
+        method: "get",
+        path: "/schema-migrations/{id}/content-loss-entries",
+        pathParams: ["id"],
+        queryParams: ["cursor", "limit"],
+        body: false,
+        multipart: false,
+        binary: false,
+        anonymous: false
+      }
+    ),
+    getActive: operation<"schemaMigrations.getActive", Workspace>(request, {
       method: "get",
       path: "/collections/{collectionID}/schema-migration",
       pathParams: ["collectionID"],
@@ -1504,7 +1572,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    get: operation<"schemaMigrations.get">(request, {
+    get: operation<"schemaMigrations.get", Workspace>(request, {
       method: "get",
       path: "/schema-migrations/{id}",
       pathParams: ["id"],
@@ -1516,7 +1584,7 @@ const createResources = (request: Requester): APIResources => ({
     })
   },
   schemaVersions: {
-    list: operation<"schemaVersions.list">(request, {
+    list: operation<"schemaVersions.list", Workspace>(request, {
       method: "get",
       path: "/schemas/{schemaID}/versions",
       pathParams: ["schemaID"],
@@ -1526,7 +1594,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    get: operation<"schemaVersions.get">(request, {
+    get: operation<"schemaVersions.get", Workspace>(request, {
       method: "get",
       path: "/schema-versions/{id}",
       pathParams: ["id"],
@@ -1536,7 +1604,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    update: operation<"schemaVersions.update">(request, {
+    update: operation<"schemaVersions.update", Workspace>(request, {
       method: "patch",
       path: "/schema-versions/{id}",
       pathParams: ["id"],
@@ -1546,7 +1614,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    revert: operation<"schemaVersions.revert">(request, {
+    revert: operation<"schemaVersions.revert", Workspace>(request, {
       method: "post",
       path: "/schema-versions/{id}/revert",
       pathParams: ["id"],
@@ -1558,7 +1626,7 @@ const createResources = (request: Requester): APIResources => ({
     })
   },
   memberships: {
-    list: operation<"memberships.list">(request, {
+    list: operation<"memberships.list", Workspace>(request, {
       method: "get",
       path: "/memberships",
       pathParams: [],
@@ -1568,7 +1636,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    invite: operation<"memberships.invite">(request, {
+    invite: operation<"memberships.invite", Workspace>(request, {
       method: "post",
       path: "/memberships",
       pathParams: [],
@@ -1578,7 +1646,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    update: operation<"memberships.update">(request, {
+    update: operation<"memberships.update", Workspace>(request, {
       method: "patch",
       path: "/memberships/{id}",
       pathParams: ["id"],
@@ -1588,7 +1656,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    remove: operation<"memberships.remove">(request, {
+    remove: operation<"memberships.remove", Workspace>(request, {
       method: "delete",
       path: "/memberships/{id}",
       pathParams: ["id"],
@@ -1598,7 +1666,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    listInvites: operation<"memberships.listInvites">(request, {
+    listInvites: operation<"memberships.listInvites", Workspace>(request, {
       method: "get",
       path: "/memberships/invites",
       pathParams: [],
@@ -1608,7 +1676,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    resendInvite: operation<"memberships.resendInvite">(request, {
+    resendInvite: operation<"memberships.resendInvite", Workspace>(request, {
       method: "post",
       path: "/memberships/invites/{id}/resend",
       pathParams: ["id"],
@@ -1618,7 +1686,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    revokeInvite: operation<"memberships.revokeInvite">(request, {
+    revokeInvite: operation<"memberships.revokeInvite", Workspace>(request, {
       method: "delete",
       path: "/memberships/invites/{id}",
       pathParams: ["id"],
@@ -1630,7 +1698,7 @@ const createResources = (request: Requester): APIResources => ({
     })
   },
   publishing: {
-    setCollection: operation<"publishing.setCollection">(request, {
+    setCollection: operation<"publishing.setCollection", Workspace>(request, {
       method: "put",
       path: "/publishing/collections/{collectionID}",
       pathParams: ["collectionID"],
@@ -1640,7 +1708,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    publishCollection: operation<"publishing.publishCollection">(request, {
+    publishCollection: operation<"publishing.publishCollection", Workspace>(request, {
       method: "post",
       path: "/publishing/collections/{collectionID}",
       pathParams: ["collectionID"],
@@ -1650,7 +1718,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    unpublishCollection: operation<"publishing.unpublishCollection">(request, {
+    unpublishCollection: operation<"publishing.unpublishCollection", Workspace>(request, {
       method: "delete",
       path: "/publishing/collections/{collectionID}",
       pathParams: ["collectionID"],
@@ -1660,7 +1728,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    bulkSetCollections: operation<"publishing.bulkSetCollections">(request, {
+    bulkSetCollections: operation<"publishing.bulkSetCollections", Workspace>(request, {
       method: "post",
       path: "/publishing/collections/bulk/set",
       pathParams: [],
@@ -1670,7 +1738,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    bulkPublishCollections: operation<"publishing.bulkPublishCollections">(request, {
+    bulkPublishCollections: operation<"publishing.bulkPublishCollections", Workspace>(request, {
       method: "post",
       path: "/publishing/collections/bulk/publish",
       pathParams: [],
@@ -1680,7 +1748,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    bulkUnpublishCollections: operation<"publishing.bulkUnpublishCollections">(request, {
+    bulkUnpublishCollections: operation<"publishing.bulkUnpublishCollections", Workspace>(request, {
       method: "post",
       path: "/publishing/collections/bulk/unpublish",
       pathParams: [],
@@ -1690,7 +1758,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    publishEntry: operation<"publishing.publishEntry">(request, {
+    publishEntry: operation<"publishing.publishEntry", Workspace>(request, {
       method: "post",
       path: "/publishing/entries/{entryID}",
       pathParams: ["entryID"],
@@ -1700,7 +1768,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    unpublishEntry: operation<"publishing.unpublishEntry">(request, {
+    unpublishEntry: operation<"publishing.unpublishEntry", Workspace>(request, {
       method: "delete",
       path: "/publishing/entries/{entryID}",
       pathParams: ["entryID"],
@@ -1710,7 +1778,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    bulkPublishEntries: operation<"publishing.bulkPublishEntries">(request, {
+    bulkPublishEntries: operation<"publishing.bulkPublishEntries", Workspace>(request, {
       method: "post",
       path: "/publishing/entries/bulk/publish",
       pathParams: [],
@@ -1720,7 +1788,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    bulkUnpublishEntries: operation<"publishing.bulkUnpublishEntries">(request, {
+    bulkUnpublishEntries: operation<"publishing.bulkUnpublishEntries", Workspace>(request, {
       method: "post",
       path: "/publishing/entries/bulk/unpublish",
       pathParams: [],
@@ -1730,7 +1798,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    revertChanges: operation<"publishing.revertChanges">(request, {
+    revertChanges: operation<"publishing.revertChanges", Workspace>(request, {
       method: "post",
       path: "/publishing/changes/revert",
       pathParams: [],
@@ -1740,7 +1808,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    getEntryVersion: operation<"publishing.getEntryVersion">(request, {
+    getEntryVersion: operation<"publishing.getEntryVersion", Workspace>(request, {
       method: "get",
       path: "/publishing/entries/{entryID}/version",
       pathParams: ["entryID"],
@@ -1750,7 +1818,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    listEntryPublications: operation<"publishing.listEntryPublications">(request, {
+    listEntryPublications: operation<"publishing.listEntryPublications", Workspace>(request, {
       method: "get",
       path: "/publishing/entries/{entryID}/publications",
       pathParams: ["entryID"],
@@ -1760,7 +1828,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    listChannels: operation<"publishing.listChannels">(request, {
+    listChannels: operation<"publishing.listChannels", Workspace>(request, {
       method: "get",
       path: "/publishing/channels",
       pathParams: [],
@@ -1770,7 +1838,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    createChannel: operation<"publishing.createChannel">(request, {
+    createChannel: operation<"publishing.createChannel", Workspace>(request, {
       method: "post",
       path: "/publishing/channels",
       pathParams: [],
@@ -1780,7 +1848,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    getChannelContent: operation<"publishing.getChannelContent">(request, {
+    getChannelContent: operation<"publishing.getChannelContent", Workspace>(request, {
       method: "get",
       path: "/publishing/channels/{channel}/content",
       pathParams: ["channel"],
@@ -1790,7 +1858,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    deleteChannel: operation<"publishing.deleteChannel">(request, {
+    deleteChannel: operation<"publishing.deleteChannel", Workspace>(request, {
       method: "delete",
       path: "/publishing/channels/{code}",
       pathParams: ["code"],
@@ -1801,8 +1869,20 @@ const createResources = (request: Requester): APIResources => ({
       anonymous: false
     })
   },
+  workspaces: {
+    list: operation<"workspaces.list", Workspace>(request, {
+      method: "get",
+      path: "/workspaces",
+      pathParams: [],
+      queryParams: [],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    })
+  },
   versions: {
-    create: operation<"versions.create">(request, {
+    create: operation<"versions.create", Workspace>(request, {
       method: "post",
       path: "/entries/{entryID}/versions",
       pathParams: ["entryID"],
@@ -1812,7 +1892,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    list: operation<"versions.list">(request, {
+    list: operation<"versions.list", Workspace>(request, {
       method: "get",
       path: "/entries/{entryID}/versions",
       pathParams: ["entryID"],
@@ -1822,7 +1902,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    get: operation<"versions.get">(request, {
+    get: operation<"versions.get", Workspace>(request, {
       method: "get",
       path: "/versions/{id}",
       pathParams: ["id"],
@@ -1832,7 +1912,7 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    update: operation<"versions.update">(request, {
+    update: operation<"versions.update", Workspace>(request, {
       method: "patch",
       path: "/versions/{id}",
       pathParams: ["id"],
@@ -1842,12 +1922,34 @@ const createResources = (request: Requester): APIResources => ({
       binary: false,
       anonymous: false
     }),
-    revert: operation<"versions.revert">(request, {
+    revert: operation<"versions.revert", Workspace>(request, {
       method: "post",
       path: "/versions/{id}/revert",
       pathParams: ["id"],
       queryParams: [],
       body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    })
+  },
+  typeMetadata: {
+    getCurrent: operation<"typeMetadata.getCurrent", Workspace>(request, {
+      method: "post",
+      path: "/type-metadata/current",
+      pathParams: [],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    getPublished: operation<"typeMetadata.getPublished", Workspace>(request, {
+      method: "post",
+      path: "/type-metadata/published",
+      pathParams: [],
+      queryParams: [],
+      body: true,
       multipart: false,
       binary: false,
       anonymous: false

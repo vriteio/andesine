@@ -17,6 +17,7 @@ import { schemasRouter } from "./schemas";
 import { searchRouter } from "./search";
 import { syncRouter } from "./sync";
 import { versionsRouter } from "./versions";
+import { typeMetadataRouter } from "./type-metadata";
 import { workspacesRouter } from "./workspaces";
 
 const router = api.router({
@@ -38,6 +39,7 @@ const router = api.router({
   publishing: publishingRouter,
   workspaces: workspacesRouter,
   versions: versionsRouter,
+  typeMetadata: typeMetadataRouter,
   sync: syncRouter
 });
 

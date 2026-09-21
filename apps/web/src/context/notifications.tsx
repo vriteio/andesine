@@ -11,12 +11,13 @@ import {
   onMount
 } from "solid-js";
 import clsx from "clsx";
-import { Card, Button, Spinner, IconButton } from "@andesine/components";
+import { Card, Spinner, IconButton } from "@andesine/components";
 import styles from "./notifications.module.scss";
 
 interface NotificationData {
   type: "success" | "error" | "info" | "loading";
   text: string;
+  description?: string;
   promise?: Promise<unknown>;
 }
 interface NotificationProps extends NotificationData {
@@ -34,7 +35,7 @@ const Notification: Component<NotificationProps> = (props) => (
     color="contrast"
     class="flex p-0 justify-center items-center w-full rounded-xl transition-shadow duration-250 shadow-lg"
   >
-    <div class="flex w-full p-1 rounded-xl shadow-inner shadow-gray-200 shadow-opacity-60 justify-start">
+    <div class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center w-full p-1 rounded-xl shadow-inner shadow-gray-200 shadow-opacity-60">
       <Show when={props.type !== "loading"} fallback={<Spinner class="h-6 w-6" color="primary" />}>
         <div class="p-1 flex justify-center items-center">
           <div
@@ -47,16 +48,24 @@ const Notification: Component<NotificationProps> = (props) => (
           />
         </div>
       </Show>
-      <span class="flex items-center px-1 min-w-48 flex-1 text-[16px] md:text-base">
+      <span
+        class={clsx("px-1 min-w-0 text-[16px] md:text-base", props.description && "font-medium")}
+      >
         {props.text}
       </span>
       <IconButton
+        aria-label="Dismiss notification"
         size="small"
         variant="text"
         text="soft"
         onClick={() => props.onDismiss?.()}
         icon="i-lucide:x"
       />
+      <Show when={props.description}>
+        <p class="col-start-2 px-1 text-sm leading-5 text-gray-500 mt-0.5 mb-1 break-words">
+          {props.description}
+        </p>
+      </Show>
     </div>
   </Card>
 );
@@ -181,7 +190,10 @@ const NotificationsProvider: ParentComponent = (props) => {
           } else {
             notificationTimers.set(
               activeNotification.id,
-              window.setTimeout(() => dismiss(activeNotification.id), 3000)
+              window.setTimeout(
+                () => dismiss(activeNotification.id),
+                notification.description ? 6000 : 3000
+              )
             );
           }
         }

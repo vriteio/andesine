@@ -25,10 +25,12 @@ const rootRedirectQuery = query(async () => {
     return { success: true };
   }
 
+  const url = new URL(event ? event.request.url : window.location.href);
+  const isDeviceRoute = url.pathname.replace(/\/$/, "") === "/auth/device";
   const offlineState = readOfflineState();
   const offlinePath = typeof window !== "undefined" ? window.location.pathname : "";
 
-  if (isOffline() && offlineState) {
+  if (isOffline() && offlineState && !isDeviceRoute) {
     if (
       !offlineState.workspaces.some(
         (workspace) =>
@@ -44,7 +46,6 @@ const rootRedirectQuery = query(async () => {
   const { data, error } = await authClient.getSession();
 
   if (error && isOffline() && offlineState) return { success: true };
-  const url = new URL(event ? event.request.url : window.location.href);
   const isAuthRoute = url.pathname.startsWith("/auth");
   const isInviteRoute = url.pathname === "/invite";
   const isNewWorkspaceRoute = url.pathname === "/new-workspace";
@@ -63,7 +64,7 @@ const rootRedirectQuery = query(async () => {
   } else {
     const { currentWorkspaceID } = data.user;
 
-    if (isAuthRoute && isAddAccount) {
+    if (isDeviceRoute || (isAuthRoute && isAddAccount)) {
       return { success: true };
     }
 

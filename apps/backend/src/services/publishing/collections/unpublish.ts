@@ -1,3 +1,4 @@
+import { getUserAuthorization } from "#backend/lib/policy";
 import { assertPublishingSnapshot } from "#backend/lib/publishing/precondition";
 import { collections } from "#backend/db";
 import {
@@ -75,7 +76,7 @@ const unpublishCollection = withAuthorization<
       workspaceID,
       channelCode: input.channel,
       collectionRemovals: snapshotOperations.collectionRemovals,
-      creatorID: auth.session?.userID,
+      creatorID: getUserAuthorization(auth)?.userID,
       entryRemovals: snapshotOperations.entryRemovals,
       expectedSnapshotID: snapshotOperations.snapshotID,
       reason: "unpublish",

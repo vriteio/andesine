@@ -1,3 +1,4 @@
+import { getUserAuthorization } from "#backend/lib/policy";
 import { emitRoleEvent } from "#backend/events";
 import { authorized } from "#backend/lib/transport/middleware/authorized";
 import { Auth } from "#backend/services/auth";
@@ -23,7 +24,7 @@ const rolesRouter = handlers.router({
 
     emitRoleEvent(context.auth.workspaceID, {
       action: "role:create",
-      memberID: context.auth.session?.memberID,
+      memberID: getUserAuthorization(context.auth)?.memberID,
       data: newRole
     });
 
@@ -46,7 +47,7 @@ const rolesRouter = handlers.router({
     emitRoleEvent(context.auth.workspaceID, {
       action: "role:update",
       affectedUserIDs,
-      memberID: context.auth.session?.memberID,
+      memberID: getUserAuthorization(context.auth)?.memberID,
       data: {
         id: input.id,
         ...(input.name !== undefined && { name: input.name }),
@@ -69,7 +70,7 @@ const rolesRouter = handlers.router({
     emitRoleEvent(context.auth.workspaceID, {
       action: "role:delete",
       affectedUserIDs,
-      memberID: context.auth.session?.memberID,
+      memberID: getUserAuthorization(context.auth)?.memberID,
       data: {
         id: input.id
       }

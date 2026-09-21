@@ -8,12 +8,15 @@ interface OTPInputSlotProps {
   color?: "base" | "contrast";
   variant?: "solid" | "outlined";
 }
-interface OTPInputProps extends JSX.InputHTMLAttributes<HTMLInputElement> {
+interface OTPInputProps extends Omit<JSX.InputHTMLAttributes<HTMLInputElement>, "type"> {
   length?: number;
+  controlClass?: string;
+  type?: "numeric" | "alphanumeric" | "alphabetic";
   color?: "base" | "contrast";
   variant?: "solid" | "outlined";
   value: string;
   setValue?(value: string): void;
+  sanitizeValue?(value: string): string;
   onEnter?(event: KeyboardEvent): void;
 }
 const OTPInputColors = {
@@ -26,11 +29,11 @@ const OTPInputVariants = {
 };
 
 const OTPInputSlot: Component<OTPInputSlotProps> = (props) => (
-  <div class="flex-1">
+  <div class="flex-1 min-w-0">
     <PinInput.Input
       index={props.index}
       class={clsx(
-        ":base: rounded-md h-full w-full flex justify-center items-center text-2xl font-semibold text-center",
+        ":base: rounded-md h-full w-full min-w-0 flex justify-center items-center text-2xl font-semibold text-center",
         OTPInputColors[props.color || "base"],
         OTPInputVariants[props.variant || "solid"],
         props.index === 0 && "rounded-l-lg",
@@ -42,27 +45,31 @@ const OTPInputSlot: Component<OTPInputSlotProps> = (props) => (
 const OTPInput: Component<OTPInputProps> = (props) => {
   const length = () => props.length || 6;
   const slots = () => Array.from({ length: length() }).map((_, index) => index);
-  const arrayValue = () => [
-    ...props.value.split(""),
-    ...Array(length() - props.value.length).fill("")
-  ];
+  const arrayValue = () => Array.from({ length: length() }, (_, index) => props.value[index] || "");
 
   return (
     <PinInput.Root
-      class="flex h-12 gap-2"
+      class={clsx("flex h-12 gap-2", props.class)}
+      role="group"
+      aria-label={props["aria-label"]}
+      type={props.type || "numeric"}
+      count={length()}
+      disabled={props.disabled}
+      readOnly={props.readOnly}
+      sanitizeValue={props.sanitizeValue}
       value={arrayValue()}
       placeholder=""
       onValueChange={(details) => {
         props.setValue?.(details.valueAsString);
       }}
       onKeyUp={(event) => {
-        if (event.key === "Enter") {
+        if (event.key === "Enter" && !props.disabled && !props.readOnly) {
           props.onEnter?.(event);
         }
       }}
-      otp
+      otp={!props.type || props.type === "numeric"}
     >
-      <PinInput.Control class="flex h-12 gap-2">
+      <PinInput.Control class={clsx(":base: flex h-12 w-full min-w-0 gap-2", props.controlClass)}>
         <Index each={slots()}>
           {(index) => (
             <>
@@ -73,8 +80,8 @@ const OTPInput: Component<OTPInputProps> = (props) => {
                 variant={props.variant}
               />
               <Show when={index() + 1 === length() / 2}>
-                <div class="w-4 flex justify-center items-center">
-                  <div class="h-0.5 w-full bg-gray-400 rounded-full"></div>
+                <div aria-hidden="true" class="w-4 shrink-0 flex justify-center items-center">
+                  <div class="h-0.5 w-full bg-gray-400 rounded-full" />
                 </div>
               </Show>
             </>

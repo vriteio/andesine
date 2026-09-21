@@ -1,3 +1,4 @@
+import { getUserAuthorization } from "#backend/lib/policy";
 import { assertPublishingSnapshot } from "#backend/lib/publishing/precondition";
 import { collections, publishingChannels } from "#backend/db";
 import {
@@ -303,7 +304,7 @@ const commitCollectionsPublishing = withAuthorization<
         entries: [...publishableEntryIDs].map((entryID) => ({ entryID })),
         channel: PUBLISHED_CHANNEL_CODE,
         contributorIDs: input.contributorIDs,
-        creatorID: auth.session?.userID,
+        creatorID: getUserAuthorization(auth)?.userID,
         snapshotOperations,
         subscriptionPlan: auth.subscriptionPlan
       });

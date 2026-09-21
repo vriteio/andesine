@@ -1,5 +1,5 @@
-import { type Component, onMount, Suspense } from "solid-js";
-import { type RouteSectionProps } from "@solidjs/router";
+import { type Component, onMount, Show, Suspense } from "solid-js";
+import { type RouteSectionProps, useLocation } from "@solidjs/router";
 import { NoHydration } from "solid-js/web";
 import { Logo, Skeleton, AnimatedGradientCard, DotsBackground } from "@andesine/components";
 import { lockOfflineState } from "#web/lib/offline";
@@ -12,8 +12,14 @@ const tips = [
 ];
 
 const AuthLayout: Component<RouteSectionProps> = (props) => {
+  const location = useLocation();
+  const isDeviceRoute = () => location.pathname.replace(/\/$/, "") === "/auth/device";
+
   onMount(() => {
-    if (new URLSearchParams(window.location.search).get("addAccount") !== "true") {
+    if (
+      !isDeviceRoute() &&
+      new URLSearchParams(window.location.search).get("addAccount") !== "true"
+    ) {
       lockOfflineState();
     }
   });
@@ -22,22 +28,24 @@ const AuthLayout: Component<RouteSectionProps> = (props) => {
     <div class="flex flex-row h-full w-full">
       <DotsBackground class="absolute mask-edge-fading-16" />
       <Logo class="top-4 left-4 absolute" />
-      <div class="flex-1 relative flex justify-center items-center">
-        <div class="p-4 lg:p-24 relative">
+      <div class="flex-1 relative flex overflow-y-auto">
+        <div class="p-4 lg:p-24 relative m-auto">
           <div class="absolute h-full w-full top-0 left-0 mask-edge-fading-4 lg:mask-edge-fading-24 bg-gray-100 rounded-2xl" />
           <div class="relative flex flex-col w-80 max-w-full">
             <Suspense
               fallback={
-                <div class="flex flex-col w-full">
-                  <Skeleton
-                    class={[
-                      "my-1 h-6 w-2/5",
-                      "h-8 my-1 w-3/5",
-                      "my-4 h-8 w-full",
-                      "mt-1 h-8 w-2/5"
-                    ]}
-                  />
-                </div>
+                <Show when={!isDeviceRoute()}>
+                  <div class="flex flex-col w-full">
+                    <Skeleton
+                      class={[
+                        "my-1 h-6 w-2/5",
+                        "h-8 my-1 w-3/5",
+                        "my-4 h-8 w-full",
+                        "mt-1 h-8 w-2/5"
+                      ]}
+                    />
+                  </div>
+                </Show>
               }
             >
               {props.children}

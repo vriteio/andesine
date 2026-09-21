@@ -112,7 +112,7 @@ interface WithWorkspaceOptions {
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Database = DatabaseTransaction;
 type DatabaseClient = DatabaseTransaction | typeof db;
-type TransactionMode = "atomic" | "locked-workspace";
+type TransactionMode = "atomic" | "locked-workspace" | "snapshot";
 
 const activeAuthorizationScopes = new WeakSet<AuthorizationScope>();
 
@@ -253,13 +253,16 @@ function withAuthorization<Input, Resolved = undefined, Result = void>(
 
     if (!options.transaction) return execute(db);
 
-    return db.transaction(async (transaction) => {
-      if (options.transaction === "locked-workspace") {
-        await lockWorkspace(transaction, workspaceID);
-      }
+    return db.transaction(
+      async (transaction) => {
+        if (options.transaction === "locked-workspace") {
+          await lockWorkspace(transaction, workspaceID);
+        }
 
-      return execute(transaction);
-    });
+        return execute(transaction);
+      },
+      options.transaction === "snapshot" ? { isolationLevel: "repeatable read" } : undefined
+    );
   };
 }
 const withExplicitWorkspace = <Input, Result = void>(
@@ -274,7 +277,12 @@ const withExplicitWorkspace = <Input, Result = void>(
       return handler({ database: databaseClient as Database, input, workspaceID });
     };
 
-    if (options.transaction === "atomic") return db.transaction(execute);
+    if (options.transaction) {
+      return db.transaction(
+        execute,
+        options.transaction === "snapshot" ? { isolationLevel: "repeatable read" } : undefined
+      );
+    }
 
     return execute(db);
   };

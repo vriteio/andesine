@@ -6,9 +6,7 @@ const withErrorHints = (error: unknown) => {
   const data = error.data && typeof error.data === "object" ? error.data : {};
   const hints =
     error.code === "UNAUTHORIZED"
-      ? [
-          "Use a valid API key for this Andesine instance, or sign in again if the request uses a session."
-        ]
+      ? ["Use a valid API key or OAuth access token for this Andesine instance, or sign in again."]
       : error.code === "BAD_REQUEST" && "issues" in data
         ? ["Correct the fields listed in issues before submitting the request again."]
         : undefined;

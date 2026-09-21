@@ -1,3 +1,4 @@
+import { getUserAuthorization } from "#backend/lib/policy";
 import { assertPublishingSnapshot } from "#backend/lib/publishing/precondition";
 import {
   isCollectionPublishingEnabled,
@@ -95,7 +96,7 @@ const commitPublishEntry = withAuthorization<
       entries: publishingEntries,
       channel: input.channel,
       contributorIDs: input.contributorIDs,
-      creatorID: auth.session?.userID,
+      creatorID: getUserAuthorization(auth)?.userID,
       subscriptionPlan: auth.subscriptionPlan
     });
   }
