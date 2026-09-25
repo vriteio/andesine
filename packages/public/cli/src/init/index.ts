@@ -89,7 +89,9 @@ const describeConfig = (config: ProjectConfig): Record<string, string | undefine
   "Profile": config.profile,
   "Source": config.types ? JSON.stringify(config.types.source) : undefined,
   "Collections": config.types
-    ? config.types.collections.join(", ") || "All accessible collections"
+    ? config.types.collections
+        .map((selector) => (typeof selector === "string" ? selector : selector.collectionSlugPath))
+        .join(", ") || "All accessible collections"
     : undefined,
   "Output": config.types?.output,
   "Entry IDs": config.types ? String(config.types.includeEntryIDs) : undefined,

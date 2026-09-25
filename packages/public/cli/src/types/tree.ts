@@ -76,7 +76,7 @@ const treeTypes = (metadata: TypeMetadata, collectionNames: Map<string, string>)
         throw new Error(`Invalid tree entry reference ${literal(id)}.`);
       }
 
-      return `Omit<SDK.PublishedEntry, "id" | "name" | "path"> & { id: ${literal(id)}; name: ${literal(entry.name)}; path: ${literal(entry.path)} }`;
+      return `Omit<SDK.PublishedEntry, "id" | "name" | "path" | "slugPath"> & { id: ${literal(id)}; name: ${literal(entry.name)}; path: ${literal(entry.path)}; slugPath: ${literal(entry.slugPath)} }`;
     });
 
     if (metadata.source.kind === "current") {
@@ -91,6 +91,7 @@ const treeTypes = (metadata: TypeMetadata, collectionNames: Map<string, string>)
   id: ${literal(collection.id)};
   name: ${literal(collection.name)};
   path: ${literal(collection.path)};
+  slugPath: ${literal(collection.slugPath)};
   entries: ${tuple(childEntries)};
   collections: ${tuple(childTrees)};
 }`;

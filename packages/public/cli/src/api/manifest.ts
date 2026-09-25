@@ -562,7 +562,7 @@ const commands: APICommand[] = [
     path: "/collections",
     summary: "Create a collection",
     description:
-      "Creates a child collection. Without parentID, uses the workspace root. The name defaults to Untitled. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed, NFC-normalized, case-sensitive, and shared by sibling entries and collections. Names cannot contain a slash or equal a single dot or two dots. Restricted collections require a session with restricted_collections permission and the Pro plan; API keys cannot create them.\n\nRequired API key permissions: collections. Write permissions also grant read access for the same resource.",
+      "Creates a child collection. Without parentID, uses the workspace root. The name defaults to Untitled. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed and NFC-normalized. Derived URL slugs must be unique across sibling entries and collections, including case and punctuation variants. Names cannot contain a slash or equal a single dot or two dots. Restricted collections require a session with restricted_collections permission and the Pro plan; API keys cannot create them.\n\nRequired API key permissions: collections. Write permissions also grant read access for the same resource.",
     example: {
       name: "Documentation",
       parentID: "coll_example"
@@ -744,6 +744,19 @@ const commands: APICommand[] = [
         nullable: false
       },
       {
+        name: "collectionSlugPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
         name: "cursor",
         location: "query",
         required: false,
@@ -898,6 +911,19 @@ const commands: APICommand[] = [
             "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
         },
         flag: "path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "slugPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "slug-path",
         kind: "string",
         nullable: false
       },
@@ -1088,6 +1114,19 @@ const commands: APICommand[] = [
         nullable: false
       },
       {
+        name: "slugPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
         name: "channel",
         location: "query",
         required: false,
@@ -1177,6 +1216,19 @@ const commands: APICommand[] = [
         nullable: false
       },
       {
+        name: "collectionSlugPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
         name: "channel",
         location: "query",
         required: false,
@@ -1228,7 +1280,7 @@ const commands: APICommand[] = [
     path: "/content/collections",
     summary: "List published collections",
     description:
-      "Returns a flat page of collections from a publication snapshot. The default channel is published. On later pages, pass the returned snapshotID and pagination.nextCursor, and omit channel. Optionally select direct children using collectionID or collectionPath. Results are ordered by ID, not display order.\n\nRequired API key permissions: read:publishing. Write permissions also grant read access for the same resource.",
+      "Returns a flat page of collections from a publication snapshot. The default channel is published. On later pages, pass the returned snapshotID and pagination.nextCursor, and omit channel. Optionally select direct children using collectionID, collectionPath, or collectionSlugPath. Results are ordered by ID, not display order.\n\nRequired API key permissions: read:publishing. Write permissions also grant read access for the same resource.",
     example: {
       channel: "published",
       limit: 20
@@ -1291,6 +1343,19 @@ const commands: APICommand[] = [
             "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
         },
         flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
         kind: "string",
         nullable: false
       },
@@ -1345,7 +1410,7 @@ const commands: APICommand[] = [
     path: "/content/entries",
     summary: "List published entries",
     description:
-      "Returns a flat page of entries from a publication snapshot. The default channel is published. On later pages, pass the returned snapshotID and pagination.nextCursor, and omit channel. Select direct children using collectionID or collectionPath, or include nested entries with descendants: true. descendants requires a collection scope. All property filters must match the assigned version. includeContent: true returns validated full content, properties, fragments, assets, and recorded schema metadata. An invalid full item fails the page. Keep the same scope and filters across pages. Results are ordered by ID, not display order.\n\nRequired API key permissions: read:publishing. Write permissions also grant read access for the same resource.",
+      "Returns a flat page of entries from a publication snapshot. The default channel is published. On later pages, pass the returned snapshotID and pagination.nextCursor, and omit channel. Select direct children using collectionID, collectionPath, or collectionSlugPath, or include nested entries with descendants: true. descendants requires a collection scope. All property filters must match the assigned version. includeContent: true returns validated full content, properties, fragments, assets, and recorded schema metadata. An invalid full item fails the page. Keep the same scope and filters across pages. Results are ordered by ID, not display order.\n\nRequired API key permissions: read:publishing. Write permissions also grant read access for the same resource.",
     example: {
       channel: "published",
       limit: 20
@@ -1408,6 +1473,19 @@ const commands: APICommand[] = [
             "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
         },
         flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
         kind: "string",
         nullable: false
       },
@@ -1558,7 +1636,7 @@ const commands: APICommand[] = [
     path: "/entries",
     summary: "Create an entry",
     description:
-      "Creates an entry and its initial document. The name defaults to Untitled. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed, NFC-normalized, case-sensitive, and shared by sibling entries and collections. Names cannot contain a slash or equal a single dot or two dots. A collection schema can set the initial content.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+      "Creates an entry and its initial document. The name defaults to Untitled. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed and NFC-normalized. Derived URL slugs must be unique across sibling entries and collections, including case and punctuation variants. Names cannot contain a slash or equal a single dot or two dots. A collection schema can set the initial content.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
     example: {
       name: "Getting started",
       collectionID: "coll_example"
@@ -1726,6 +1804,19 @@ const commands: APICommand[] = [
         nullable: false
       },
       {
+        name: "slugPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
         name: "expectedSchemaHash",
         location: "query",
         required: false,
@@ -1799,6 +1890,19 @@ const commands: APICommand[] = [
             "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
         },
         flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
         kind: "string",
         nullable: false
       },
@@ -4425,6 +4529,19 @@ const commands: APICommand[] = [
         nullable: false
       },
       {
+        name: "collectionSlugPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
         name: "x-workspace-id",
         location: "header",
         required: false,
@@ -4846,6 +4963,19 @@ const commands: APICommand[] = [
         nullable: false
       },
       {
+        name: "collectionSlugPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
         name: "filters",
         location: "body",
         required: false,
@@ -4947,6 +5077,19 @@ const commands: APICommand[] = [
             "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
         },
         flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
         kind: "string",
         nullable: false
       },
@@ -5056,6 +5199,19 @@ const commands: APICommand[] = [
             "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
         },
         flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
         kind: "string",
         nullable: false
       },
@@ -5175,6 +5331,19 @@ const commands: APICommand[] = [
             "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
         },
         flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
         kind: "string",
         nullable: false
       },
@@ -5301,6 +5470,19 @@ const commands: APICommand[] = [
         nullable: false
       },
       {
+        name: "collectionSlugPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
         name: "filters",
         location: "body",
         required: false,
@@ -5421,6 +5603,19 @@ const commands: APICommand[] = [
         nullable: false
       },
       {
+        name: "collectionSlugPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
         name: "filters",
         location: "body",
         required: false,
@@ -5533,12 +5728,23 @@ const commands: APICommand[] = [
                 type: "string",
                 description:
                   "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+              },
+              {
+                type: "object",
+                properties: {
+                  collectionSlugPath: {
+                    type: "string",
+                    description:
+                      "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+                  }
+                },
+                required: ["collectionSlugPath"]
               }
             ]
           },
           default: [],
           description:
-            "Collection IDs or paths. Includes selected subtrees; empty selects all accessible collections."
+            "Collection IDs, name paths, or objects with collectionSlugPath. Includes selected subtrees; empty selects all accessible collections."
         },
         flag: "collections",
         kind: "json",
@@ -5627,12 +5833,23 @@ const commands: APICommand[] = [
                 type: "string",
                 description:
                   "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+              },
+              {
+                type: "object",
+                properties: {
+                  collectionSlugPath: {
+                    type: "string",
+                    description:
+                      "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+                  }
+                },
+                required: ["collectionSlugPath"]
               }
             ]
           },
           default: [],
           description:
-            "Collection IDs or paths. Includes selected subtrees; empty selects all accessible collections."
+            "Collection IDs, name paths, or objects with collectionSlugPath. Includes selected subtrees; empty selects all accessible collections."
         },
         flag: "collections",
         kind: "json",

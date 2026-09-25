@@ -1,16 +1,22 @@
 import { publicID } from "#backend/lib/primitives";
 import { schemaHashType, schemaRevisionType } from "#backend/lib/schema/contract/recorded";
 import { publishingChannelCodeType } from "#backend/lib/publishing/channel";
-import { contentPathType } from "./paths";
+import { contentPathType, contentSlugPathType } from "./paths";
 import * as z from "zod";
 
 const typeMetadataInputType = z.object({
   collections: z
-    .array(z.union([publicID("coll"), contentPathType]))
+    .array(
+      z.union([
+        publicID("coll"),
+        contentPathType,
+        z.object({ collectionSlugPath: contentSlugPathType })
+      ])
+    )
     .max(100)
     .default([])
     .describe(
-      "Collection IDs or paths. Includes selected subtrees; empty selects all accessible collections."
+      "Collection IDs, name paths, or objects with collectionSlugPath. Includes selected subtrees; empty selects all accessible collections."
     ),
   includeEntries: z
     .boolean()
@@ -34,6 +40,7 @@ const typeMetadataCollectionType = z.object({
   parentID: publicID("coll").nullable(),
   name: z.string(),
   path: z.string(),
+  slugPath: z.string(),
   schemaRevisionIDs: z
     .array(publicID("schr").nullable())
     .describe(
@@ -45,6 +52,7 @@ const typeMetadataEntryType = z.object({
   collectionID: publicID("coll").nullable(),
   name: z.string(),
   path: z.string(),
+  slugPath: z.string(),
   schemaRevisionID: publicID("schr").nullable()
 });
 const typeMetadataTreeType = z.object({

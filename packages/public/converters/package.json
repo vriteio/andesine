@@ -44,7 +44,7 @@
   "scripts": {
     "build": "rolldown -c rolldown.config.ts",
     "typecheck": "tsc --noEmit",
-    "prepack": "pnpm run typecheck && pnpm run build && pnpm run lint:package",
+    "prepack": "turbo run lint:package --filter=@andesine/converters",
     "lint:package": "publint --strict"
   },
   "publishConfig": {

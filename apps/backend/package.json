@@ -57,6 +57,7 @@
     "drizzle-kit": "^0.31.10",
     "rolldown": "^1.2.2",
     "tsx": "^4.23.5",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "@andesine/sdk": "workspace:*"
   }
 }

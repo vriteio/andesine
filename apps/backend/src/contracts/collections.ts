@@ -41,7 +41,7 @@ const collectionsContract = baseContract.prefix("/collections").router({
     .route({
       summary: "Create a collection",
       description:
-        "Creates a child collection. Without parentID, uses the workspace root. The name defaults to Untitled. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed, NFC-normalized, case-sensitive, and shared by sibling entries and collections. Names cannot contain a slash or equal a single dot or two dots. Restricted collections require a session with restricted_collections permission and the Pro plan; API keys cannot create them.",
+        "Creates a child collection. Without parentID, uses the workspace root. The name defaults to Untitled. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed and NFC-normalized. Derived URL slugs must be unique across sibling entries and collections, including case and punctuation variants. Names cannot contain a slash or equal a single dot or two dots. Restricted collections require a session with restricted_collections permission and the Pro plan; API keys cannot create them.",
       tags: ["collections"],
       method: "POST",
       path: "/"
@@ -176,7 +176,7 @@ const collectionsContract = baseContract.prefix("/collections").router({
             .describe("Maximum collections to return")
         })
         .refine(hasOptionalCollectionSelector, {
-          message: "Use collectionID or collectionPath, not both"
+          message: "Use only one collectionID, collectionPath, or collectionSlugPath"
         })
     )
     .output(collectionListType)

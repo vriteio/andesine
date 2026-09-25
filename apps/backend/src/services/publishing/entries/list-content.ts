@@ -90,6 +90,7 @@ const listPublishedEntries = withPublicWorkspace<
       collectionID: row.collectionID ? toCollectionID(row.collectionID) : null,
       name: row.name,
       path: paths.entryPath(row.collectionID, row.name),
+      slugPath: paths.entrySlugPath(row.collectionID, row.name, row.id),
       version: { id: toVersionID(row.versionID), hash: row.hash }
     })),
     limit

@@ -87,8 +87,9 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
   };
   const createEntry = (collectionID?: string): Entry | undefined => {
     const firstSibling = getEntriesInCollection(collectionID ?? null)[0];
+    const id = toEntryID(generateUUID());
     const entry: Entry = {
-      id: toEntryID(generateUUID()),
+      id,
       order: firstSibling
         ? `${LexoRank.parse(firstSibling.order).genNext()}`
         : `${LexoRank.middle()}`,
@@ -97,7 +98,7 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
           entries: input.entriesCollection().find().fetch(),
           collections: input.collectionsCollection().find().fetch()
         },
-        { kind: "entry", parentID: collectionID, name: "Untitled" }
+        { id, kind: "entry", parentID: collectionID, name: "Untitled" }
       ),
       collectionID
     };

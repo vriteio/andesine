@@ -1,6 +1,6 @@
 {
   "name": "andesine",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Command-line tools for Andesine",
   "type": "module",
   "license": "MIT",
@@ -19,7 +19,7 @@
   "scripts": {
     "build": "rolldown -c rolldown.config.ts",
     "typecheck": "tsc --noEmit",
-    "prepack": "pnpm run build && pnpm run typecheck && pnpm run lint:package",
+    "prepack": "turbo run lint:package --filter=andesine",
     "lint:package": "publint --strict",
     "generate:api": "tsx scripts/generate-api.ts"
   },

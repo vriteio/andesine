@@ -63,7 +63,7 @@ const searchInputType = z
     semantic: z.boolean().default(false).describe("Whether to combine keyword and vector search")
   })
   .refine(hasOptionalCollectionSelector, {
-    message: "Use collectionID or collectionPath, not both"
+    message: "Use only one collectionID, collectionPath, or collectionSlugPath"
   });
 const publishedSearchInputType = searchInputType.safeExtend({
   channel: publishingChannelCodeType.describe("Publishing channel to search")
@@ -80,13 +80,14 @@ const askInputType = z
     history: z.array(historyMessageType).max(10).default([])
   })
   .refine(hasOptionalCollectionSelector, {
-    message: "Use collectionID or collectionPath, not both"
+    message: "Use only one collectionID, collectionPath, or collectionSlugPath"
   });
 const publishedAskInputType = askInputType.safeExtend({
   channel: publishingChannelCodeType.describe("Publishing channel to search")
 });
 const searchResultItemType = z.object({
   path: z.string(),
+  slugPath: z.string(),
   anchor: z.string().optional(),
   entryID: id(),
   collectionID: id().optional(),

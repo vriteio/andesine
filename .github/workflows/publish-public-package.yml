@@ -62,7 +62,7 @@ jobs:
           archive_name="$(jq -r '.name | ltrimstr("@") | gsub("/"; "-")' "packages/public/$PACKAGE_NAME/package.json")"
           echo "PACKAGE_ARCHIVE=$archive_name-$actual_version.tgz" >> "$GITHUB_ENV"
       - run: pnpm install --frozen-lockfile
-      - name: Prepare CLI SDK dependency
+      - name: Check CLI SDK release
         if: inputs.package == 'cli'
         run: |
           sdk_version="$(jq -r '.version' packages/public/sdk/package.json)"
@@ -74,7 +74,6 @@ jobs:
             echo "Publish @andesine/sdk@$sdk_version before the CLI."
             exit 1
           fi
-          pnpm --filter @andesine/sdk build
       - name: Check source
         run: |
           pnpm exec eslint "packages/public/$PACKAGE_NAME"
@@ -82,8 +81,7 @@ jobs:
       - name: Check generated API files
         if: inputs.package == 'sdk' || inputs.package == 'cli'
         run: |
-          pnpm --filter @andesine/backend openapi:export
-          pnpm --filter @andesine/sdk generate
+          pnpm api:generate
           git diff --exit-code -- packages/public/sdk/openapi.json packages/public/sdk/src/generated
       - name: Build, check, and pack
         run: |

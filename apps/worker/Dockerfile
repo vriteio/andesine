@@ -15,7 +15,7 @@ WORKDIR /app
 COPY --from=pruner /app/out/json/ ./
 RUN pnpm install --frozen-lockfile
 COPY --from=pruner /app/out/full/ ./
-RUN pnpm turbo build --filter=@andesine/worker
+RUN pnpm build --filter=@andesine/worker
 RUN pnpm --config.inject-workspace-packages=true --filter @andesine/worker --prod deploy --config.shamefully-hoist=true /app/deploy
 
 FROM node:24-alpine AS runner

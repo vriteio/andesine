@@ -6,13 +6,13 @@ Worker, and proxies all other paths to the Railway web app.
 Copy `.dev.vars.example` to `.dev.vars` when local origin addresses differ. Then run:
 
 ```sh
-pnpm --filter @andesine/edge dev
+pnpm dev --filter=@andesine/edge
 ```
 
 The command builds the landing and docs apps, then starts both Workers locally. The edge Worker
 is the primary service at `http://localhost:8787`.
 
-Deploy `@andesine/docs` before `@andesine/edge` because the edge Worker has a service binding to
+Run `pnpm deploy:docs` before `pnpm deploy:edge` because the edge Worker has a service binding to
 `andesine-docs`. After the first edge deployment, set `APP_ORIGIN` to the Railway service origin
 and `API_ORIGIN` to the production Andesine API in the Cloudflare Worker settings. Wrangler keeps
 dashboard-managed variables during later deployments.

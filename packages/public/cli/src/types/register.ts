@@ -21,6 +21,10 @@ const registerTypes = (program: Command, signal: AbortSignal): void => {
     .option("--channel <code>", "Follow a publishing channel")
     .option("--snapshot <id>", "Use a fixed published snapshot")
     .option("--collection <selectors...>", "Collection IDs or decoded paths, including descendants")
+    .option(
+      "--collection-slug-path <paths...>",
+      "Decoded collection slug paths, including descendants"
+    )
     .option("--all-collections", "Include all accessible collections")
     .option(
       "--output <file>",

@@ -45,9 +45,10 @@ changed by flags. `--snapshot snp_…` selects a fixed snapshot instead of a cha
 Use `--include-entry-ids`, `--include-entry-paths`, and `--include-tree` to opt into
 additional types, or their `--no-…` forms to remove existing selections.
 
-The collection picker offers IDs for rename stability or paths for readability.
+The collection picker offers IDs for rename stability, name paths, and slug paths.
 `--collection` accepts one or more IDs or decoded paths, including collection-ID
-anchors. The API validates them against the selected source. `--all-collections`
+anchors. Use `--collection-slug-path /docs` for derived URL paths; it can be
+combined with `--collection`. The API validates them against the selected source. `--all-collections`
 clears an existing selection. Empty collection selections mean all accessible
 collections, including collections added later.
 
@@ -103,7 +104,8 @@ rejected. Trailing slashes are removed.
 The default type source is the `published` channel. Use
 `{ "kind": "published", "snapshotID": "snp_example" }` for a fixed snapshot, or
 `{ "kind": "current" }` for current schemas. Channel and snapshot are exclusive.
-Collection selectors are IDs or paths, resolved by the API in the generation
+Collection selectors are IDs, name paths, or `{ "collectionSlugPath": "/docs" }`
+objects, resolved by the API in the generation
 step. An omitted or empty collection list selects all accessible collections.
 Entry IDs, entry paths, and tree types are off by default.
 
@@ -218,7 +220,7 @@ andesine api --help
 andesine api content get-tree --help
 andesine api entries create --schema
 andesine api content get-tree --channel published
-andesine api content get --path /Docs/Introduction --channel published --full
+andesine api content get --slug-path /docs/introduction --channel published --full
 andesine api content list-entries --channel published --paginate
 andesine api search published --input @search.json --semantic false
 andesine api search ask-published-stream --input @question.json --format text
@@ -278,7 +280,7 @@ type without warnings. These API commands return metadata only; use
 andesine types generate
 andesine types generate --check
 andesine types generate --watch
-andesine types generate --source current --collection /Tutorials
+andesine types generate --source current --collection-slug-path /tutorials
 andesine types generate --snapshot snp_example --include-entry-paths
 andesine init --generate
 ```
@@ -333,6 +335,10 @@ allowed block kinds. Custom element names and properties remain general because
 schemas do not define them. Defaults are not treated as value constraints.
 Empty and schema-free collections use general content types without warnings.
 
+`--include-entry-paths` emits both name-path and slug-path bindings, plus named
+`EntryPath` and `EntrySlugPath` unions. Collection and tree bindings include slug
+paths automatically.
+
 Entry ID bindings, entry path bindings, and ordered tree types are separate
 opt-ins. Tree exports include their entry identities. Published trees narrow
 `content.getTree()`; current trees describe the metadata's child-ID lists only.
@@ -354,9 +360,9 @@ values, content bodies, or timestamps.
 ## Development
 
 ```sh
-pnpm --filter ./packages/public/cli typecheck
-pnpm --filter ./packages/public/cli generate:api
-pnpm --filter ./packages/public/cli build
+pnpm exec turbo run typecheck --filter=andesine
+pnpm api:generate
+pnpm build --filter=andesine
 node packages/public/cli/dist/cli.js --help
 ```
 

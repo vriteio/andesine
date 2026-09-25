@@ -13,6 +13,7 @@ import type { ContentSchemaMetadata } from "#backend/lib/schema/contract/recorde
 interface PublishedEntryContent {
   id: string;
   path: string;
+  slugPath: string;
   collectionID: string | null;
   schema: ContentSchemaMetadata | null;
   channel: string;
@@ -62,6 +63,7 @@ const getPublishedEntryContent = withPublicWorkspace<
   return {
     id: entryID,
     path: source.path,
+    slugPath: source.slugPath,
     collectionID: source.collectionID ? toCollectionID(source.collectionID) : null,
     channel: source.snapshot.channelCode,
     assets: assets.get(source.version.id) || [],

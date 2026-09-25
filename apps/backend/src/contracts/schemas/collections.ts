@@ -1,6 +1,6 @@
 import { collectionType } from "#backend/db/collections";
 import * as z from "zod";
 
-const publicCollectionType = collectionType.extend({ path: z.string() });
+const publicCollectionType = collectionType.extend({ path: z.string(), slugPath: z.string() });
 
 export { publicCollectionType };

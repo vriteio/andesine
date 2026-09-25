@@ -116,7 +116,7 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
     /**
      * Create an entry
      *
-     * Creates an entry and its initial document. The name defaults to Untitled. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed, NFC-normalized, case-sensitive, and shared by sibling entries and collections. Names cannot contain a slash or equal a single dot or two dots. A collection schema can set the initial content.
+     * Creates an entry and its initial document. The name defaults to Untitled. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed and NFC-normalized. Derived URL slugs must be unique across sibling entries and collections, including case and punctuation variants. Names cannot contain a slash or equal a single dot or two dots. A collection schema can set the initial content.
      *
      * Required API key permissions: entries. Write permissions also grant read access for the same resource.
      *
@@ -201,7 +201,7 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
     /**
      * Create a collection
      *
-     * Creates a child collection. Without parentID, uses the workspace root. The name defaults to Untitled. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed, NFC-normalized, case-sensitive, and shared by sibling entries and collections. Names cannot contain a slash or equal a single dot or two dots. Restricted collections require a session with restricted_collections permission and the Pro plan; API keys cannot create them.
+     * Creates a child collection. Without parentID, uses the workspace root. The name defaults to Untitled. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed and NFC-normalized. Derived URL slugs must be unique across sibling entries and collections, including case and punctuation variants. Names cannot contain a slash or equal a single dot or two dots. Restricted collections require a session with restricted_collections permission and the Pro plan; API keys cannot create them.
      *
      * Required API key permissions: collections. Write permissions also grant read access for the same resource.
      *
@@ -273,7 +273,7 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
     /**
      * List published collections
      *
-     * Returns a flat page of collections from a publication snapshot. The default channel is published. On later pages, pass the returned snapshotID and pagination.nextCursor, and omit channel. Optionally select direct children using collectionID or collectionPath. Results are ordered by ID, not display order.
+     * Returns a flat page of collections from a publication snapshot. The default channel is published. On later pages, pass the returned snapshotID and pagination.nextCursor, and omit channel. Optionally select direct children using collectionID, collectionPath, or collectionSlugPath. Results are ordered by ID, not display order.
      *
      * Required API key permissions: read:publishing. Write permissions also grant read access for the same resource.
      *
@@ -287,7 +287,7 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
     /**
      * List published entries
      *
-     * Returns a flat page of entries from a publication snapshot. The default channel is published. On later pages, pass the returned snapshotID and pagination.nextCursor, and omit channel. Select direct children using collectionID or collectionPath, or include nested entries with descendants: true. descendants requires a collection scope. All property filters must match the assigned version. includeContent: true returns validated full content, properties, fragments, assets, and recorded schema metadata. An invalid full item fails the page. Keep the same scope and filters across pages. Results are ordered by ID, not display order.
+     * Returns a flat page of entries from a publication snapshot. The default channel is published. On later pages, pass the returned snapshotID and pagination.nextCursor, and omit channel. Select direct children using collectionID, collectionPath, or collectionSlugPath, or include nested entries with descendants: true. descendants requires a collection scope. All property filters must match the assigned version. includeContent: true returns validated full content, properties, fragments, assets, and recorded schema metadata. An invalid full item fails the page. Keep the same scope and filters across pages. Results are ordered by ID, not display order.
      *
      * Required API key permissions: read:publishing. Write permissions also grant read access for the same resource.
      *
@@ -1249,7 +1249,7 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       method: "get",
       path: "/entries/get",
       pathParams: [],
-      queryParams: ["id", "path", "expectedSchemaHash"],
+      queryParams: ["id", "path", "slugPath", "expectedSchemaHash"],
       body: false,
       multipart: false,
       binary: false,
@@ -1259,7 +1259,7 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       method: "get",
       path: "/entries/list",
       pathParams: [],
-      queryParams: ["collectionID", "collectionPath", "cursor", "limit"],
+      queryParams: ["collectionID", "collectionPath", "collectionSlugPath", "cursor", "limit"],
       body: false,
       multipart: false,
       binary: false,
@@ -1311,7 +1311,7 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       method: "get",
       path: "/collections/list",
       pathParams: [],
-      queryParams: ["collectionID", "collectionPath", "cursor", "limit"],
+      queryParams: ["collectionID", "collectionPath", "collectionSlugPath", "cursor", "limit"],
       body: false,
       multipart: false,
       binary: false,
@@ -1323,7 +1323,15 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       method: "get",
       path: "/content/collections",
       pathParams: [],
-      queryParams: ["cursor", "limit", "collectionID", "collectionPath", "channel", "snapshotID"],
+      queryParams: [
+        "cursor",
+        "limit",
+        "collectionID",
+        "collectionPath",
+        "collectionSlugPath",
+        "channel",
+        "snapshotID"
+      ],
       body: false,
       multipart: false,
       binary: false,
@@ -1338,6 +1346,7 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
         "limit",
         "collectionID",
         "collectionPath",
+        "collectionSlugPath",
         "channel",
         "snapshotID",
         "descendants",
@@ -1353,7 +1362,7 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       method: "get",
       path: "/content/entries/schema",
       pathParams: [],
-      queryParams: ["entryID", "path", "channel", "snapshotID"],
+      queryParams: ["entryID", "path", "slugPath", "channel", "snapshotID"],
       body: false,
       multipart: false,
       binary: false,
@@ -1373,7 +1382,7 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       method: "get",
       path: "/content/entries/get",
       pathParams: [],
-      queryParams: ["entryID", "path", "expectedSchemaHash", "channel", "snapshotID"],
+      queryParams: ["entryID", "path", "slugPath", "expectedSchemaHash", "channel", "snapshotID"],
       body: false,
       multipart: false,
       binary: false,
@@ -1383,7 +1392,13 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       method: "get",
       path: "/content/tree",
       pathParams: [],
-      queryParams: ["collectionID", "collectionPath", "channel", "snapshotID"],
+      queryParams: [
+        "collectionID",
+        "collectionPath",
+        "collectionSlugPath",
+        "channel",
+        "snapshotID"
+      ],
       body: false,
       multipart: false,
       binary: false,
@@ -1531,7 +1546,7 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       method: "get",
       path: "/schemas/collection",
       pathParams: [],
-      queryParams: ["collectionID", "collectionPath"],
+      queryParams: ["collectionID", "collectionPath", "collectionSlugPath"],
       body: false,
       multipart: false,
       binary: false,

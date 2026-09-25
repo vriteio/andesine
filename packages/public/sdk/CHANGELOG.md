@@ -2,6 +2,9 @@
 
 ## 0.2.0
 
+- Add derived `slugPath` selectors and responses, slug-based sibling uniqueness,
+  slug-aware workspace maps, and slug URLs by default in `toContentURL`.
+
 - Add type-only workspace maps through `createClient<Workspace>()`, with selector-aware
   content types, revision unions, optional entry/tree bindings, and typed content helpers.
 - Add bulk current/published type metadata with effective schema revisions,

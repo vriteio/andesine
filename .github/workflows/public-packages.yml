@@ -8,6 +8,7 @@ on:
       - "apps/backend/**"
       - "packages/private/**"
       - "package.json"
+      - "turbo.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "eslint.config.mjs"
@@ -19,6 +20,7 @@ on:
       - "apps/backend/**"
       - "packages/private/**"
       - "package.json"
+      - "turbo.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "eslint.config.mjs"
@@ -46,8 +48,7 @@ jobs:
           pnpm exec prettier --check packages/public .github/workflows/public-packages.yml .github/workflows/publish-public-package.yml
       - name: Check generated API files
         run: |
-          pnpm --filter @andesine/backend openapi:export
-          pnpm --filter @andesine/sdk generate
+          pnpm api:generate
           git diff --exit-code -- packages/public/sdk/openapi.json packages/public/sdk/src/generated
       - name: Build, check, and pack
         run: |

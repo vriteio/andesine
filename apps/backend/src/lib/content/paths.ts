@@ -1,9 +1,12 @@
+import { toContentSlug } from "@andesine/sdk/slug";
+import { entries } from "#backend/db/entries";
+import { entryVersions } from "#backend/db/versions";
 import { collections } from "#backend/db/collections";
-import { publishingSnapshotCollections } from "#backend/db/publishing";
-import { publicID, toUUID } from "#backend/lib/primitives";
+import { publishingSnapshotCollections, publishingSnapshotEntries } from "#backend/db/publishing";
+import { publicID, toUUID, toCollectionID, toEntryID } from "#backend/lib/primitives";
 import { MAX_CONTENT_NAME_LENGTH } from "#backend/lib/validation/content-name";
 import { ORPCError } from "@orpc/server";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, or } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 interface CollectionPathRow {
@@ -14,14 +17,17 @@ interface CollectionPathRow {
 interface CollectionSelector {
   collectionID?: string;
   collectionPath?: string;
+  collectionSlugPath?: string;
 }
 interface EntrySelector {
   id?: string;
   path?: string;
+  slugPath?: string;
 }
 interface PublishedEntrySelector {
   entryID?: string;
   path?: string;
+  slugPath?: string;
 }
 interface ParsedContentPath {
   anchorID: string | null;
@@ -35,12 +41,12 @@ const invalidPath = () => {
     message: "Invalid content path",
     data: {
       hints: [
-        "Use /Docs/Page or coll_ID/Page with decoded names. Do not use empty segments, trailing slashes, single-dot segments or double-dot segments. Use / to select the root collection."
+        "Use /Docs/Page with decoded names, or /docs/page with decoded slugs. Both support a coll_ID/ anchor. Do not use empty segments, trailing slashes, single-dot segments or double-dot segments. Use / to select the root collection."
       ]
     }
   });
 };
-const parseContentPath = (path: string): ParsedContentPath => {
+const parseContentPath = (path: string, slug = false): ParsedContentPath => {
   const absolute = path.startsWith("/");
   const parts = path.split("/");
   const anchor = parts.shift()!;
@@ -48,27 +54,24 @@ const parseContentPath = (path: string): ParsedContentPath => {
 
   if (
     (!absolute && !publicID("coll").safeParse(anchor).success) ||
-    segments.some(
-      (part) => !part || part === "." || part === ".." || part.length > MAX_CONTENT_NAME_LENGTH
-    )
+    segments.some((part) => {
+      return (
+        !part || part === "." || part === ".." || (!slug && part.length > MAX_CONTENT_NAME_LENGTH)
+      );
+    })
   )
     throw invalidPath();
 
   return { anchorID: absolute ? null : toUUID(anchor), segments };
 };
-const assertSelector = (
-  id: string | undefined,
-  path: string | undefined,
-  required = true
-): void => {
-  if (
-    (id !== undefined && path !== undefined) ||
-    (required && id === undefined && path === undefined)
-  ) {
+const assertSelector = (selectors: Array<string | undefined>, required = true): void => {
+  const count = selectors.filter((value) => value !== undefined).length;
+
+  if (count > 1 || (required && count === 0)) {
     throw new ORPCError("BAD_REQUEST", {
       message: required
-        ? "Use exactly one ID or path selector"
-        : "Use an ID or path selector, not both"
+        ? "Use exactly one ID, path, or slugPath selector"
+        : "Use only one ID, path, or slugPath selector"
     });
   }
 };
@@ -80,14 +83,21 @@ const createContentPaths = (rows: CollectionPathRow[], rootID?: string) => {
   );
   const childrenByName = new Map<string, string>();
   const paths = new Map<string, string>();
+  const slugPaths = new Map<string, string>();
+  const childrenBySlug = new Map<string, string | null>();
   const parentKey = (parentID: string | null, name: string) => JSON.stringify([parentID, name]);
 
-  for (const row of collectionsByID.values())
+  for (const row of collectionsByID.values()) {
     childrenByName.set(parentKey(row.parentID, row.name), row.id);
+    const slugKey = parentKey(row.parentID, toContentSlug(row.name, toCollectionID(row.id)));
 
-  const collectionPath = (id: string | null): string => {
+    childrenBySlug.set(slugKey, childrenBySlug.has(slugKey) ? null : row.id);
+  }
+
+  const collectionPath = (id: string | null, slug = false): string => {
+    const cache = slug ? slugPaths : paths;
     if (!id || id === rootID) return "/";
-    if (paths.has(id)) return paths.get(id)!;
+    if (cache.has(id)) return cache.get(id)!;
 
     const names: string[] = [];
     const visited = new Set<string>();
@@ -99,23 +109,29 @@ const createContentPaths = (rows: CollectionPathRow[], rootID?: string) => {
       if (!row || visited.has(current))
         throw new ORPCError("NOT_FOUND", { message: "Collection path is unavailable" });
       visited.add(current);
-      names.unshift(row.name);
+      names.unshift(slug ? toContentSlug(row.name, toCollectionID(row.id)) : row.name);
       current = row.parentID;
     }
 
     const path = `/${names.join("/")}`;
 
-    paths.set(id, path);
+    cache.set(id, path);
     return path;
   };
-  const resolveSegments = (parsed: ParsedContentPath): string | null => {
+  const resolveSegments = (parsed: ParsedContentPath, slug = false): string | null => {
+    const children = slug ? childrenBySlug : childrenByName;
     let parentID = parsed.anchorID === rootID ? null : parsed.anchorID;
 
     if (parentID && !collectionsByID.has(parentID)) throw new ORPCError("NOT_FOUND");
 
     for (const name of parsed.segments) {
-      const child = childrenByName.get(parentKey(parentID, name));
+      const child = children.get(parentKey(parentID, name));
 
+      if (child === null) {
+        throw new ORPCError("CONFLICT", {
+          message: "Multiple collections use this slug. Rename the conflicting collections."
+        });
+      }
       if (!child) throw new ORPCError("NOT_FOUND");
       parentID = child;
     }
@@ -126,23 +142,29 @@ const createContentPaths = (rows: CollectionPathRow[], rootID?: string) => {
     input: CollectionSelector,
     required = true
   ): string | null | undefined => {
-    assertSelector(input.collectionID, input.collectionPath, required);
+    assertSelector([input.collectionID, input.collectionPath, input.collectionSlugPath], required);
+    if (input.collectionSlugPath !== undefined)
+      return resolveSegments(parseContentPath(input.collectionSlugPath, true), true);
     if (input.collectionPath !== undefined)
       return resolveSegments(parseContentPath(input.collectionPath));
     if (input.collectionID !== undefined)
       return resolveSegments({ anchorID: toUUID(input.collectionID), segments: [] });
     return undefined;
   };
-  const resolveEntryPath = (path: string) => {
-    const parsed = parseContentPath(path);
+  const resolveEntryPath = (path: string, slug = false) => {
+    const parsed = parseContentPath(path, slug);
     const name = parsed.segments.pop();
 
     if (!name) throw invalidPath();
 
-    return { collectionID: resolveSegments(parsed), name };
+    return { collectionID: resolveSegments(parsed, slug), name };
   };
   const entryPath = (collectionID: string | null, name: string): string =>
     `${collectionPath(collectionID).replace(/\/$/, "")}/${name}`;
+
+  const collectionSlugPath = (id: string | null): string => collectionPath(id, true);
+  const entrySlugPath = (collectionID: string | null, name: string, id: string): string =>
+    `${collectionSlugPath(collectionID).replace(/\/$/, "")}/${toContentSlug(name, toEntryID(id))}`;
 
   const descendantIDs = (id: string | null): string[] => {
     const result: string[] = [];
@@ -169,7 +191,16 @@ const createContentPaths = (rows: CollectionPathRow[], rootID?: string) => {
     return result;
   };
 
-  return { collectionPath, entryPath, resolveCollection, resolveEntryPath, descendantIDs, rootID };
+  return {
+    collectionPath,
+    collectionSlugPath,
+    entryPath,
+    entrySlugPath,
+    resolveCollection,
+    resolveEntryPath,
+    descendantIDs,
+    rootID
+  };
 };
 const loadCurrentContentPaths = async (database: PathDatabase, workspaceID: string) => {
   const rows = await database
@@ -201,7 +232,56 @@ const loadPublishedContentPaths = async (
   return createContentPaths(rows);
 };
 
+const resolveEntrySlugID = async (
+  database: PathDatabase,
+  workspaceID: string,
+  paths: ReturnType<typeof createContentPaths>,
+  slugPath: string,
+  snapshotID?: string
+): Promise<string> => {
+  const target = paths.resolveEntryPath(slugPath, true);
+  const rows = snapshotID
+    ? await database
+        .select({ id: publishingSnapshotEntries.entryID, name: entryVersions.entryName })
+        .from(publishingSnapshotEntries)
+        .innerJoin(entryVersions, eq(entryVersions.id, publishingSnapshotEntries.versionID))
+        .where(
+          and(
+            eq(publishingSnapshotEntries.workspaceID, workspaceID),
+            eq(publishingSnapshotEntries.snapshotID, snapshotID),
+            target.collectionID
+              ? eq(publishingSnapshotEntries.collectionID, target.collectionID)
+              : isNull(publishingSnapshotEntries.collectionID)
+          )
+        )
+    : await database
+        .select({ id: entries.id, name: entries.name })
+        .from(entries)
+        .where(
+          and(
+            eq(entries.workspaceID, workspaceID),
+            isNull(entries.deletedAt),
+            target.collectionID
+              ? eq(entries.collectionID, target.collectionID)
+              : or(
+                  isNull(entries.collectionID),
+                  paths.rootID ? eq(entries.collectionID, paths.rootID) : undefined
+                )
+          )
+        );
+  const matches = rows.filter((row) => toContentSlug(row.name, toEntryID(row.id)) === target.name);
+
+  if (!matches.length) throw new ORPCError("NOT_FOUND");
+  if (matches.length > 1)
+    throw new ORPCError("CONFLICT", {
+      message: "Multiple entries use this slug. Rename the conflicting entries."
+    });
+
+  return matches[0]!.id;
+};
+
 export {
+  resolveEntrySlugID,
   assertSelector,
   createContentPaths,
   loadCurrentContentPaths,

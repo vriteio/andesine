@@ -141,6 +141,9 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
+      '@andesine/sdk':
+        specifier: workspace:*
+        version: link:../../packages/public/sdk
       '@types/node':
         specifier: ^26.1.2
         version: 26.1.2
@@ -418,6 +421,9 @@ importers:
       '@andesine/backend':
         specifier: workspace:*
         version: link:../backend
+      '@andesine/sdk':
+        specifier: workspace:*
+        version: link:../../packages/public/sdk
       '@types/node':
         specifier: ^26.1.2
         version: 26.1.2
@@ -491,6 +497,9 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
+      '@andesine/sdk':
+        specifier: workspace:*
+        version: link:../../packages/public/sdk
       '@types/node':
         specifier: ^26.1.2
         version: 26.1.2

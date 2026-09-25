@@ -15,12 +15,11 @@ type Lookup<Map, Key> = Key extends string
       ? Map[Key]
       : undefined
   : undefined;
-type Selector<Input, ID extends string, Path extends string> =
-  Input extends Record<ID, infer Key extends string>
-    ? Key
-    : Input extends Record<Path, infer Key extends string>
-      ? Key
-      : undefined;
+type Selector<Input, Keys extends string> = Input extends unknown
+  ? [Extract<Keys, keyof Input>] extends [never]
+    ? undefined
+    : Input[Extract<Keys, keyof Input>]
+  : never;
 type EntryMap<Workspace> = Workspace extends { entries: infer Entries }
   ? Entries
   : Record<never, never>;
@@ -46,7 +45,7 @@ type EntryContent<
 type EntryOutput<Base, Workspace extends WorkspaceTypeMap, Input, ID extends string> = EntryContent<
   Base,
   Workspace,
-  Lookup<EntryMap<Workspace>, Selector<Input, ID, "path">>
+  Lookup<EntryMap<Workspace>, Selector<Input, ID | "path" | "slugPath">>
 >;
 
 type Descendants<Workspace extends WorkspaceTypeMap, Collection> = Collection extends {
@@ -85,7 +84,10 @@ type WorkspaceListContent<
       ListCollections<
         Workspace,
         Input,
-        Lookup<Workspace["collections"], Selector<Input, "collectionID", "collectionPath">>
+        Lookup<
+          Workspace["collections"],
+          Selector<Input, "collectionID" | "collectionPath" | "collectionSlugPath">
+        >
       >
     >
   : Base;
@@ -123,12 +125,15 @@ type WorkspaceOperationOutput<
         ? EntrySchemaOutput<
             Base,
             Workspace,
-            Lookup<EntryMap<Workspace>, Selector<Input, "entryID", "path">>
+            Lookup<EntryMap<Workspace>, Selector<Input, "entryID" | "path" | "slugPath">>
           >
         : Operation extends "content.getTree"
           ? TreeOutput<
               Base,
-              Lookup<TreeMap<Workspace>, Selector<Input, "collectionID", "collectionPath">>
+              Lookup<
+                TreeMap<Workspace>,
+                Selector<Input, "collectionID" | "collectionPath" | "collectionSlugPath">
+              >
             >
           : Base
     : Base;

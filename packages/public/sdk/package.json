@@ -20,13 +20,17 @@
     "./streaming": {
       "types": "./dist/streaming.d.ts",
       "import": "./dist/streaming.js"
+    },
+    "./slug": {
+      "types": "./dist/content-slug.d.ts",
+      "import": "./dist/content-slug.js"
     }
   },
   "scripts": {
     "build": "rolldown -c rolldown.config.ts",
     "typecheck": "tsc --noEmit && tsc -p scripts/tsconfig.json",
     "generate": "tsx scripts/generate.ts",
-    "prepack": "pnpm run typecheck && pnpm run build && pnpm run lint:package",
+    "prepack": "turbo run lint:package --filter=@andesine/sdk",
     "lint:package": "publint --strict"
   },
   "publishConfig": {

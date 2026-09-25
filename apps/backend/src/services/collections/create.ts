@@ -14,7 +14,7 @@ interface CreateCollectionInput extends Partial<Pick<Collection, "id" | "name" |
 const createCollection = withAuthorization<
   CreateCollectionInput,
   undefined,
-  Collection & { path: string }
+  Collection & { path: string; slugPath: string }
 >(
   {
     actions: ({ input }) => ({
@@ -142,7 +142,11 @@ const createCollection = withAuthorization<
       throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create collection" });
 
     const paths = await loadCurrentContentPaths(database, workspaceID);
-    return { ...result, path: paths.collectionPath(collectionID) };
+    return {
+      ...result,
+      path: paths.collectionPath(collectionID),
+      slugPath: paths.collectionSlugPath(collectionID)
+    };
   }
 );
 

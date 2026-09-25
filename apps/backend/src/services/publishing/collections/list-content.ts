@@ -51,7 +51,8 @@ const listPublishedCollections = withPublicWorkspace<
         id: toCollectionID(row.id),
         parentID: row.parentID ? toCollectionID(row.parentID) : null,
         name: row.name,
-        path: paths.collectionPath(row.id)
+        path: paths.collectionPath(row.id),
+        slugPath: paths.collectionSlugPath(row.id)
       })),
       limit
     ),

@@ -23,7 +23,7 @@ const entriesContract = baseContract.prefix("/entries").router({
     .route({
       summary: "Create an entry",
       description:
-        "Creates an entry and its initial document. The name defaults to Untitled. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed, NFC-normalized, case-sensitive, and shared by sibling entries and collections. Names cannot contain a slash or equal a single dot or two dots. A collection schema can set the initial content.",
+        "Creates an entry and its initial document. The name defaults to Untitled. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed and NFC-normalized. Derived URL slugs must be unique across sibling entries and collections, including case and punctuation variants. Names cannot contain a slash or equal a single dot or two dots. A collection schema can set the initial content.",
       tags: ["entries"],
       method: "POST",
       path: "/"
@@ -127,7 +127,7 @@ const entriesContract = baseContract.prefix("/entries").router({
           ...entrySelectorShape,
           expectedSchemaHash: schemaHashType.optional()
         })
-        .refine(hasEntrySelector, { message: "Use exactly one id or path" })
+        .refine(hasEntrySelector, { message: "Use exactly one id, path, or slugPath" })
     )
     .output(entryDetailsType),
   list: authenticatedContract
@@ -155,7 +155,7 @@ const entriesContract = baseContract.prefix("/entries").router({
             .describe("Maximum entries to return")
         })
         .refine(hasOptionalCollectionSelector, {
-          message: "Use collectionID or collectionPath, not both"
+          message: "Use only one collectionID, collectionPath, or collectionSlugPath"
         })
     )
     .output(entryListType)

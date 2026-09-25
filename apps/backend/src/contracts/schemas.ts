@@ -81,7 +81,7 @@ const schemasContract = baseContract.router({
     .meta({ required: { session: true, key: ["read:collections"] } })
     .input(
       z.object(collectionSelectorShape).refine(hasCollectionSelector, {
-        message: "Use exactly one collectionID or collectionPath"
+        message: "Use exactly one collectionID, collectionPath, or collectionSlugPath"
       })
     )
     .output(collectionSchemaDetailsType),

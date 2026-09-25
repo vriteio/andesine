@@ -16,6 +16,7 @@ import { asc, eq } from "drizzle-orm";
 
 interface PublishedTreeEntry {
   path: string;
+  slugPath: string;
   id: string;
   name: string;
   version: {
@@ -25,6 +26,7 @@ interface PublishedTreeEntry {
 }
 interface PublishedTreeCollection {
   path: string;
+  slugPath: string;
   id: string | null;
   name: string;
   entries: PublishedTreeEntry[];
@@ -87,6 +89,7 @@ const getPublishedContentTree = withPublicWorkspace<
       id: toEntryID(row.id),
       name: row.entryName,
       path: paths.entryPath(row.collectionID, row.entryName),
+      slugPath: paths.entrySlugPath(row.collectionID, row.entryName, row.id),
       version: {
         id: toVersionID(row.versionID),
         hash: row.versionHash
@@ -107,6 +110,7 @@ const getPublishedContentTree = withPublicWorkspace<
       id: toCollectionID(row.id),
       name: row.name,
       path: paths.collectionPath(row.id),
+      slugPath: paths.collectionSlugPath(row.id),
       entries: entriesByCollection.get(row.id) || [],
       collections: (collectionsByParent.get(row.id) || []).map(mapCollection)
     };
@@ -125,6 +129,7 @@ const getPublishedContentTree = withPublicWorkspace<
           id: null,
           name: "",
           path: "/",
+          slugPath: "/",
           entries: entriesByCollection.get(null) || [],
           collections: (collectionsByParent.get(null) || []).map(mapCollection)
         },

@@ -1,3 +1,4 @@
+import { toContentSlug } from "@andesine/sdk/slug";
 import { collections } from "@andesine/backend/db/collections";
 import { contents } from "@andesine/backend/db/contents";
 import { entries } from "@andesine/backend/db/entries";
@@ -103,6 +104,7 @@ const loadCurrentEntrySource = async (
       .map((collection) => toCollectionID(collection.id)),
     collectionPath: visibleLineage.map((collection) => collection.name),
     path: `/${[...visibleLineage.map((collection) => collection.name), entry.name].join("/")}`,
+    slugPath: `/${[...visibleLineage.map((collection) => toContentSlug(collection.name, toCollectionID(collection.id))), toContentSlug(entry.name, toEntryID(entry.id))].join("/")}`,
     title: entry.name,
     content: entry.document || { type: "doc", content: [] },
     updatedAt: entry.updatedAt

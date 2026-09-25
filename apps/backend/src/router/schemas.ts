@@ -65,6 +65,7 @@ const schemasRouter = handlers.router({
     return Schema.get({
       auth: context.auth,
       collectionID: input.collectionID,
+      collectionSlugPath: input.collectionSlugPath,
       collectionPath: input.collectionPath
     });
   }),

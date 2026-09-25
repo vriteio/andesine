@@ -1,3 +1,4 @@
+import { collectionSelectors } from "../types/options";
 import { multiselect, select, text, confirm } from "@clack/prompts";
 import type { AndesineClient } from "@andesine/sdk";
 import type { CommandContext } from "../context";
@@ -113,13 +114,18 @@ const selectTypes = async (
 ): Promise<TypesConfig> => {
   const interactive = canPrompt(options.interactive);
   const source = await selectSource(context, client, options, initial.source);
-  let collections = options.allCollections ? [] : (options.collection ?? initial.collections);
+  let collections = collectionSelectors(options, initial.collections);
   let output = options.output ?? initial.output;
   let includeEntryIDs = options.includeEntryIds ?? initial.includeEntryIDs;
   let includeEntryPaths = options.includeEntryPaths ?? initial.includeEntryPaths;
   let includeTree = options.includeTree ?? initial.includeTree;
 
-  if (interactive && options.collection === undefined && !options.allCollections) {
+  if (
+    interactive &&
+    options.collection === undefined &&
+    options.collectionSlugPath === undefined &&
+    !options.allCollections
+  ) {
     const change =
       !collections.length ||
       (await context.prompt((prompt) =>
@@ -144,7 +150,8 @@ const selectTypes = async (
             message: "How should collections be saved?",
             options: [
               { value: "id", label: "IDs", hint: "Stable when collections are renamed" },
-              { value: "path", label: "Paths", hint: "Readable names from the explorer" }
+              { value: "path", label: "Paths", hint: "Readable names from the explorer" },
+              { value: "slug", label: "Slug paths", hint: "URL paths derived from names" }
             ]
           })
         );
@@ -154,7 +161,13 @@ const selectTypes = async (
             message: "Collections (leave empty for all)",
             required: false,
             initialValues: available
-              .filter((item) => collections.includes(item.id) || collections.includes(item.path))
+              .filter((item) =>
+                collections.some((selector) =>
+                  typeof selector === "string"
+                    ? selector === item.id || selector === item.path
+                    : selector.collectionSlugPath === item.slugPath
+                )
+              )
               .map((item) => item.id),
             options: available.map((item) => ({ value: item.id, label: item.path, hint: item.id }))
           })
@@ -162,7 +175,13 @@ const selectTypes = async (
 
         collections = available
           .filter((item) => selected.includes(item.id))
-          .map((item) => (format === "id" ? item.id : item.path));
+          .map((item) =>
+            format === "id"
+              ? item.id
+              : format === "slug"
+                ? { collectionSlugPath: item.slugPath }
+                : item.path
+          );
       } else {
         collections = [];
         await context.output.diagnostic(

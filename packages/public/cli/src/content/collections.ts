@@ -4,6 +4,7 @@ import type { TypesConfig } from "../config/schema";
 interface CollectionChoice {
   id: string;
   path: string;
+  slugPath: string;
 }
 
 /** Read selectable collections from one published snapshot, or the current tree. */
@@ -46,7 +47,7 @@ const listCollections = async (
 const validateCollections = async (
   client: AndesineClient,
   source: TypesConfig["source"],
-  selectors: string[],
+  selectors: TypesConfig["collections"],
   signal: AbortSignal
 ): Promise<void> => {
   let snapshotID =
@@ -56,9 +57,11 @@ const validateCollections = async (
     const scope =
       selector === undefined
         ? {}
-        : /^coll_[A-Za-z\d]+$/.test(selector)
-          ? { collectionID: selector }
-          : { collectionPath: selector };
+        : typeof selector !== "string"
+          ? selector
+          : /^coll_[A-Za-z\d]+$/.test(selector)
+            ? { collectionID: selector }
+            : { collectionPath: selector };
 
     if (source.kind === "current") {
       await client.collections.list({ ...scope, limit: 1 }, { signal });

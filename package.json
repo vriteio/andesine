@@ -5,13 +5,22 @@
   "private": true,
   "scripts": {
     "start": "dotenv -- turbo start",
-    "build": "pnpm check && dotenv -- turbo build",
+    "build": "dotenv -- turbo build",
     "check": "pnpm lint && pnpm format:check",
     "dev": "dotenv -- turbo dev",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix && prettier --write ."
+    "lint:fix": "eslint . --fix && prettier --write .",
+    "openapi:export": "turbo run openapi:export --filter=@andesine/backend",
+    "api:generate": "turbo run generate:api --filter=andesine",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "turbo run db:generate --filter=@andesine/backend",
+    "db:migrate": "turbo run db:migrate --filter=@andesine/backend",
+    "db:studio": "turbo run db:studio --filter=@andesine/backend",
+    "dev:email": "dotenv -- turbo run dev:email --filter=@andesine/templates",
+    "deploy:docs": "dotenv -- turbo run deploy --filter=@andesine/docs",
+    "deploy:edge": "dotenv -- turbo run deploy --filter=@andesine/edge"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

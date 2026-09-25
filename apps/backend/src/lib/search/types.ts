@@ -4,6 +4,7 @@ import type { ContentNode } from "#backend/lib/content/document";
 
 interface SearchDocumentBase {
   path: string;
+  slugPath: string;
   anchor?: string;
   id: string;
   workspaceID: string;
@@ -40,6 +41,7 @@ interface PublishedSearchDocument extends SearchDocumentBase {
 
 interface SearchDocumentSourceBase {
   path: string;
+  slugPath: string;
   workspaceID: string;
   entryID: string;
   collectionID: string;

@@ -16,9 +16,9 @@ and worker runtimes. The CLI requires Node.js 22.12+ and runs only in Node.js.
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm --filter @andesine/sdk build
-pnpm --filter @andesine/converters build
-pnpm --filter ./packages/public/cli build
+pnpm build --filter=@andesine/sdk
+pnpm build --filter=@andesine/converters
+pnpm build --filter=andesine
 ```
 
 The Rolldown CLI reads each package's `rolldown.config.ts`, cleans its `dist`
@@ -35,6 +35,10 @@ JavaScript and declarations so consumers can use Node ESM and `NodeNext`.
 
 Use tool configuration files and CLIs for standard tasks. Reserve TypeScript
 scripts run with `tsx` for custom tasks such as OpenAPI export and SDK generation.
+
+Run workspace commands through the root scripts or `pnpm exec turbo run` so Turbo
+builds their dependencies first. Direct package scripts run only that package's
+command. Packing also uses Turbo through each package's `prepack` hook.
 
 To build and inspect the exact npm archives without publishing:
 
@@ -55,10 +59,12 @@ no TypeScript loader or monorepo runtime dependency. pnpm rewrites its SDK
 For API changes, regenerate and commit the spec and client together:
 
 ```sh
-pnpm --filter @andesine/backend openapi:export
-pnpm --filter @andesine/sdk generate
-pnpm --filter ./packages/public/cli generate:api
+pnpm api:generate
 ```
+
+This exports OpenAPI, generates SDK types, and generates CLI bindings in order.
+Use `pnpm openapi:export` to update only the OpenAPI document. Normal builds use
+the checked-in API files.
 
 API definitions live in `apps/backend/src/contracts`. Both the server and the
 standalone exporter use those contracts. Generation needs no backend environment
@@ -98,7 +104,7 @@ the checked archive from the repository root. For example:
 
 ```sh
 npm publish dist/packages/andesine-sdk-0.2.0.tgz --access public
-npm publish dist/packages/andesine-0.1.0.tgz --access public
+npm publish dist/packages/andesine-0.2.0.tgz --access public
 ```
 
 These commands publish publicly and are examples for an unpublished version only.
@@ -137,7 +143,7 @@ the failed package. npm does not allow replacing an already published version.
 2. Deploy the web device-approval page and verify device approval/denial, refresh,
    and the configured instance URLs. Keep self-hosted API and web URLs consistent.
 3. Publish `@andesine/sdk@0.2.0` with OAuth and workspace type-map support.
-4. Publish `andesine@0.1.0`, then verify installation against the published SDK.
+4. Publish `andesine@0.2.0`, then verify installation against the published SDK.
 
 Deployment and publication are separate actions; they were not performed during
 implementation. See the [CLI release review](./CLI-RELEASE-REVIEW.md) for package

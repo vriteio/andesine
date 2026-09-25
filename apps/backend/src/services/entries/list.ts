@@ -19,7 +19,7 @@ interface ResolvedListEntries {
 const listEntries = withAuthorization<
   ListEntriesInput,
   ResolvedListEntries,
-  { entries: Array<Entry & { path: string }>; nextCursor: string | null }
+  { entries: Array<Entry & { path: string; slugPath: string }>; nextCursor: string | null }
 >(
   {
     actions: ({ resolved }) => ({
@@ -134,6 +134,7 @@ const listEntries = withAuthorization<
         id: toEntryID(entry.id),
         name: entry.name,
         path: resolved.paths.entryPath(entry.collectionID, entry.name),
+        slugPath: resolved.paths.entrySlugPath(entry.collectionID, entry.name, entry.id),
         order: entry.rank,
         collectionID: entry.collectionID ? toCollectionID(entry.collectionID) : undefined
       })),

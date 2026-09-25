@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "dotenv -e ../../.env -- astro dev",
     "build": "astro build",
-    "check": "astro check",
-    "start": "astro preview"
+    "start": "astro preview",
+    "typecheck": "astro check"
   },
   "dependencies": {
     "@andesine/components": "workspace:*",

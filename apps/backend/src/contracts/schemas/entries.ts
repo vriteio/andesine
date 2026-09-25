@@ -29,7 +29,7 @@ const entryPropertyType = z.object({
   type: entryPropertyKindType.describe("Property type"),
   value: entryPropertyValueType
 });
-const entrySummaryType = entryType.extend({ path: z.string() });
+const entrySummaryType = entryType.extend({ path: z.string(), slugPath: z.string() });
 const entryDetailsType = entrySummaryType.extend({
   schema: contentSchemaMetadataType.nullable(),
   updatedAt: z.iso.datetime().describe("Time when the entry content was last updated"),

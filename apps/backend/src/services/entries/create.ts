@@ -11,7 +11,7 @@ import type { PublishingEntryStatus } from "#backend/lib/publishing";
 import { getResolvedSchemaDefinition, migrateSchemaContentState } from "#backend/lib/schema";
 
 interface CreateEntryResult {
-  entry: Entry & { path: string };
+  entry: Entry & { path: string; slugPath: string };
   publishingEntries: PublishingEntryStatus[];
 }
 
@@ -152,6 +152,7 @@ const createEntry = withAuthorization<Partial<Entry>, undefined, CreateEntryResu
       id: toEntryID(entry.id),
       name: entry.name,
       path: paths.entryPath(entry.collectionID, entry.name),
+      slugPath: paths.entrySlugPath(entry.collectionID, entry.name, entry.id),
       order: entry.rank,
       collectionID: entry.collectionID ? toCollectionID(entry.collectionID) : undefined
     };

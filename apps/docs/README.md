@@ -4,9 +4,9 @@ Nimbus-based Astro documentation served publicly below `/docs/`. The static buil
 search, sitemap, Open Graph images, Markdown alternatives, and `llms.txt`.
 
 ```sh
-pnpm --filter @andesine/docs dev
-pnpm --filter @andesine/docs build
-pnpm --filter @andesine/docs typecheck
+pnpm dev --filter=@andesine/docs
+pnpm build --filter=@andesine/docs
+pnpm typecheck --filter=@andesine/docs
 pnpm --filter @andesine/docs lint:docs
 ```
 
@@ -16,6 +16,7 @@ the existing local certificate, open
 `https://macbook-pro.local:4322/docs/overview/`. Both certificate paths must be set together.
 
 The Cloudflare Worker is named `andesine-docs`. It has no public `workers.dev` route and is called
-by the `andesine-edge` Worker through a service binding. Deploy this Worker before the edge Worker.
+by the `andesine-edge` Worker through a service binding. Use `pnpm deploy:docs` to check, build, and deploy this Worker before the edge Worker.
+Use `pnpm exec turbo run preview:cf --filter=@andesine/docs` for a built local preview.
 
 Add documentation pages to `src/content/docs`. Nimbus creates navigation from the filesystem.

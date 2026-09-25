@@ -14,6 +14,7 @@ const errorDataType = z.object({
 });
 const contentNameConflictErrorDataType = errorDataType.extend({
   name: z.string(),
+  slug: z.string().describe("Conflicting URL slug derived from the name"),
   parentID: publicID("coll").nullable()
 });
 const validationIssueType = z.object({

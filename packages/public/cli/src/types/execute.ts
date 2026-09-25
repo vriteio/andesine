@@ -75,7 +75,10 @@ const executeTypes = async (
   );
   await output.note("Type generation", {
     Source: JSON.stringify(types.source),
-    Collections: types.collections.join(", ") || "All accessible collections",
+    Collections:
+      types.collections
+        .map((selector) => (typeof selector === "string" ? selector : selector.collectionSlugPath))
+        .join(", ") || "All accessible collections",
     Output: types.output
   });
 

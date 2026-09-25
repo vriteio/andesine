@@ -378,9 +378,8 @@ public package imports the private editor or backend at runtime.
 From the repository root:
 
 ```sh
-pnpm --filter @andesine/backend openapi:export
-pnpm --filter @andesine/sdk generate
-pnpm --filter @andesine/sdk build
+pnpm api:generate
+pnpm build --filter=@andesine/sdk
 ```
 
 The export calls oRPC's OpenAPI generator on the same contracts implemented by
@@ -420,7 +419,8 @@ keeps runtime dependencies small.
 ## Content names
 
 Sibling entries and collections share names. Names are trimmed, normalized to
-Unicode NFC, and compared case-sensitively. Names cannot contain `/` or equal
+Unicode NFC, and must have unique derived URL slugs at each level. Exact names
+also remain unique, including symbol-only names. Names cannot contain `/` or equal
 `.` or `..`. The limit is 300 JavaScript string units. The collection name `~`
 is reserved for the internal workspace root. Root entries and root collections
 share the same level.
@@ -430,20 +430,20 @@ Use the returned name rather than assuming that your requested name was saved.
 Rename, move, and restore operations reject conflicts. Deleted items release
 names; a schema move temporarily reserves its source name for rollback.
 
-`CONTENT_NAME_CONFLICT` (409) includes `name`, `parentID`, and optional `hints`.
+`CONTENT_NAME_CONFLICT` (409) includes `name`, `slug`, `parentID`, and optional `hints`.
 Use `error.is("CONTENT_NAME_CONFLICT")` to access typed data. Renaming never
 chooses a different name for you.
 
 ## Content paths
 
-Read an entry by ID or by path. Use exactly one selector:
+Read an entry by ID, `path`, or `slugPath`. Use exactly one selector:
 
 ```ts
 const current = await client.entries.get({ path: "/Docs/Getting started" });
-const tree = await client.content.getTree({ collectionPath: "/Docs" });
+const tree = await client.content.getTree({ collectionSlugPath: "/docs" });
 const content = client.atSnapshot(tree.snapshotID);
-const page = await content.get({ path: "/Docs/Getting started" });
-const definition = await content.getSchema({ path: page.path });
+const page = await content.get({ slugPath: "/docs/getting-started" });
+const definition = await content.getSchema({ slugPath: page.slugPath });
 const activeSchema = await client.schemas.get({ collectionPath: "/Docs" });
 ```
 
@@ -458,23 +458,56 @@ selected current tree or snapshot. A name that looks like an ID is still a name
 when it occurs in an absolute path. A bare collection ID is also a valid
 `collectionPath`. `/` selects the root. Neither selects an entry on its own.
 
-Current entry and collection responses include their canonical absolute `path`.
+Current entry and collection responses include their canonical absolute `path` and `slugPath`.
 Published content, trees, and list results use snapshot collection names and the
 titles of assigned versions. Draft renames, moves, and deletions do not change
 those snapshot paths. Full published content also includes `id` and `collectionID`.
 Saved versions remain ID-based because a version alone has no snapshot location.
 
 `content.getTree({ collectionPath: "/" })` returns a virtual root collection with
-`id: null`, `name: ""`, and `path: "/"`. It contains top-level entries and collections.
+`id: null`, `name: ""`, `path: "/"`, and `slugPath: "/"`. It contains top-level entries and collections.
 
 `entries.list`, `collections.list`, `content.listEntries`, and
-`content.listCollections` accept either `collectionID` or `collectionPath` to
+`content.listCollections` accept one of `collectionID`, `collectionPath`, or `collectionSlugPath` to
 select direct children. Keep the same scope while paging. With no scope,
 `collections.list` selects root children; the other lists select all accessible
 items. `collections.list` now uses these fields instead of `ancestorID`.
 Search accepts the same collection selectors and includes descendants. Its `/`
 scope covers the whole accessible tree. Search results include a canonical entry
-`path` and an optional heading `anchor`.
+`path`, `slugPath`, and an optional heading `anchor`.
+
+Slugs use Unicode NFKC normalization, lowercase, Unicode letters/marks/numbers,
+and single hyphens between other character groups. Accents and non-Latin letters
+are retained. A symbol-only name uses its public ID in lowercase with `-` instead
+of `_`. Slugs are derived, never edited separately. Renaming or moving content
+changes its path; redirects are not stored. `Getting Started`, `getting-started`,
+and `Getting Started!` conflict at the same level. Existing conflicting content
+must be renamed before publishing it again.
+
+`slugPath` and `collectionSlugPath` accept absolute paths and collection-ID
+anchors, with the same snapshot and scope rules as name paths. Pass decoded
+segments, for example `coll_ID/getting-started`. The URL route should be decoded
+once by your framework before passing it to the SDK.
+
+```ts
+import { toContentURL } from "@andesine/sdk";
+
+// Prefer the API object: its slugPath also covers symbol-only ancestor names.
+const url = toContentURL(page, { rootPath: "/Docs", baseURL: "/docs" });
+// /docs/getting-started
+const originalNames = toContentURL(page, { format: "name" });
+// /Docs/Getting%20started
+```
+
+`toContentURL` defaults to slug URLs. A string input derives slugs from the path;
+API objects use their returned `slugPath`. `format: "name"` preserves original
+names. `rootPath` accepts a name or slug prefix in slug mode. Destination prefixes
+and heading anchors are not slugified. `toContentSlug(name, id?)` exposes the
+shared segment rule; symbol-only names require a public content ID. It is also
+available from `@andesine/sdk/slug`, which loads only the slug helper.
+
+Search indexes must be rebuilt after this upgrade to populate `slugPath` on
+existing results and AI sources. No database schema migration is needed.
 
 HTTP reads use query selectors on `GET /entries/get`, `GET /content/entries/get`,
 `GET /content/tree`, and `GET /schemas/collection`. The published schema route
@@ -490,7 +523,7 @@ publication leaves the channel and its snapshot unchanged.
 ## Search and source links
 
 Published search results include required `channel`, `snapshotID`, `versionID`,
-and canonical entry `path` fields. `entryID` remains the stable identity.
+and canonical entry `path` and `slugPath` fields. `entryID` remains the stable identity.
 An optional `anchor` identifies a heading in that version; a result before any
 heading has no anchor. Current results have their indexed working path. Search
 index updates are asynchronous, so current paths can briefly lag draft changes.
@@ -505,9 +538,8 @@ for (const result of matches.results) {
   const page = await client.atSnapshot(result.snapshotID).get({
     entryID: result.entryID
   });
-  const pathname = result.path.split("/").map(encodeURIComponent).join("/");
-  const link = pathname + (result.anchor ? `#${encodeURIComponent(result.anchor)}` : "");
-  // Map pathname to your docs site's route and render page with matching heading IDs.
+  const link = toContentURL(result, { rootPath: "/Docs", baseURL: "/docs" });
+  // Render page headings with matching IDs.
 }
 ```
 
@@ -623,7 +655,8 @@ const current = await client.typeMetadata.getCurrent({
 });
 ```
 
-Selectors accept IDs or decoded paths and include descendant collections. An
+Selectors accept IDs, decoded name paths, or `{ collectionSlugPath: "/docs" }`
+objects and include descendant collections. An
 empty list selects all accessible collections. Each response is one consistent
 database snapshot; published metadata also returns its publication snapshot ID
 for related reads. Published paths and schemas come from the assigned versions,
@@ -660,13 +693,14 @@ import {
 interface Tutorials extends WorkspaceCollection {
   id: "coll_tutorials";
   path: "/Tutorials";
+  slugPath: "/tutorials";
   schemaRevisionIDs: readonly ["schr_tutorial"];
   descendants: readonly [];
 }
 
 interface Workspace extends WorkspaceTypeMap {
   source: { kind: "published"; channel: "published" };
-  collections: { "coll_tutorials": Tutorials; "/Tutorials": Tutorials };
+  collections: { "coll_tutorials": Tutorials; "/Tutorials": Tutorials; "/tutorials": Tutorials };
   schemas: {
     schr_tutorial: {
       hash: "RECORDED_SCHEMA_HASH";
@@ -700,7 +734,7 @@ lists include their shapes. If the hierarchy is incomplete, recursive results
 also retain the general content type.
 
 Exact entry reads narrow only when the map has an `entries` binding for the given
-ID or path. Each binding supplies `collection` and `schemaRevisionID`. Optional
+ID, path, or slug path. Each binding supplies `collection` and `schemaRevisionID`. Optional
 `tree` bindings supply published tree shapes by collection selector. Unknown keys
 and dynamic strings keep general SDK types. Current maps apply to `entries.get`;
 published maps apply to content delivery. Summary lists do not gain content fields.

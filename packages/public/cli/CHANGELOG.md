@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.0
+
+- Add slug-path API flags, collection selection, and generated type bindings.
+
 ## 0.1.0
 
 - Add `types generate`, read-only `--check`, foreground `--watch`, atomic output

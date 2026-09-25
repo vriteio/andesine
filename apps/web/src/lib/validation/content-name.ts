@@ -1,7 +1,8 @@
+import { toContentSlug } from "@andesine/sdk/slug";
 import type { Collection, Entry } from "#web/lib/api";
 
 interface ContentNameInput {
-  id?: string;
+  id: string;
   parentID?: string | null;
   kind: "entry" | "collection";
   name: string;
@@ -31,7 +32,12 @@ const getSiblingContentNames = (tree: ContentNameTree, input: ContentNameInput):
     )
   ];
 
-  return new Set(siblings.map((item) => item.name.normalize("NFC").trim()));
+  return new Set(
+    siblings.flatMap((item) => [
+      toContentSlug(item.name, item.id),
+      `name:${item.name.normalize("NFC").trim()}`
+    ])
+  );
 };
 const getContentNameError = (
   tree: ContentNameTree,
@@ -56,8 +62,10 @@ const getContentNameError = (
     return "The name ~ is reserved for the workspace root";
   }
 
-  if (getSiblingContentNames(tree, input).has(name)) {
-    return "An entry or collection already uses this name at this level";
+  const names = getSiblingContentNames(tree, input);
+
+  if (names.has(toContentSlug(name, input.id)) || names.has(`name:${name}`)) {
+    return "An entry or collection already uses this name or URL slug at this level";
   }
 };
 const getAvailableContentName = (tree: ContentNameTree, input: ContentNameInput): string => {
@@ -66,7 +74,7 @@ const getAvailableContentName = (tree: ContentNameTree, input: ContentNameInput)
   let name = input.name;
   let number = 2;
 
-  while (names.has(name)) {
+  while (names.has(toContentSlug(name, input.id)) || names.has(`name:${name}`)) {
     const suffix = ` (${number})`;
 
     let prefix = "";

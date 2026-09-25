@@ -166,6 +166,7 @@ const entriesRouter = handlers.router({
       auth: context.auth,
       id: input.id,
       path: input.path,
+      slugPath: input.slugPath,
       expectedSchemaHash: input.expectedSchemaHash
     });
   }),
@@ -173,6 +174,7 @@ const entriesRouter = handlers.router({
     const { entries, nextCursor } = await Entries.list({
       auth: context.auth,
       collectionID: input.collectionID,
+      collectionSlugPath: input.collectionSlugPath,
       collectionPath: input.collectionPath,
       cursor: input.cursor,
       limit: input.limit

@@ -182,7 +182,7 @@ export interface paths {
     put?: never;
     /**
      * Create an entry
-     * @description Creates an entry and its initial document. The name defaults to Untitled. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed, NFC-normalized, case-sensitive, and shared by sibling entries and collections. Names cannot contain a slash or equal a single dot or two dots. A collection schema can set the initial content.
+     * @description Creates an entry and its initial document. The name defaults to Untitled. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed and NFC-normalized. Derived URL slugs must be unique across sibling entries and collections, including case and punctuation variants. Names cannot contain a slash or equal a single dot or two dots. A collection schema can set the initial content.
      *
      *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
      */
@@ -298,7 +298,7 @@ export interface paths {
     put?: never;
     /**
      * Create a collection
-     * @description Creates a child collection. Without parentID, uses the workspace root. The name defaults to Untitled. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed, NFC-normalized, case-sensitive, and shared by sibling entries and collections. Names cannot contain a slash or equal a single dot or two dots. Restricted collections require a session with restricted_collections permission and the Pro plan; API keys cannot create them.
+     * @description Creates a child collection. Without parentID, uses the workspace root. The name defaults to Untitled. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed and NFC-normalized. Derived URL slugs must be unique across sibling entries and collections, including case and punctuation variants. Names cannot contain a slash or equal a single dot or two dots. Restricted collections require a session with restricted_collections permission and the Pro plan; API keys cannot create them.
      *
      *     Required API key permissions: collections. Write permissions also grant read access for the same resource.
      */
@@ -390,7 +390,7 @@ export interface paths {
     };
     /**
      * List published collections
-     * @description Returns a flat page of collections from a publication snapshot. The default channel is published. On later pages, pass the returned snapshotID and pagination.nextCursor, and omit channel. Optionally select direct children using collectionID or collectionPath. Results are ordered by ID, not display order.
+     * @description Returns a flat page of collections from a publication snapshot. The default channel is published. On later pages, pass the returned snapshotID and pagination.nextCursor, and omit channel. Optionally select direct children using collectionID, collectionPath, or collectionSlugPath. Results are ordered by ID, not display order.
      *
      *     Required API key permissions: read:publishing. Write permissions also grant read access for the same resource.
      */
@@ -412,7 +412,7 @@ export interface paths {
     };
     /**
      * List published entries
-     * @description Returns a flat page of entries from a publication snapshot. The default channel is published. On later pages, pass the returned snapshotID and pagination.nextCursor, and omit channel. Select direct children using collectionID or collectionPath, or include nested entries with descendants: true. descendants requires a collection scope. All property filters must match the assigned version. includeContent: true returns validated full content, properties, fragments, assets, and recorded schema metadata. An invalid full item fails the page. Keep the same scope and filters across pages. Results are ordered by ID, not display order.
+     * @description Returns a flat page of entries from a publication snapshot. The default channel is published. On later pages, pass the returned snapshotID and pagination.nextCursor, and omit channel. Select direct children using collectionID, collectionPath, or collectionSlugPath, or include nested entries with descendants: true. descendants requires a collection scope. All property filters must match the assigned version. includeContent: true returns validated full content, properties, fragments, assets, and recorded schema metadata. An invalid full item fails the page. Keep the same scope and filters across pages. Results are ordered by ID, not display order.
      *
      *     Required API key permissions: read:publishing. Write permissions also grant read access for the same resource.
      */
@@ -1555,6 +1555,7 @@ export interface components {
       parentID: string | null;
       name: string;
       path: string;
+      slugPath: string;
       /** @description Effective schema revisions for this collection. Null represents schema-free content. An empty array has no recorded schema evidence; use a general type without a warning. */
       schemaRevisionIDs: (string | null)[];
     };
@@ -1563,6 +1564,7 @@ export interface components {
       collectionID: string | null;
       name: string;
       path: string;
+      slugPath: string;
       schemaRevisionID: string | null;
     };
     TypeMetadataTree: {
@@ -1640,6 +1642,7 @@ export interface components {
         };
     AnswerSource: {
       path: string;
+      slugPath: string;
       anchor?: string;
       entryID: string;
       collectionID?: string;
@@ -1658,6 +1661,7 @@ export interface components {
     };
     PublishedAnswerSource: {
       path: string;
+      slugPath: string;
       anchor?: string;
       entryID: string;
       collectionID?: string;
@@ -1750,6 +1754,7 @@ export interface components {
     PublishedEntryContent: {
       id: string;
       path: string;
+      slugPath: string;
       collectionID: string | null;
       schema: components["schemas"]["ContentSchemaMetadata"] | null;
       /** @description Entry name stored in the published version */
@@ -1766,6 +1771,7 @@ export interface components {
     };
     PublishedEntrySummary: {
       path: string;
+      slugPath: string;
       /** @description ID of the published entry */
       id: string;
       /** @description Entry name stored in the published version */
@@ -1775,6 +1781,7 @@ export interface components {
     };
     PublishedCollectionSummary: {
       path: string;
+      slugPath: string;
       id: string;
       parentID: string | null;
       name: string;
@@ -1833,6 +1840,8 @@ export interface components {
       /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
       hints?: string[];
       name: string;
+      /** @description Conflicting URL slug derived from the name */
+      slug: string;
       parentID: string | null;
     };
     ErrorData: {
@@ -1902,6 +1911,7 @@ export interface components {
       /** @description ID of the collection this entry belongs to */
       collectionID?: string;
       path: string;
+      slugPath: string;
     };
     Collection: {
       /** @description ID of the collection */
@@ -1913,6 +1923,7 @@ export interface components {
       ancestors: string[];
       descendants: string[];
       path: string;
+      slugPath: string;
     };
     Role: {
       /** @description ID of the role */
@@ -2321,6 +2332,7 @@ export interface components {
       /** @description ID of the collection this entry belongs to */
       collectionID?: string;
       path: string;
+      slugPath: string;
       schema: components["schemas"]["ContentSchemaMetadata"] | null;
       /**
        * Format: date-time
@@ -2490,6 +2502,7 @@ export interface components {
     PublishedContent: {
       id: string;
       path: string;
+      slugPath: string;
       collectionID: string | null;
       schema: components["schemas"]["ContentSchemaMetadata"] | null;
       /** @description Publishing channel used for delivery */
@@ -2522,6 +2535,7 @@ export interface components {
     };
     PublishedEntry: {
       path: string;
+      slugPath: string;
       /** @description ID of the published entry */
       id: string;
       /** @description Entry name stored in the published version */
@@ -2538,6 +2552,7 @@ export interface components {
       /** @description Collection ID, or null for the virtual root */
       id: string | null;
       path: string;
+      slugPath: string;
       /** @description Name of the collection */
       name: string;
       entries: components["schemas"]["PublishedEntry"][];
@@ -2729,6 +2744,7 @@ export interface components {
     };
     PublishedSearchResult: {
       path: string;
+      slugPath: string;
       anchor?: string;
       entryID: string;
       collectionID?: string;
@@ -2745,6 +2761,7 @@ export interface components {
     };
     SearchResult: {
       path: string;
+      slugPath: string;
       anchor?: string;
       entryID: string;
       collectionID?: string;
@@ -6201,6 +6218,7 @@ export interface operations {
         /** @example ent_example */
         id?: string;
         path?: string;
+        slugPath?: string;
         expectedSchemaHash?: string;
       };
       header?: {
@@ -6475,6 +6493,7 @@ export interface operations {
         /** @example coll_example */
         collectionID?: string;
         collectionPath?: string;
+        collectionSlugPath?: string;
         cursor?: string;
         /** @example 20 */
         limit?: number;
@@ -7881,6 +7900,7 @@ export interface operations {
         /** @example coll_example */
         collectionID?: string;
         collectionPath?: string;
+        collectionSlugPath?: string;
         cursor?: string;
         /** @example 20 */
         limit?: number;
@@ -8140,6 +8160,7 @@ export interface operations {
         limit?: number;
         collectionID?: string;
         collectionPath?: string;
+        collectionSlugPath?: string;
         /** @example published */
         channel?: string;
         snapshotID?: string;
@@ -8402,6 +8423,7 @@ export interface operations {
         limit?: number;
         collectionID?: string;
         collectionPath?: string;
+        collectionSlugPath?: string;
         /** @example published */
         channel?: string;
         snapshotID?: string;
@@ -8678,6 +8700,7 @@ export interface operations {
         /** @example ent_example */
         entryID?: string;
         path?: string;
+        slugPath?: string;
         /** @example published */
         channel?: string;
         snapshotID?: string;
@@ -9201,6 +9224,7 @@ export interface operations {
         /** @example ent_example */
         entryID?: string;
         path?: string;
+        slugPath?: string;
         expectedSchemaHash?: string;
         /** @example published */
         channel?: string;
@@ -9489,6 +9513,7 @@ export interface operations {
         /** @example coll_example */
         collectionID?: string;
         collectionPath?: string;
+        collectionSlugPath?: string;
         /** @example published */
         channel?: string;
         snapshotID?: string;
@@ -10840,6 +10865,8 @@ export interface operations {
           collectionID?: string;
           /** @description Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK. */
           collectionPath?: string;
+          /** @description Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding. */
+          collectionSlugPath?: string;
           /** @default [] */
           filters?: components["schemas"]["PropertyFilter"][];
           /** @default 20 */
@@ -11112,6 +11139,8 @@ export interface operations {
           collectionID?: string;
           /** @description Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK. */
           collectionPath?: string;
+          /** @description Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding. */
+          collectionSlugPath?: string;
           /** @default [] */
           filters?: components["schemas"]["PropertyFilter"][];
           /** @default 20 */
@@ -11386,6 +11415,8 @@ export interface operations {
           collectionID?: string;
           /** @description Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK. */
           collectionPath?: string;
+          /** @description Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding. */
+          collectionSlugPath?: string;
           /** @default [] */
           filters?: components["schemas"]["PropertyFilter"][];
           /** @default [] */
@@ -11652,6 +11683,8 @@ export interface operations {
           collectionID?: string;
           /** @description Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK. */
           collectionPath?: string;
+          /** @description Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding. */
+          collectionSlugPath?: string;
           /** @default [] */
           filters?: components["schemas"]["PropertyFilter"][];
           /** @default [] */
@@ -11914,6 +11947,8 @@ export interface operations {
           collectionID?: string;
           /** @description Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK. */
           collectionPath?: string;
+          /** @description Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding. */
+          collectionSlugPath?: string;
           /** @default [] */
           filters?: components["schemas"]["PropertyFilter"][];
           /** @default [] */
@@ -12195,6 +12230,8 @@ export interface operations {
           collectionID?: string;
           /** @description Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK. */
           collectionPath?: string;
+          /** @description Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding. */
+          collectionSlugPath?: string;
           /** @default [] */
           filters?: components["schemas"]["PropertyFilter"][];
           /** @default [] */
@@ -13280,6 +13317,7 @@ export interface operations {
         /** @example coll_example */
         collectionID?: string;
         collectionPath?: string;
+        collectionSlugPath?: string;
       };
       header?: {
         /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
@@ -23994,10 +24032,16 @@ export interface operations {
          */
         "application/json": {
           /**
-           * @description Collection IDs or paths. Includes selected subtrees; empty selects all accessible collections.
+           * @description Collection IDs, name paths, or objects with collectionSlugPath. Includes selected subtrees; empty selects all accessible collections.
            * @default []
            */
-          collections?: string[];
+          collections?: (
+            | string
+            | {
+                /** @description Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding. */
+                collectionSlugPath: string;
+              }
+          )[];
           /**
            * @description Include entry IDs, names, paths, and schema associations.
            * @default false
@@ -24291,10 +24335,16 @@ export interface operations {
          */
         "application/json": {
           /**
-           * @description Collection IDs or paths. Includes selected subtrees; empty selects all accessible collections.
+           * @description Collection IDs, name paths, or objects with collectionSlugPath. Includes selected subtrees; empty selects all accessible collections.
            * @default []
            */
-          collections?: string[];
+          collections?: (
+            | string
+            | {
+                /** @description Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding. */
+                collectionSlugPath: string;
+              }
+          )[];
           /**
            * @description Include entry IDs, names, paths, and schema associations.
            * @default false

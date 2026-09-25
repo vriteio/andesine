@@ -16,7 +16,7 @@ const listCollections = withAuthorization<
     paths: Awaited<ReturnType<typeof loadCurrentContentPaths>>;
     scopeID: string | null | undefined;
   },
-  { collections: Array<Collection & { path: string }>; nextCursor: string | null }
+  { collections: Array<Collection & { path: string; slugPath: string }>; nextCursor: string | null }
 >(
   {
     actions: ({ resolved }) => ({
@@ -67,7 +67,8 @@ const listCollections = withAuthorization<
     return {
       collections: pageRows.map((row) => ({
         ...row,
-        path: resolved.paths.collectionPath(toUUID(row.id))
+        path: resolved.paths.collectionPath(toUUID(row.id)),
+        slugPath: resolved.paths.collectionSlugPath(toUUID(row.id))
       })),
       nextCursor: hasMore ? pageRows[pageRows.length - 1].id : null
     };

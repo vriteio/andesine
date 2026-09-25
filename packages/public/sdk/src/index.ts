@@ -2,6 +2,7 @@ export { createClient } from "./client";
 export type { AndesineClient, ClientOptions } from "./client";
 export type { ContentClient, ContentPaginationOptions } from "./content-client";
 export { toContentURL } from "./content-url";
+export { toContentSlug } from "./content-slug";
 export type { ContentLocation, ContentURLOptions } from "./content-url";
 export { AndesineAPIError, AndesineStreamError, AndesineStreamProtocolError } from "./error";
 export type {

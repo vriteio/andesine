@@ -5,9 +5,9 @@ components, logo, dotted background, animated gradient, and font styles come fro
 `@andesine/components`. These are also used by the web app's auth pages. The UnoCSS configuration
 extends the web app's colors, icon collection, and component class transformers.
 
-- Dev server: `pnpm --filter @andesine/landing dev`
-- Build: `pnpm --filter @andesine/landing build`
-- Type check: `pnpm --filter @andesine/landing check`
+- Dev server: `pnpm dev --filter=@andesine/landing`
+- Build: `pnpm build --filter=@andesine/landing`
+- Type check: `pnpm typecheck --filter=@andesine/landing`
 - Output: `apps/landing/dist`
 
 The dev command loads the root `.env` and listens on all network interfaces on port 4321.

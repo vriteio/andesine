@@ -1,5 +1,6 @@
 import {
   assertSelector,
+  resolveEntrySlugID,
   loadCurrentContentPaths,
   type EntrySelector
 } from "#backend/lib/content/paths";
@@ -20,6 +21,7 @@ import { type ServiceResolveContext, withAuthorization } from "#backend/lib/poli
 
 interface EntryDetails extends Entry {
   path: string;
+  slugPath: string;
   schema: ContentSchemaMetadata | null;
   updatedAt: string;
   content: ContentNode;
@@ -37,10 +39,14 @@ async function resolveGetEntry({
   input,
   workspaceID
 }: ServiceResolveContext<GetEntryInput>) {
-  assertSelector(input.id, input.path);
+  assertSelector([input.id, input.path, input.slugPath]);
 
   const paths = await loadCurrentContentPaths(database, workspaceID);
   const target = input.path !== undefined ? paths.resolveEntryPath(input.path) : null;
+  const slugEntryID =
+    input.slugPath !== undefined
+      ? await resolveEntrySlugID(database, workspaceID, paths, input.slugPath)
+      : undefined;
   const [row] = await database
     .select({
       id: entries.id,
@@ -57,6 +63,7 @@ async function resolveGetEntry({
     .where(
       and(
         input.id !== undefined ? eq(entries.id, toUUID(input.id)) : undefined,
+        slugEntryID ? eq(entries.id, slugEntryID) : undefined,
         target ? eq(entries.name, target.name) : undefined,
         target
           ? target.collectionID
@@ -77,7 +84,8 @@ async function resolveGetEntry({
   return {
     ...row,
     authorizationCollectionID: row.collectionID === paths.rootID ? null : row.collectionID,
-    path: paths.entryPath(row.collectionID, row.name)
+    path: paths.entryPath(row.collectionID, row.name),
+    slugPath: paths.entrySlugPath(row.collectionID, row.name, row.id)
   };
 }
 
@@ -111,6 +119,7 @@ const getEntry = withAuthorization<GetEntryInput, ResolvedGetEntry, EntryDetails
       id: toEntryID(resolved.id),
       name: resolved.name,
       path: resolved.path,
+      slugPath: resolved.slugPath,
       order: resolved.rank,
       collectionID: resolved.collectionID ? toCollectionID(resolved.collectionID) : undefined,
       updatedAt: resolved.contentUpdatedAt.toISOString(),

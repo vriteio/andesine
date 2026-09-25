@@ -1,5 +1,6 @@
 import {
   assertSelector,
+  resolveEntrySlugID,
   loadPublishedContentPaths,
   type PublishedEntrySelector
 } from "#backend/lib/content/paths";
@@ -18,6 +19,7 @@ interface PublishedEntryVersionInput extends PublishedEntrySelector {
 }
 interface PublishedEntryVersionSource {
   path: string;
+  slugPath: string;
   collectionID: string | null;
   snapshot: ResolvedPublishingSnapshot;
   version: typeof entryVersions.$inferSelect;
@@ -29,7 +31,7 @@ const loadPublishedEntryVersion = async (
   workspaceID: string,
   input: PublishedEntryVersionInput
 ): Promise<PublishedEntryVersionSource> => {
-  assertSelector(input.entryID, input.path);
+  assertSelector([input.entryID, input.path, input.slugPath]);
   const snapshot = input.snapshotID
     ? await resolvePublishingSnapshot(database, workspaceID, { snapshotID: input.snapshotID })
     : await resolvePublishingSnapshot(database, workspaceID, {
@@ -37,6 +39,10 @@ const loadPublishedEntryVersion = async (
       });
   const paths = await loadPublishedContentPaths(database, workspaceID, snapshot.id);
   const target = input.path !== undefined ? paths.resolveEntryPath(input.path) : null;
+  const slugEntryID =
+    input.slugPath !== undefined
+      ? await resolveEntrySlugID(database, workspaceID, paths, input.slugPath, snapshot.id)
+      : undefined;
   const [row] = await database
     .select({ collectionID: publishingSnapshotEntries.collectionID, version: entryVersions })
     .from(publishingSnapshotEntries)
@@ -47,6 +53,7 @@ const loadPublishedEntryVersion = async (
         input.entryID !== undefined
           ? eq(publishingSnapshotEntries.entryID, toUUID(input.entryID))
           : undefined,
+        slugEntryID ? eq(publishingSnapshotEntries.entryID, slugEntryID) : undefined,
         target ? eq(entryVersions.entryName, target.name) : undefined,
         target
           ? target.collectionID
@@ -72,6 +79,7 @@ const loadPublishedEntryVersion = async (
 
   return {
     path: paths.entryPath(row.collectionID, row.version.entryName),
+    slugPath: paths.entrySlugPath(row.collectionID, row.version.entryName, row.version.entryID),
     collectionID: row.collectionID,
     snapshot,
     version: row.version,

@@ -13,7 +13,7 @@ interface MetadataCollectionSource extends Omit<MetadataCollectionRow, "id"> {
 }
 interface MetadataSelectionInput {
   rows: MetadataCollectionRow[];
-  selectors: string[];
+  selectors: Array<string | { collectionSlugPath: string }>;
   rootID?: string;
   authorization?: AuthorizedCollectionTree;
 }
@@ -31,9 +31,11 @@ const selectMetadataCollections = ({
     ? selectors.map(
         (selector) =>
           paths.resolveCollection(
-            publicID("coll").safeParse(selector).success
-              ? { collectionID: selector }
-              : { collectionPath: selector }
+            typeof selector !== "string"
+              ? selector
+              : publicID("coll").safeParse(selector).success
+                ? { collectionID: selector }
+                : { collectionPath: selector }
           ) ?? null
       )
     : [null];

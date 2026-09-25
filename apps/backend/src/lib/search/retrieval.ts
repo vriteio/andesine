@@ -73,6 +73,7 @@ const mapSearchResultItem = (document: SearchDocument, query: string): SearchRes
   return {
     ...publishedFields,
     path: document.path,
+    slugPath: document.slugPath,
     ...(document.anchor ? { anchor: document.anchor } : {}),
     ...(document.collectionPath.length > 0 && { collectionID: document.collectionID }),
     collectionPath: document.collectionPath,
@@ -174,7 +175,11 @@ const searchIndex = async (input: SearchIndexInput): Promise<SearchIndexMatch[]>
 
   for (const hit of result.hits || []) {
     if (hit.document.scope !== input.scope) continue;
-    if (!hit.document.path || (hit.document.scope === "published" && !hit.document.snapshotID)) {
+    if (
+      !hit.document.path ||
+      !hit.document.slugPath ||
+      (hit.document.scope === "published" && !hit.document.snapshotID)
+    ) {
       throw new ORPCError("SERVICE_UNAVAILABLE", {
         message: "Search metadata needs to be rebuilt",
         data: {

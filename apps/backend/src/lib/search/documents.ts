@@ -328,6 +328,7 @@ const buildSearchDocuments = <TDocument extends SearchDocument>(
     const baseDocument = {
       id: getSearchDocumentID(source, chunkIndex),
       path: source.path,
+      slugPath: source.slugPath,
       ...(chunk.anchor ? { anchor: chunk.anchor } : {}),
       workspaceID: source.workspaceID,
       entryID: source.entryID,

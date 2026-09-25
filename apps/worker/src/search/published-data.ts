@@ -1,3 +1,4 @@
+import { toContentSlug } from "@andesine/sdk/slug";
 import {
   publishingChannels,
   publishingSnapshotCollections,
@@ -217,6 +218,7 @@ const loadPublishedEntrySources = async (
         restrictedBoundaryIDs: [],
         collectionPath: lineage.map((item) => item.name),
         path: `/${[...lineage.map((item) => item.name), publication.entryName].join("/")}`,
+        slugPath: `/${[...lineage.map((item) => toContentSlug(item.name, toCollectionID(item.collectionID))), toContentSlug(publication.entryName, toEntryID(publication.entryID))].join("/")}`,
         title: publication.entryName,
         content: publication.document,
         updatedAt: publication.publishedAt,

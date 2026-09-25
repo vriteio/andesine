@@ -58,14 +58,15 @@ const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
   };
   const createCollection = (collectionID?: string): Collection | undefined => {
     const parent = collectionID ? getCollection(collectionID) : getRootCollection();
+    const id = fromUUID(generateUUID(), "coll");
     const collection: Collection = {
-      id: fromUUID(generateUUID(), "coll"),
+      id,
       name: getAvailableContentName(
         {
           entries: input.entriesCollection().find().fetch(),
           collections: input.collectionsCollection().find().fetch()
         },
-        { kind: "collection", parentID: collectionID, name: "Untitled" }
+        { id, kind: "collection", parentID: collectionID, name: "Untitled" }
       ),
       restricted: false,
       descendants: [],

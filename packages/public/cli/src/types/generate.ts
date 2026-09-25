@@ -8,7 +8,7 @@ interface TypeGenerationOptions {
   /** Requested source. Omit to follow the metadata's channel or current source. */
   source?: TypesConfig["source"];
   /** Requested collection selectors, recorded as provenance. Metadata is already scoped. */
-  collections?: string[];
+  collections?: TypesConfig["collections"];
   /** Emit exact ID bindings and per-collection entry ID unions. Defaults to false. */
   includeEntryIDs?: boolean;
   /** Emit exact path bindings and per-collection entry path unions. Defaults to false. */
@@ -85,7 +85,9 @@ const generateTypes = (metadata: TypeMetadata, options: TypeGenerationOptions = 
   const base = metadata.source.kind === "published" ? "SDK.PublishedEntryContent" : "SDK.Entry";
   const contentBase = `Omit<${base}, "schema" | "properties" | "fragments">`;
   const bind = (map: Map<string, string>, key: string, value: string) => {
-    if (map.has(key)) throw new Error(`Duplicate metadata selector ${literal(key)}.`);
+    if (map.has(key) && map.get(key) !== value) {
+      throw new Error(`Duplicate metadata selector ${literal(key)}.`);
+    }
 
     map.set(key, value);
   };
@@ -94,6 +96,9 @@ const generateTypes = (metadata: TypeMetadata, options: TypeGenerationOptions = 
     const name = collectionNames.get(collection.id ?? "/")!;
 
     bind(collectionBindings, collection.path, name);
+    if (collection.slugPath !== collection.path) {
+      bind(collectionBindings, collection.slugPath, name);
+    }
 
     if (collection.id !== null) bind(collectionBindings, collection.id, name);
   }
@@ -107,7 +112,14 @@ const generateTypes = (metadata: TypeMetadata, options: TypeGenerationOptions = 
     const binding = `{ collection: ${literal(entry.collectionID ?? "/")}; schemaRevisionID: ${literal(entry.schemaRevisionID)} }`;
 
     if (options.includeEntryIDs) bind(entryBindings, entry.id, binding);
-    if (options.includeEntryPaths) bind(entryBindings, entry.path, binding);
+
+    if (options.includeEntryPaths) {
+      bind(entryBindings, entry.path, binding);
+
+      if (entry.slugPath !== entry.path) {
+        bind(entryBindings, entry.slugPath, binding);
+      }
+    }
   }
 
   const revisionNames = names(
@@ -146,6 +158,7 @@ const generateTypes = (metadata: TypeMetadata, options: TypeGenerationOptions = 
     interfaces.push(`export interface ${name} extends SDK.WorkspaceCollection {
   id: ${literal(collection.id)};
   path: ${literal(collection.path)};
+  slugPath: ${literal(collection.slugPath)};
   schemaRevisionIDs: readonly ${tuple(ids.map(literal))};
   descendants: readonly ${tuple(childIDs.map(literal))};
 }`);
@@ -164,12 +177,16 @@ const generateTypes = (metadata: TypeMetadata, options: TypeGenerationOptions = 
 
     if (options.includeEntryPaths) {
       types.push(
-        `export type ${name}EntryPath = ${union(collectionEntries.map((entry) => literal(entry.path)))};`
+        `export type ${name}EntryPath = ${union(collectionEntries.map((entry) => literal(entry.path)))};`,
+        `export type ${name}EntrySlugPath = ${union(collectionEntries.map((entry) => literal(entry.slugPath)))};`
       );
     }
 
     if (options.includeTree) {
       treeBindings.push(`    ${literal(collection.path)}: ${name}Tree;`);
+      if (collection.slugPath !== collection.path) {
+        treeBindings.push(`    ${literal(collection.slugPath)}: ${name}Tree;`);
+      }
       if (collection.id !== null) treeBindings.push(`    ${literal(collection.id)}: ${name}Tree;`);
     }
   }
@@ -213,7 +230,7 @@ const generateTypes = (metadata: TypeMetadata, options: TypeGenerationOptions = 
     [
       GENERATED_TYPES_MARKER,
       `// Workspace: ${literal(metadata.workspaceID)}; source: ${json(source)}.`,
-      `// Collections: ${json([...new Set(options.collections ?? [])].sort(compare))}; entry IDs: ${Boolean(options.includeEntryIDs)}; entry paths: ${Boolean(options.includeEntryPaths)}; tree: ${Boolean(options.includeTree)}.`,
+      `// Collections: ${json([...(options.collections ?? [])].sort((a, b) => compare(json(a), json(b))))}; entry IDs: ${Boolean(options.includeEntryIDs)}; entry paths: ${Boolean(options.includeEntryPaths)}; tree: ${Boolean(options.includeTree)}.`,
       "// Types only. Configure the runtime client for the same workspace and source."
     ].join("\n"),
     'import type * as SDK from "@andesine/sdk";',

@@ -10,6 +10,7 @@ import { entryFragmentType, entryPropertyType } from "./entries";
 
 interface PublishedTreeEntryOutput {
   path: string;
+  slugPath: string;
   id: string;
   name: string;
   version: {
@@ -19,6 +20,7 @@ interface PublishedTreeEntryOutput {
 }
 interface PublishedTreeCollectionOutput {
   path: string;
+  slugPath: string;
   id: string | null;
   name: string;
   entries: PublishedTreeEntryOutput[];
@@ -37,6 +39,7 @@ const publishedAssetType = z.object({
 const publishedContentType = z.object({
   id: publicID("ent"),
   path: z.string(),
+  slugPath: z.string(),
   collectionID: publicID("coll").nullable(),
   schema: contentSchemaMetadataType.nullable(),
   channel: publishingChannelCodeType.describe("Publishing channel used for delivery"),
@@ -55,6 +58,7 @@ const publishedTreeVersionType = z.object({
 });
 const publishedTreeEntryType = z.object({
   path: z.string(),
+  slugPath: z.string(),
   id: id().describe("ID of the published entry"),
   name: z.string().describe("Entry name stored in the published version"),
   version: publishedTreeVersionType
@@ -63,6 +67,7 @@ const publishedTreeCollectionType: z.ZodType<PublishedTreeCollectionOutput> = z.
   return z.object({
     id: id().nullable().describe("Collection ID, or null for the virtual root"),
     path: z.string(),
+    slugPath: z.string(),
     name: z.string().describe("Name of the collection"),
     entries: z.array(publishedTreeEntryType),
     collections: z.array(publishedTreeCollectionType)
@@ -73,6 +78,7 @@ const publishedEntrySummaryType = publishedTreeEntryType.extend({
 });
 const publishedCollectionSummaryType = z.object({
   path: z.string(),
+  slugPath: z.string(),
   id: publicID("coll"),
   parentID: publicID("coll").nullable(),
   name: z.string()

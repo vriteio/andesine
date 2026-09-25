@@ -18,9 +18,11 @@ const sourceSchema = z.union([
 const typesConfigSchema = z.strictObject({
   source: sourceSchema.default({ kind: "published", channel: "published" }),
   collections: z
-    .array(nonemptyString)
+    .array(z.union([nonemptyString, z.strictObject({ collectionSlugPath: nonemptyString })]))
     .default([])
-    .describe("Collection IDs or paths; empty selects all accessible collections."),
+    .describe(
+      "Collection IDs, name paths, or objects with collectionSlugPath; empty selects all accessible collections."
+    ),
   output: nonemptyString
     .default("src/andesine.generated.ts")
     .describe(

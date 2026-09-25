@@ -39,6 +39,10 @@ const createProgram = (signal: AbortSignal) => {
       "--collection <selectors...>",
       "Collection IDs or decoded paths, including collection-ID anchors"
     )
+    .option(
+      "--collection-slug-path <paths...>",
+      "Decoded collection slug paths, including descendants"
+    )
     .option("--all-collections", "Include all accessible collections")
     .option("--output <file>", "Types file relative to config (default: src/andesine.generated.ts)")
     .option("--include-entry-ids", "Include entry ID types")

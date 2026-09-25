@@ -28,9 +28,8 @@ To change an endpoint:
 4. Run backend type checking, export the OpenAPI document, and regenerate the SDK.
 
 ```sh
-pnpm --filter @andesine/backend typecheck
-pnpm --filter @andesine/backend openapi:export
-pnpm --filter @andesine/sdk generate
+pnpm typecheck --filter=@andesine/backend
+pnpm api:generate
 ```
 
 The export script imports only contracts and calls `OpenAPIGenerator.generate()`

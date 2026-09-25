@@ -28,7 +28,7 @@ ENV PUBLIC_SECURE="$PUBLIC_SECURE"
 COPY --from=pruner /app/out/json/ ./
 RUN pnpm install --frozen-lockfile
 COPY --from=pruner /app/out/full/ ./
-RUN pnpm turbo build --filter=@andesine/web
+RUN pnpm build --filter=@andesine/web
 
 FROM prod-deps AS packager
 WORKDIR /app

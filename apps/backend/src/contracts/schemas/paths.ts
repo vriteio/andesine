@@ -1,3 +1,8 @@
+import type {
+  CollectionSelector,
+  EntrySelector,
+  PublishedEntrySelector
+} from "#backend/lib/content/paths";
 import { parseContentPath } from "#backend/lib/content/paths";
 import { publicID } from "#backend/lib/primitives";
 import * as z from "zod";
@@ -18,26 +23,51 @@ const contentPathType = z
   .describe(
     "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
   );
-const entrySelectorShape = { id: publicID("ent").optional(), path: contentPathType.optional() };
+const contentSlugPathType = z
+  .string()
+  .refine(
+    (path) => {
+      try {
+        parseContentPath(path, true);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    { message: "Use an absolute slug path or a collection-ID anchor with valid segments" }
+  )
+  .describe(
+    "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+  );
+const entrySelectorShape = {
+  id: publicID("ent").optional(),
+  path: contentPathType.optional(),
+  slugPath: contentSlugPathType.optional()
+};
 const publishedEntrySelectorShape = {
   entryID: publicID("ent").optional(),
-  path: contentPathType.optional()
+  path: contentPathType.optional(),
+  slugPath: contentSlugPathType.optional()
 };
 const collectionSelectorShape = {
   collectionID: publicID("coll").optional(),
-  collectionPath: contentPathType.optional()
+  collectionPath: contentPathType.optional(),
+  collectionSlugPath: contentSlugPathType.optional()
 };
-const hasEntrySelector = (input: { id?: string; path?: string }) =>
-  (input.id !== undefined) !== (input.path !== undefined);
-const hasPublishedEntrySelector = (input: { entryID?: string; path?: string }) =>
-  (input.entryID !== undefined) !== (input.path !== undefined);
-const hasCollectionSelector = (input: { collectionID?: string; collectionPath?: string }) =>
-  (input.collectionID !== undefined) !== (input.collectionPath !== undefined);
-const hasOptionalCollectionSelector = (input: { collectionID?: string; collectionPath?: string }) =>
-  input.collectionID === undefined || input.collectionPath === undefined;
+const selectorCount = (...values: Array<string | undefined>): number =>
+  values.filter((value) => value !== undefined).length;
+const hasEntrySelector = (input: EntrySelector) =>
+  selectorCount(input.id, input.path, input.slugPath) === 1;
+const hasPublishedEntrySelector = (input: PublishedEntrySelector) =>
+  selectorCount(input.entryID, input.path, input.slugPath) === 1;
+const hasCollectionSelector = (input: CollectionSelector) =>
+  selectorCount(input.collectionID, input.collectionPath, input.collectionSlugPath) === 1;
+const hasOptionalCollectionSelector = (input: CollectionSelector) =>
+  selectorCount(input.collectionID, input.collectionPath, input.collectionSlugPath) <= 1;
 
 export {
   contentPathType,
+  contentSlugPathType,
   entrySelectorShape,
   publishedEntrySelectorShape,
   collectionSelectorShape,

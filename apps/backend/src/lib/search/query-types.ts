@@ -11,6 +11,7 @@ interface SearchInput {
   signal?: AbortSignal;
   collectionID?: string;
   collectionPath?: string;
+  collectionSlugPath?: string;
   filters: SearchPropertyFilter[];
   limit: number;
   query: string;
@@ -30,6 +31,7 @@ interface AskInput {
   signal?: AbortSignal;
   collectionID?: string;
   collectionPath?: string;
+  collectionSlugPath?: string;
   filters: SearchPropertyFilter[];
   history: AskHistoryMessage[];
   question: string;
@@ -41,6 +43,7 @@ interface PublishedAskInput extends AskInput {
 
 interface SearchResultItem {
   path: string;
+  slugPath: string;
   anchor?: string;
   snapshotID?: string;
   channel?: string;

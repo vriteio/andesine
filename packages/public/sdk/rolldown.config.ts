@@ -4,7 +4,11 @@ import { dts } from "rolldown-plugin-dts";
 
 export default defineConfig({
   cwd: import.meta.dirname,
-  input: { index: "src/index.ts", streaming: "src/streaming.ts" },
+  input: {
+    "index": "src/index.ts",
+    "streaming": "src/streaming.ts",
+    "content-slug": "src/content-slug.ts"
+  },
   plugins: [dts({ cwd: import.meta.dirname })],
   platform: "neutral",
   tsconfig: "tsconfig.json",

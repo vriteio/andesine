@@ -33,7 +33,7 @@ const publishedListInputType = pageInputType
     snapshotID: publicID("snp").optional()
   })
   .refine(hasOptionalCollectionSelector, {
-    message: "Use collectionID or collectionPath, not both"
+    message: "Use only one collectionID, collectionPath, or collectionSlugPath"
   })
   .refine(hasValidSnapshotSelector, { message: "Use channel or snapshotID, not both" })
   .refine((input) => !input.cursor || Boolean(input.snapshotID), {
@@ -46,7 +46,7 @@ const contentContract = baseContract.prefix("/content").router({
       path: "/collections",
       summary: "List published collections",
       description:
-        "Returns a flat page of collections from a publication snapshot. The default channel is published. On later pages, pass the returned snapshotID and pagination.nextCursor, and omit channel. Optionally select direct children using collectionID or collectionPath. Results are ordered by ID, not display order.",
+        "Returns a flat page of collections from a publication snapshot. The default channel is published. On later pages, pass the returned snapshotID and pagination.nextCursor, and omit channel. Optionally select direct children using collectionID, collectionPath, or collectionSlugPath. Results are ordered by ID, not display order.",
       tags: ["content"]
     })
     .meta({ required: { key: ["read:publishing"] }, example: { channel: "published", limit: 20 } })
@@ -59,7 +59,7 @@ const contentContract = baseContract.prefix("/content").router({
       path: "/entries",
       summary: "List published entries",
       description:
-        "Returns a flat page of entries from a publication snapshot. The default channel is published. On later pages, pass the returned snapshotID and pagination.nextCursor, and omit channel. Select direct children using collectionID or collectionPath, or include nested entries with descendants: true. descendants requires a collection scope. All property filters must match the assigned version. includeContent: true returns validated full content, properties, fragments, assets, and recorded schema metadata. An invalid full item fails the page. Keep the same scope and filters across pages. Results are ordered by ID, not display order.",
+        "Returns a flat page of entries from a publication snapshot. The default channel is published. On later pages, pass the returned snapshotID and pagination.nextCursor, and omit channel. Select direct children using collectionID, collectionPath, or collectionSlugPath, or include nested entries with descendants: true. descendants requires a collection scope. All property filters must match the assigned version. includeContent: true returns validated full content, properties, fragments, assets, and recorded schema metadata. An invalid full item fails the page. Keep the same scope and filters across pages. Results are ordered by ID, not display order.",
       tags: ["content"]
     })
     .meta({ required: { key: ["read:publishing"] }, example: { channel: "published", limit: 20 } })
@@ -75,11 +75,12 @@ const contentContract = baseContract.prefix("/content").router({
             return (
               !input.descendants ||
               input.collectionID !== undefined ||
-              input.collectionPath !== undefined
+              input.collectionPath !== undefined ||
+              input.collectionSlugPath !== undefined
             );
           },
           {
-            message: "descendants requires collectionID or collectionPath"
+            message: "descendants requires collectionID, collectionPath, or collectionSlugPath"
           }
         )
     )
@@ -105,7 +106,9 @@ const contentContract = baseContract.prefix("/content").router({
           channel: publishingChannelCodeType.optional(),
           snapshotID: publicID("snp").optional()
         })
-        .refine(hasPublishedEntrySelector, { message: "Use exactly one ID or path selector" })
+        .refine(hasPublishedEntrySelector, {
+          message: "Use exactly one ID, path, or slugPath selector"
+        })
         .refine(hasValidSnapshotSelector, { message: "Use channel or snapshotID, not both" })
     )
     .output(schemaRevisionType.nullable()),
@@ -174,7 +177,9 @@ const contentContract = baseContract.prefix("/content").router({
             .describe(`Publishing channel, defaults to ${PUBLISHED_CHANNEL_CODE}`),
           snapshotID: publicID("snp").optional().describe("Historical publication snapshot to read")
         })
-        .refine(hasPublishedEntrySelector, { message: "Use exactly one ID or path selector" })
+        .refine(hasPublishedEntrySelector, {
+          message: "Use exactly one ID, path, or slugPath selector"
+        })
         .refine(hasValidSnapshotSelector, {
           message: "Use either channel or snapshotID, not both",
           path: ["snapshotID"]
@@ -206,7 +211,9 @@ const contentContract = baseContract.prefix("/content").router({
             .describe(`Publishing channel, defaults to ${PUBLISHED_CHANNEL_CODE}`),
           snapshotID: publicID("snp").optional().describe("Historical publication snapshot to read")
         })
-        .refine(hasCollectionSelector, { message: "Use exactly one ID or path selector" })
+        .refine(hasCollectionSelector, {
+          message: "Use exactly one ID, path, or slugPath selector"
+        })
         .refine(hasValidSnapshotSelector, {
           message: "Use either channel or snapshotID, not both",
           path: ["snapshotID"]

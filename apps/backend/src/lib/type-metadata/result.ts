@@ -46,6 +46,7 @@ const createMetadataResult = (input: MetadataResultInput): TypeMetadata => {
       parentID: collectionID(row.parentID),
       name: row.name,
       path: input.paths.collectionPath(row.id),
+      slugPath: input.paths.collectionSlugPath(row.id),
       schemaRevisionIDs: [...(schemasByCollection.get(row.id) ?? [])].sort((a, b) =>
         compare(a ?? "", b ?? "")
       )
@@ -60,6 +61,7 @@ const createMetadataResult = (input: MetadataResultInput): TypeMetadata => {
             collectionID: collectionID(row.collectionID),
             name: row.name,
             path: input.paths.entryPath(row.collectionID, row.name),
+            slugPath: input.paths.entrySlugPath(row.collectionID, row.name, row.id),
             schemaRevisionID: revisionID(row.schemaRevisionID)
           }))
           .sort((a, b) => compare(a.id, b.id))

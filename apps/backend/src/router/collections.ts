@@ -230,6 +230,7 @@ const collectionsRouter = handlers.router({
     const { collections, nextCursor } = await Collections.list({
       auth: context.auth,
       collectionID: input.collectionID,
+      collectionSlugPath: input.collectionSlugPath,
       collectionPath: input.collectionPath,
       cursor: input.cursor,
       limit: input.limit

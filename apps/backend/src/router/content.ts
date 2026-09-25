@@ -33,6 +33,7 @@ const contentRouter = handlers.router({
       workspaceID: context.auth.workspaceID,
       entryID: input.entryID,
       path: input.path,
+      slugPath: input.slugPath,
       expectedSchemaHash: input.expectedSchemaHash,
       channel: input.channel,
       snapshotID: input.snapshotID
@@ -50,6 +51,7 @@ const contentRouter = handlers.router({
     const content = await Publishing.Collections.getContentTree({
       workspaceID: context.auth.workspaceID,
       collectionID: input.collectionID,
+      collectionSlugPath: input.collectionSlugPath,
       collectionPath: input.collectionPath,
       channel: input.channel,
       snapshotID: input.snapshotID

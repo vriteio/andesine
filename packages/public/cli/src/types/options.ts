@@ -8,6 +8,7 @@ interface TypeOptions {
   channel?: string;
   snapshot?: string;
   collection?: string[];
+  collectionSlugPath?: string[];
   allCollections?: boolean;
   output?: string;
   includeEntryIds?: boolean;
@@ -34,12 +35,24 @@ const validateTypeOptions = (options: TypeOptions): void => {
     );
   }
 
-  if (options.allCollections && options.collection) {
-    throw new CLIError("Use --collection or --all-collections, not both.", exitCodes.usage);
+  if (options.allCollections && (options.collection || options.collectionSlugPath)) {
+    throw new CLIError("Use collection selectors or --all-collections, not both.", exitCodes.usage);
   }
 };
 
 /** Apply command overrides without changing the saved configuration. */
+const collectionSelectors = (
+  options: TypeOptions,
+  initial: TypesConfig["collections"]
+): TypesConfig["collections"] => {
+  if (options.allCollections) return [];
+  if (options.collection === undefined && options.collectionSlugPath === undefined) return initial;
+
+  return [
+    ...(options.collection ?? []),
+    ...(options.collectionSlugPath ?? []).map((collectionSlugPath) => ({ collectionSlugPath }))
+  ];
+};
 const resolveTypes = (config: ResolvedConfig, options: TypeOptions): TypesConfig => {
   const initial = config.types;
   const directory = config.configPath ? path.dirname(config.configPath) : process.cwd();
@@ -63,7 +76,7 @@ const resolveTypes = (config: ResolvedConfig, options: TypeOptions): TypesConfig
   const parsed = typesConfigSchema.safeParse({
     ...initial,
     source,
-    collections: options.allCollections ? [] : (options.collection ?? initial.collections),
+    collections: collectionSelectors(options, initial.collections),
     output: options.output ?? initial.output,
     includeEntryIDs: options.includeEntryIds ?? initial.includeEntryIDs,
     includeEntryPaths: options.includeEntryPaths ?? initial.includeEntryPaths,
@@ -89,5 +102,5 @@ const resolveTypes = (config: ResolvedConfig, options: TypeOptions): TypesConfig
   return { ...parsed.data, collections: [...new Set(parsed.data.collections)], output };
 };
 
-export { resolveTypes, validateTypeOptions };
+export { resolveTypes, validateTypeOptions, collectionSelectors };
 export type { TypeOptions, GenerateOptions };

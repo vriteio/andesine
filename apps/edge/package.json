@@ -3,10 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "pnpm --filter @andesine/landing build && pnpm --filter @andesine/docs build",
     "dev": "wrangler dev -c wrangler.jsonc -c ../docs/wrangler.jsonc",
     "typecheck": "tsc --noEmit",
-    "predeploy": "pnpm --filter @andesine/landing build && pnpm --filter @andesine/docs build && pnpm typecheck",
     "deploy": "wrangler deploy"
   },
   "devDependencies": {
