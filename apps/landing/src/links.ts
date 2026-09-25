@@ -12,11 +12,6 @@ const links = {
     privacy: "/privacy",
     terms: "/tos"
   },
-  documentation: {
-    home: "/docs/",
-    publishing: "/docs/publishing",
-    api: "/docs/api"
-  },
   vrite: "https://vrite.io/",
   sections: {
     home: "#top",

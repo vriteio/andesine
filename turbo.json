@@ -39,12 +39,6 @@
       "cache": false,
       "persistent": true
     },
-    "preview:cf": {
-      "dependsOn": ["build"],
-      "cache": false,
-      "persistent": true,
-      "interactive": true
-    },
     "deploy": {
       "dependsOn": ["build", "typecheck"],
       "cache": false,
@@ -72,12 +66,6 @@
       "dependsOn": ["build", "typecheck"],
       "cache": false
     },
-    "lint:docs": {
-      "cache": false
-    },
-    "lint:docs:fix": {
-      "cache": false
-    },
     "@andesine/backend#migrate": {
       "dependsOn": ["build"],
       "cache": false
@@ -103,13 +91,13 @@
       "cache": false
     },
     "@andesine/edge#dev": {
-      "dependsOn": ["@andesine/landing#build", "@andesine/docs#build"],
+      "dependsOn": ["@andesine/landing#build"],
       "cache": false,
       "persistent": true,
       "interactive": true
     },
     "@andesine/edge#deploy": {
-      "dependsOn": ["@andesine/landing#build", "@andesine/docs#build", "typecheck"],
+      "dependsOn": ["@andesine/landing#build", "typecheck"],
       "cache": false,
       "interactive": true
     }

@@ -10,11 +10,5 @@
     "binding": "LANDING",
     "run_worker_first": true,
     "not_found_handling": "none"
-  },
-  "services": [
-    {
-      "binding": "DOCS",
-      "service": "andesine-docs"
-    }
-  ]
+  }
 }

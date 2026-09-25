@@ -19,7 +19,6 @@
     "db:migrate": "turbo run db:migrate --filter=@andesine/backend",
     "db:studio": "turbo run db:studio --filter=@andesine/backend",
     "dev:email": "dotenv -- turbo run dev:email --filter=@andesine/templates",
-    "deploy:docs": "dotenv -- turbo run deploy --filter=@andesine/docs",
     "deploy:edge": "dotenv -- turbo run deploy --filter=@andesine/edge"
   },
   "devDependencies": {

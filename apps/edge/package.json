@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev -c wrangler.jsonc -c ../docs/wrangler.jsonc",
+    "dev": "wrangler dev",
     "typecheck": "tsc --noEmit",
     "deploy": "wrangler deploy"
   },

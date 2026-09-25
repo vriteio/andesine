@@ -8,8 +8,7 @@ import {
 } from "../../shared/feature-graphics";
 import { FeatureCard, type FeatureCardProps } from "../../shared/feature-card";
 import { SectionHeadline } from "../../shared/section";
-import { links } from "../../../links";
-import { Button, IconButton } from "@andesine/components/primitives";
+import { IconButton } from "@andesine/components/primitives";
 import { type Component, createSignal, For, onCleanup, onMount } from "solid-js";
 import clsx from "clsx";
 
@@ -135,15 +134,7 @@ const Publishing: Component = () => {
         </ol>
       </div>
       <div class="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 md:gap-8 md:px-8">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div class="flex flex-wrap gap-2">
-            <Button link={links.documentation.api} variant="outlined" color="contrast">
-              API documentation
-            </Button>
-            <Button link={links.documentation.publishing} variant="text">
-              Publishing guide
-            </Button>
-          </div>
+        <div class="flex flex-wrap items-center justify-end gap-3">
           <div class="flex gap-2">
             <IconButton
               icon="i-lucide:arrow-left"

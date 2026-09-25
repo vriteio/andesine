@@ -6,8 +6,7 @@ import { type Component, createSignal, For } from "solid-js";
 const navigation = [
   { label: "Workspace", href: links.sections.editor },
   { label: "Features", href: links.sections.features },
-  { label: "Pricing", href: links.sections.pricing },
-  { label: "Docs", href: links.documentation.home }
+  { label: "Pricing", href: links.sections.pricing }
 ];
 
 // Port of the Vrite landing page's compact, fixed navigation.

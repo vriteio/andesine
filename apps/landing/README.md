@@ -18,11 +18,10 @@ Devices that open this address must trust the certificate's local CA. Restart an
 dev process with the command above to load these settings and remove any old `--host` override.
 
 All navigation destinations are defined in `src/links.ts`, including page anchors, the cloud
-app, GitHub, and documentation. Cloud sign-in and sign-up use same-origin application routes.
-Documentation uses the local `/docs/` route served by the edge Worker. The known GitHub and Vrite destinations remain real URLs. Primary actions
+app, GitHub, and legal pages. Cloud sign-in and sign-up use same-origin application routes.
+The known GitHub and Vrite destinations remain real URLs. Primary actions
 always lead to the cloud app; GitHub is secondary. Links and labels do not depend on environment
-variables. The header and footer include documentation, with dedicated publishing and API guides
-linked from the publishing section. HTTPS development settings remain in the root `.env`.
+variables. HTTPS development settings remain in the root `.env`.
 
 The page reuses compositions from [Vrite](https://vrite.io/) and its
 [original source](https://github.com/vriteio/andesine/tree/main/apps/landing-page): a floating
@@ -55,7 +54,7 @@ JavaScript or with reduced motion, and keyboard focus bypasses any pending anima
 The fonts, favicon, and gradient noise texture are copies of the existing web app assets.
 Feature cards use inline SVG diagrams with CSS animations. The publishing section shows
 content API access, custom channels, versioning, content transformers, and one-way publishing from Andesine to GitHub
-as a wide horizontal strip of shaded cards. API delivery leads the introduction and documentation links. Native scrolling, scroll snapping, edge fades,
+as a wide horizontal strip of shaded cards. API delivery leads the introduction. Native scrolling, scroll snapping, edge fades,
 and previous/next controls support touch, trackpad, and keyboard use. Reduced motion disables smooth
 scrolling. A real repository capture can be added after the feature
 exists; the section currently uses explanatory diagrams only. Verify custom-element syntax, transformer outputs,

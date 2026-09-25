@@ -7,7 +7,6 @@ interface SessionResponse {
 
 interface Env {
   LANDING: Fetcher;
-  DOCS: Fetcher;
   APP_ORIGIN: string;
   API_ORIGIN: string;
 }
@@ -105,37 +104,6 @@ const serveLanding = async (request: Request, env: Env): Promise<Response> => {
   });
 };
 
-const serveDocs = async (request: Request, env: Env): Promise<Response> => {
-  const url = new URL(request.url);
-
-  url.pathname = url.pathname.slice("/docs".length) || "/";
-  const docsRequest = new Request(url, request);
-
-  docsRequest.headers.delete("authorization");
-  docsRequest.headers.delete("cookie");
-
-  const response = await env.DOCS.fetch(docsRequest);
-  const location = response.headers.get("location");
-
-  if (!location) return response;
-
-  const target = new URL(location, url);
-
-  if (target.origin !== url.origin) return response;
-
-  const hasDocsPrefix = target.pathname === "/docs" || target.pathname.startsWith("/docs/");
-  const pathname = hasDocsPrefix ? target.pathname : `/docs${target.pathname}`;
-  const headers = new Headers(response.headers);
-
-  headers.set("location", `${pathname}${target.search}${target.hash}`);
-
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers
-  });
-};
-
 const rewriteAppLocation = (response: Response, appOrigin: URL): Response => {
   const location = response.headers.get("location");
 
@@ -207,16 +175,6 @@ const worker: ExportedHandler<Env> = {
       }
 
       return serveLanding(request, env);
-    }
-
-    if (url.pathname === "/docs" || url.pathname === "/docs/") {
-      url.pathname = "/docs/overview/";
-
-      return Response.redirect(url.toString(), 308);
-    }
-
-    if (url.pathname.startsWith("/docs/")) {
-      return serveDocs(request, env);
     }
 
     if (isLandingAsset(url.pathname)) {
