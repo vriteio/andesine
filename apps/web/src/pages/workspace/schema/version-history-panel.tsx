@@ -1,6 +1,5 @@
 import { createAsync, revalidate, useParams, useSearchParams } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
-import { formatDistanceToNow } from "date-fns";
 import {
   type Component,
   createEffect,
@@ -24,6 +23,7 @@ import {
 } from "#web/lib/data";
 import { useSchemaMigration } from "../use-schema-migration";
 import { VersionHistoryList } from "../version-history/list";
+import { formatRelativeTime } from "#web/lib/primitives";
 
 interface SchemaVersionHistoryPanelProps {
   opened?: boolean;
@@ -62,7 +62,7 @@ const SchemaVersionHistoryPanel: Component<SchemaVersionHistoryPanelProps> = (pr
 
     return [
       {
-        detail: formatDistanceToNow(new Date(version.createdAt), { addSuffix: true }),
+        detail: formatRelativeTime(version.createdAt),
         id: version.id,
         icon: "i-lucide:history",
         label: version.name || `Version ${version.version}`

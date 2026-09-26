@@ -17,6 +17,10 @@ import type { PublishingEntryStatus } from "#backend/lib/publishing";
 import { prepareSchemaMigrationConnections } from "#backend/collaboration";
 import { submitSchemaMigration } from "#backend/lib/queue";
 import type { EffectiveSchemaChangePlan } from "#backend/lib/schema/migration/effective-change";
+import { toWorkspaceID } from "#backend/lib/primitives/id";
+import { createOutboundEvent, createWebhookOperation } from "#backend/lib/webhooks/operation";
+import { createWebhookRecorder } from "#backend/lib/webhooks/recorder";
+import { getWebhookEntryContext } from "#backend/lib/webhooks/entry-context";
 
 interface MoveEntryInput {
   confirmedDataLoss?: boolean;
@@ -158,20 +162,27 @@ const planEntryMove = withAuthorization<MoveEntryInput, ResolvedMoveEntry, MoveE
       }
     }
 
-    await database
-      .update(entries)
-      .set({
-        rank,
-        ...(input.collectionID !== undefined && { collectionID: destinationCollectionID }),
-        updatedAt: new Date()
-      })
-      .where(
-        and(
-          eq(entries.id, entryID),
-          eq(entries.workspaceID, workspaceID),
-          isNull(entries.deletedAt)
-        )
-      );
+    const positionChanged =
+      sourceCollectionID !== destinationCollectionID || resolved.sourceOrder !== rank;
+    const operation = createWebhookOperation(toWorkspaceID(workspaceID));
+    const recorder = positionChanged ? await createWebhookRecorder({ database, operation }) : null;
+
+    if (positionChanged) {
+      await database
+        .update(entries)
+        .set({
+          rank,
+          ...(input.collectionID !== undefined && { collectionID: destinationCollectionID }),
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(entries.id, entryID),
+            eq(entries.workspaceID, workspaceID),
+            isNull(entries.deletedAt)
+          )
+        );
+    }
 
     let schemaMigration: EffectiveSchemaChangePlan = {
       affectedCollectionIDs: [],
@@ -286,6 +297,37 @@ const planEntryMove = withAuthorization<MoveEntryInput, ResolvedMoveEntry, MoveE
           totalEntries: 1
         };
       }
+    }
+
+    if (recorder) {
+      const before = getWebhookEntryContext(recorder.before, {
+        id: entryID,
+        collectionID: sourceCollectionID
+      });
+      const after = getWebhookEntryContext(recorder.before, {
+        id: entryID,
+        collectionID: destinationCollectionID
+      });
+
+      await recorder.record([
+        {
+          event: createOutboundEvent(operation, "moved", {
+            type: "entry.moved",
+            subject: before.subject,
+            data: {
+              scopeTransition: "within",
+              reason: sourceCollectionID === destinationCollectionID ? "reordered" : "direct",
+              from: {
+                visibility: "visible",
+                parentID: before.collectionID,
+                order: resolved.sourceOrder
+              },
+              to: { visibility: "visible", parentID: after.collectionID, order: rank }
+            }
+          }),
+          resources: [{ ...before.subject, before: before.scope, after: after.scope }]
+        }
+      ]);
     }
 
     return {

@@ -4,10 +4,12 @@ import { hasAuthPermission, isAdminAuthorization } from "./permissions";
 import type { SessionData } from "./session";
 
 const rolePermissionRequirements: Partial<Record<Permission, KeyPermission[]>> = {
-  content: ["entries", "collections", "versions", "publishing"],
-  publishing: ["publishing"],
-  memberships: ["memberships"],
-  roles: ["roles"]
+  "content": ["entries", "collections", "versions", "publishing"],
+  "publishing": ["publishing"],
+  "memberships": ["memberships"],
+  "roles": ["roles"],
+  "webhooks": ["webhooks"],
+  "read:webhooks": ["read:webhooks"]
 };
 const canGrantKeyPermission = (auth: SessionData, permission: KeyPermission): boolean => {
   return (

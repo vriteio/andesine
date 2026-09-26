@@ -9,6 +9,10 @@ import { normalizeEntryName } from "#backend/lib/validation";
 import { withAuthorization } from "#backend/lib/policy";
 import type { PublishingEntryStatus } from "#backend/lib/publishing";
 import { getResolvedSchemaDefinition, migrateSchemaContentState } from "#backend/lib/schema";
+import { createOutboundEvent, createWebhookOperation } from "#backend/lib/webhooks/operation";
+import { createWebhookRecorder } from "#backend/lib/webhooks/recorder";
+import { getWebhookEntryContext } from "#backend/lib/webhooks/entry-context";
+import { toWorkspaceID } from "#backend/lib/primitives/id";
 
 interface CreateEntryResult {
   entry: Entry & { path: string; slugPath: string };
@@ -37,6 +41,8 @@ const createEntry = withAuthorization<Partial<Entry>, undefined, CreateEntryResu
   async ({ authorization, database, input, workspaceID }) => {
     const entryID = input.id ? toUUID(input.id) : crypto.randomUUID();
     const collectionID = input.collectionID ? toUUID(input.collectionID) : null;
+    const operation = createWebhookOperation(toWorkspaceID(workspaceID));
+    const recorder = await createWebhookRecorder({ database, operation });
     const name = await getAvailableContentName(database, workspaceID, {
       kind: "entry",
       id: entryID,
@@ -80,7 +86,7 @@ const createEntry = withAuthorization<Partial<Entry>, undefined, CreateEntryResu
         .limit(1);
       const rank = rankBetweenNeighbors(last?.rank);
 
-      await database
+      const [inserted] = await database
         .insert(entries)
         .values({
           id: entryID,
@@ -89,7 +95,8 @@ const createEntry = withAuthorization<Partial<Entry>, undefined, CreateEntryResu
           name,
           rank
         })
-        .onConflictDoNothing({ target: entries.id });
+        .onConflictDoNothing({ target: entries.id })
+        .returning({ id: entries.id });
       const [created] = await database
         .select()
         .from(entries)
@@ -143,6 +150,25 @@ const createEntry = withAuthorization<Partial<Entry>, undefined, CreateEntryResu
           })
         })
         .onConflictDoNothing({ target: contents.entryID });
+
+      if (inserted) {
+        const context = getWebhookEntryContext(recorder.before, created);
+
+        await recorder.record([
+          {
+            event: createOutboundEvent(operation, "created", {
+              type: "entry.created",
+              subject: context.subject,
+              data: {
+                name: created.name,
+                collectionID: context.collectionID,
+                ...(initialContent && { contentHash: initialContent.hash })
+              }
+            }),
+            resources: [{ ...context.subject, before: null, after: context.scope }]
+          }
+        ]);
+      }
 
       return created;
     })();

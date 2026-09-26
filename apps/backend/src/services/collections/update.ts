@@ -1,3 +1,4 @@
+import { createStructureWebhookRecorder } from "#backend/lib/webhooks/structure";
 import { assertContentNameAvailable } from "#backend/lib/content/names";
 import { toUUID } from "#backend/lib/primitives";
 import { collections, type Collection } from "#backend/db";
@@ -34,7 +35,7 @@ const updateCollection = withAuthorization<UpdateCollectionInput>(
     }
 
     const [collection] = await database
-      .select({ parentID: collections.parentID })
+      .select({ parentID: collections.parentID, name: collections.name })
       .from(collections)
       .where(
         and(
@@ -45,6 +46,14 @@ const updateCollection = withAuthorization<UpdateCollectionInput>(
       );
 
     if (!collection?.parentID) throw new ORPCError("NOT_FOUND");
+
+    if (collection.name === name) return;
+
+    const webhooks = await createStructureWebhookRecorder({
+      database,
+      workspaceID,
+      collectionIDs: [input.id]
+    });
 
     await assertContentNameAvailable(database, workspaceID, {
       kind: "collection",
@@ -67,6 +76,8 @@ const updateCollection = withAuthorization<UpdateCollectionInput>(
       .returning({ id: collections.id });
 
     if (updated.length !== 1) throw new ORPCError("NOT_FOUND");
+
+    await webhooks.record();
   }
 );
 

@@ -511,6 +511,280 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/webhooks": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List webhooks
+     * @description Required API key permissions: read:webhooks. Write permissions also grant read access for the same resource.
+     */
+    get: operations["webhooks.list"];
+    put?: never;
+    /**
+     * Create a webhook
+     * @description Creates an enabled webhook unless `enabled` is false and returns the signing secret once. The caller must be able to read every resource type its events send, and restricted content when included.
+     *
+     *     Required API key permissions: webhooks. Write permissions also grant read access for the same resource.
+     */
+    post: operations["webhooks.create"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/webhooks/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get a webhook
+     * @description Required API key permissions: read:webhooks. Write permissions also grant read access for the same resource.
+     */
+    get: operations["webhooks.get"];
+    /**
+     * Update a webhook
+     * @description Checks expectedRevision and validates the merged configuration. A URL change cancels pending deliveries and returns a replacement secret once. Scope changes require authority over the previous and new scope.
+     *
+     *     Required API key permissions: webhooks. Write permissions also grant read access for the same resource.
+     */
+    put: operations["webhooks.update"];
+    post?: never;
+    /**
+     * Delete a webhook
+     * @description Cancels pending deliveries and destroys signing keys. Retains history until its original expiry; a deleted endpoint cannot be replayed.
+     *
+     *     Required API key permissions: webhooks. Write permissions also grant read access for the same resource.
+     */
+    delete: operations["webhooks.delete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/webhooks/bulk/set-enabled": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Enable or disable webhooks
+     * @description Applies the state to every listed webhook in one transaction, checking each expectedRevision. Enabling checks the scope authority and destination of each webhook. Webhooks already in the state are unchanged.
+     *
+     *     Required API key permissions: webhooks. Write permissions also grant read access for the same resource.
+     */
+    post: operations["webhooks.bulkSetEnabled"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/webhooks/bulk/delete": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Delete webhooks
+     * @description Deletes every listed webhook in one transaction, checking each expectedRevision. Each deletion cancels pending deliveries and destroys signing keys; history stays until its original expiry.
+     *
+     *     Required API key permissions: webhooks. Write permissions also grant read access for the same resource.
+     */
+    post: operations["webhooks.bulkDelete"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/webhooks/{id}/rotate-secret": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Rotate a webhook secret
+     * @description Returns a new secret once. Overlap keeps the old secret valid for 24 hours. Immediate rotation retires it at once. Normal rotation conflicts while a previous overlap remains active.
+     *
+     *     Required API key permissions: webhooks. Write permissions also grant read access for the same resource.
+     */
+    post: operations["webhooks.rotateSecret"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/webhooks/{id}/test": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Send a webhook test
+     * @description Schedules one signed synthetic attempt for this endpoint, including when disabled. The event must be selected by the endpoint. It does not enable the endpoint or change content.
+     *
+     *     Required API key permissions: webhooks. Write permissions also grant read access for the same resource.
+     */
+    post: operations["webhooks.sendTest"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/webhooks/{id}/deliveries": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List webhook deliveries
+     * @description Returns unexpired history, including for a deleted endpoint. Metadata does not include event payloads.
+     *
+     *     Required API key permissions: read:webhooks. Write permissions also grant read access for the same resource.
+     */
+    get: operations["webhooks.listDeliveries"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/webhooks/{id}/deliveries/{deliveryID}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get a webhook delivery
+     * @description Returns retained delivery metadata and, with content authority, the immutable event payload. Expired deliveries return not found even before physical cleanup.
+     *
+     *     Required API key permissions: read:webhooks. Write permissions also grant read access for the same resource.
+     */
+    get: operations["webhooks.getDelivery"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/webhooks/{id}/deliveries/{deliveryID}/runs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List delivery runs
+     * @description Required API key permissions: read:webhooks. Write permissions also grant read access for the same resource.
+     */
+    get: operations["webhooks.listRuns"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/webhooks/{id}/deliveries/{deliveryID}/runs/{runID}/attempts": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List delivery attempts
+     * @description Required API key permissions: read:webhooks. Write permissions also grant read access for the same resource.
+     */
+    get: operations["webhooks.listAttempts"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/webhooks/{id}/deliveries/{deliveryID}/redeliver": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Redeliver a webhook event
+     * @description Checks the reviewed destination revision and current scope authority. Reuses the original event ID, payload, and expiry. Returns a conflict if a run is active, or the endpoint is disabled or deleted.
+     *
+     *     Required API key permissions: webhooks. Write permissions also grant read access for the same resource.
+     */
+    post: operations["webhooks.redeliver"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/webhooks/{id}/deliveries/bulk/redeliver": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Redeliver webhook events
+     * @description Replays every listed delivery in one transaction with the same checks as a single redelivery. Any ineligible delivery fails the whole request. Counts as one request for rate limiting.
+     *
+     *     Required API key permissions: webhooks. Write permissions also grant read access for the same resource.
+     */
+    post: operations["webhooks.bulkRedeliver"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/roles": {
     parameters: {
       query?: never;
@@ -1525,6 +1799,561 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    WebhookEvent:
+      | {
+          id: string;
+          operationID: string;
+          /** @constant */
+          schemaVersion: 1;
+          /** Format: date-time */
+          occurredAt: string;
+          workspaceID: string;
+          test: boolean;
+          subject: {
+            /** @constant */
+            kind: "entry";
+            id: string;
+          };
+          /** @constant */
+          type: "entry.created";
+          data: {
+            name: string;
+            collectionID: string | null;
+            contentHash?: string;
+          };
+        }
+      | {
+          id: string;
+          operationID: string;
+          /** @constant */
+          schemaVersion: 1;
+          /** Format: date-time */
+          occurredAt: string;
+          workspaceID: string;
+          test: boolean;
+          subject: {
+            /** @constant */
+            kind: "entry";
+            id: string;
+          };
+          /** @constant */
+          type: "entry.updated";
+          data: {
+            collectionID: string | null;
+            changedFields: "name"[];
+          };
+        }
+      | {
+          id: string;
+          operationID: string;
+          /** @constant */
+          schemaVersion: 1;
+          /** Format: date-time */
+          occurredAt: string;
+          workspaceID: string;
+          test: boolean;
+          subject: {
+            /** @constant */
+            kind: "entry";
+            id: string;
+          };
+          /** @constant */
+          type: "entry.content_saved";
+          data: {
+            collectionID: string | null;
+            contentHash: string;
+            /** Format: date-time */
+            savedAt: string;
+          };
+        }
+      | {
+          id: string;
+          operationID: string;
+          /** @constant */
+          schemaVersion: 1;
+          /** Format: date-time */
+          occurredAt: string;
+          workspaceID: string;
+          test: boolean;
+          subject: {
+            /** @constant */
+            kind: "entry";
+            id: string;
+          };
+          /** @constant */
+          type: "entry.moved";
+          data:
+            | {
+                /** @constant */
+                scopeTransition: "within";
+                /** @enum {string} */
+                reason: "direct" | "ancestor_moved" | "reordered";
+                from: {
+                  /** @constant */
+                  visibility: "visible";
+                  /** @description Null means the workspace root, never a hidden parent */
+                  parentID: string | null;
+                  order?: string;
+                };
+                to: {
+                  /** @constant */
+                  visibility: "visible";
+                  /** @description Null means the workspace root, never a hidden parent */
+                  parentID: string | null;
+                  order?: string;
+                };
+              }
+            | {
+                /** @constant */
+                scopeTransition: "entered";
+                /** @enum {string} */
+                reason: "direct" | "ancestor_moved" | "reordered";
+                from: {
+                  /** @constant */
+                  visibility: "hidden";
+                };
+                to: {
+                  /** @constant */
+                  visibility: "visible";
+                  /** @description Null means the workspace root, never a hidden parent */
+                  parentID: string | null;
+                  order?: string;
+                };
+              }
+            | {
+                /** @constant */
+                scopeTransition: "left";
+                /** @enum {string} */
+                reason: "direct" | "ancestor_moved" | "reordered";
+                from: {
+                  /** @constant */
+                  visibility: "visible";
+                  /** @description Null means the workspace root, never a hidden parent */
+                  parentID: string | null;
+                  order?: string;
+                };
+                to: {
+                  /** @constant */
+                  visibility: "hidden";
+                };
+              };
+        }
+      | {
+          id: string;
+          operationID: string;
+          /** @constant */
+          schemaVersion: 1;
+          /** Format: date-time */
+          occurredAt: string;
+          workspaceID: string;
+          test: boolean;
+          subject: {
+            /** @constant */
+            kind: "entry";
+            id: string;
+          };
+          /** @constant */
+          type: "entry.deleted";
+          data: {
+            name: string;
+            collectionID: string | null;
+            /** Format: date-time */
+            deletedAt: string;
+          };
+        }
+      | {
+          id: string;
+          operationID: string;
+          /** @constant */
+          schemaVersion: 1;
+          /** Format: date-time */
+          occurredAt: string;
+          workspaceID: string;
+          test: boolean;
+          subject: {
+            /** @constant */
+            kind: "entry";
+            id: string;
+          };
+          /** @constant */
+          type: "entry.restored";
+          data: {
+            name: string;
+            collectionID: string | null;
+          };
+        }
+      | {
+          id: string;
+          operationID: string;
+          /** @constant */
+          schemaVersion: 1;
+          /** Format: date-time */
+          occurredAt: string;
+          workspaceID: string;
+          test: boolean;
+          subject: {
+            /** @constant */
+            kind: "collection";
+            id: string;
+          };
+          /** @constant */
+          type: "collection.created";
+          data: {
+            name: string;
+            parentID: string | null;
+          };
+        }
+      | {
+          id: string;
+          operationID: string;
+          /** @constant */
+          schemaVersion: 1;
+          /** Format: date-time */
+          occurredAt: string;
+          workspaceID: string;
+          test: boolean;
+          subject: {
+            /** @constant */
+            kind: "collection";
+            id: string;
+          };
+          /** @constant */
+          type: "collection.updated";
+          data: {
+            parentID: string | null;
+            changedFields: ("name" | "restricted" | "publishingEnabled")[];
+          };
+        }
+      | {
+          id: string;
+          operationID: string;
+          /** @constant */
+          schemaVersion: 1;
+          /** Format: date-time */
+          occurredAt: string;
+          workspaceID: string;
+          test: boolean;
+          subject: {
+            /** @constant */
+            kind: "collection";
+            id: string;
+          };
+          /** @constant */
+          type: "collection.moved";
+          data:
+            | {
+                /** @constant */
+                scopeTransition: "within";
+                /** @enum {string} */
+                reason: "direct" | "ancestor_moved" | "reordered";
+                from: {
+                  /** @constant */
+                  visibility: "visible";
+                  /** @description Null means the workspace root, never a hidden parent */
+                  parentID: string | null;
+                  order?: string;
+                };
+                to: {
+                  /** @constant */
+                  visibility: "visible";
+                  /** @description Null means the workspace root, never a hidden parent */
+                  parentID: string | null;
+                  order?: string;
+                };
+              }
+            | {
+                /** @constant */
+                scopeTransition: "entered";
+                /** @enum {string} */
+                reason: "direct" | "ancestor_moved" | "reordered";
+                from: {
+                  /** @constant */
+                  visibility: "hidden";
+                };
+                to: {
+                  /** @constant */
+                  visibility: "visible";
+                  /** @description Null means the workspace root, never a hidden parent */
+                  parentID: string | null;
+                  order?: string;
+                };
+              }
+            | {
+                /** @constant */
+                scopeTransition: "left";
+                /** @enum {string} */
+                reason: "direct" | "ancestor_moved" | "reordered";
+                from: {
+                  /** @constant */
+                  visibility: "visible";
+                  /** @description Null means the workspace root, never a hidden parent */
+                  parentID: string | null;
+                  order?: string;
+                };
+                to: {
+                  /** @constant */
+                  visibility: "hidden";
+                };
+              };
+        }
+      | {
+          id: string;
+          operationID: string;
+          /** @constant */
+          schemaVersion: 1;
+          /** Format: date-time */
+          occurredAt: string;
+          workspaceID: string;
+          test: boolean;
+          subject: {
+            /** @constant */
+            kind: "collection";
+            id: string;
+          };
+          /** @constant */
+          type: "collection.deleted";
+          data: {
+            name: string;
+            parentID: string | null;
+            /** Format: date-time */
+            deletedAt: string;
+          };
+        }
+      | {
+          id: string;
+          operationID: string;
+          /** @constant */
+          schemaVersion: 1;
+          /** Format: date-time */
+          occurredAt: string;
+          workspaceID: string;
+          test: boolean;
+          subject: {
+            /** @constant */
+            kind: "collection";
+            id: string;
+          };
+          /** @constant */
+          type: "collection.restored";
+          data: {
+            name: string;
+            parentID: string | null;
+          };
+        }
+      | {
+          id: string;
+          operationID: string;
+          /** @constant */
+          schemaVersion: 1;
+          /** Format: date-time */
+          occurredAt: string;
+          workspaceID: string;
+          test: boolean;
+          subject: {
+            /** @constant */
+            kind: "channel";
+            code: string;
+          };
+          /** @constant */
+          type: "publishing.channel_advanced";
+          data: {
+            previousSnapshotID: string;
+            snapshotID: string;
+            /** @enum {string} */
+            reason: "publish" | "unpublish";
+          };
+        }
+      | {
+          id: string;
+          operationID: string;
+          /** @constant */
+          schemaVersion: 1;
+          /** Format: date-time */
+          occurredAt: string;
+          workspaceID: string;
+          test: boolean;
+          subject: {
+            /** @constant */
+            kind: "channel";
+            code: string;
+          };
+          /** @constant */
+          type: "publishing.channel_created";
+          data: {
+            name: string;
+            builtIn: boolean;
+            snapshotID: string;
+          };
+        }
+      | {
+          id: string;
+          operationID: string;
+          /** @constant */
+          schemaVersion: 1;
+          /** Format: date-time */
+          occurredAt: string;
+          workspaceID: string;
+          test: boolean;
+          subject: {
+            /** @constant */
+            kind: "channel";
+            code: string;
+          };
+          /** @constant */
+          type: "publishing.channel_deleted";
+          data: {
+            name: string;
+            snapshotID: string;
+          };
+        };
+    /** @enum {string} */
+    WebhookEventName:
+      | "entry.created"
+      | "entry.updated"
+      | "entry.content_saved"
+      | "entry.moved"
+      | "entry.deleted"
+      | "entry.restored"
+      | "collection.created"
+      | "collection.updated"
+      | "collection.moved"
+      | "collection.deleted"
+      | "collection.restored"
+      | "publishing.channel_advanced"
+      | "publishing.channel_created"
+      | "publishing.channel_deleted";
+    WebhookEndpoint: {
+      name: string;
+      /** Format: uri */
+      url: string;
+      enabled: boolean;
+      eventTypes: components["schemas"]["WebhookEventName"][];
+      /** @constant */
+      schemaVersion: 1;
+      collections:
+        | {
+            /** @constant */
+            mode: "all";
+          }
+        | {
+            /** @constant */
+            mode: "selected";
+            roots: string[];
+          };
+      channels:
+        | {
+            /** @constant */
+            mode: "all";
+          }
+        | {
+            /** @constant */
+            mode: "selected";
+            codes: string[];
+          };
+      /** @description Include restricted collections, including ones restricted later */
+      restrictedContent: boolean;
+      id: string;
+      workspaceID: string;
+      revision: number;
+      destinationRevision: number;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+      disabledReason: ("manual" | "failures") | null;
+      health: {
+        consecutiveFailures: number;
+        firstFailureAt: string | null;
+        lastFailureAt: string | null;
+        lastFailureCategory:
+          ("http_status" | "timeout" | "network" | "destination_policy" | "internal") | null;
+        lastSuccessAt: string | null;
+        pendingCount: number;
+        failedCount: number;
+      };
+      signing: {
+        /** Format: date-time */
+        rotatedAt: string;
+        previousSecretExpiresAt: string | null;
+      };
+    };
+    WebhookDelivery: {
+      id: string;
+      endpointID: string;
+      eventID: string;
+      type: components["schemas"]["WebhookEventName"];
+      /** Format: date-time */
+      occurredAt: string;
+      test: boolean;
+      /** @enum {string} */
+      state: "pending" | "in_flight" | "succeeded" | "failed" | "cancelled";
+      selectedRevision: number;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      expiresAt: string;
+      retentionDays: number;
+      attemptCount: number;
+      currentRunID: string | null;
+      nextAttemptAt: string | null;
+      lastHTTPStatus: number | null;
+      lastFailureCategory:
+        ("http_status" | "timeout" | "network" | "destination_policy" | "internal") | null;
+    };
+    WebhookRun: {
+      id: string;
+      deliveryID: string;
+      number: number;
+      /** @enum {string} */
+      trigger: "automatic" | "manual" | "test";
+      destinationRevision: number;
+      /** @enum {string} */
+      state: "pending" | "in_flight" | "succeeded" | "failed" | "cancelled";
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      deadlineAt: string;
+      finishedAt: string | null;
+      nextAttemptAt: string | null;
+      attemptCount: number;
+      stopReason:
+        | (
+            | "retry_exhausted"
+            | "expired"
+            | "disabled"
+            | "endpoint_deleted"
+            | "destination_changed"
+            | "selection_changed"
+            | "access_revoked"
+            | "destination_policy"
+            | "test_completed"
+          )
+        | null;
+    };
+    WebhookAttempt: {
+      id: string;
+      runID: string;
+      number: number;
+      /** Format: date-time */
+      startedAt: string;
+      finishedAt: string | null;
+      durationMs: number | null;
+      /** @enum {string} */
+      outcome: "in_flight" | "succeeded" | "failed" | "unknown";
+      httpStatus: number | null;
+      failureCategory:
+        ("http_status" | "timeout" | "network" | "destination_policy" | "internal") | null;
+      lateResult: {
+        /** Format: date-time */
+        receivedAt: string;
+        /** @enum {string} */
+        outcome: "succeeded" | "receiver_failure" | "platform_failure";
+        durationMs: number;
+        httpStatus: number | null;
+        failureCategory:
+          ("http_status" | "timeout" | "network" | "destination_policy" | "internal") | null;
+      } | null;
+    };
     TypeMetadata: {
       /** @constant */
       formatVersion: 1;
@@ -1947,6 +2776,8 @@ export interface components {
       | "read:restricted_collections"
       | "memberships"
       | "roles"
+      | "webhooks"
+      | "read:webhooks"
       | "workspace";
     /** @enum {string} */
     BaseRole: "admin" | "viewer";
@@ -2786,6 +3617,12 @@ export interface components {
   headers: never;
   pathItems: never;
 }
+export type WebhookEvent = components["schemas"]["WebhookEvent"];
+export type WebhookEventName = components["schemas"]["WebhookEventName"];
+export type WebhookEndpoint = components["schemas"]["WebhookEndpoint"];
+export type WebhookDelivery = components["schemas"]["WebhookDelivery"];
+export type WebhookRun = components["schemas"]["WebhookRun"];
+export type WebhookAttempt = components["schemas"]["WebhookAttempt"];
 export type TypeMetadata = components["schemas"]["TypeMetadata"];
 export type TypeMetadataCollection = components["schemas"]["TypeMetadataCollection"];
 export type TypeMetadataEntry = components["schemas"]["TypeMetadataEntry"];
@@ -9546,6 +10383,3928 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "webhooks.list": {
+    parameters: {
+      query?: {
+        cursor?: string;
+        limit?: number;
+      };
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            data: components["schemas"]["WebhookEndpoint"][];
+            pagination: components["schemas"]["Pagination"];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "webhooks.create": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          name: string;
+          /** Format: uri */
+          url: string;
+          /** @default true */
+          enabled?: boolean;
+          eventTypes: components["schemas"]["WebhookEventName"][];
+          /** @constant */
+          schemaVersion: 1;
+          collections:
+            | {
+                /** @constant */
+                mode: "all";
+              }
+            | {
+                /** @constant */
+                mode: "selected";
+                roots: string[];
+              };
+          channels:
+            | {
+                /** @constant */
+                mode: "all";
+              }
+            | {
+                /** @constant */
+                mode: "selected";
+                codes: string[];
+              };
+          /** @description Include restricted collections, including ones restricted later */
+          restrictedContent: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            endpoint: components["schemas"]["WebhookEndpoint"];
+            /** @description One-time signing secret. Never returned by configuration or history reads. */
+            secret: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "webhooks.get": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WebhookEndpoint"];
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "webhooks.update": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          name?: string;
+          /** Format: uri */
+          url?: string;
+          enabled?: boolean;
+          eventTypes?: components["schemas"]["WebhookEventName"][];
+          /** @constant */
+          schemaVersion?: 1;
+          collections?:
+            | {
+                /** @constant */
+                mode: "all";
+              }
+            | {
+                /** @constant */
+                mode: "selected";
+                roots: string[];
+              };
+          channels?:
+            | {
+                /** @constant */
+                mode: "all";
+              }
+            | {
+                /** @constant */
+                mode: "selected";
+                codes: string[];
+              };
+          /** @description Include restricted collections, including ones restricted later */
+          restrictedContent?: boolean;
+          expectedRevision: number;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                secretChanged: false;
+                endpoint: components["schemas"]["WebhookEndpoint"];
+              }
+            | {
+                endpoint: components["schemas"]["WebhookEndpoint"];
+                /** @description One-time signing secret. Never returned by configuration or history reads. */
+                secret: string;
+                /** @constant */
+                secretChanged: true;
+              };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "webhooks.delete": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          expectedRevision: number;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": never;
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "webhooks.bulkSetEnabled": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          webhooks: {
+            id: string;
+            expectedRevision: number;
+          }[];
+          enabled: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            data: components["schemas"]["WebhookEndpoint"][];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "webhooks.bulkDelete": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          webhooks: {
+            id: string;
+            expectedRevision: number;
+          }[];
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": never;
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "webhooks.rotateSecret": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          expectedRevision: number;
+          /** @enum {string} */
+          mode: "overlap" | "immediate";
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            endpoint: components["schemas"]["WebhookEndpoint"];
+            /** @description One-time signing secret. Never returned by configuration or history reads. */
+            secret: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "webhooks.sendTest": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          expectedRevision: number;
+          type: components["schemas"]["WebhookEventName"];
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            deliveryID: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "webhooks.listDeliveries": {
+    parameters: {
+      query?: {
+        cursor?: string;
+        limit?: number;
+        type?: components["schemas"]["WebhookEventName"];
+        state?: "pending" | "in_flight" | "succeeded" | "failed" | "cancelled";
+        createdAfter?: string;
+        createdBefore?: string;
+      };
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            data: components["schemas"]["WebhookDelivery"][];
+            pagination: components["schemas"]["Pagination"];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "webhooks.getDelivery": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path: {
+        id: string;
+        deliveryID: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            delivery: components["schemas"]["WebhookDelivery"];
+            payload:
+              | {
+                  /** @constant */
+                  availability: "available";
+                  event: components["schemas"]["WebhookEvent"];
+                }
+              | {
+                  /** @constant */
+                  availability: "forbidden";
+                };
+            currentRun: components["schemas"]["WebhookRun"] | null;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "webhooks.listRuns": {
+    parameters: {
+      query?: {
+        cursor?: string;
+        limit?: number;
+      };
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path: {
+        id: string;
+        deliveryID: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            data: components["schemas"]["WebhookRun"][];
+            pagination: components["schemas"]["Pagination"];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "webhooks.listAttempts": {
+    parameters: {
+      query?: {
+        cursor?: string;
+        limit?: number;
+      };
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path: {
+        id: string;
+        deliveryID: string;
+        runID: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            data: components["schemas"]["WebhookAttempt"][];
+            pagination: components["schemas"]["Pagination"];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "webhooks.redeliver": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path: {
+        id: string;
+        deliveryID: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          expectedDestinationRevision: number;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WebhookRun"];
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "webhooks.bulkRedeliver": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          expectedDestinationRevision: number;
+          deliveryIDs: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            data: components["schemas"]["WebhookRun"][];
+          };
+        };
       };
       /** @description 400 */
       400: {

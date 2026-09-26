@@ -42,6 +42,9 @@ import { applyUpdate, Doc, encodeStateAsUpdate } from "yjs";
 import { clearPendingContributors, getPendingContributors } from "./activity";
 import { getDocumentTitle, setDocumentTitle } from "./document";
 import { fetchSchemaDocument, storeSchemaDocument } from "./schema-database";
+import { createWebhookOperation } from "#backend/lib/webhooks/operation";
+import { createWebhookRecorder } from "#backend/lib/webhooks/recorder";
+import { recordSavedEntryWebhooks } from "#backend/lib/webhooks/entry-save";
 
 const collaborationDatabase = new Database({
   async fetch({ context, documentName }) {
@@ -114,6 +117,7 @@ const collaborationDatabase = new Database({
     const workspaceID = toUUID(lastContext.workspaceID);
     const pendingContributorIDs = getPendingContributors(documentName);
     const contributorIDs = pendingContributorIDs.map(toUUID);
+    const webhookOperationID = lastContext.webhookOperationID;
     const stored = await db.transaction(async (tx) => {
       const [workspace] = await tx
         .select({ id: workspaces.id })
@@ -128,7 +132,8 @@ const collaborationDatabase = new Database({
           id: entries.id,
           collectionID: entries.collectionID,
           workspaceID: entries.workspaceID,
-          name: entries.name
+          name: entries.name,
+          deletedAt: entries.deletedAt
         })
         .from(entries)
         .where(
@@ -176,6 +181,9 @@ const collaborationDatabase = new Database({
 
       if (activeMigration && !preparingMigration) return null;
 
+      const operation = createWebhookOperation(toWorkspaceID(workspaceID), webhookOperationID);
+      const recorder = await createWebhookRecorder({ database: tx, operation });
+
       // Preserve pending edits until the worker saves the recovery version. A move has
       // already changed the collection, so its active schema can be the destination schema.
       const [activeRevision] =
@@ -199,6 +207,8 @@ const collaborationDatabase = new Database({
       const [content] = await tx
         .select({
           state: contents.state,
+          document: contents.document,
+          schemaRevisionID: contents.schemaRevisionID,
           hash: contents.hash,
           publishedHash: entryVersions.hash,
           publishedVersionID: publishingSnapshotEntries.versionID
@@ -224,6 +234,10 @@ const collaborationDatabase = new Database({
       const persistedDocument = new Doc();
 
       if (content?.state) applyUpdate(persistedDocument, new Uint8Array(content.state));
+
+      const previousHash =
+        content?.hash ??
+        hashContentDocument(content?.document ?? serializeContentDocument(persistedDocument));
 
       applyUpdate(persistedDocument, state);
 
@@ -295,7 +309,9 @@ const collaborationDatabase = new Database({
       const document = serializeContentDocument(persistedDocument);
       const hash = hashContentDocument(document);
       const title = getDocumentTitle(persistedDocument);
-      const contentChanged = content?.hash !== hash;
+      const contentChanged = previousHash !== hash;
+      const titleChanged = entry.deletedAt === null && title !== null && entry.name !== title;
+      const savedAt = new Date();
       const publishingEntry = {
         entryID: toEntryID(entry.id),
         matchesPublishedVersion: Boolean(
@@ -312,7 +328,7 @@ const collaborationDatabase = new Database({
           document,
           hash,
           ...(schemaRevisionID !== undefined && { schemaRevisionID }),
-          updatedAt: new Date()
+          updatedAt: savedAt
         })
         .onConflictDoUpdate({
           target: contents.entryID,
@@ -321,7 +337,7 @@ const collaborationDatabase = new Database({
             document,
             hash,
             ...(schemaRevisionID !== undefined && { schemaRevisionID }),
-            updatedAt: new Date()
+            updatedAt: savedAt
           }
         });
 
@@ -382,29 +398,41 @@ const collaborationDatabase = new Database({
         }
       }
 
-      if (title !== null && entry.name !== title) {
+      if (titleChanged) {
         await tx
           .update(entries)
-          .set({ name: title, updatedAt: new Date() })
+          .set({ name: title, updatedAt: savedAt })
           .where(and(eq(entries.id, entryID), isNull(entries.deletedAt)));
-
-        return {
-          contentChanged,
-          contentNormalized: Boolean(normalizedContent?.changed || assetContent.changed),
-          entry,
-          publishingEntry,
-          title
-        };
       }
+
+      await recordSavedEntryWebhooks({
+        database: tx,
+        recorder,
+        operation,
+        entry,
+        document,
+        schemaRevisionID:
+          schemaRevisionID === undefined ? (content?.schemaRevisionID ?? null) : schemaRevisionID,
+        hash,
+        savedAt,
+        contentChanged,
+        titleChanged
+      });
 
       return {
         contentChanged,
         contentNormalized: Boolean(normalizedContent?.changed || assetContent.changed),
         entry,
         publishingEntry,
-        title: null
+        title: titleChanged ? title : null
       };
     });
+
+    // A direct operation owns one committed save. Do not reuse its identity for
+    // later edits if the connection context is retained by a debounced store.
+    if (stored && lastContext.webhookOperationID === webhookOperationID) {
+      delete lastContext.webhookOperationID;
+    }
 
     clearPendingContributors(documentName, pendingContributorIDs);
 

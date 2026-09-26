@@ -48,7 +48,7 @@ API keys keep their workspace binding and cannot list a user's workspaces.
 
 Resource methods are generated from the checked-in OpenAPI document. They cover
 assets, entries, collections, content delivery, roles, search, schemas, schema
-migrations, schema versions, memberships, publishing, entry versions, and instance information. Internal
+migrations, schema versions, memberships, publishing, entry versions, webhooks, and instance information. Internal
 session-only operations are excluded. Published asset delivery does not require
 an API key.
 
@@ -890,3 +890,11 @@ JSON; `event: error` carries the error envelope. Completion is an application
 `completed` event. Comments are ignored, and a transport `done` event cannot
 replace application completion. Event IDs and retry fields never trigger
 reconnection.
+
+## Webhooks
+
+Manage endpoints and delivery history through `client.webhooks`. Verify incoming
+requests in server code with `verifyWebhook` or `verifyWebhookRequest` from
+`@andesine/sdk/webhooks`. Both helpers return a validated, typed event after
+authenticating the unchanged body and checking the five-minute timestamp window.
+See [webhook setup, receivers, rotation, and replay](WEBHOOKS.md).

@@ -226,6 +226,8 @@ andesine api search published --input @search.json --semantic false
 andesine api search ask-published-stream --input @question.json --format text
 andesine api assets upload --asset-id ast_example --file ./image.png
 andesine api type-metadata get-published --collections '["/Tutorials"]'
+andesine api webhooks list
+andesine api webhooks send-test --help
 ```
 
 Pass simple values as flags, or supply an API input object through `--input @file`

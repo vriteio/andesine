@@ -2,7 +2,6 @@ import { type Invite, type Role } from "#backend/db";
 import { useTree, TreeItem } from "#web/components/tree";
 import { type Card, DropdownArea, DropdownMenu, IconButton } from "@andesine/components";
 import clsx from "clsx";
-import { format } from "date-fns";
 import {
   type Component,
   createSignal,
@@ -10,6 +9,7 @@ import {
   createEffect,
   type ComponentProps
 } from "solid-js";
+import { formatDate } from "#web/lib/primitives";
 
 const InviteItem: Component<{
   invite: Invite & { inviteLink: string };
@@ -94,9 +94,7 @@ const InviteItem: Component<{
             <div class="hidden h-4 w-px shrink-0 rounded-full bg-gray-200 md:block" />
             <span class="hidden shrink-0 text-xs text-gray-400 md:inline">{inviteRoleName()}</span>
             <div class="flex-1" />
-            <span class="shrink-0 text-xs text-gray-400">
-              {format(props.invite.createdAt, "MMM d, yyyy")}
-            </span>
+            <span class="shrink-0 text-xs text-gray-400">{formatDate(props.invite.createdAt)}</span>
           </div>
         )}
         actions={

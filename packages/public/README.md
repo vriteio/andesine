@@ -103,8 +103,8 @@ For a local publication, authenticate with `npm login`, then publish
 the checked archive from the repository root. For example:
 
 ```sh
-npm publish dist/packages/andesine-sdk-0.2.0.tgz --access public
-npm publish dist/packages/andesine-0.2.0.tgz --access public
+npm publish dist/packages/andesine-sdk-0.3.0.tgz --access public
+npm publish dist/packages/andesine-0.3.0.tgz --access public
 ```
 
 These commands publish publicly and are examples for an unpublished version only.
@@ -144,6 +144,15 @@ the failed package. npm does not allow replacing an already published version.
    and the configured instance URLs. Keep self-hosted API and web URLs consistent.
 3. Publish `@andesine/sdk@0.2.0` with OAuth and workspace type-map support.
 4. Publish `andesine@0.2.0`, then verify installation against the published SDK.
+
+## Webhooks rollout order (0.3.0)
+
+1. Apply backend migration `0030_add_webhooks.sql`. Set the same `ENCRYPTION_KEYS`
+   and webhook destination settings for the backend and worker, then deploy both.
+2. Deploy the web app with the webhook settings and events pages.
+3. Publish `@andesine/sdk@0.3.0` with webhook methods and the `@andesine/sdk/webhooks`
+   verifier.
+4. Publish `andesine@0.3.0`, then verify installation against the published SDK.
 
 Deployment and publication are separate actions; they were not performed during
 implementation. See the [CLI release review](./CLI-RELEASE-REVIEW.md) for package

@@ -13,6 +13,8 @@ const keyPermissionRequirements: Record<KeyPermission, Permission[]> = {
   "read:memberships": [],
   "roles": ["roles"],
   "read:roles": [],
+  "webhooks": ["webhooks"],
+  "read:webhooks": ["read:webhooks"],
   // All session users can ask AI; key management still requires api_keys.
   "ai-answers": []
 };

@@ -1,6 +1,6 @@
 {
   "name": "@andesine/sdk",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "TypeScript API client for Andesine",
   "type": "module",
   "license": "MIT",
@@ -10,7 +10,8 @@
     "LICENSE",
     "README.md",
     "CHANGELOG.md",
-    "openapi.json"
+    "openapi.json",
+    "WEBHOOKS.md"
   ],
   "exports": {
     ".": {
@@ -24,6 +25,10 @@
     "./slug": {
       "types": "./dist/content-slug.d.ts",
       "import": "./dist/content-slug.js"
+    },
+    "./webhooks": {
+      "types": "./dist/webhooks.d.ts",
+      "import": "./dist/webhooks.js"
     }
   },
   "scripts": {
@@ -48,7 +53,9 @@
     "rolldown": "^1.2.2",
     "rolldown-plugin-dts": "^0.28.6",
     "tsx": "^4.23.5",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1"
   },
   "dependencies": {
     "@orpc/standard-server": "1.14.14",

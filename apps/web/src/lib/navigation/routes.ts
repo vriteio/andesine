@@ -20,6 +20,8 @@ import GroupSettingsPage from "../../pages/workspace/settings/group/page";
 import BillingSettingsPage from "../../pages/workspace/settings/billing/page";
 import APISettingsPage from "../../pages/workspace/settings/api/page";
 import KeySettingsPage from "../../pages/workspace/settings/key/page";
+import WebhookSettingsPage from "../../pages/workspace/settings/webhook/page";
+import WebhookEventsPage from "../../pages/workspace/settings/webhook-events/page";
 
 const AuthLayout = lazy(() => import("../../pages/auth/layout"));
 const DevicePage = lazy(() => import("../../pages/auth/device/page"));
@@ -105,6 +107,25 @@ const routesData: Record<string, (params: Params) => RouteData> = {
         path: `/settings/key/${params.keyID || ""}`
       }
     ]
+  }),
+  "/:workspaceID/settings/webhook/:webhookID?": (params) => ({
+    title: params.webhookID ? "Edit webhook" : "Create webhook",
+    breadcrumbs: [
+      { label: "Settings" },
+      { label: "API", path: "/settings/api" },
+      {
+        label: params.webhookID ? "Edit webhook" : "Create webhook",
+        path: `/settings/webhook/${params.webhookID || ""}`
+      }
+    ]
+  }),
+  "/:workspaceID/settings/webhook/:webhookID/events": (params) => ({
+    title: "Webhook events",
+    breadcrumbs: [
+      { label: "Settings" },
+      { label: "API", path: "/settings/api" },
+      { label: "Webhook events", path: `/settings/webhook/${params.webhookID}/events` }
+    ]
   })
 };
 const routes: RouteDefinition[] = [
@@ -173,6 +194,14 @@ const routes: RouteDefinition[] = [
           {
             path: "/key/:keyID?",
             component: KeySettingsPage
+          },
+          {
+            path: "/webhook/:webhookID/events",
+            component: WebhookEventsPage
+          },
+          {
+            path: "/webhook/:webhookID?",
+            component: WebhookSettingsPage
           }
         ]
       },
@@ -217,7 +246,8 @@ const useRouteData = (): Accessor<RouteData | null> => {
     const optionalRoutePatterns: Record<string, string> = {
       group: "/:workspaceID/settings/group/:groupID?",
       key: "/:workspaceID/settings/key/:keyID?",
-      role: "/:workspaceID/settings/role/:roleID?"
+      role: "/:workspaceID/settings/role/:roleID?",
+      webhook: "/:workspaceID/settings/webhook/:webhookID?"
     };
     const optionalRouteData = settingsRoute
       ? routesData[optionalRoutePatterns[settingsRoute]]

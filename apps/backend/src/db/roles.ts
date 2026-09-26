@@ -16,6 +16,8 @@ const permissionEnum = pgEnum("permission", [
   "read:restricted_collections",
   "memberships",
   "roles",
+  "webhooks",
+  "read:webhooks",
   "workspace"
 ]);
 const baseRoleEnum = pgEnum("base_role", ["admin", "viewer"]);
@@ -30,6 +32,8 @@ const permissionType = z.enum([
   "read:restricted_collections",
   "memberships",
   "roles",
+  "webhooks",
+  "read:webhooks",
   "workspace"
 ]);
 const baseRoleType = z.enum(["admin", "viewer"]);

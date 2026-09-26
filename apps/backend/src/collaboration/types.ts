@@ -12,6 +12,8 @@ interface CollaborationContext {
   resource?: "entry" | "schema";
   schemaID?: string;
   schemaMigrationReadOnly?: boolean;
+  // Server-side direct operations can link a later persisted save to their event.
+  webhookOperationID?: string;
   workspaceID?: string;
 }
 interface ContentSnapshot {

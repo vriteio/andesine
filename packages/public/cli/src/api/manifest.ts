@@ -6246,6 +6246,1393 @@ const commands: APICommand[] = [
     response: "empty"
   },
   {
+    id: "webhooks.bulkDelete",
+    group: "webhooks",
+    command: "bulk-delete",
+    method: "post",
+    path: "/webhooks/bulk/delete",
+    summary: "Delete webhooks",
+    description:
+      "Deletes every listed webhook in one transaction, checking each expectedRevision. Each deletion cancels pending deliveries and destroys signing keys; history stays until its original expiry.\n\nRequired API key permissions: webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "webhooks",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          minItems: 1,
+          maxItems: 10,
+          items: {
+            type: "object",
+            properties: {
+              id: {
+                type: "string",
+                pattern: "^wh_[A-Za-z\\d]{1,22}$"
+              },
+              expectedRevision: {
+                type: "integer",
+                minimum: -9007199254740991,
+                maximum: 9007199254740991,
+                exclusiveMinimum: 0
+              }
+            },
+            required: ["id", "expectedRevision"],
+            additionalProperties: false
+          }
+        },
+        flag: "webhooks",
+        kind: "json",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "webhooks.bulkRedeliver",
+    group: "webhooks",
+    command: "bulk-redeliver",
+    method: "post",
+    path: "/webhooks/{id}/deliveries/bulk/redeliver",
+    summary: "Redeliver webhook events",
+    description:
+      "Replays every listed delivery in one transaction with the same checks as a single redelivery. Any ineligible delivery fails the whole request. Counts as one request for rate limiting.\n\nRequired API key permissions: webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          pattern: "^wh_[A-Za-z\\d]{1,22}$"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedDestinationRevision",
+        location: "body",
+        required: true,
+        schema: {
+          type: "integer",
+          minimum: -9007199254740991,
+          maximum: 9007199254740991,
+          exclusiveMinimum: 0
+        },
+        flag: "expected-destination-revision",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "deliveryIDs",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          minItems: 1,
+          maxItems: 25,
+          items: {
+            type: "string",
+            pattern: "^whdel_[A-Za-z\\d]{1,22}$"
+          }
+        },
+        flag: "delivery-ids",
+        kind: "json",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "webhooks.bulkSetEnabled",
+    group: "webhooks",
+    command: "bulk-set-enabled",
+    method: "post",
+    path: "/webhooks/bulk/set-enabled",
+    summary: "Enable or disable webhooks",
+    description:
+      "Applies the state to every listed webhook in one transaction, checking each expectedRevision. Enabling checks the scope authority and destination of each webhook. Webhooks already in the state are unchanged.\n\nRequired API key permissions: webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "webhooks",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          minItems: 1,
+          maxItems: 10,
+          items: {
+            type: "object",
+            properties: {
+              id: {
+                type: "string",
+                pattern: "^wh_[A-Za-z\\d]{1,22}$"
+              },
+              expectedRevision: {
+                type: "integer",
+                minimum: -9007199254740991,
+                maximum: 9007199254740991,
+                exclusiveMinimum: 0
+              }
+            },
+            required: ["id", "expectedRevision"],
+            additionalProperties: false
+          }
+        },
+        flag: "webhooks",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "enabled",
+        location: "body",
+        required: true,
+        schema: {
+          type: "boolean"
+        },
+        flag: "enabled",
+        kind: "boolean",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "webhooks.create",
+    group: "webhooks",
+    command: "create",
+    method: "post",
+    path: "/webhooks",
+    summary: "Create a webhook",
+    description:
+      "Creates an enabled webhook unless `enabled` is false and returns the signing secret once. The caller must be able to read every resource type its events send, and restricted content when included.\n\nRequired API key permissions: webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "name",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string",
+          minLength: 1,
+          maxLength: 100
+        },
+        flag: "name",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "url",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string",
+          maxLength: 2048,
+          format: "uri"
+        },
+        flag: "url",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "enabled",
+        location: "body",
+        required: false,
+        schema: {
+          type: "boolean",
+          default: true
+        },
+        flag: "enabled",
+        kind: "boolean",
+        nullable: false
+      },
+      {
+        name: "eventTypes",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          minItems: 1,
+          maxItems: 14,
+          items: {
+            $ref: "#/components/schemas/WebhookEventName"
+          }
+        },
+        flag: "event-types",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "schemaVersion",
+        location: "body",
+        required: true,
+        schema: {
+          const: 1
+        },
+        flag: "schema-version",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "collections",
+        location: "body",
+        required: true,
+        schema: {
+          anyOf: [
+            {
+              type: "object",
+              properties: {
+                mode: {
+                  const: "all"
+                }
+              },
+              required: ["mode"],
+              additionalProperties: false
+            },
+            {
+              type: "object",
+              properties: {
+                mode: {
+                  const: "selected"
+                },
+                roots: {
+                  type: "array",
+                  minItems: 1,
+                  maxItems: 100,
+                  items: {
+                    type: "string",
+                    pattern: "^coll_[A-Za-z\\d]{1,22}$"
+                  }
+                }
+              },
+              required: ["mode", "roots"],
+              additionalProperties: false
+            }
+          ]
+        },
+        flag: "collections",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "channels",
+        location: "body",
+        required: true,
+        schema: {
+          anyOf: [
+            {
+              type: "object",
+              properties: {
+                mode: {
+                  const: "all"
+                }
+              },
+              required: ["mode"],
+              additionalProperties: false
+            },
+            {
+              type: "object",
+              properties: {
+                mode: {
+                  const: "selected"
+                },
+                codes: {
+                  type: "array",
+                  minItems: 1,
+                  maxItems: 100,
+                  items: {
+                    type: "string",
+                    minLength: 1,
+                    maxLength: 50
+                  }
+                }
+              },
+              required: ["mode", "codes"],
+              additionalProperties: false
+            }
+          ]
+        },
+        flag: "channels",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "restrictedContent",
+        location: "body",
+        required: true,
+        schema: {
+          type: "boolean",
+          description: "Include restricted collections, including ones restricted later"
+        },
+        flag: "restricted-content",
+        kind: "boolean",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "webhooks.delete",
+    group: "webhooks",
+    command: "delete",
+    method: "delete",
+    path: "/webhooks/{id}",
+    summary: "Delete a webhook",
+    description:
+      "Cancels pending deliveries and destroys signing keys. Retains history until its original expiry; a deleted endpoint cannot be replayed.\n\nRequired API key permissions: webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          pattern: "^wh_[A-Za-z\\d]{1,22}$"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedRevision",
+        location: "body",
+        required: true,
+        schema: {
+          type: "integer",
+          minimum: -9007199254740991,
+          maximum: 9007199254740991,
+          exclusiveMinimum: 0
+        },
+        flag: "expected-revision",
+        kind: "number",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "webhooks.get",
+    group: "webhooks",
+    command: "get",
+    method: "get",
+    path: "/webhooks/{id}",
+    summary: "Get a webhook",
+    description:
+      "Required API key permissions: read:webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          pattern: "^wh_[A-Za-z\\d]{1,22}$"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "webhooks.getDelivery",
+    group: "webhooks",
+    command: "get-delivery",
+    method: "get",
+    path: "/webhooks/{id}/deliveries/{deliveryID}",
+    summary: "Get a webhook delivery",
+    description:
+      "Returns retained delivery metadata and, with content authority, the immutable event payload. Expired deliveries return not found even before physical cleanup.\n\nRequired API key permissions: read:webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          pattern: "^wh_[A-Za-z\\d]{1,22}$"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "deliveryID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          pattern: "^whdel_[A-Za-z\\d]{1,22}$"
+        },
+        flag: "delivery-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "webhooks.list",
+    group: "webhooks",
+    command: "list",
+    method: "get",
+    path: "/webhooks",
+    summary: "List webhooks",
+    description:
+      "Required API key permissions: read:webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "cursor",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
+          description: "Cursor from the previous page; keep the same filters"
+        },
+        flag: "cursor",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "query",
+        required: false,
+        schema: {
+          type: "integer",
+          minimum: 1,
+          maximum: 100,
+          default: 50
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json",
+    pagination: "cursor"
+  },
+  {
+    id: "webhooks.listAttempts",
+    group: "webhooks",
+    command: "list-attempts",
+    method: "get",
+    path: "/webhooks/{id}/deliveries/{deliveryID}/runs/{runID}/attempts",
+    summary: "List delivery attempts",
+    description:
+      "Required API key permissions: read:webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          pattern: "^wh_[A-Za-z\\d]{1,22}$"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "deliveryID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          pattern: "^whdel_[A-Za-z\\d]{1,22}$"
+        },
+        flag: "delivery-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "runID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          pattern: "^whrun_[A-Za-z\\d]{1,22}$"
+        },
+        flag: "run-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "cursor",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          pattern: "^whatt_[A-Za-z\\d]{1,22}$"
+        },
+        flag: "cursor",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "query",
+        required: false,
+        schema: {
+          type: "integer",
+          minimum: 1,
+          maximum: 100,
+          default: 50
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json",
+    pagination: "cursor"
+  },
+  {
+    id: "webhooks.listDeliveries",
+    group: "webhooks",
+    command: "list-deliveries",
+    method: "get",
+    path: "/webhooks/{id}/deliveries",
+    summary: "List webhook deliveries",
+    description:
+      "Returns unexpired history, including for a deleted endpoint. Metadata does not include event payloads.\n\nRequired API key permissions: read:webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          pattern: "^wh_[A-Za-z\\d]{1,22}$"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "cursor",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          pattern: "^whdel_[A-Za-z\\d]{1,22}$"
+        },
+        flag: "cursor",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "query",
+        required: false,
+        schema: {
+          type: "integer",
+          minimum: 1,
+          maximum: 100,
+          default: 50
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "type",
+        location: "query",
+        required: false,
+        schema: {
+          $ref: "#/components/schemas/WebhookEventName"
+        },
+        flag: "type",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "state",
+        location: "query",
+        required: false,
+        schema: {
+          enum: ["pending", "in_flight", "succeeded", "failed", "cancelled"],
+          type: "string"
+        },
+        flag: "state",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "createdAfter",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          format: "date-time"
+        },
+        flag: "created-after",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "createdBefore",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          format: "date-time"
+        },
+        flag: "created-before",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json",
+    pagination: "cursor"
+  },
+  {
+    id: "webhooks.listRuns",
+    group: "webhooks",
+    command: "list-runs",
+    method: "get",
+    path: "/webhooks/{id}/deliveries/{deliveryID}/runs",
+    summary: "List delivery runs",
+    description:
+      "Required API key permissions: read:webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          pattern: "^wh_[A-Za-z\\d]{1,22}$"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "deliveryID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          pattern: "^whdel_[A-Za-z\\d]{1,22}$"
+        },
+        flag: "delivery-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "cursor",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          pattern: "^whrun_[A-Za-z\\d]{1,22}$"
+        },
+        flag: "cursor",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "query",
+        required: false,
+        schema: {
+          type: "integer",
+          minimum: 1,
+          maximum: 100,
+          default: 50
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json",
+    pagination: "cursor"
+  },
+  {
+    id: "webhooks.redeliver",
+    group: "webhooks",
+    command: "redeliver",
+    method: "post",
+    path: "/webhooks/{id}/deliveries/{deliveryID}/redeliver",
+    summary: "Redeliver a webhook event",
+    description:
+      "Checks the reviewed destination revision and current scope authority. Reuses the original event ID, payload, and expiry. Returns a conflict if a run is active, or the endpoint is disabled or deleted.\n\nRequired API key permissions: webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          pattern: "^wh_[A-Za-z\\d]{1,22}$"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "deliveryID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          pattern: "^whdel_[A-Za-z\\d]{1,22}$"
+        },
+        flag: "delivery-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedDestinationRevision",
+        location: "body",
+        required: true,
+        schema: {
+          type: "integer",
+          minimum: -9007199254740991,
+          maximum: 9007199254740991,
+          exclusiveMinimum: 0
+        },
+        flag: "expected-destination-revision",
+        kind: "number",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "webhooks.rotateSecret",
+    group: "webhooks",
+    command: "rotate-secret",
+    method: "post",
+    path: "/webhooks/{id}/rotate-secret",
+    summary: "Rotate a webhook secret",
+    description:
+      "Returns a new secret once. Overlap keeps the old secret valid for 24 hours. Immediate rotation retires it at once. Normal rotation conflicts while a previous overlap remains active.\n\nRequired API key permissions: webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          pattern: "^wh_[A-Za-z\\d]{1,22}$"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedRevision",
+        location: "body",
+        required: true,
+        schema: {
+          type: "integer",
+          minimum: -9007199254740991,
+          maximum: 9007199254740991,
+          exclusiveMinimum: 0
+        },
+        flag: "expected-revision",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "mode",
+        location: "body",
+        required: true,
+        schema: {
+          enum: ["overlap", "immediate"],
+          type: "string"
+        },
+        flag: "mode",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "webhooks.sendTest",
+    group: "webhooks",
+    command: "send-test",
+    method: "post",
+    path: "/webhooks/{id}/test",
+    summary: "Send a webhook test",
+    description:
+      "Schedules one signed synthetic attempt for this endpoint, including when disabled. The event must be selected by the endpoint. It does not enable the endpoint or change content.\n\nRequired API key permissions: webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          pattern: "^wh_[A-Za-z\\d]{1,22}$"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedRevision",
+        location: "body",
+        required: true,
+        schema: {
+          type: "integer",
+          minimum: -9007199254740991,
+          maximum: 9007199254740991,
+          exclusiveMinimum: 0
+        },
+        flag: "expected-revision",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "type",
+        location: "body",
+        required: true,
+        schema: {
+          $ref: "#/components/schemas/WebhookEventName"
+        },
+        flag: "type",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "webhooks.update",
+    group: "webhooks",
+    command: "update",
+    method: "put",
+    path: "/webhooks/{id}",
+    summary: "Update a webhook",
+    description:
+      "Checks expectedRevision and validates the merged configuration. A URL change cancels pending deliveries and returns a replacement secret once. Scope changes require authority over the previous and new scope.\n\nRequired API key permissions: webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          pattern: "^wh_[A-Za-z\\d]{1,22}$"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "name",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          minLength: 1,
+          maxLength: 100
+        },
+        flag: "name",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "url",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          maxLength: 2048,
+          format: "uri"
+        },
+        flag: "url",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "enabled",
+        location: "body",
+        required: false,
+        schema: {
+          type: "boolean"
+        },
+        flag: "enabled",
+        kind: "boolean",
+        nullable: false
+      },
+      {
+        name: "eventTypes",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          minItems: 1,
+          maxItems: 14,
+          items: {
+            $ref: "#/components/schemas/WebhookEventName"
+          }
+        },
+        flag: "event-types",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "schemaVersion",
+        location: "body",
+        required: false,
+        schema: {
+          const: 1
+        },
+        flag: "schema-version",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "collections",
+        location: "body",
+        required: false,
+        schema: {
+          anyOf: [
+            {
+              type: "object",
+              properties: {
+                mode: {
+                  const: "all"
+                }
+              },
+              required: ["mode"],
+              additionalProperties: false
+            },
+            {
+              type: "object",
+              properties: {
+                mode: {
+                  const: "selected"
+                },
+                roots: {
+                  type: "array",
+                  minItems: 1,
+                  maxItems: 100,
+                  items: {
+                    type: "string",
+                    pattern: "^coll_[A-Za-z\\d]{1,22}$"
+                  }
+                }
+              },
+              required: ["mode", "roots"],
+              additionalProperties: false
+            }
+          ]
+        },
+        flag: "collections",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "channels",
+        location: "body",
+        required: false,
+        schema: {
+          anyOf: [
+            {
+              type: "object",
+              properties: {
+                mode: {
+                  const: "all"
+                }
+              },
+              required: ["mode"],
+              additionalProperties: false
+            },
+            {
+              type: "object",
+              properties: {
+                mode: {
+                  const: "selected"
+                },
+                codes: {
+                  type: "array",
+                  minItems: 1,
+                  maxItems: 100,
+                  items: {
+                    type: "string",
+                    minLength: 1,
+                    maxLength: 50
+                  }
+                }
+              },
+              required: ["mode", "codes"],
+              additionalProperties: false
+            }
+          ]
+        },
+        flag: "channels",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "restrictedContent",
+        location: "body",
+        required: false,
+        schema: {
+          type: "boolean",
+          description: "Include restricted collections, including ones restricted later"
+        },
+        flag: "restricted-content",
+        kind: "boolean",
+        nullable: false
+      },
+      {
+        name: "expectedRevision",
+        location: "body",
+        required: true,
+        schema: {
+          type: "integer",
+          minimum: -9007199254740991,
+          maximum: 9007199254740991,
+          exclusiveMinimum: 0
+        },
+        flag: "expected-revision",
+        kind: "number",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
     id: "workspaces.list",
     group: "workspaces",
     command: "list",
@@ -6381,6 +7768,25 @@ const schemas: Record<string, JSONSchema> = {
     },
     required: ["kind", "key", "operator", "value"]
   },
+  WebhookEventName: {
+    enum: [
+      "entry.created",
+      "entry.updated",
+      "entry.content_saved",
+      "entry.moved",
+      "entry.deleted",
+      "entry.restored",
+      "collection.created",
+      "collection.updated",
+      "collection.moved",
+      "collection.deleted",
+      "collection.restored",
+      "publishing.channel_advanced",
+      "publishing.channel_created",
+      "publishing.channel_deleted"
+    ],
+    type: "string"
+  },
   Permission: {
     enum: [
       "content",
@@ -6393,6 +7799,8 @@ const schemas: Record<string, JSONSchema> = {
       "read:restricted_collections",
       "memberships",
       "roles",
+      "webhooks",
+      "read:webhooks",
       "workspace"
     ],
     type: "string"

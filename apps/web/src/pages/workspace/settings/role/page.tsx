@@ -27,6 +27,7 @@ type Resource =
   | "restricted_collections"
   | "memberships"
   | "roles"
+  | "webhooks"
   | "workspace";
 type ResourceAccess = Record<Resource, AccessLevel>;
 
@@ -64,6 +65,11 @@ const resources: Array<{
     description: "View or manage subscriptions and payments"
   },
   {
+    id: "webhooks",
+    label: "Webhooks",
+    description: "View or manage webhooks"
+  },
+  {
     id: "memberships",
     label: "Members",
     description: "Invite and remove members, manage groups, and assign permitted roles",
@@ -89,6 +95,7 @@ const { accessToPermissions, emptyAccess, permissionsToAccess } = createPermissi
   resources: [
     { id: "api_keys", read: "read:api_keys", write: "api_keys" },
     { id: "billing", read: "read:billing", write: "billing" },
+    { id: "webhooks", read: "read:webhooks", write: "webhooks" },
     { id: "content", write: "content" },
     { id: "publishing", write: "publishing" },
     {

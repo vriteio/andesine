@@ -1,6 +1,9 @@
 import { assertPublishingSnapshot } from "#backend/lib/publishing/precondition";
 import { publishingChannels, publishingSnapshots } from "#backend/db";
 import { withAuthorization } from "#backend/lib/policy";
+import { toSnapshotID, toWorkspaceID } from "#backend/lib/primitives";
+import { createOutboundEvent, createWebhookOperation } from "#backend/lib/webhooks/operation";
+import { createWebhookRecorder } from "#backend/lib/webhooks/recorder";
 import {
   getPublishingSnapshotExpiry,
   normalizePublishingChannelCode
@@ -19,18 +22,21 @@ interface DeleteChannelResult {
 const deleteChannel = withAuthorization<DeleteChannelInput, undefined, DeleteChannelResult>(
   {
     permissions: { session: ["publishing"], key: ["publishing"] },
-    transaction: "atomic"
+    transaction: "locked-workspace"
   },
   async ({ auth, database, input, workspaceID }) => {
-    await assertPublishingSnapshot(database, workspaceID, input.code, input.expectedSnapshotID);
-
     const code = normalizePublishingChannelCode(input.code);
     const now = new Date();
     const expiresAt = getPublishingSnapshotExpiry(auth.subscriptionPlan, now);
+    const operation = createWebhookOperation(toWorkspaceID(workspaceID));
+    const recorder = await createWebhookRecorder({ database, operation });
+
+    await assertPublishingSnapshot(database, workspaceID, input.code, input.expectedSnapshotID);
 
     const [channel] = await database
       .select({
         id: publishingChannels.id,
+        name: publishingChannels.name,
         builtIn: publishingChannels.builtIn,
         currentSnapshotID: publishingChannels.currentSnapshotID
       })
@@ -65,6 +71,22 @@ const deleteChannel = withAuthorization<DeleteChannelInput, undefined, DeleteCha
       .update(publishingChannels)
       .set({ currentSnapshotID: null, deletedAt: now, updatedAt: now })
       .where(eq(publishingChannels.id, channel.id));
+
+    await recorder.record([
+      {
+        event: createOutboundEvent(
+          operation,
+          "channel-deleted",
+          {
+            type: "publishing.channel_deleted",
+            subject: { kind: "channel", code },
+            data: { name: channel.name, snapshotID: toSnapshotID(channel.currentSnapshotID) }
+          },
+          now
+        ),
+        resources: []
+      }
+    ]);
 
     return { channelID: channel.id };
   }

@@ -38,7 +38,7 @@ const Checkbox: Component<CheckboxProps> = (props) => (
         props.controlClass
       )}
     >
-      <BaseCheckbox.Indicator>
+      <BaseCheckbox.Indicator indeterminate={props.checked === "indeterminate"}>
         <div
           class={clsx(
             ":base: text-white",

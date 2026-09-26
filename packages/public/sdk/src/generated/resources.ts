@@ -356,6 +356,120 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
      */
     getTree: Operation<"content.getTree", Workspace>;
   };
+  webhooks: {
+    /**
+     * List webhooks
+     *
+     * Required API key permissions: read:webhooks. Write permissions also grant read access for the same resource.
+     */
+    list: Operation<"webhooks.list", Workspace>;
+    /**
+     * Create a webhook
+     *
+     * Creates an enabled webhook unless `enabled` is false and returns the signing secret once. The caller must be able to read every resource type its events send, and restricted content when included.
+     *
+     * Required API key permissions: webhooks. Write permissions also grant read access for the same resource.
+     */
+    create: Operation<"webhooks.create", Workspace>;
+    /**
+     * Get a webhook
+     *
+     * Required API key permissions: read:webhooks. Write permissions also grant read access for the same resource.
+     */
+    get: Operation<"webhooks.get", Workspace>;
+    /**
+     * Update a webhook
+     *
+     * Checks expectedRevision and validates the merged configuration. A URL change cancels pending deliveries and returns a replacement secret once. Scope changes require authority over the previous and new scope.
+     *
+     * Required API key permissions: webhooks. Write permissions also grant read access for the same resource.
+     */
+    update: Operation<"webhooks.update", Workspace>;
+    /**
+     * Delete a webhook
+     *
+     * Cancels pending deliveries and destroys signing keys. Retains history until its original expiry; a deleted endpoint cannot be replayed.
+     *
+     * Required API key permissions: webhooks. Write permissions also grant read access for the same resource.
+     */
+    delete: Operation<"webhooks.delete", Workspace>;
+    /**
+     * Enable or disable webhooks
+     *
+     * Applies the state to every listed webhook in one transaction, checking each expectedRevision. Enabling checks the scope authority and destination of each webhook. Webhooks already in the state are unchanged.
+     *
+     * Required API key permissions: webhooks. Write permissions also grant read access for the same resource.
+     */
+    bulkSetEnabled: Operation<"webhooks.bulkSetEnabled", Workspace>;
+    /**
+     * Delete webhooks
+     *
+     * Deletes every listed webhook in one transaction, checking each expectedRevision. Each deletion cancels pending deliveries and destroys signing keys; history stays until its original expiry.
+     *
+     * Required API key permissions: webhooks. Write permissions also grant read access for the same resource.
+     */
+    bulkDelete: Operation<"webhooks.bulkDelete", Workspace>;
+    /**
+     * Rotate a webhook secret
+     *
+     * Returns a new secret once. Overlap keeps the old secret valid for 24 hours. Immediate rotation retires it at once. Normal rotation conflicts while a previous overlap remains active.
+     *
+     * Required API key permissions: webhooks. Write permissions also grant read access for the same resource.
+     */
+    rotateSecret: Operation<"webhooks.rotateSecret", Workspace>;
+    /**
+     * Send a webhook test
+     *
+     * Schedules one signed synthetic attempt for this endpoint, including when disabled. The event must be selected by the endpoint. It does not enable the endpoint or change content.
+     *
+     * Required API key permissions: webhooks. Write permissions also grant read access for the same resource.
+     */
+    sendTest: Operation<"webhooks.sendTest", Workspace>;
+    /**
+     * List webhook deliveries
+     *
+     * Returns unexpired history, including for a deleted endpoint. Metadata does not include event payloads.
+     *
+     * Required API key permissions: read:webhooks. Write permissions also grant read access for the same resource.
+     */
+    listDeliveries: Operation<"webhooks.listDeliveries", Workspace>;
+    /**
+     * Get a webhook delivery
+     *
+     * Returns retained delivery metadata and, with content authority, the immutable event payload. Expired deliveries return not found even before physical cleanup.
+     *
+     * Required API key permissions: read:webhooks. Write permissions also grant read access for the same resource.
+     */
+    getDelivery: Operation<"webhooks.getDelivery", Workspace>;
+    /**
+     * List delivery runs
+     *
+     * Required API key permissions: read:webhooks. Write permissions also grant read access for the same resource.
+     */
+    listRuns: Operation<"webhooks.listRuns", Workspace>;
+    /**
+     * List delivery attempts
+     *
+     * Required API key permissions: read:webhooks. Write permissions also grant read access for the same resource.
+     */
+    listAttempts: Operation<"webhooks.listAttempts", Workspace>;
+    /**
+     * Redeliver a webhook event
+     *
+     * Checks the reviewed destination revision and current scope authority. Reuses the original event ID, payload, and expiry. Returns a conflict if a run is active, or the endpoint is disabled or deleted.
+     *
+     * Required API key permissions: webhooks. Write permissions also grant read access for the same resource.
+     */
+    redeliver: Operation<"webhooks.redeliver", Workspace>;
+    /**
+     * Redeliver webhook events
+     *
+     * Replays every listed delivery in one transaction with the same checks as a single redelivery. Any ineligible delivery fails the whole request. Counts as one request for rate limiting.
+     *
+     * Required API key permissions: webhooks. Write permissions also grant read access for the same resource.
+     */
+    bulkRedeliver: Operation<"webhooks.bulkRedeliver", Workspace>;
+  };
   roles: {
     /**
      * List roles
@@ -1400,6 +1514,158 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
         "snapshotID"
       ],
       body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    })
+  },
+  webhooks: {
+    list: operation<"webhooks.list", Workspace>(request, {
+      method: "get",
+      path: "/webhooks",
+      pathParams: [],
+      queryParams: ["cursor", "limit"],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    create: operation<"webhooks.create", Workspace>(request, {
+      method: "post",
+      path: "/webhooks",
+      pathParams: [],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    get: operation<"webhooks.get", Workspace>(request, {
+      method: "get",
+      path: "/webhooks/{id}",
+      pathParams: ["id"],
+      queryParams: [],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    update: operation<"webhooks.update", Workspace>(request, {
+      method: "put",
+      path: "/webhooks/{id}",
+      pathParams: ["id"],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    delete: operation<"webhooks.delete", Workspace>(request, {
+      method: "delete",
+      path: "/webhooks/{id}",
+      pathParams: ["id"],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    bulkSetEnabled: operation<"webhooks.bulkSetEnabled", Workspace>(request, {
+      method: "post",
+      path: "/webhooks/bulk/set-enabled",
+      pathParams: [],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    bulkDelete: operation<"webhooks.bulkDelete", Workspace>(request, {
+      method: "post",
+      path: "/webhooks/bulk/delete",
+      pathParams: [],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    rotateSecret: operation<"webhooks.rotateSecret", Workspace>(request, {
+      method: "post",
+      path: "/webhooks/{id}/rotate-secret",
+      pathParams: ["id"],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    sendTest: operation<"webhooks.sendTest", Workspace>(request, {
+      method: "post",
+      path: "/webhooks/{id}/test",
+      pathParams: ["id"],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    listDeliveries: operation<"webhooks.listDeliveries", Workspace>(request, {
+      method: "get",
+      path: "/webhooks/{id}/deliveries",
+      pathParams: ["id"],
+      queryParams: ["cursor", "limit", "type", "state", "createdAfter", "createdBefore"],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    getDelivery: operation<"webhooks.getDelivery", Workspace>(request, {
+      method: "get",
+      path: "/webhooks/{id}/deliveries/{deliveryID}",
+      pathParams: ["id", "deliveryID"],
+      queryParams: [],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    listRuns: operation<"webhooks.listRuns", Workspace>(request, {
+      method: "get",
+      path: "/webhooks/{id}/deliveries/{deliveryID}/runs",
+      pathParams: ["id", "deliveryID"],
+      queryParams: ["cursor", "limit"],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    listAttempts: operation<"webhooks.listAttempts", Workspace>(request, {
+      method: "get",
+      path: "/webhooks/{id}/deliveries/{deliveryID}/runs/{runID}/attempts",
+      pathParams: ["id", "deliveryID", "runID"],
+      queryParams: ["cursor", "limit"],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    redeliver: operation<"webhooks.redeliver", Workspace>(request, {
+      method: "post",
+      path: "/webhooks/{id}/deliveries/{deliveryID}/redeliver",
+      pathParams: ["id", "deliveryID"],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    bulkRedeliver: operation<"webhooks.bulkRedeliver", Workspace>(request, {
+      method: "post",
+      path: "/webhooks/{id}/deliveries/bulk/redeliver",
+      pathParams: ["id"],
+      queryParams: [],
+      body: true,
       multipart: false,
       binary: false,
       anonymous: false

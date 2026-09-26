@@ -676,16 +676,6 @@ header:only-of-type.is-empty:first-child::before,
 .prose-editor .element-tag[hidden] {
   display: none;
 }
-/* Shared GitHub Light syntax colors */
-.prose-editor {
-  --syntax-tag: #116329;
-  --syntax-punctuation: #6a737d;
-  --syntax-property: #6f42c1;
-  --syntax-value: #005cc5;
-  --syntax-string: #032f62;
-  --syntax-literal: #e36209;
-}
-
 /* Element tokens */
 .prose-editor .element-token-name {
   color: var(--syntax-tag);

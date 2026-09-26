@@ -8,7 +8,20 @@ import {
 } from "#backend/db";
 import type { db } from "#backend/lib/adapters";
 import type { AuthorizedCollectionTree } from "#backend/lib/policy";
-import { toCollectionID, toEntryID, toSnapshotID, toUUID } from "#backend/lib/primitives";
+import {
+  toCollectionID,
+  toEntryID,
+  toSnapshotID,
+  toUUID,
+  toWorkspaceID
+} from "#backend/lib/primitives";
+import {
+  createOutboundEvent,
+  createWebhookOperation,
+  type WebhookOperation
+} from "#backend/lib/webhooks/operation";
+import { createWebhookRecorder } from "#backend/lib/webhooks/recorder";
+import { getPublicationWebhookResources } from "#backend/lib/webhooks/publication";
 import { ORPCError } from "@orpc/server";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { normalizePublishingChannelCode } from "./channel";
@@ -46,6 +59,7 @@ interface CommitPublishingSnapshotInput {
   reason: "publish" | "unpublish";
   subscriptionPlan: string;
   workspaceID: string;
+  webhookOperation?: WebhookOperation;
 }
 interface CommitPublishingSnapshotResult {
   affectedCollectionIDs: string[];
@@ -104,6 +118,14 @@ const commitPublishingSnapshot = async (
   const entryRemovals = (input.entryRemovals || []).map(toUUID);
   const now = new Date();
   const expiresAt = getPublishingSnapshotExpiry(input.subscriptionPlan, now);
+  const operation =
+    input.webhookOperation || createWebhookOperation(toWorkspaceID(input.workspaceID));
+
+  if (operation.workspaceID !== toWorkspaceID(input.workspaceID)) {
+    throw new Error("Webhook operation belongs to another workspace");
+  }
+
+  const recorder = await createWebhookRecorder({ database, operation });
 
   assertUniqueOperations(
     collectionChanges.map(({ collectionID }) => collectionID),
@@ -289,6 +311,34 @@ const commitPublishingSnapshot = async (
     .update(publishingChannels)
     .set({ currentSnapshotID: snapshot.id, updatedAt: now })
     .where(eq(publishingChannels.id, channel.id));
+
+  await recorder.record([
+    {
+      event: createOutboundEvent(
+        operation,
+        `channel-advanced:${currentSnapshot.id}`,
+        {
+          type: "publishing.channel_advanced",
+          subject: { kind: "channel", code: channelCode },
+          data: {
+            previousSnapshotID: toSnapshotID(currentSnapshot.id),
+            snapshotID: toSnapshotID(snapshot.id),
+            reason: input.reason
+          }
+        },
+        now
+      ),
+      resources: getPublicationWebhookResources({
+        index: recorder.before,
+        beforeCollections: currentCollections,
+        afterCollections: nextCollections,
+        beforeEntries: currentEntries,
+        afterEntries: nextEntries,
+        changedCollectionIDs: affectedCollectionIDs,
+        changedEntryIDs: affectedEntryIDs
+      })
+    }
+  ]);
 
   return {
     affectedCollectionIDs: [...affectedCollectionIDs].map(toCollectionID),

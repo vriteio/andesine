@@ -19,6 +19,7 @@ import { syncContract } from "./sync";
 import { versionsContract } from "./versions";
 import { typeMetadataContract } from "./type-metadata";
 import { workspacesContract } from "./workspaces";
+import { webhooksContract } from "./webhooks";
 
 interface APIContractOptions {
   maxUploadBytes?: number;
@@ -36,6 +37,7 @@ const createAPIContract = (options: APIContractOptions = {}) => ({
   content: contentContract,
   billing: billingContract,
   keys: keysContract,
+  webhooks: webhooksContract,
   roles: rolesContract,
   search: searchContract,
   schemas: schemasContract,

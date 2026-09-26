@@ -2,7 +2,9 @@ import { publishingChannels, publishingSnapshots } from "#backend/db";
 import type { db } from "#backend/lib/adapters";
 import { getEffectivePlan } from "#backend/lib/billing";
 import { config } from "#backend/lib/config";
-import { toUUID } from "#backend/lib/primitives";
+import { toSnapshotID, toUUID, toWorkspaceID } from "#backend/lib/primitives";
+import { createOutboundEvent, createWebhookOperation } from "#backend/lib/webhooks/operation";
+import { createWebhookRecorder } from "#backend/lib/webhooks/recorder";
 import { ORPCError } from "@orpc/server";
 import { and, eq, gt, isNull, or } from "drizzle-orm";
 import { normalizePublishingChannelCode } from "./channel";
@@ -45,6 +47,8 @@ const createInitialPublishingChannel = async (
   input: CreateInitialPublishingChannelInput
 ) => {
   const now = new Date();
+  const operation = createWebhookOperation(toWorkspaceID(input.workspaceID));
+  const recorder = await createWebhookRecorder({ database, operation });
   const [channel] = await database
     .insert(publishingChannels)
     .values({
@@ -72,6 +76,26 @@ const createInitialPublishingChannel = async (
     .update(publishingChannels)
     .set({ currentSnapshotID: snapshot.id, updatedAt: now })
     .where(eq(publishingChannels.id, channel.id));
+
+  await recorder.record([
+    {
+      event: createOutboundEvent(
+        operation,
+        "channel-created",
+        {
+          type: "publishing.channel_created",
+          subject: { kind: "channel", code: channel.code },
+          data: {
+            name: channel.name,
+            builtIn: channel.builtIn,
+            snapshotID: toSnapshotID(snapshot.id)
+          }
+        },
+        now
+      ),
+      resources: []
+    }
+  ]);
 
   return { ...channel, currentSnapshotID: snapshot.id, updatedAt: now };
 };

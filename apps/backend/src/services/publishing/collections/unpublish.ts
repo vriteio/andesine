@@ -1,4 +1,5 @@
 import { getUserAuthorization } from "#backend/lib/policy";
+import type { WebhookOperation } from "#backend/lib/webhooks/operation";
 import { assertPublishingSnapshot } from "#backend/lib/publishing/precondition";
 import { collections } from "#backend/db";
 import {
@@ -20,6 +21,7 @@ interface UnpublishCollectionInput {
   channel: string;
   expectedSnapshotID?: string;
   includeWorkingTree?: boolean;
+  webhookOperation?: WebhookOperation;
 }
 interface UnpublishCollectionResult {
   publishingEntries: PublishingEntryStatus[];
@@ -72,6 +74,7 @@ const unpublishCollection = withAuthorization<
     });
     const entryRowsByID = new Map(entryRows.map((entry) => [toEntryID(entry.id), entry]));
     const result = await commitPublishingSnapshot(database, {
+      webhookOperation: input.webhookOperation,
       authorization,
       workspaceID,
       channelCode: input.channel,

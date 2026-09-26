@@ -1,5 +1,7 @@
 import { billingConfigSchema } from "#backend/lib/billing/config-schema";
 import { assetConfigSchema } from "#backend/lib/assets/config-schema";
+import { encryptionConfigSchema } from "#backend/lib/security/encryption-config";
+import { webhookDestinationConfigSchema } from "#backend/lib/webhooks/destination-config";
 import * as z from "zod";
 
 const url = z.preprocess((value) => {
@@ -35,6 +37,8 @@ const configSchema = z.object({
     .describe("Whether to use secure connections for public URLs"),
   // Secrets
   SECRET: secret.describe("Secret for signing tokens and encrypting data"),
+  ...encryptionConfigSchema.shape,
+  ...webhookDestinationConfigSchema.shape,
   // Database
   DATABASE_URL: z.string().describe("PostgreSQL connection URL"),
   QUEUE_REDIS_URL: z.string().describe("Background job Redis connection URL"),

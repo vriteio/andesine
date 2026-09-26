@@ -1,4 +1,7 @@
 import { identityType } from "../auth";
+import { webhookEventType, webhookEventNameType } from "#backend/lib/webhooks/events";
+import { webhookEndpointType } from "./webhooks";
+import { webhookDeliveryType, webhookRunType, webhookAttemptType } from "./webhook-deliveries";
 import { workspaceListItemType } from "../workspaces";
 import {
   answerEventType,
@@ -145,6 +148,12 @@ import {
 
 // Names in this registry become public SDK type names.
 const publicSchemas = {
+  WebhookEvent: { schema: webhookEventType, strategy: "output" },
+  WebhookEventName: { schema: webhookEventNameType, strategy: "output" },
+  WebhookEndpoint: { schema: webhookEndpointType, strategy: "output" },
+  WebhookDelivery: { schema: webhookDeliveryType, strategy: "output" },
+  WebhookRun: { schema: webhookRunType, strategy: "output" },
+  WebhookAttempt: { schema: webhookAttemptType, strategy: "output" },
   TypeMetadata: { schema: typeMetadataType, strategy: "output" },
   TypeMetadataCollection: { schema: typeMetadataCollectionType, strategy: "output" },
   TypeMetadataEntry: { schema: typeMetadataEntryType, strategy: "output" },

@@ -195,6 +195,36 @@ const bindings: Record<keyof operations, SDKOperation> = {
     client.versions.revert(input as OperationInput<"versions.revert">, options),
   "versions.update": (client, input, options) =>
     client.versions.update(input as OperationInput<"versions.update">, options),
+  "webhooks.bulkDelete": (client, input, options) =>
+    client.webhooks.bulkDelete(input as OperationInput<"webhooks.bulkDelete">, options),
+  "webhooks.bulkRedeliver": (client, input, options) =>
+    client.webhooks.bulkRedeliver(input as OperationInput<"webhooks.bulkRedeliver">, options),
+  "webhooks.bulkSetEnabled": (client, input, options) =>
+    client.webhooks.bulkSetEnabled(input as OperationInput<"webhooks.bulkSetEnabled">, options),
+  "webhooks.create": (client, input, options) =>
+    client.webhooks.create(input as OperationInput<"webhooks.create">, options),
+  "webhooks.delete": (client, input, options) =>
+    client.webhooks.delete(input as OperationInput<"webhooks.delete">, options),
+  "webhooks.get": (client, input, options) =>
+    client.webhooks.get(input as OperationInput<"webhooks.get">, options),
+  "webhooks.getDelivery": (client, input, options) =>
+    client.webhooks.getDelivery(input as OperationInput<"webhooks.getDelivery">, options),
+  "webhooks.list": (client, input, options) =>
+    client.webhooks.list(input as OperationInput<"webhooks.list">, options),
+  "webhooks.listAttempts": (client, input, options) =>
+    client.webhooks.listAttempts(input as OperationInput<"webhooks.listAttempts">, options),
+  "webhooks.listDeliveries": (client, input, options) =>
+    client.webhooks.listDeliveries(input as OperationInput<"webhooks.listDeliveries">, options),
+  "webhooks.listRuns": (client, input, options) =>
+    client.webhooks.listRuns(input as OperationInput<"webhooks.listRuns">, options),
+  "webhooks.redeliver": (client, input, options) =>
+    client.webhooks.redeliver(input as OperationInput<"webhooks.redeliver">, options),
+  "webhooks.rotateSecret": (client, input, options) =>
+    client.webhooks.rotateSecret(input as OperationInput<"webhooks.rotateSecret">, options),
+  "webhooks.sendTest": (client, input, options) =>
+    client.webhooks.sendTest(input as OperationInput<"webhooks.sendTest">, options),
+  "webhooks.update": (client, input, options) =>
+    client.webhooks.update(input as OperationInput<"webhooks.update">, options),
   "workspaces.list": (client, input, options) =>
     client.workspaces.list(input as OperationInput<"workspaces.list">, options)
 };

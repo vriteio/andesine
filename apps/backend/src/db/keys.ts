@@ -17,6 +17,8 @@ const keyPermissionEnum = pgEnum("key_permission", [
   "read:memberships",
   "roles",
   "read:roles",
+  "webhooks",
+  "read:webhooks",
   "ai-answers"
 ]);
 const keyPermissionType = z.enum([
@@ -32,6 +34,8 @@ const keyPermissionType = z.enum([
   "read:memberships",
   "roles",
   "read:roles",
+  "webhooks",
+  "read:webhooks",
   "ai-answers"
 ]);
 const keyType = z.object({

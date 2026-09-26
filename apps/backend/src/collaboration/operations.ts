@@ -1,6 +1,7 @@
 import { collectionSchemas, entries } from "#backend/db";
 import { db } from "#backend/lib/adapters";
 import {
+  hashContentDocument,
   replaceContentDocument,
   serializeContentDocument,
   type ContentNode
@@ -17,12 +18,12 @@ import { prepareSchemaMigrationDocuments } from "./schema-content";
 import { collab } from "./server";
 import type { ContentSnapshot } from "./types";
 
-type ContentConnection = Awaited<ReturnType<typeof collab.openDirectConnection>>;
-
 interface OpenDocumentContentConnectionOptions {
   includeDeleted?: boolean;
   preserveSchemaRevision?: boolean;
 }
+
+type ContentConnection = Awaited<ReturnType<typeof collab.openDirectConnection>>;
 
 const prepareSchemaMigrationConnections = async (
   collectionIDs: string[],
@@ -65,10 +66,12 @@ const updateDocumentTitle = async (
   documentName: string,
   title: string,
   workspaceID: string,
-  contributorID?: string
+  contributorID?: string,
+  webhookOperationID?: string
 ): Promise<void> => {
   const connection = await collab.openDirectConnection(documentName, {
     contributorID,
+    webhookOperationID,
     workspaceID
   });
 
@@ -101,12 +104,19 @@ const getCurrentDocumentContent = async (
 };
 const replaceDocumentContent = async (
   connection: ContentConnection,
-  content: ContentNode
+  content: ContentNode,
+  webhookOperationID?: string
 ): Promise<ContentSnapshot> => {
+  const hash = hashContentDocument(content);
+
   let previous: ContentSnapshot | undefined;
 
   await connection.transact((document) => {
     previous = getContentSnapshot(document);
+
+    if (previous.hash === hash) return;
+
+    connection.context.webhookOperationID = webhookOperationID;
     replaceContentDocument(document, content);
   });
 

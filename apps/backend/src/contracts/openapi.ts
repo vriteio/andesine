@@ -74,7 +74,12 @@ const generateOpenAPI = async (contract: APIContract, baseURL: string) => {
       }
 
       if (Array.isArray(permissions)) {
-        operation.description += `\n\nRequired API key permissions: ${permissions.join(", ")}. Write permissions also grant read access for the same resource.`;
+        operation.description = [
+          operation.description,
+          `Required API key permissions: ${permissions.join(", ")}. Write permissions also grant read access for the same resource.`
+        ]
+          .filter(Boolean)
+          .join("\n\n");
       }
 
       if (example) {

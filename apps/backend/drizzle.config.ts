@@ -7,6 +7,8 @@ export default defineConfig({
     "./src/db/assets.ts",
     "./src/db/auth.ts",
     "./src/db/oauth.ts",
+    "./src/db/outbound-events.ts",
+    "./src/db/outbound-deliveries.ts",
     "./src/db/collections.ts",
     "./src/db/content-schemas.ts",
     "./src/db/contents.ts",
@@ -22,7 +24,8 @@ export default defineConfig({
     "./src/db/users.ts",
     "./src/db/versions.ts",
     "./src/db/version-properties.ts",
-    "./src/db/workspaces.ts"
+    "./src/db/workspaces.ts",
+    "./src/db/webhooks.ts"
   ],
   out: "./drizzle",
   dbCredentials: {

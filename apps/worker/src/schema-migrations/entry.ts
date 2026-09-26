@@ -14,7 +14,10 @@ import {
   entryVersionContributors,
   entryVersions
 } from "@andesine/backend/db/versions";
-import type { ContentNode } from "@andesine/backend/lib/content";
+import { hashContentDocument, type ContentNode } from "@andesine/backend/lib/content";
+import { toEntryID } from "@andesine/backend/lib/primitives/id";
+import { createWebhookRecorder } from "@andesine/backend/lib/webhooks/recorder";
+import { recordSavedEntryWebhooks } from "@andesine/backend/lib/webhooks/entry-save";
 import {
   migrateSchemaContentState,
   replaceSchemaContentState
@@ -22,6 +25,10 @@ import {
 import { getResolvedSchemaDefinition } from "@andesine/backend/lib/schema/inheritance";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../database";
+import {
+  createMigrationWebhookOperation,
+  getSavedMigrationContentHash
+} from "@andesine/backend/lib/webhooks/migration";
 
 interface MigrationEntryInput {
   entryID: string;
@@ -53,6 +60,9 @@ const processMigrationEntry = async (
     const [row] = await transaction
       .select({
         entryName: entries.name,
+        collectionID: entries.collectionID,
+        deletedAt: entries.deletedAt,
+        contentEntryID: contents.entryID,
         migrationStatus: schemaMigrations.status,
         initiatedBy: schemaMigrations.initiatedBy,
         entryStatus: schemaMigrationEntries.status,
@@ -97,12 +107,18 @@ const processMigrationEntry = async (
 
     if (!row.targetRevisionID) throw new Error("Schema migration target revision is missing");
 
+    const operation = createMigrationWebhookOperation(input.workspaceID, input.migrationID);
+    const recorder = await createWebhookRecorder({ database: transaction, operation });
     const sourceDocument = row.document || createEmptyDocument(row.entryName);
     const migrated = migrateSchemaContentState({
       document: sourceDocument,
       schema: getResolvedSchemaDefinition(row.targetDefinition),
       state: row.state
     });
+    const contentChanged =
+      row.contentEntryID === null ||
+      getSavedMigrationContentHash(row.document, row.state) !== migrated.hash;
+    const savedAt = new Date();
     const activityContributors = await transaction
       .select({ membershipID: entryVersionActivityContributors.membershipID })
       .from(entryVersionActivityContributors)
@@ -169,7 +185,7 @@ const processMigrationEntry = async (
         document: migrated.document,
         hash: migrated.hash,
         schemaRevisionID: row.targetRevisionID,
-        updatedAt: new Date()
+        updatedAt: savedAt
       })
       .onConflictDoUpdate({
         target: contents.entryID,
@@ -178,7 +194,7 @@ const processMigrationEntry = async (
           document: migrated.document,
           hash: migrated.hash,
           schemaRevisionID: row.targetRevisionID,
-          updatedAt: new Date()
+          updatedAt: savedAt
         }
       });
     await transaction
@@ -210,8 +226,22 @@ const processMigrationEntry = async (
       })
       .where(eq(schemaMigrations.id, input.migrationID));
 
+    await recordSavedEntryWebhooks({
+      database: transaction,
+      recorder,
+      operation,
+      itemKey: `${toEntryID(input.entryID)}:apply`,
+      entry: { id: input.entryID, collectionID: row.collectionID, deletedAt: row.deletedAt },
+      document: migrated.document,
+      schemaRevisionID: row.targetRevisionID,
+      hash: migrated.hash,
+      savedAt,
+      contentChanged,
+      titleChanged: false
+    });
+
     return {
-      changed: migrated.changed,
+      changed: contentChanged,
       entryID: input.entryID,
       processed: true
     };
@@ -227,12 +257,17 @@ const rollbackMigrationEntry = async (input: MigrationEntryInput): Promise<void>
     const [row] = await transaction
       .select({
         contentState: contents.state,
+        contentDocument: contents.document,
+        collectionID: entries.collectionID,
+        deletedAt: entries.deletedAt,
+        migrationStatus: schemaMigrations.status,
         entryStatus: schemaMigrationEntries.status,
         recoveryDocument: entryVersions.document,
-        recoveryHash: entryVersions.hash,
         recoveryRevisionID: entryVersions.schemaRevisionID
       })
       .from(schemaMigrationEntries)
+      .innerJoin(schemaMigrations, eq(schemaMigrations.id, schemaMigrationEntries.migrationID))
+      .innerJoin(entries, eq(entries.id, schemaMigrationEntries.entryID))
       .innerJoin(entryVersions, eq(entryVersions.id, schemaMigrationEntries.recoveryVersionID))
       .innerJoin(contents, eq(contents.entryID, schemaMigrationEntries.entryID))
       .where(
@@ -245,9 +280,15 @@ const rollbackMigrationEntry = async (input: MigrationEntryInput): Promise<void>
       .for("update");
 
     if (!row) throw new Error("Schema migration recovery content is missing");
-    if (row.entryStatus !== "completed") return;
+    if (row.entryStatus !== "completed" || row.migrationStatus !== "rolling_back") return;
 
+    const operation = createMigrationWebhookOperation(input.workspaceID, input.migrationID);
+    const recorder = await createWebhookRecorder({ database: transaction, operation });
     const restored = replaceSchemaContentState(row.contentState, row.recoveryDocument);
+    const hash = hashContentDocument(restored.document);
+    const contentChanged =
+      getSavedMigrationContentHash(row.contentDocument, row.contentState) !== hash;
+    const savedAt = new Date();
     const imageReferences = await syncEntryAssets({
       database: transaction,
       workspaceID: input.workspaceID,
@@ -263,16 +304,16 @@ const rollbackMigrationEntry = async (input: MigrationEntryInput): Promise<void>
       .set({
         state: restored.state,
         document: restored.document,
-        hash: row.recoveryHash,
+        hash,
         schemaRevisionID: row.recoveryRevisionID,
-        updatedAt: new Date()
+        updatedAt: savedAt
       })
       .where(eq(contents.entryID, input.entryID));
     await transaction
       .update(schemaMigrationEntries)
       .set({
         status: "rolled_back",
-        targetHash: row.recoveryHash,
+        targetHash: hash,
         completedAt: new Date()
       })
       .where(
@@ -281,6 +322,20 @@ const rollbackMigrationEntry = async (input: MigrationEntryInput): Promise<void>
           eq(schemaMigrationEntries.entryID, input.entryID)
         )
       );
+
+    await recordSavedEntryWebhooks({
+      database: transaction,
+      recorder,
+      operation,
+      itemKey: `${toEntryID(input.entryID)}:rollback`,
+      entry: { id: input.entryID, collectionID: row.collectionID, deletedAt: row.deletedAt },
+      document: restored.document,
+      schemaRevisionID: row.recoveryRevisionID,
+      hash,
+      savedAt,
+      contentChanged,
+      titleChanged: false
+    });
   });
 };
 

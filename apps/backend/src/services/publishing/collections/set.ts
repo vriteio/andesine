@@ -1,3 +1,4 @@
+import { createStructureWebhookRecorder } from "#backend/lib/webhooks/structure";
 import { getUserAuthorization } from "#backend/lib/policy";
 import { assertPublishingSnapshot } from "#backend/lib/publishing/precondition";
 import { collections, publishingChannels } from "#backend/db";
@@ -125,6 +126,8 @@ const commitCollectionsPublishing = withAuthorization<
     }
 
     const collectionIDs = [...new Set(input.collectionIDs.map(toUUID))];
+
+    const webhooks = await createStructureWebhookRecorder({ database, workspaceID, collectionIDs });
 
     const currentCollections = await database
       .select({
@@ -299,6 +302,7 @@ const commitCollectionsPublishing = withAuthorization<
       });
 
       const result = await publishEntries(database, {
+        webhookOperation: webhooks.operation,
         authorization,
         workspaceID,
         entries: [...publishableEntryIDs].map((entryID) => ({ entryID })),
@@ -341,6 +345,7 @@ const commitCollectionsPublishing = withAuthorization<
 
       for (const channel of channels) {
         const result = await unpublishCollection({
+          webhookOperation: webhooks.operation,
           auth,
           channel: channel.code,
           collectionIDs: collectionIDs.map(toCollectionID),
@@ -354,6 +359,8 @@ const commitCollectionsPublishing = withAuthorization<
         }
       }
     }
+
+    await webhooks.record();
 
     return results.map((result) => ({
       ...result,

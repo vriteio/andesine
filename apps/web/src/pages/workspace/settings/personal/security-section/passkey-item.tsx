@@ -8,7 +8,7 @@ import {
   createSignal
 } from "solid-js";
 import clsx from "clsx";
-import { format } from "date-fns";
+import { formatDate } from "#web/lib/primitives";
 
 const PasskeyItem: Component<{
   id: string;
@@ -79,7 +79,7 @@ const PasskeyItem: Component<{
               <div class="min-w-0 truncate">{label}</div>
               <div class="hidden h-4 w-px shrink-0 rounded-full bg-gray-200 md:block" />
               <span class="hidden shrink-0 text-xs text-gray-400 md:inline">
-                {format(props.createdAt, "MMM d, yyyy")}
+                {formatDate(props.createdAt)}
               </span>
               <div class="flex-1" />
             </div>

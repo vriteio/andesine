@@ -158,7 +158,8 @@ await writeFile(
 await writeFile(
   new URL("src/generated/types.ts", root),
   await format(
-    header +
+    "/* eslint-disable max-lines */\n" +
+      header +
       `import type { OperationInput, OperationOutput, OperationError } from "../operation";\n\n` +
       `export type { ${schemaNames.join(", ")} } from "./schema";\n\n` +
       operationTypes.sort().join("\n"),
@@ -171,6 +172,21 @@ await writeFile(
     "/* eslint-disable max-lines */\n" +
       header +
       `import { operation, type Operation, type Requester } from "../operation";\nimport type { WorkspaceTypeMap } from "../workspace";\n\ninterface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {\n${[...resourceTypes].map(([name, methods]) => `${JSON.stringify(name)}: {\n${methods.join("\n")}\n}`).join("\n")}\n}\n\nconst createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(request: Requester): APIResources<Workspace> => ({\n${[...resources].map(([name, methods]) => `${JSON.stringify(name)}: {\n${methods.join(",\n")}\n}`).join(",\n")}\n});\n\nexport { createResources };\nexport type { APIResources };\n`,
+    formatting
+  )
+);
+
+const webhookEventNames = document.components?.schemas?.WebhookEventName;
+
+if (!webhookEventNames || "$ref" in webhookEventNames || !webhookEventNames.enum) {
+  throw new Error("Public webhook event names are missing");
+}
+
+await writeFile(
+  new URL("src/generated/webhook-event-names.ts", root),
+  await format(
+    header +
+      `export const webhookEventNames = ${JSON.stringify(webhookEventNames.enum)} as const;\n`,
     formatting
   )
 );

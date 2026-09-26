@@ -43,6 +43,13 @@ import {
   entryVersions
 } from "./versions";
 import { workspaces } from "./workspaces";
+import { webhookEndpoints, webhookEndpointRevisions } from "./webhooks";
+import { outboundEvents, outboundEventResources } from "./outbound-events";
+import {
+  outboundDeliveries,
+  outboundDeliveryRuns,
+  outboundDeliveryAttempts
+} from "./outbound-deliveries";
 
 const schema = {
   ...oauth,
@@ -90,7 +97,14 @@ const schema = {
   apiKeys,
   dailyUsage,
   usageLedger,
-  stripeWebhookEvents
+  stripeWebhookEvents,
+  webhookEndpoints,
+  webhookEndpointRevisions,
+  outboundEvents,
+  outboundEventResources,
+  outboundDeliveries,
+  outboundDeliveryRuns,
+  outboundDeliveryAttempts
 };
 
 export { schema };

@@ -1,8 +1,8 @@
 import { Button, Dialog, IconButton, Input } from "@andesine/components";
-import { formatDistanceToNow } from "date-fns";
 import { type Component, createSignal } from "solid-js";
 import { ActionConfirmationDialog } from "#web/components/action-confirmation-dialog";
 import { type VersionSummary } from "#web/lib/data";
+import { formatRelativeTime } from "#web/lib/primitives";
 
 interface CreateVersionDialogProps {
   loading: boolean;
@@ -94,7 +94,7 @@ const RevertVersionDialog: Component<RevertVersionDialogProps> = (props) => {
 
     return [
       {
-        detail: formatDistanceToNow(new Date(version.createdAt), { addSuffix: true }),
+        detail: formatRelativeTime(version.createdAt),
         id: version.id,
         icon: "i-lucide:history",
         label: version.name || version.entryName

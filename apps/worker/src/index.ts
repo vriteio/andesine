@@ -29,6 +29,9 @@ import { createClient } from "redis";
 import { config } from "./config";
 import { processJob } from "./jobs";
 import { pool } from "./database";
+import { startWebhookScheduler } from "./webhooks/scheduler";
+import { startWebhookConsumer } from "./webhooks/consumer";
+import { startWebhookMaintenance } from "./webhooks/maintenance";
 import { createCurrentSearchJobHandlers } from "./search/current";
 import { createPublishedSearchJobHandlers } from "./search/published";
 import {
@@ -60,9 +63,12 @@ const jobDependencies = {
   queue: searchIndexingQueue,
   typesense: typesenseClient
 };
+const publishEvent = (channel: string, message: string) => {
+  return eventsRedisClient.publish(channel, message);
+};
 const schemaMigrationDependencies = {
   queue: searchIndexingQueue,
-  publish: (channel: string, message: string) => eventsRedisClient.publish(channel, message)
+  publish: publishEvent
 };
 const jobHandlers = new Map([
   ...createCurrentSearchJobHandlers(jobDependencies),
@@ -146,41 +152,29 @@ worker.on("failed", (job, error) => {
   });
 });
 
-await Promise.all([
-  worker.waitUntilReady(),
-  maintenanceWorker.waitUntilReady(),
-  eventsRedisClient.connect(),
-  ensureSearchCollections(
-    typesenseClient,
-    createSearchCollectionDefinitions({
-      dimensions: config.SEARCH_EMBEDDING_DIMENSIONS
-    })
-  )
-]);
-// Set the shared limit before any replica starts consuming maintenance jobs.
-await maintenanceQueue.setGlobalConcurrency(1);
-for (const name of maintenanceHandlers.keys()) {
-  await maintenanceQueue.upsertJobScheduler(
-    name,
-    { every: MAINTENANCE_INTERVAL_MS },
-    { name, data: {}, opts: SEARCH_INDEXING_DEFAULT_JOB_OPTIONS }
-  );
-}
-void worker.run().catch((error) => {
-  worker.emit("error", error);
-});
-void maintenanceWorker.run().catch((error) => {
-  maintenanceWorker.emit("error", error);
-});
-
-console.log("Background worker is ready");
+const webhookScheduler = startWebhookScheduler();
+const webhookConsumer = startWebhookConsumer(publishEvent);
+const webhookMaintenance = startWebhookMaintenance(publishEvent);
 
 let shutdownPromise: Promise<void> | undefined;
 const shutdown = (): Promise<void> => {
   if (shutdownPromise) return shutdownPromise;
 
   shutdownPromise = (async () => {
-    let exitCode = 0;
+    let exitCode = process.exitCode ? 1 : 0;
+
+    // Stop all webhook admission immediately; wait for active database/HTTP work
+    // before the shared pool closes. Maintenance does not need a live queue.
+    const webhookStops = await Promise.allSettled([
+      webhookConsumer.stop(),
+      webhookScheduler.stop(),
+      webhookMaintenance.stop()
+    ]);
+
+    if (webhookStops.some((result) => result.status === "rejected")) {
+      exitCode = 1;
+      console.error("Failed to close webhook workers");
+    }
 
     // Finish maintenance while its target queue and database are still available.
     try {
@@ -244,3 +238,50 @@ const shutdown = (): Promise<void> => {
 
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
+
+// Webhooks start independently; install shutdown handlers before waiting for
+// Redis, event messaging, or search initialization.
+const startBackgroundWorkers = async (): Promise<void> => {
+  await Promise.all([
+    worker.waitUntilReady(),
+    maintenanceWorker.waitUntilReady(),
+    eventsRedisClient.connect(),
+    ensureSearchCollections(
+      typesenseClient,
+      createSearchCollectionDefinitions({
+        dimensions: config.SEARCH_EMBEDDING_DIMENSIONS
+      })
+    )
+  ]);
+  if (shutdownPromise) return;
+
+  // Set the shared limit before any replica starts consuming maintenance jobs.
+  await maintenanceQueue.setGlobalConcurrency(1);
+  for (const name of maintenanceHandlers.keys()) {
+    if (shutdownPromise) return;
+
+    await maintenanceQueue.upsertJobScheduler(
+      name,
+      { every: MAINTENANCE_INTERVAL_MS },
+      { name, data: {}, opts: SEARCH_INDEXING_DEFAULT_JOB_OPTIONS }
+    );
+  }
+  if (shutdownPromise) return;
+
+  void worker.run().catch((error) => {
+    worker.emit("error", error);
+  });
+  void maintenanceWorker.run().catch((error) => {
+    maintenanceWorker.emit("error", error);
+  });
+
+  console.log("Background worker is ready");
+};
+
+try {
+  await startBackgroundWorkers();
+} catch (error) {
+  console.error("Background worker startup failed", { error });
+  process.exitCode = 1;
+  await shutdown();
+}

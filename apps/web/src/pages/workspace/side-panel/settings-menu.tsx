@@ -3,7 +3,6 @@ import { A, useLocation, useParams } from "@solidjs/router";
 import { type Component, createMemo, For, Show } from "solid-js";
 
 import { useWorkspace } from "#web/context/workspace";
-import { useRouteData } from "#web/lib/navigation";
 
 interface SettingsMenuItem {
   icon: string;
@@ -64,10 +63,10 @@ const SettingsMenu: Component = () => {
     groupID?: string;
     keyID?: string;
     roleID?: string;
+    webhookID?: string;
     workspaceID?: string;
   }>();
   const { sessions, currentWorkspace, hasPermission } = useWorkspace();
-  const routeData = useRouteData();
   const settingsPath = () => `/${params.workspaceID || ""}/settings`;
   const isRoute = (route: string) => location.pathname === `${settingsPath()}${route}`;
   const userName = createMemo(() => {
@@ -82,6 +81,9 @@ const SettingsMenu: Component = () => {
     const roleActive = isRoute("/role") || editingRole;
     const groupActive = isRoute("/group") || editingGroup;
     const keyActive = isRoute("/key") || editingKey;
+    const editingWebhook = Boolean(params.webhookID);
+    const viewingEvents = editingWebhook && location.pathname.endsWith("/events");
+    const webhookActive = isRoute("/webhook") || editingWebhook;
     const isPro = currentWorkspace()?.subscriptionPlan === "pro";
 
     return [
@@ -160,7 +162,7 @@ const SettingsMenu: Component = () => {
                   label: "API",
                   href: `${settingsPath()}/api`,
                   active: isRoute("/api"),
-                  visible: hasPermission("read:api_keys"),
+                  visible: hasPermission("read:api_keys") || hasPermission("read:webhooks"),
                   subItems: [
                     {
                       icon: "i-lucide:key-round",
@@ -170,6 +172,21 @@ const SettingsMenu: Component = () => {
                         : `${settingsPath()}/key`,
                       active: keyActive,
                       visible: Boolean(params.keyID) || hasPermission("read:api_keys")
+                    },
+                    {
+                      icon: "i-lucide:webhook",
+                      label: viewingEvents
+                        ? "Webhook events"
+                        : editingWebhook
+                          ? "Edit webhook"
+                          : "Create webhook",
+                      href: editingWebhook
+                        ? `${settingsPath()}/webhook/${encodeURIComponent(params.webhookID!)}${viewingEvents ? "/events" : ""}`
+                        : `${settingsPath()}/webhook`,
+                      active: webhookActive,
+                      visible: editingWebhook
+                        ? hasPermission("read:webhooks")
+                        : hasPermission("webhooks")
                     }
                   ]
                 }
@@ -182,9 +199,7 @@ const SettingsMenu: Component = () => {
 
   return (
     <div class="flex min-h-0 flex-col overflow-y-auto px-1 pb-1 scrollbar-sm md:flex-1">
-      <h2 class="my-0.5 truncate text-2xl font-semibold">
-        {routeData()?.breadcrumbs.length === 3 ? routeData()?.title : "Settings"}
-      </h2>
+      <h2 class="my-0.5 truncate text-2xl font-semibold">Settings</h2>
       <div class="flex flex-col gap-3">
         <For each={menu()}>
           {(subMenu) => (

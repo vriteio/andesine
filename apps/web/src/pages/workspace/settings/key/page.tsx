@@ -15,14 +15,21 @@ import { useNotify } from "#web/context/notifications";
 import { type KeyPermission } from "#web/lib/api";
 import { Setting } from "../setting";
 import { SettingsSection } from "../settings-section";
-import { NewKeyDialog } from "../new-key-dialog";
+import { SecretDialog } from "../secret-dialog";
 import { Dynamic } from "solid-js/web";
 import { useWorkspace } from "#web/context/workspace";
 import { apiKeyQuery, useKeyMutations } from "#web/lib/data";
 import { type AccessLevel, createPermissionAccessMapper } from "#web/lib/permissions";
 
 type Resource =
-  "ai-answers" | "collections" | "entries" | "memberships" | "publishing" | "roles" | "versions";
+  | "ai-answers"
+  | "collections"
+  | "entries"
+  | "memberships"
+  | "publishing"
+  | "roles"
+  | "versions"
+  | "webhooks";
 type ResourceAccess = Record<Resource, AccessLevel>;
 
 const resources: Array<{ id: Resource; label: string; description: string }> = [
@@ -33,10 +40,14 @@ const resources: Array<{ id: Resource; label: string; description: string }> = [
   { id: "memberships", label: "People", description: "Workspace members and invitations" },
   { id: "roles", label: "Roles", description: "Workspace roles and permissions" },
   {
+    id: "webhooks",
+    label: "Webhooks",
+    description: "View or manage webhooks"
+  },
+  {
     id: "ai-answers",
     label: "AI answers",
-    description:
-      "Generate AI answers. Also requires Entries and Collections read access, or Publishing read access."
+    description: "Generate AI answers"
   }
 ];
 
@@ -57,6 +68,7 @@ const { accessToPermissions, permissionsToAccess } = createPermissionAccessMappe
     { id: "collections", read: "read:collections", write: "collections" },
     { id: "memberships", read: "read:memberships", write: "memberships" },
     { id: "roles", read: "read:roles", write: "roles" },
+    { id: "webhooks", read: "read:webhooks", write: "webhooks" },
     { id: "ai-answers", write: "ai-answers" }
   ]
 });
@@ -133,8 +145,9 @@ const KeySettingsPage: Component = () => {
 
   return (
     <>
-      <NewKeyDialog
-        key={revealedKey()}
+      <SecretDialog
+        kind="api-key"
+        secret={revealedKey()}
         onClose={() => {
           setRevealedKey("");
           createKeyMutation.reset();

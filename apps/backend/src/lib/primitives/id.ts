@@ -20,7 +20,13 @@ type PublicIDPrefix =
   | "schv"
   | "schr"
   | "smg"
-  | "snp";
+  | "snp"
+  | "wh"
+  | "whevt"
+  | "whop"
+  | "whdel"
+  | "whrun"
+  | "whatt";
 
 const id = (options?: Exclude<Parameters<typeof z.regex>[1], string>) => {
   return z.string().regex(ID_REGEX, { error: "invalid id", ...options });
@@ -76,6 +82,12 @@ const toSchemaVersionID = (value: string) => fromUUID(value, "schv");
 const toSchemaRevisionID = (value: string) => fromUUID(value, "schr");
 const toSchemaMigrationID = (value: string) => fromUUID(value, "smg");
 const toSnapshotID = (value: string) => fromUUID(value, "snp");
+const toWebhookID = (value: string) => fromUUID(value, "wh");
+const toWebhookEventID = (value: string) => fromUUID(value, "whevt");
+const toWebhookOperationID = (value: string) => fromUUID(value, "whop");
+const toWebhookDeliveryID = (value: string) => fromUUID(value, "whdel");
+const toWebhookRunID = (value: string) => fromUUID(value, "whrun");
+const toWebhookAttemptID = (value: string) => fromUUID(value, "whatt");
 
 export {
   fromUUID,
@@ -98,6 +110,12 @@ export {
   toUserID,
   toVersionID,
   toUUID,
-  toWorkspaceID
+  toWorkspaceID,
+  toWebhookID,
+  toWebhookEventID,
+  toWebhookOperationID,
+  toWebhookDeliveryID,
+  toWebhookRunID,
+  toWebhookAttemptID
 };
 export type { PublicIDPrefix };

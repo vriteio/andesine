@@ -12,9 +12,12 @@ import {
 } from "#backend/db";
 import type { db } from "#backend/lib/adapters";
 import type { AuthorizedCollectionTree } from "#backend/lib/policy";
-import { hashContentDocument, type ContentNode } from "#backend/lib/content";
+import { hashContentDocument } from "#backend/lib/content";
 import { mapVersionSummary, type VersionSummary } from "#backend/lib/data/entry-version";
-import { toEntryID, toUUID, toVersionID } from "#backend/lib/primitives";
+import { toEntryID, toUUID, toVersionID, toWorkspaceID } from "#backend/lib/primitives";
+import { createWebhookOperation, type WebhookOperation } from "#backend/lib/webhooks/operation";
+import { createWebhookRecorder } from "#backend/lib/webhooks/recorder";
+import { getPublishingContentDocument, initializePublishingContent } from "./initialize-content";
 import { ORPCError } from "@orpc/server";
 import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { commitPublishingSnapshot, type CommitPublishingSnapshotResult } from "./snapshot-commit";
@@ -35,6 +38,7 @@ interface PublishEntriesInput {
   creatorID?: string;
   snapshotOperations?: ResolvedCollectionSnapshotChanges;
   subscriptionPlan: string;
+  webhookOperation?: WebhookOperation;
 }
 interface PublishEntriesResult {
   createdVersions: VersionSummary[];
@@ -44,7 +48,6 @@ interface PublishEntriesResult {
 }
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-const EMPTY_DOCUMENT: ContentNode = { type: "doc", content: [] };
 const lockPublishingEntries = async (
   tx: DatabaseTransaction,
   workspaceID: string,
@@ -77,6 +80,14 @@ const publishEntries = async (
   const providedVersionIDs = input.entries.flatMap((entry) => {
     return entry.versionID ? [entry.versionID] : [];
   });
+  const operation =
+    input.webhookOperation || createWebhookOperation(toWorkspaceID(input.workspaceID));
+
+  if (operation.workspaceID !== toWorkspaceID(input.workspaceID)) {
+    throw new Error("Webhook operation belongs to another workspace");
+  }
+
+  const recorder = await createWebhookRecorder({ database: tx, operation });
 
   if (input.entries.length === 0) {
     let snapshot: CommitPublishingSnapshotResult | null = null;
@@ -92,6 +103,7 @@ const publishEntries = async (
         entryRemovals: input.snapshotOperations.entryRemovals,
         expectedSnapshotID: input.snapshotOperations.snapshotID,
         reason: "publish",
+        webhookOperation: operation,
         subscriptionPlan: input.subscriptionPlan
       });
     }
@@ -157,6 +169,7 @@ const publishEntries = async (
     .select({
       entryID: contents.entryID,
       document: contents.document,
+      state: contents.state,
       hash: contents.hash,
       schemaRevisionID: contents.schemaRevisionID
     })
@@ -214,7 +227,10 @@ const publishEntries = async (
 
     if (target.versionID) {
       const assignedVersion = providedVersionsByID.get(target.versionID)!;
-      const draftHash = content?.hash || hashContentDocument(content?.document || EMPTY_DOCUMENT);
+      const draftHash =
+        content?.document && content.hash
+          ? content.hash
+          : hashContentDocument(getPublishingContentDocument(content));
       const draftSchemaRevisionID = content?.schemaRevisionID || null;
 
       await assertRecordedContent(
@@ -261,8 +277,8 @@ const publishEntries = async (
       continue;
     }
 
-    const document = content?.document || EMPTY_DOCUMENT;
-    const hash = content?.hash || hashContentDocument(document);
+    const document = getPublishingContentDocument(content);
+    const hash = (content?.document && content.hash) || hashContentDocument(document);
     const schemaRevisionID = content?.schemaRevisionID || null;
     const latestVersion = latestVersionByEntryID.get(entry.id);
     let versionID = latestVersion?.id;
@@ -275,18 +291,17 @@ const publishEntries = async (
     );
 
     if (!content?.document || !content.hash) {
-      await tx
-        .insert(contents)
-        .values({
-          workspaceID: input.workspaceID,
-          entryID: entry.id,
-          document,
-          hash
-        })
-        .onConflictDoUpdate({
-          target: contents.entryID,
-          set: { document, hash, updatedAt: new Date() }
-        });
+      await initializePublishingContent({
+        database: tx,
+        workspaceID: input.workspaceID,
+        entry,
+        document,
+        hash,
+        schemaRevisionID,
+        contentExists: Boolean(content),
+        operation,
+        recorder
+      });
     }
 
     if (
@@ -391,6 +406,7 @@ const publishEntries = async (
     entryRemovals: input.snapshotOperations?.entryRemovals,
     expectedSnapshotID: input.snapshotOperations?.snapshotID || snapshotChanges.snapshotID,
     reason: "publish",
+    webhookOperation: operation,
     subscriptionPlan: input.subscriptionPlan
   });
 

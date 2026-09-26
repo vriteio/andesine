@@ -1,3 +1,4 @@
+import { createStructureWebhookRecorder } from "#backend/lib/webhooks/structure";
 import { toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
 import { collections, entries, memberships } from "#backend/db";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
@@ -46,6 +47,12 @@ const deleteCollections = withAuthorization<DeleteCollectionsInput, undefined, D
       sql`, `
     );
 
+    const webhooks = await createStructureWebhookRecorder({
+      database,
+      workspaceID,
+      collectionIDs: ids,
+      includeDescendants: true
+    });
     const deletedCollections = await database.execute<{ id: string }>(sql`
       with recursive subtree as (
         select id
@@ -97,6 +104,8 @@ const deleteCollections = withAuthorization<DeleteCollectionsInput, undefined, D
           )
         );
     }
+
+    await webhooks.record();
 
     return {
       collectionIDs: collectionIDs.map(toCollectionID),

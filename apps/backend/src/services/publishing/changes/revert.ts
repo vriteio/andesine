@@ -1,10 +1,9 @@
 import {
+  createDeferredDocumentReplacements,
   getContentSnapshot,
   openDocumentContentConnection,
-  replaceDocumentContent,
-  setPersistedDocumentSchemaRevision,
   type ContentConnection,
-  type ContentSnapshot
+  type DeferredDocumentReplacements
 } from "#backend/collaboration";
 import {
   collectionSchemas,
@@ -28,14 +27,16 @@ import {
   toEntryID,
   toSchemaID,
   toUUID,
-  toVersionID
+  toVersionID,
+  toWorkspaceID
 } from "#backend/lib/primitives";
+import { createWebhookOperation, type WebhookOperation } from "#backend/lib/webhooks/operation";
 import {
   loadVersionRevertTargets,
   retainRevertedVersionAssets,
   type VersionRevertTarget
 } from "#backend/lib/versioning";
-import { commitCreateVersion } from "#backend/services/versions/create";
+import { Versions } from "#backend/services/versions";
 import { ORPCError } from "@orpc/server";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 
@@ -82,12 +83,8 @@ interface CommitRevertPublishingChangesInput {
   connections: Map<string, ContentConnection>;
   expectedPlan: PublishingRevertPlan;
   request: RevertPublishingChangesInput;
-}
-interface ReplacedDocument {
-  connection: ContentConnection;
-  entryID: string;
-  snapshot: ContentSnapshot;
-  schemaRevisionID: string | null;
+  replacements: DeferredDocumentReplacements;
+  webhookOperation: WebhookOperation;
 }
 interface RevertedCollectionState {
   collection: Collection;
@@ -157,19 +154,6 @@ const getTargetsByEntryID = async (
   );
 
   return new Map(targets.map((target) => [target.entryID, target]));
-};
-const rollbackDocuments = async (documents: ReplacedDocument[]): Promise<void> => {
-  for (const document of [...documents].reverse()) {
-    try {
-      setPersistedDocumentSchemaRevision(document.connection, document.schemaRevisionID);
-      await replaceDocumentContent(document.connection, document.snapshot.document);
-    } catch (error) {
-      console.error("Failed to roll back publishing revert document", {
-        error,
-        entryID: toEntryID(document.entryID)
-      });
-    }
-  }
 };
 const disconnectConnections = async (
   connections: Map<string, ContentConnection>
@@ -248,14 +232,18 @@ const commitRevertPublishingChanges = withAuthorization<
     const contentOperations = resolved.entryOperations.filter(
       ({ restoreContent }) => restoreContent
     );
-    const replacedDocuments: ReplacedDocument[] = [];
     const createdVersions: VersionDetails[] = [];
 
     assertCompatiblePlan(input.expectedPlan, resolved);
     assertRequiredConnections(contentOperations, input.connections);
 
     const targetsByEntryID = await getTargetsByEntryID(database, workspaceID, contentOperations);
-    const result = await applyPublishingRevertStructure(database, workspaceID, resolved);
+    const result = await applyPublishingRevertStructure(
+      database,
+      workspaceID,
+      resolved,
+      input.webhookOperation
+    );
     const collectionTree = await loadCollectionTree(workspaceID, false, database);
     const restoredCollectionOperations = [
       ...resolved.dependencyCollectionOperations,
@@ -294,83 +282,84 @@ const commitRevertPublishingChanges = withAuthorization<
             )
         : [];
 
-    try {
-      for (const operation of contentOperations) {
-        const connection = input.connections.get(operation.entryID)!;
-        const target = targetsByEntryID.get(operation.entryID);
+    for (const operation of contentOperations) {
+      const connection = input.connections.get(operation.entryID)!;
+      const target = targetsByEntryID.get(operation.entryID);
 
-        if (!target) {
-          throw new ORPCError("CONFLICT", {
-            message: "Published entry version changed",
-            data: {
-              hints: [
-                "Read publishing.getChannelContent again and review the current changes before submitting a new revert request."
-              ]
-            }
-          });
-        }
-
-        await retainRevertedVersionAssets(database, workspaceID, {
-          entryID: operation.entryID,
-          versionID: target.versionID
+      if (!target) {
+        throw new ORPCError("CONFLICT", {
+          message: "Published entry version changed",
+          data: {
+            hints: [
+              "Read publishing.getChannelContent again and review the current changes before submitting a new revert request."
+            ]
+          }
         });
+      }
 
-        const previous = await replaceDocumentContent(connection, target.document);
+      await retainRevertedVersionAssets(database, workspaceID, {
+        entryID: operation.entryID,
+        versionID: target.versionID
+      });
 
-        setPersistedDocumentSchemaRevision(connection, target.schemaRevisionID);
-        replacedDocuments.push({
-          connection,
-          entryID: operation.entryID,
-          snapshot: previous,
-          schemaRevisionID: operation.workingSchemaRevisionID
-        });
-
-        const [existing] = await database
-          .select({ id: entryVersions.id })
-          .from(entryVersions)
-          .where(
-            and(
-              eq(entryVersions.workspaceID, workspaceID),
-              eq(entryVersions.entryID, operation.entryID),
-              eq(entryVersions.hash, previous.hash),
-              operation.workingSchemaRevisionID
-                ? eq(entryVersions.schemaRevisionID, operation.workingSchemaRevisionID)
-                : isNull(entryVersions.schemaRevisionID)
-            )
-          )
-          .limit(1);
-        const entryID = toEntryID(operation.entryID);
-
-        if (!existing) {
-          const safetyVersion = await commitCreateVersion({
+      const previous = await input.replacements.prepare(connection, target.document, {
+        schemaRevisionID: target.schemaRevisionID,
+        preserve: async (snapshot) => {
+          const version = await Versions.createFromSnapshot({
             auth,
-            contributorIDs: input.request.contributorIDs,
-            entryID,
+            entryID: toEntryID(operation.entryID),
             reason: "auto",
+            contributorIDs: input.request.contributorIDs,
             schemaRevisionID: operation.workingSchemaRevisionID,
-            skipAuthorization: authorizationScope,
-            snapshot: previous
+            snapshot
           });
 
-          createdVersions.push(safetyVersion);
+          createdVersions.push(version);
         }
+      });
 
-        const version = await commitCreateVersion({
+      const [existing] = await database
+        .select({ id: entryVersions.id })
+        .from(entryVersions)
+        .where(
+          and(
+            eq(entryVersions.workspaceID, workspaceID),
+            eq(entryVersions.entryID, operation.entryID),
+            eq(entryVersions.hash, previous.hash),
+            operation.workingSchemaRevisionID
+              ? eq(entryVersions.schemaRevisionID, operation.workingSchemaRevisionID)
+              : isNull(entryVersions.schemaRevisionID)
+          )
+        )
+        .limit(1);
+      const entryID = toEntryID(operation.entryID);
+
+      if (!existing) {
+        const safetyVersion = await Versions.createFromSnapshot({
           auth,
           contributorIDs: input.request.contributorIDs,
           entryID,
-          reason: "revert",
-          schemaRevisionID: target.schemaRevisionID,
+          reason: "auto",
+          schemaRevisionID: operation.workingSchemaRevisionID,
           skipAuthorization: authorizationScope,
-          snapshot: { document: target.document, hash: target.hash },
-          sourceVersionID: toVersionID(target.versionID)
+          snapshot: previous
         });
 
-        createdVersions.push(version);
+        createdVersions.push(safetyVersion);
       }
-    } catch (error) {
-      await rollbackDocuments(replacedDocuments);
-      throw error;
+
+      const version = await Versions.createFromSnapshot({
+        auth,
+        contributorIDs: input.request.contributorIDs,
+        entryID,
+        reason: "revert",
+        schemaRevisionID: target.schemaRevisionID,
+        skipAuthorization: authorizationScope,
+        snapshot: { document: target.document, hash: target.hash },
+        sourceVersionID: toVersionID(target.versionID)
+      });
+
+      createdVersions.push(version);
     }
 
     const restoredVisibilityEntryIDs = resolved.entryOperations
@@ -510,6 +499,8 @@ const revertPublishingChanges = withAuthorization<
   RevertPublishingChangesResult
 >({}, async ({ auth, input, workspaceID }) => {
   const plan = await prepareRevertPublishingChanges({ ...input, auth });
+  const operation = createWebhookOperation(toWorkspaceID(workspaceID));
+  const replacements = createDeferredDocumentReplacements(operation.id);
   const connections = new Map<string, ContentConnection>();
 
   try {
@@ -522,12 +513,18 @@ const revertPublishingChanges = withAuthorization<
       connections.set(entryID, connection);
     }
 
-    return await commitRevertPublishingChanges({
+    const result = await commitRevertPublishingChanges({
       auth,
       connections,
       expectedPlan: plan,
-      request: input
+      request: input,
+      replacements,
+      webhookOperation: operation
     });
+
+    await replacements.apply();
+
+    return result;
   } finally {
     await disconnectConnections(connections);
   }

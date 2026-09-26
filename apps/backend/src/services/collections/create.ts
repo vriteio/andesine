@@ -1,3 +1,4 @@
+import { createStructureWebhookRecorder } from "#backend/lib/webhooks/structure";
 import { loadCurrentContentPaths } from "#backend/lib/content/paths";
 import { getAvailableContentName } from "#backend/lib/content/names";
 import { rankBetweenNeighbors, toCollectionID, toUUID } from "#backend/lib/primitives";
@@ -91,6 +92,11 @@ const createCollection = withAuthorization<
       .limit(1);
     const rank = rankBetweenNeighbors(lastSibling?.rank);
 
+    const webhooks = await createStructureWebhookRecorder({
+      database,
+      workspaceID,
+      collectionIDs: [collectionID]
+    });
     const [created] = await database
       .insert(collections)
       .values({
@@ -140,6 +146,8 @@ const createCollection = withAuthorization<
 
     if (!result)
       throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create collection" });
+
+    await webhooks.record();
 
     const paths = await loadCurrentContentPaths(database, workspaceID);
     return {

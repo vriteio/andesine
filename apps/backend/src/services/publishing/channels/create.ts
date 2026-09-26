@@ -14,7 +14,7 @@ interface CreateChannelInput {
 const createChannel = withAuthorization<CreateChannelInput, undefined, PublishingChannel>(
   {
     permissions: { session: ["publishing"], key: ["publishing"] },
-    transaction: "atomic"
+    transaction: "locked-workspace"
   },
   async ({ auth, database, input, workspaceID }) => {
     const name = input.name.trim();

@@ -10,6 +10,7 @@ import { schemaMigrationEventType } from "./schema-migrations";
 import { schemaEventType } from "./schemas";
 import { publishingEventType } from "./publishing";
 import { versionEventType } from "./versions";
+import { webhookEventType } from "./webhooks";
 import { workspaceStateEventType } from "./workspaces";
 import * as z from "zod";
 
@@ -31,6 +32,7 @@ const workspaceEventType = z.union([
   publishingEventType,
   versionEventType,
   keyEventType,
+  webhookEventType,
   workspaceStateEventType
 ]);
 const workspaceSettingsEventType = z.union([
@@ -38,6 +40,7 @@ const workspaceSettingsEventType = z.union([
   membershipEventType,
   roleEventType,
   keyEventType,
+  webhookEventType,
   workspaceStateEventType
 ]);
 
@@ -64,6 +67,7 @@ export * from "./keys";
 export * from "./workspaces";
 export * from "./publishing";
 export * from "./versions";
+export * from "./webhooks";
 export * from "./schema-versions";
 export * from "./schema-migrations";
 export * from "./schemas";

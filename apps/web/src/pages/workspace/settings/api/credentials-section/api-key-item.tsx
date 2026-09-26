@@ -10,8 +10,8 @@ import {
 import clsx from "clsx";
 import { TreeItem, useTree } from "#web/components/tree";
 import type { KeyPermission } from "#web/lib/api";
-import { format, formatDistanceToNow } from "date-fns";
 import { useDelegationPermissions } from "#web/lib/policy/delegation";
+import { formatDate, formatRelativeTime } from "#web/lib/primitives";
 
 interface APIKeyItemProps {
   canManage: boolean;
@@ -88,10 +88,7 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
             when={props.expiresAt}
             fallback={<div class="h-5 w-5 i-lucide:key-round text-gray-400" />}
           >
-            <Tooltip
-              content={`Expires ${formatDistanceToNow(new Date(props.expiresAt!), { addSuffix: true })}`}
-              fixed
-            >
+            <Tooltip content={`Expires ${formatRelativeTime(props.expiresAt!)}`} fixed>
               <div class="h-5 w-5 i-lucide:clock bg-gradient-to-tr from-primary to-secondary" />
             </Tooltip>
           </Show>
@@ -107,7 +104,7 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
               </span>
               <div class="flex-1" />
               <span class={clsx("text-xs text-gray-400 shrink-0")}>
-                {format(props.createdAt, "MMM d, yyyy")}
+                {formatDate(props.createdAt)}
               </span>
             </div>
           </div>

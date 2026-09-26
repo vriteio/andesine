@@ -7,8 +7,8 @@ import {
   Tooltip,
   useDropdown
 } from "@andesine/components";
-import { format, formatDistanceToNow } from "date-fns";
 import { type Component, type ComponentProps, createSignal, For, Show } from "solid-js";
+import { TimeAgo } from "#web/components/time-ago";
 import { TreeItem, useTree } from "#web/components/tree";
 import { usePublishing } from "#web/context/publishing";
 import { type VersionReason } from "#web/lib/data";
@@ -56,14 +56,8 @@ const VersionHistoryItem: Component<VersionHistoryItemProps> = (props) => {
   const label = () =>
     props.version.name || props.version.entryName || props.fallbackLabel || "Version";
   const assignedChannels = () => props.assignedChannels || [];
-  const createdAt = () => new Date(props.version.createdAt);
   const publishedToCurrentChannel = () => {
     return assignedChannels().includes(publishing.channel());
-  };
-  const relativeTime = () => {
-    return formatDistanceToNow(createdAt(), {
-      addSuffix: true
-    });
   };
   const startRenaming = () => {
     setMenuOpened(false);
@@ -164,23 +158,14 @@ const VersionHistoryItem: Component<VersionHistoryItemProps> = (props) => {
           <div class="flex min-w-0 flex-1 flex-col leading-tight">
             <div class="flex min-w-0 flex-1">{currentLabel}</div>
             <div class="flex w-full min-w-0 items-center gap-1 text-left text-xs font-normal text-gray-400">
-              <Tooltip
-                content={
-                  <div class="flex flex-col items-start justify-center gap-px">
-                    <span class="opacity-50 font-mono text-[80%] mb-0.5">
-                      {versionReasonLabels[props.version.reason]}
-                    </span>
-                    <span>{format(createdAt(), "MMM d, yyyy HH:mm:ss")}</span>
-                  </div>
-                }
+              <TimeAgo
+                class="!items-start !justify-start"
+                date={props.version.createdAt}
+                meta={versionReasonLabels[props.version.reason]}
                 enabled={!menuOpened()}
                 offset={{ mainAxis: 8 }}
                 placement="bottom-start"
-                wrapperClass="min-w-0 !items-start !justify-start"
-                fixed
-              >
-                <span class="truncate">{relativeTime()}</span>
-              </Tooltip>
+              />
               <Show when={props.version.contributorIDs.length > 0}>
                 <span class="h-3 w-px shrink-0 bg-gray-400 opacity-20" />
                 <Tooltip

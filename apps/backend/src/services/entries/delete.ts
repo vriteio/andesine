@@ -1,6 +1,10 @@
 import { toEntryID, toUUID } from "#backend/lib/primitives";
 import { entries, memberships } from "#backend/db";
 import { and, eq, inArray, isNull } from "drizzle-orm";
+import { toWorkspaceID } from "#backend/lib/primitives/id";
+import { createOutboundEvent, createWebhookOperation } from "#backend/lib/webhooks/operation";
+import { createWebhookRecorder } from "#backend/lib/webhooks/recorder";
+import { getWebhookEntryContext } from "#backend/lib/webhooks/entry-context";
 import {
   type EntryAuthorizationSource,
   loadEntryAuthorizationSources,
@@ -29,10 +33,13 @@ const deleteEntries = withAuthorization<
     if (input.ids.length === 0) return { entryIDs: [] };
 
     const entryIDs = [...new Set(input.ids)].map(toUUID);
+    const operation = createWebhookOperation(toWorkspaceID(workspaceID));
+    const recorder = await createWebhookRecorder({ database, operation });
+    const deletedAt = new Date();
     const deleted = await (async () => {
       const rows = await database
         .update(entries)
-        .set({ deletedAt: new Date(), updatedAt: new Date() })
+        .set({ deletedAt, updatedAt: deletedAt })
         .where(
           and(
             inArray(entries.id, entryIDs),
@@ -40,7 +47,7 @@ const deleteEntries = withAuthorization<
             isNull(entries.deletedAt)
           )
         )
-        .returning({ id: entries.id });
+        .returning({ id: entries.id, name: entries.name, collectionID: entries.collectionID });
 
       if (rows.length > 0) {
         await database
@@ -59,6 +66,30 @@ const deleteEntries = withAuthorization<
 
       return rows;
     })();
+
+    await recorder.record(
+      deleted.map((entry) => {
+        const context = getWebhookEntryContext(recorder.before, entry);
+
+        return {
+          event: createOutboundEvent(
+            operation,
+            "deleted",
+            {
+              type: "entry.deleted",
+              subject: context.subject,
+              data: {
+                name: entry.name,
+                collectionID: context.collectionID,
+                deletedAt: deletedAt.toISOString()
+              }
+            },
+            deletedAt
+          ),
+          resources: [{ ...context.subject, before: context.scope, after: null }]
+        };
+      })
+    );
 
     return { entryIDs: deleted.map(({ id }) => toEntryID(id)) };
   }

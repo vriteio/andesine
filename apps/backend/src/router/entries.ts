@@ -85,7 +85,7 @@ const entriesRouter = handlers.router({
   update: authorizedHandlers.update.handler(async ({ context, input }) => {
     const name = input.name;
 
-    await Entries.update({
+    const { webhookOperationID } = await Entries.update({
       auth: context.auth,
       id: input.id,
       name
@@ -96,7 +96,8 @@ const entriesRouter = handlers.router({
         input.id,
         name,
         context.auth.workspaceID,
-        getUserAuthorization(context.auth)?.memberID
+        getUserAuthorization(context.auth)?.memberID,
+        webhookOperationID
       );
     }
 

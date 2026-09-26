@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 // Generated from openapi.json. Do not edit.
 import type { OperationInput, OperationOutput, OperationError } from "../operation";
 
@@ -118,6 +119,12 @@ export type {
   ValidationErrorData,
   ValidationIssue,
   VersionReason,
+  WebhookAttempt,
+  WebhookDelivery,
+  WebhookEndpoint,
+  WebhookEvent,
+  WebhookEventName,
+  WebhookRun,
   WorkspaceListItem
 } from "./schema";
 
@@ -368,6 +375,51 @@ export type VersionsRevertOutput = OperationOutput<"versions.revert">;
 export type VersionsUpdateError = OperationError<"versions.update">;
 export type VersionsUpdateInput = OperationInput<"versions.update">;
 export type VersionsUpdateOutput = OperationOutput<"versions.update">;
+export type WebhooksBulkDeleteError = OperationError<"webhooks.bulkDelete">;
+export type WebhooksBulkDeleteInput = OperationInput<"webhooks.bulkDelete">;
+export type WebhooksBulkDeleteOutput = OperationOutput<"webhooks.bulkDelete">;
+export type WebhooksBulkRedeliverError = OperationError<"webhooks.bulkRedeliver">;
+export type WebhooksBulkRedeliverInput = OperationInput<"webhooks.bulkRedeliver">;
+export type WebhooksBulkRedeliverOutput = OperationOutput<"webhooks.bulkRedeliver">;
+export type WebhooksBulkSetEnabledError = OperationError<"webhooks.bulkSetEnabled">;
+export type WebhooksBulkSetEnabledInput = OperationInput<"webhooks.bulkSetEnabled">;
+export type WebhooksBulkSetEnabledOutput = OperationOutput<"webhooks.bulkSetEnabled">;
+export type WebhooksCreateError = OperationError<"webhooks.create">;
+export type WebhooksCreateInput = OperationInput<"webhooks.create">;
+export type WebhooksCreateOutput = OperationOutput<"webhooks.create">;
+export type WebhooksDeleteError = OperationError<"webhooks.delete">;
+export type WebhooksDeleteInput = OperationInput<"webhooks.delete">;
+export type WebhooksDeleteOutput = OperationOutput<"webhooks.delete">;
+export type WebhooksGetDeliveryError = OperationError<"webhooks.getDelivery">;
+export type WebhooksGetDeliveryInput = OperationInput<"webhooks.getDelivery">;
+export type WebhooksGetDeliveryOutput = OperationOutput<"webhooks.getDelivery">;
+export type WebhooksGetError = OperationError<"webhooks.get">;
+export type WebhooksGetInput = OperationInput<"webhooks.get">;
+export type WebhooksGetOutput = OperationOutput<"webhooks.get">;
+export type WebhooksListAttemptsError = OperationError<"webhooks.listAttempts">;
+export type WebhooksListAttemptsInput = OperationInput<"webhooks.listAttempts">;
+export type WebhooksListAttemptsOutput = OperationOutput<"webhooks.listAttempts">;
+export type WebhooksListDeliveriesError = OperationError<"webhooks.listDeliveries">;
+export type WebhooksListDeliveriesInput = OperationInput<"webhooks.listDeliveries">;
+export type WebhooksListDeliveriesOutput = OperationOutput<"webhooks.listDeliveries">;
+export type WebhooksListError = OperationError<"webhooks.list">;
+export type WebhooksListInput = OperationInput<"webhooks.list">;
+export type WebhooksListOutput = OperationOutput<"webhooks.list">;
+export type WebhooksListRunsError = OperationError<"webhooks.listRuns">;
+export type WebhooksListRunsInput = OperationInput<"webhooks.listRuns">;
+export type WebhooksListRunsOutput = OperationOutput<"webhooks.listRuns">;
+export type WebhooksRedeliverError = OperationError<"webhooks.redeliver">;
+export type WebhooksRedeliverInput = OperationInput<"webhooks.redeliver">;
+export type WebhooksRedeliverOutput = OperationOutput<"webhooks.redeliver">;
+export type WebhooksRotateSecretError = OperationError<"webhooks.rotateSecret">;
+export type WebhooksRotateSecretInput = OperationInput<"webhooks.rotateSecret">;
+export type WebhooksRotateSecretOutput = OperationOutput<"webhooks.rotateSecret">;
+export type WebhooksSendTestError = OperationError<"webhooks.sendTest">;
+export type WebhooksSendTestInput = OperationInput<"webhooks.sendTest">;
+export type WebhooksSendTestOutput = OperationOutput<"webhooks.sendTest">;
+export type WebhooksUpdateError = OperationError<"webhooks.update">;
+export type WebhooksUpdateInput = OperationInput<"webhooks.update">;
+export type WebhooksUpdateOutput = OperationOutput<"webhooks.update">;
 export type WorkspacesListError = OperationError<"workspaces.list">;
 export type WorkspacesListInput = OperationInput<"workspaces.list">;
 export type WorkspacesListOutput = OperationOutput<"workspaces.list">;

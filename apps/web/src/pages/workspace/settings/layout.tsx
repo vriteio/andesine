@@ -1,4 +1,4 @@
-import { Card, ScrollShadow, createRef } from "@andesine/components";
+import { Card, ScrollArea, ScrollShadow, createRef } from "@andesine/components";
 import { Title } from "@solidjs/meta";
 import {
   revalidate,
@@ -17,10 +17,16 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
   const routeData = useRouteData();
   const location = useLocation();
   const navigate = useNavigate();
-  const params = useParams<{ workspaceID?: string; keyID?: string }>();
+  const params = useParams<{ workspaceID?: string; keyID?: string; webhookID?: string }>();
   const { content, currentWorkspace, hasPermission, subscribeToUpdates } = useWorkspace();
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const title = () => routeData()?.title || "Settings";
+  // Only main settings pages (Settings › Page) name the settings area in the document title.
+  const documentTitle = () => {
+    const mainPage = (routeData()?.breadcrumbs.length ?? 0) <= 2;
+
+    return mainPage ? `${title()} settings | Andesine` : `${title()} | Andesine`;
+  };
   const activeRoute = () => {
     return location.pathname
       .slice(`/${params.workspaceID || ""}/settings`.length)
@@ -44,9 +50,12 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
     }
     if (route === "publishing") return true;
     if (route === "billing") return hasPermission("read:billing");
-    if (route === "api") return hasPermission("read:api_keys");
+    if (route === "api") return hasPermission("read:api_keys") || hasPermission("read:webhooks");
     if (route === "key") {
       return params.keyID ? hasPermission("read:api_keys") : hasPermission("api_keys");
+    }
+    if (route === "webhook") {
+      return params.webhookID ? hasPermission("read:webhooks") : hasPermission("webhooks");
     }
 
     return false;
@@ -105,6 +114,18 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
       queryKeys.add("api-keys");
     }
 
+    if (route === "api" && event.action.startsWith("webhook:")) {
+      queryKeys.add("webhooks");
+    }
+
+    if (route === "webhook" && event.action.startsWith("webhook:")) {
+      queryKeys.add("webhooks");
+      queryKeys.add("webhook");
+      queryKeys.add("webhook-events");
+      queryKeys.add("webhook-event");
+      queryKeys.add("webhook-event-timeline");
+    }
+
     if (route === "publishing" && event.action.startsWith("publishing:channel-")) {
       queryKeys.add("publishing-channels-with-usage");
     }
@@ -153,12 +174,12 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
 
   return (
     <SettingsProvider>
-      <Title>{`${title()} settings | Andesine`}</Title>
+      <Title>{documentTitle()}</Title>
       <Show when={!content.offline()}>
         <div class="flex w-full flex-1 overflow-hidden px-1">
           <div class="relative flex h-full w-full overflow-hidden">
             <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
-            <div class="relative z-0 w-full overflow-auto" ref={setScrollableContainerRef}>
+            <ScrollArea class="z-0 w-full" viewportRef={setScrollableContainerRef}>
               <div class="flex w-full flex-col items-center px-2.5 pb-5 pt-5 md:px-10 md:pb-10 md:pt-9">
                 <div class="relative flex w-full max-w-[44rem] flex-col">
                   <h1 class="mb-3 text-4xl font-semibold md:text-5xl">{title()}</h1>
@@ -178,7 +199,7 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
                   </Show>
                 </div>
               </div>
-            </div>
+            </ScrollArea>
           </div>
         </div>
         <Suspense>

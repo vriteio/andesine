@@ -19,6 +19,7 @@ import { syncRouter } from "./sync";
 import { versionsRouter } from "./versions";
 import { typeMetadataRouter } from "./type-metadata";
 import { workspacesRouter } from "./workspaces";
+import { webhooksRouter } from "./webhooks";
 
 const router = api.router({
   assets: assetsRouter,
@@ -30,6 +31,7 @@ const router = api.router({
   content: contentRouter,
   billing: billingRouter,
   keys: keysRouter,
+  webhooks: webhooksRouter,
   roles: rolesRouter,
   search: searchRouter,
   schemas: schemasRouter,

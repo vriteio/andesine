@@ -8,8 +8,6 @@ import {
   createCurrentEntrySyncJobs,
   createPublishedEntrySyncJobs
 } from "@andesine/backend/lib/queue/search-indexing-jobs";
-import { restoreSchemaEntryMove } from "@andesine/backend/lib/schema/migration/entry-move";
-import { restoreSchemaCollectionMove } from "@andesine/backend/lib/schema/migration/collection-move";
 import {
   toCollectionID,
   toEntryID,
@@ -24,6 +22,7 @@ import { db } from "../database";
 import { activateMigration } from "./activate";
 import { processMigrationEntry, rollbackMigrationEntry } from "./entry";
 import { publishMigrationRecoveryVersionEvents } from "./versions";
+import { startMigrationRollback, finishMigrationRollback } from "./rollback-structure";
 
 interface ExecuteSchemaMigrationInput {
   jobID: string;
@@ -169,10 +168,13 @@ const failMigration = async (
   const message = input.error instanceof Error ? input.error.message : "Unknown migration error";
   const rollbackErrors: string[] = [];
 
-  await db
-    .update(schemaMigrations)
-    .set({ status: "rolling_back", error: message, updatedAt: new Date() })
-    .where(eq(schemaMigrations.id, input.migrationID));
+  const started = await startMigrationRollback({
+    migrationID: input.migrationID,
+    workspaceID: input.workspaceID,
+    error: message
+  });
+
+  if (!started) return [];
 
   if (input.entryID) {
     await db
@@ -247,20 +249,10 @@ const failMigration = async (
     throw new Error(finalError);
   }
 
-  const { restoredMove, restoredCollectionMove } = await db.transaction(async (transaction) => {
-    const move = await restoreSchemaEntryMove(transaction, input.migrationID, input.workspaceID);
-    const collectionMove = await restoreSchemaCollectionMove(
-      transaction,
-      input.migrationID,
-      input.workspaceID
-    );
-
-    await transaction
-      .update(schemaMigrations)
-      .set({ status: "failed", error: finalError, completedAt: new Date(), updatedAt: new Date() })
-      .where(eq(schemaMigrations.id, input.migrationID));
-
-    return { restoredMove: move, restoredCollectionMove: collectionMove };
+  const { restoredMove, restoredCollectionMove } = await finishMigrationRollback({
+    migrationID: input.migrationID,
+    workspaceID: input.workspaceID,
+    error: finalError
   });
 
   if (restoredMove) {
@@ -437,7 +429,7 @@ const executeSchemaMigration = async (
     return;
   }
 
-  await db
+  const [started] = await db
     .update(schemaMigrations)
     .set({
       status: "running",
@@ -446,7 +438,17 @@ const executeSchemaMigration = async (
       startedAt: migration.startedAt || new Date(),
       updatedAt: new Date()
     })
-    .where(eq(schemaMigrations.id, migrationID));
+    .where(
+      and(
+        eq(schemaMigrations.id, migrationID),
+        eq(schemaMigrations.workspaceID, workspaceID),
+        inArray(schemaMigrations.status, ["queued", "running"])
+      )
+    )
+    .returning({ id: schemaMigrations.id });
+
+  if (!started) return;
+
   await publishMigrationStatus(
     {
       collectionIDs,

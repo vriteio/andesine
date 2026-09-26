@@ -1,3 +1,4 @@
+import { createStructureWebhookRecorder } from "#backend/lib/webhooks/structure";
 import { assertContentNameAvailable } from "#backend/lib/content/names";
 import { rankBetweenNeighbors, toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
 import {
@@ -159,7 +160,16 @@ const planCollectionMove = withAuthorization<MoveCollectionInput, undefined, Mov
     const existingIndex = siblings.findIndex((sibling) => sibling.id === collectionID);
     const requestedIndex = input.index ?? (existingIndex >= 0 ? existingIndex : destination.length);
     const index = Math.min(Math.max(requestedIndex, 0), destination.length);
-    const rank = rankBetweenNeighbors(destination[index - 1]?.rank, destination[index]?.rank);
+    const rank =
+      parentID === collection.parentID && index === existingIndex
+        ? collection.rank
+        : rankBetweenNeighbors(destination[index - 1]?.rank, destination[index]?.rank);
+    const webhooks = await createStructureWebhookRecorder({
+      database,
+      workspaceID,
+      collectionIDs: [collectionID],
+      includeDescendants: true
+    });
 
     await database
       .update(collections)
@@ -269,6 +279,8 @@ const planCollectionMove = withAuthorization<MoveCollectionInput, undefined, Mov
         ...new Set([...schemaMigration.affectedCollectionIDs, collection.parentID])
       ];
     }
+
+    await webhooks.record();
 
     return {
       index,

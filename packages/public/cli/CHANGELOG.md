@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0
+
+- Add generated webhook commands for management (including bulk enable/disable and
+  delete), delivery history, signed tests, and single or bulk replay.
+
 ## 0.2.0
 
 - Add slug-path API flags, collection selection, and generated type bindings.

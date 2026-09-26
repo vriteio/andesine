@@ -36,7 +36,16 @@ const routerPlugin: FastifyPluginAsync = async (app) => {
         .send({ error: "Too many invite attempts. Please try again later." });
     }
   };
-  const logORPCError = (error: unknown, options?: unknown) => {
+  const logORPCError = (error: unknown, options?: unknown, pathname?: string) => {
+    // Webhook input URLs and failed output validation can contain credentials
+    // or a one-time secret. Do not log request options, causes, or raw errors.
+    if (pathname && /^\/(?:rpc\/)?webhooks(?:\/|$)/.test(pathname)) {
+      console.error("Webhook request failed", {
+        code: error instanceof ORPCError ? error.code : "INTERNAL_SERVER_ERROR"
+      });
+      return;
+    }
+
     if (error instanceof ORPCError) {
       const cause = (error as { cause?: unknown }).cause;
 
@@ -58,7 +67,7 @@ const routerPlugin: FastifyPluginAsync = async (app) => {
     ],
     interceptors: [
       onError((error, options) => {
-        logORPCError(error, options);
+        logORPCError(error, options, options.request.url.pathname);
         throw withErrorHints(error);
       })
     ]
@@ -67,7 +76,7 @@ const routerPlugin: FastifyPluginAsync = async (app) => {
     plugins: [new RequestHeadersPlugin(), new ResponseHeadersPlugin()],
     interceptors: [
       onError((error, options) => {
-        logORPCError(error, options);
+        logORPCError(error, options, options.request.url.pathname);
       })
     ]
   });

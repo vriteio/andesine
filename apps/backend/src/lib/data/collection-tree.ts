@@ -1,6 +1,6 @@
 import { collections, type Collection } from "#backend/db";
 import { toCollectionID, toUUID } from "#backend/lib/primitives";
-import { db } from "#backend/lib/adapters";
+import { db } from "#backend/lib/adapters/postgres";
 import { and, asc, eq, isNull } from "drizzle-orm";
 
 type CollectionRow = typeof collections.$inferSelect;

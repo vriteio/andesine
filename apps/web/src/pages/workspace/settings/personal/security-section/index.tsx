@@ -7,13 +7,13 @@ import { createAsync, revalidate } from "@solidjs/router";
 import { PasskeyItem } from "./passkey-item";
 import { type Passkey } from "@better-auth/passkey/client";
 import { useSettings } from "../../settings-context";
-import { format } from "date-fns";
 import {
   passkeysQuery,
   useAddPasskeyMutation,
   useDeletePasskeysMutation,
   useRenamePasskeyMutation
 } from "#web/lib/data";
+import { formatDate } from "#web/lib/primitives";
 
 interface PasskeyListProps {
   passkeys: Passkey[];
@@ -114,7 +114,7 @@ const SecuritySection: Component = () => {
     });
   };
   const addPasskeyMutation = useAddPasskeyMutation({
-    name: () => format(new Date(), "MMM d, yyyy"),
+    name: () => formatDate(new Date()),
     refresh: refreshPasskeys,
     onVerificationRequired: openVerificationDialog
   });

@@ -1,15 +1,17 @@
 import { assertContentNameAvailable } from "#backend/lib/content/names";
 import { normalizeEntryName } from "#backend/lib/validation/content-name";
 import {
+  createDeferredDocumentReplacements,
   openDocumentContentConnection,
-  replaceDocumentContent,
-  type ContentConnection
+  type ContentConnection,
+  type DeferredDocumentReplacements
 } from "#backend/collaboration";
 import { entries, entryVersions, publishingChannels, publishingSnapshotEntries } from "#backend/db";
 import type { VersionDetails } from "#backend/lib/data";
 import { PUBLISHED_CHANNEL_CODE, type PublishingEntryStatus } from "#backend/lib/publishing";
 import { withAuthorization } from "#backend/lib/policy";
-import { toUUID, toVersionID } from "#backend/lib/primitives";
+import { toUUID, toVersionID, toWorkspaceID } from "#backend/lib/primitives";
+import { createWebhookOperation } from "#backend/lib/webhooks/operation";
 import { retainRevertedVersionAssets } from "#backend/lib/versioning";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
@@ -23,6 +25,7 @@ interface RevertVersionInput {
 }
 interface CommitRevertVersionInput extends RevertVersionInput {
   connection: ContentConnection;
+  replacements: DeferredDocumentReplacements;
 }
 interface ResolvedRevertVersion {
   collectionID: string | null;
@@ -113,82 +116,81 @@ const commitRevertVersion = withAuthorization<
       name
     });
     // Only an authorized revert grants historical images to the current document.
-    // Collaboration saves wait for this workspace transaction to commit.
+    // The live replacement is applied only after this workspace transaction commits.
     await retainRevertedVersionAssets(database, workspaceID, {
       entryID: target.entryID,
       versionID: target.id
     });
 
-    const previous = await replaceDocumentContent(input.connection, target.document);
     const createdVersions: VersionDetails[] = [];
-
-    try {
-      const [existing] = await database
-        .select({ id: entryVersions.id })
-        .from(entryVersions)
-        .where(
-          and(
-            eq(entryVersions.workspaceID, workspaceID),
-            eq(entryVersions.entryID, toUUID(target.entryID)),
-            eq(entryVersions.hash, previous.hash)
-          )
-        )
-        .limit(1);
-
-      if (!existing) {
-        const safetyVersion = await commitCreateVersion({
+    const previous = await input.replacements.prepare(input.connection, target.document, {
+      preserve: async (snapshot) => {
+        const version = await commitCreateVersion({
           auth,
           entryID: target.entryID,
           reason: "auto",
           contributorIDs: input.contributorIDs,
-          snapshot: previous,
-          skipAuthorization: authorizationScope
+          snapshot
         });
 
-        createdVersions.push(safetyVersion);
+        createdVersions.push(version);
       }
+    });
 
-      const version = await commitCreateVersion({
+    const [existing] = await database
+      .select({ id: entryVersions.id })
+      .from(entryVersions)
+      .where(
+        and(
+          eq(entryVersions.workspaceID, workspaceID),
+          eq(entryVersions.entryID, toUUID(target.entryID)),
+          eq(entryVersions.hash, previous.hash)
+        )
+      )
+      .limit(1);
+
+    if (!existing) {
+      const safetyVersion = await commitCreateVersion({
         auth,
         entryID: target.entryID,
-        reason: "revert",
+        reason: "auto",
         contributorIDs: input.contributorIDs,
-        schemaRevisionID: resolved.targetSchemaRevisionID,
-        sourceVersionID: target.id,
-        snapshot: {
-          document: target.document,
-          hash: target.hash
-        },
+        snapshot: previous,
         skipAuthorization: authorizationScope
       });
 
-      createdVersions.push(version);
-
-      return {
-        createdVersions,
-        publishingEntries: [
-          {
-            entryID: target.entryID,
-            hasUnpublishedChanges:
-              authorization.isPublishingEnabled(resolved.collectionID) &&
-              (!resolved.publishedVersionID || target.hash !== resolved.publishedHash),
-            versionID: resolved.publishedVersionID ? toVersionID(resolved.publishedVersionID) : null
-          }
-        ],
-        version
-      };
-    } catch (error) {
-      try {
-        await replaceDocumentContent(input.connection, previous.document);
-      } catch (rollbackError) {
-        console.error("Failed to roll back reverted document", {
-          error: rollbackError,
-          entryID: target.entryID
-        });
-      }
-
-      throw error;
+      createdVersions.push(safetyVersion);
     }
+
+    const version = await commitCreateVersion({
+      auth,
+      entryID: target.entryID,
+      reason: "revert",
+      contributorIDs: input.contributorIDs,
+      schemaRevisionID: resolved.targetSchemaRevisionID,
+      sourceVersionID: target.id,
+      snapshot: {
+        document: target.document,
+        hash: target.hash
+      },
+      skipAuthorization: authorizationScope
+    });
+
+    createdVersions.push(version);
+
+    return {
+      createdVersions,
+      publishingEntries: [
+        {
+          entryID: target.entryID,
+          hasUnpublishedChanges:
+            authorization.isPublishingEnabled(resolved.collectionID) &&
+            (!resolved.publishedVersionID || target.hash !== resolved.publishedHash),
+          versionID: resolved.publishedVersionID ? toVersionID(resolved.publishedVersionID) : null
+        }
+      ],
+      version
+    };
   }
 );
 
@@ -196,10 +198,16 @@ const revertVersion = withAuthorization<RevertVersionInput, undefined, RevertVer
   {},
   async ({ auth, input, workspaceID }) => {
     const target = await getVersion({ ...input, auth, action: "version:revert" });
+    const operation = createWebhookOperation(toWorkspaceID(workspaceID));
+    const replacements = createDeferredDocumentReplacements(operation.id);
     const connection = await openDocumentContentConnection(target.entryID, workspaceID);
 
     try {
-      return await commitRevertVersion({ ...input, auth, connection });
+      const result = await commitRevertVersion({ ...input, auth, connection, replacements });
+
+      await replacements.apply();
+
+      return result;
     } finally {
       await connection.disconnect();
     }

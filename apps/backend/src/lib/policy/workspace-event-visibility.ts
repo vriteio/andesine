@@ -85,6 +85,10 @@ const isWorkspaceEventVisible = (
     return hasAuthorizationRequirements(auth, { session: ["read:api_keys"] });
   }
 
+  if (event.action.startsWith("webhook:")) {
+    return hasAuthorizationRequirements(auth, { session: ["read:webhooks"] });
+  }
+
   if (event.action.startsWith("workspace:")) {
     return hasAuthorizationRequirements(auth, { session: true });
   }

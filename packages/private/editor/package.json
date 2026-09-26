@@ -17,6 +17,10 @@
       "types": "./src/lib/normalize-source-name.ts",
       "default": "./src/lib/normalize-source-name.ts"
     },
+    "./highlight-code": {
+      "types": "./src/lib/highlight-code.ts",
+      "default": "./src/lib/highlight-code.ts"
+    },
     "./element": {
       "types": "./src/lib/element.ts",
       "default": "./src/lib/element.ts"

@@ -1,7 +1,7 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "envMode": "loose",
-  "ui": "stream",
+  "ui": "tui",
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

@@ -1,3 +1,5 @@
+import { createStructureWebhookRecorder } from "#backend/lib/webhooks/structure";
+import type { WebhookOperation } from "#backend/lib/webhooks/operation";
 import { assertContentTreeNames } from "#backend/lib/content/names";
 import { collections, entries, memberships } from "#backend/db";
 import type { db } from "#backend/lib/adapters";
@@ -188,8 +190,19 @@ const clearDeletedCurrentEntries = async (
 const applyPublishingRevertStructure = async (
   database: DatabaseTransaction,
   workspaceID: string,
-  plan: PublishingRevertPlan
+  plan: PublishingRevertPlan,
+  webhookOperation?: WebhookOperation
 ): Promise<ApplyPublishingRevertStructureResult> => {
+  const webhooks = await createStructureWebhookRecorder({
+    database,
+    workspaceID,
+    operation: webhookOperation,
+    collectionIDs: [...plan.dependencyCollectionOperations, ...plan.collectionOperations].map(
+      ({ collectionID }) => collectionID
+    ),
+    entryIDs: plan.entryOperations.map(({ entryID }) => entryID),
+    includeDescendants: true
+  });
   const ranks = await resolvePublishingRevertRanks(database, workspaceID, plan);
   const schemaRootCollectionIDs = [
     ...plan.dependencyCollectionOperations,
@@ -267,6 +280,8 @@ const applyPublishingRevertStructure = async (
       workspaceID
     });
   }
+
+  await webhooks.record();
 
   return {
     deletedCollectionIDs: deletedCollections.collectionIDs,

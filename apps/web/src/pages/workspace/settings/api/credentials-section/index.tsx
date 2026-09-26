@@ -18,7 +18,7 @@ import { SettingsSection } from "../../settings-section";
 import { APIKeyItem } from "./api-key-item";
 import { DeleteKeyDialog } from "./delete-key-dialog";
 import { RotateKeyDialog, type ExpirationOption } from "./rotate-key-dialog";
-import { NewKeyDialog } from "../../new-key-dialog";
+import { SecretDialog } from "../../secret-dialog";
 import { useWorkspace } from "#web/context/workspace";
 import { apiKeysQuery } from "#web/lib/data";
 
@@ -90,7 +90,14 @@ const APIKeyList: Component<APIKeyListProps> = (props) => {
     },
     mutationFn: (input: { ids: string[] }) => client.keys.delete(input)
   }));
-  const mutationPending = () => rotateKeyMutation.isPending || deleteKeyMutation.isPending;
+  // Spinners belong only to keys with an action in progress, never to list refreshes.
+  const isKeyPending = (id: string) => {
+    const rotating = rotateKeyMutation.isPending && rotateKeyMutation.variables?.id === id;
+    const deleting =
+      deleteKeyMutation.isPending && Boolean(deleteKeyMutation.variables?.ids.includes(id));
+
+    return rotating || deleting;
+  };
   const visibleKeys = createMemo(() => {
     // Sort keys by creation date first, moving expired ones to the end of the list
     const orderedKeys = [...props.keys].sort((a, b) => {
@@ -114,7 +121,7 @@ const APIKeyList: Component<APIKeyListProps> = (props) => {
 
   return (
     <>
-      <NewKeyDialog key={revealedKey()} onClose={() => setRevealedKey("")} />
+      <SecretDialog kind="api-key" secret={revealedKey()} onClose={() => setRevealedKey("")} />
       <RotateKeyDialog
         key={rotationTarget()}
         loading={rotateKeyMutation.isPending}
@@ -167,7 +174,7 @@ const APIKeyList: Component<APIKeyListProps> = (props) => {
                 createdAt={key().createdAt}
                 expiresAt={key().expiresAt}
                 canManage={props.canManage}
-                loading={mutationPending() || props.keysRefreshing}
+                loading={isKeyPending(key().id)}
                 onEdit={() => navigate(`${settingsPath()}/key/${encodeURIComponent(key().id)}`)}
                 onRotate={() => setRotationTarget(key())}
                 onDelete={(ids) => {

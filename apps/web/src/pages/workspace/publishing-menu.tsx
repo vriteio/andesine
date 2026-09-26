@@ -9,7 +9,6 @@ import {
 import { createAsync, revalidate, useSearchParams } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
 import clsx from "clsx";
-import { format, formatDistanceToNow } from "date-fns";
 import { type Component, createMemo, createSignal, type JSX, Show } from "solid-js";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
@@ -22,6 +21,7 @@ import {
   type VersionReason
 } from "#web/lib/data";
 import { useEntryPublishingRevert } from "./publishing/use-entry-publishing-revert";
+import { formatDateTime, formatRelativeTime } from "#web/lib/primitives";
 
 interface PublishingMenuProps {
   entryID: string;
@@ -229,7 +229,7 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
       <Tooltip
         content={
           <div class="flex flex-col items-start justify-center gap-1">
-            <span>{format(createdAt(), "MMM d, yyyy HH:mm:ss")}</span>
+            <span>{formatDateTime(createdAt())}</span>
             <span class="font-mono text-[80%] opacity-50">{reason().label}</span>
           </div>
         }
@@ -253,7 +253,7 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
             </span>
             <Show when={version()}>
               <span class="truncate text-sm font-normal text-gray-400 md:text-xs">
-                {formatDistanceToNow(createdAt(), { addSuffix: true })}
+                {formatRelativeTime(createdAt())}
               </span>
             </Show>
           </div>

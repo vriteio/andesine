@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0
+
+- Add generated webhook methods for management (including bulk enable/disable and
+  delete), delivery history, signed tests, and single or bulk replay, plus public
+  webhook event types.
+- Add the isolated `@andesine/sdk/webhooks` verifier with raw-body authentication,
+  timestamp and schema checks, plus receiver and durable deduplication examples.
+
 ## 0.2.0
 
 - Add derived `slugPath` selectors and responses, slug-based sibling uniqueness,
