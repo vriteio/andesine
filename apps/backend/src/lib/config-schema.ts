@@ -1,14 +1,11 @@
+import { versionRetentionConfigSchema } from "@andesine/server/versioning/config";
+import { searchConfigSchema } from "@andesine/server/search/config";
+import { assetConfigSchema } from "@andesine/server/assets/config";
+import { encryptionConfigSchema } from "@andesine/server/security/config";
+import { webhookDestinationConfigSchema } from "@andesine/server/webhooks/destination/config";
 import { billingConfigSchema } from "#backend/lib/billing/config-schema";
-import { assetConfigSchema } from "#backend/lib/assets/config-schema";
-import { encryptionConfigSchema } from "#backend/lib/security/encryption-config";
-import { webhookDestinationConfigSchema } from "#backend/lib/webhooks/destination-config";
 import * as z from "zod";
 
-const url = z.preprocess((value) => {
-  if (typeof value !== "string") return value;
-
-  return value.replace(/\/+$/, "");
-}, z.url());
 const cookieDomain = z.preprocess(
   (value) => {
     if (typeof value !== "string") return value;
@@ -23,7 +20,7 @@ const cookieDomain = z.preprocess(
     .optional()
 );
 const secret = z.string().trim().min(32, "SECRET must contain at least 32 characters");
-const configSchema = z.object({
+const configSchema = billingConfigSchema.safeExtend({
   NODE_ENV: z.string().optional().describe("Node environment"),
   // Hosts
   PUBLIC_API_HOST: z.string().describe("Public host of the API"),
@@ -44,38 +41,7 @@ const configSchema = z.object({
   QUEUE_REDIS_URL: z.string().describe("Background job Redis connection URL"),
   REDIS_URL: z.string().describe("Redis connection URL"),
   // Search
-  TYPESENSE_URL: url.describe("Typesense API URL"),
-  TYPESENSE_API_KEY: z.string().min(1).describe("Typesense API key"),
-  OPENAI_API_KEY: z.string().min(1).describe("OpenAI-compatible API key"),
-  OPENAI_BASE_URL: url
-    .default("https://api.openai.com/v1")
-    .describe("OpenAI-compatible API base URL"),
-  SEARCH_EMBEDDING_MODEL: z
-    .string()
-    .min(1)
-    .default("text-embedding-3-small")
-    .describe("OpenAI-compatible embedding model"),
-  SEARCH_EMBEDDING_DIMENSIONS: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .default(1536)
-    .describe("Number of dimensions returned by the embedding model"),
-  ASSET_ANALYSIS_MODEL: z
-    .string()
-    .trim()
-    .min(1)
-    .optional()
-    .describe("Vision model for image analysis; defaults to SEARCH_ASK_MODEL"),
-  SEARCH_ASK_MODEL: z
-    .string()
-    .min(1)
-    .default("gpt-5.6-luna")
-    .describe("OpenAI-compatible model used by Ask AI"),
-  SEARCH_ASK_REASONING_EFFORT: z
-    .enum(["none", "minimal", "low", "medium", "high", "xhigh", "max"])
-    .default("none")
-    .describe("Reasoning effort used by Ask AI"),
+  ...searchConfigSchema.shape,
   // Email
   SENDER_EMAIL: z.string().describe("Email address to send emails from"),
   SENDER_NAME: z.string().describe("Name to send emails from"),
@@ -102,19 +68,7 @@ const configSchema = z.object({
   PASSKEY_RP_ID: z.string().optional().describe("WebAuthn Relying Party ID"),
   PASSKEY_ORIGIN: z.string().optional().describe("WebAuthn expected origin"),
   // Version retention
-  VERSION_RETENTION_DAYS: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .default(7)
-    .describe("Number of days to keep automatic versions by default"),
-  PRO_VERSION_RETENTION_DAYS: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .default(30)
-    .describe("Number of days to keep automatic versions on the Pro plan"),
-  ...billingConfigSchema.shape,
+  ...versionRetentionConfigSchema.shape,
   ...assetConfigSchema.shape
 });
 

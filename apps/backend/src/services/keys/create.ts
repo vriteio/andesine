@@ -1,7 +1,8 @@
+import { apiKeys } from "@andesine/server/database";
 import { assertKeyDelegation } from "#backend/lib/policy/delegation";
-import { toKeyID, toUUID } from "#backend/lib/primitives";
+import { toKeyID, toUUID } from "@andesine/contracts/primitives";
 import { db } from "#backend/lib/adapters";
-import { apiKeys, type Key } from "#backend/db";
+import { type Key } from "@andesine/contracts/entities";
 import { withAuthorization } from "#backend/lib/policy";
 import { generateKeyValue, generateSalt, hashKey } from "#backend/lib/security";
 

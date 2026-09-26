@@ -1,8 +1,3 @@
-import { assertContentNameAvailable } from "#backend/lib/content/names";
-import { ORPCError } from "@orpc/server";
-import { normalizeContentElements } from "#backend/lib/content/elements";
-import { syncEntryAssets } from "#backend/lib/assets/references";
-import { config } from "#backend/lib/config";
 import {
   workspaces,
   contents,
@@ -16,22 +11,33 @@ import {
   memberships,
   schemaMigrationEntries,
   schemaMigrations
-} from "#backend/db";
-import { emitEntryEvent, emitPublishingEntryContentUpdates } from "#backend/events";
-import { db } from "#backend/lib/adapters";
+} from "@andesine/server/database";
 import {
+  assertContentNameAvailable,
   hashContentDocument,
   replaceContentDocument,
   serializeContentDocument
-} from "#backend/lib/content";
-import { PUBLISHED_CHANNEL_CODE } from "#backend/lib/publishing";
-import { enqueueCurrentEntrySync } from "#backend/lib/queue";
-import { toEntryID, toUUID, toWorkspaceID } from "#backend/lib/primitives";
+} from "@andesine/server/content";
+import { syncEntryAssets } from "@andesine/server/assets";
 import {
   getResolvedSchemaDefinition,
   migrateContentToSchema,
   removeContentSchema
-} from "#backend/lib/schema";
+} from "@andesine/server/schema";
+import {
+  createWebhookOperation,
+  createWebhookRecorder,
+  recordSavedEntryWebhooks
+} from "@andesine/server/webhooks/recording";
+import { webhookRetentionPolicy } from "#backend/lib/webhooks/policy";
+import { normalizeContentElements } from "@andesine/document";
+import { ORPCError } from "@orpc/server";
+import { config } from "#backend/lib/config";
+import { emitEntryEvent, emitPublishingEntryContentUpdates } from "#backend/events";
+import { db } from "#backend/lib/adapters";
+import { PUBLISHED_CHANNEL_CODE } from "@andesine/contracts/publishing";
+import { enqueueCurrentEntrySync } from "#backend/lib/queue";
+import { toEntryID, toUUID, toWorkspaceID } from "@andesine/contracts/primitives";
 import {
   AUTOMATIC_VERSION_MAX_PERIOD_MS,
   AUTOMATIC_VERSION_QUIET_PERIOD_MS
@@ -42,9 +48,6 @@ import { applyUpdate, Doc, encodeStateAsUpdate } from "yjs";
 import { clearPendingContributors, getPendingContributors } from "./activity";
 import { getDocumentTitle, setDocumentTitle } from "./document";
 import { fetchSchemaDocument, storeSchemaDocument } from "./schema-database";
-import { createWebhookOperation } from "#backend/lib/webhooks/operation";
-import { createWebhookRecorder } from "#backend/lib/webhooks/recorder";
-import { recordSavedEntryWebhooks } from "#backend/lib/webhooks/entry-save";
 
 const collaborationDatabase = new Database({
   async fetch({ context, documentName }) {
@@ -182,7 +185,11 @@ const collaborationDatabase = new Database({
       if (activeMigration && !preparingMigration) return null;
 
       const operation = createWebhookOperation(toWorkspaceID(workspaceID), webhookOperationID);
-      const recorder = await createWebhookRecorder({ database: tx, operation });
+      const recorder = await createWebhookRecorder({
+        retentionPolicy: webhookRetentionPolicy,
+        database: tx,
+        operation
+      });
 
       // Preserve pending edits until the worker saves the recovery version. A move has
       // already changed the collection, so its active schema can be the destination schema.

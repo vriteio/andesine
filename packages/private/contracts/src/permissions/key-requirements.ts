@@ -1,0 +1,23 @@
+import { type KeyPermission } from "../entities/keys";
+import { type Permission } from "../entities/roles";
+
+const keyPermissionRequirements: Record<KeyPermission, Permission[]> = {
+  "entries": ["content"],
+  "read:entries": [],
+  "collections": ["content"],
+  "read:collections": [],
+  "versions": ["content"],
+  "read:versions": ["content"],
+  "publishing": ["content", "publishing"],
+  "read:publishing": [],
+  "memberships": ["memberships"],
+  "read:memberships": [],
+  "roles": ["roles"],
+  "read:roles": [],
+  "webhooks": ["webhooks"],
+  "read:webhooks": ["read:webhooks"],
+  // All session users can ask AI; key management still requires api_keys.
+  "ai-answers": []
+};
+
+export { keyPermissionRequirements };

@@ -4,8 +4,8 @@ import {
   MAX_PAGE_SIZE,
   MAX_BULK_ITEMS,
   MAX_SEARCH_RESULTS
-} from "#backend/lib/api/limits";
-import type { instanceInfoType } from "#backend/contracts/schemas/instance";
+} from "@andesine/contracts/limits";
+import { type instanceInfoType } from "@andesine/contracts/instance";
 import type * as z from "zod";
 import { config } from "#backend/lib/config";
 import { getAssetStorageLimit } from "#backend/lib/assets/quota";

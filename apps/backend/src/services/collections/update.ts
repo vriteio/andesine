@@ -1,10 +1,12 @@
-import { createStructureWebhookRecorder } from "#backend/lib/webhooks/structure";
-import { assertContentNameAvailable } from "#backend/lib/content/names";
-import { toUUID } from "#backend/lib/primitives";
-import { collections, type Collection } from "#backend/db";
+import { collections } from "@andesine/server/database";
+import { createStructureWebhookRecorder } from "@andesine/server/webhooks/recording";
+import { assertContentNameAvailable } from "@andesine/server/content";
+import { webhookRetentionPolicy } from "#backend/lib/webhooks/policy";
+import { toUUID } from "@andesine/contracts/primitives";
+import { type Collection } from "@andesine/contracts/entities";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
-import { normalizeCollectionName, ROOT_COLLECTION_NAME } from "#backend/lib/validation";
+import { normalizeCollectionName, ROOT_COLLECTION_NAME } from "@andesine/contracts/content";
 import { withAuthorization } from "#backend/lib/policy";
 
 interface UpdateCollectionInput extends Partial<Pick<Collection, "name">> {
@@ -50,6 +52,7 @@ const updateCollection = withAuthorization<UpdateCollectionInput>(
     if (collection.name === name) return;
 
     const webhooks = await createStructureWebhookRecorder({
+      retentionPolicy: webhookRetentionPolicy,
       database,
       workspaceID,
       collectionIDs: [input.id]

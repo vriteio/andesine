@@ -1,5 +1,5 @@
 import { withAuthorization } from "#backend/lib/policy";
-import { toWorkspaceID } from "#backend/lib/primitives";
+import { toWorkspaceID } from "@andesine/contracts/primitives";
 import { saveGroup, type SaveGroupInput, type SaveGroupResult } from "./update";
 
 type CreateGroupInput = Omit<SaveGroupInput, "workspaceID">;

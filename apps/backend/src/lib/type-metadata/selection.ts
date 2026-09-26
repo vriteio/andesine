@@ -1,6 +1,6 @@
-import { createContentPaths } from "#backend/lib/content/paths";
+import { createContentPaths } from "@andesine/server/content";
 import type { AuthorizedCollectionTree } from "#backend/lib/policy";
-import { publicID } from "#backend/lib/primitives";
+import { publicID } from "@andesine/contracts/primitives";
 
 interface MetadataCollectionRow {
   id: string;

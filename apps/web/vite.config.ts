@@ -13,7 +13,7 @@ export default defineConfig(({ isSsrBuild }) => ({
   },
   ssr: {
     noExternal: [
-      "@andesine/sdk/slug",
+      /^@andesine\//,
       /^@atlaskit\/pragmatic-drag-and-drop(?:$|\/)/,
       /^@atlaskit\/pragmatic-drag-and-drop-hitbox(?:$|\/)/
     ]

@@ -1,15 +1,6 @@
-import { schema } from "#backend/db/schema";
+import { createDatabase } from "@andesine/server/database";
 import { config } from "#backend/lib/config";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
 
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-type DatabaseClient = DatabaseTransaction | typeof db;
-
-const pool = new Pool({
-  connectionString: config.DATABASE_URL
-});
-const db = drizzle({ client: pool, schema, casing: "snake_case" });
+const { db, pool } = createDatabase({ connectionString: config.DATABASE_URL });
 
 export { db, pool };
-export type { DatabaseTransaction, DatabaseClient };

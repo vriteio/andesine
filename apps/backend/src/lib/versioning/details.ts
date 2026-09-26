@@ -1,9 +1,11 @@
-import type { entryVersions } from "#backend/db/versions";
-import type { db } from "#backend/lib/adapters/postgres";
-import { mapVersion, type VersionDetails } from "#backend/lib/data/entry-version";
-import { assertRecordedContent } from "#backend/lib/schema/recorded";
+import {
+  type entryVersions,
+  type DatabaseTransaction as Database
+} from "@andesine/server/database";
+import { mapVersion } from "@andesine/server/data";
+import { assertRecordedContent } from "@andesine/server/schema";
+import { type VersionDetails } from "@andesine/contracts/versions";
 
-type Database = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type EntryVersionRow = typeof entryVersions.$inferSelect;
 
 const getVersionDetails = async (

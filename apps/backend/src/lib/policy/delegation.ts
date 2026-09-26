@@ -1,4 +1,4 @@
-import type { KeyPermission, Permission } from "#backend/db";
+import { type KeyPermission, type Permission } from "@andesine/contracts/entities";
 import { ORPCError } from "@orpc/server";
 import { canGrantKeyPermission, canGrantRole } from "./delegation-permissions";
 import { isAdminAuthorization } from "./permissions";

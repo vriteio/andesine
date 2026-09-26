@@ -1,7 +1,8 @@
-import { loadCurrentContentPaths, type CollectionSelector } from "#backend/lib/content/paths";
-import { toCollectionID, toUUID } from "#backend/lib/primitives";
-import { DEFAULT_PAGE_SIZE } from "#backend/lib/api/limits";
-import { type Collection } from "#backend/db";
+import { loadCurrentContentPaths } from "@andesine/server/content";
+import { type CollectionSelector } from "@andesine/contracts/content";
+import { toCollectionID, toUUID } from "@andesine/contracts/primitives";
+import { DEFAULT_PAGE_SIZE } from "@andesine/contracts/limits";
+import { type Collection } from "@andesine/contracts/entities";
 import { ORPCError } from "@orpc/server";
 import { withAuthorization } from "#backend/lib/policy";
 

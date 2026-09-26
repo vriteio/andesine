@@ -1,6 +1,6 @@
-import { collections, collectionSchemas } from "#backend/db";
+import { collections, collectionSchemas } from "@andesine/server/database";
 import { type ServiceResolveContext } from "#backend/lib/policy";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNotNull, isNull } from "drizzle-orm";
 

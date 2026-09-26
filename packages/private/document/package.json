@@ -1,0 +1,48 @@
+{
+  "name": "@andesine/document",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./tiptap": {
+      "types": "./src/tiptap/index.ts",
+      "default": "./src/tiptap/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit && tsc --noEmit -p src/tiptap/tsconfig.json"
+  },
+  "dependencies": {
+    "@tiptap/core": "catalog:",
+    "@tiptap/extension-blockquote": "catalog:",
+    "@tiptap/extension-bold": "catalog:",
+    "@tiptap/extension-bullet-list": "catalog:",
+    "@tiptap/extension-code": "catalog:",
+    "@tiptap/extension-code-block": "catalog:",
+    "@tiptap/extension-document": "catalog:",
+    "@tiptap/extension-hard-break": "catalog:",
+    "@tiptap/extension-highlight": "catalog:",
+    "@tiptap/extension-horizontal-rule": "catalog:",
+    "@tiptap/extension-italic": "catalog:",
+    "@tiptap/extension-link": "catalog:",
+    "@tiptap/extension-list-item": "catalog:",
+    "@tiptap/extension-ordered-list": "catalog:",
+    "@tiptap/extension-paragraph": "catalog:",
+    "@tiptap/extension-strike": "catalog:",
+    "@tiptap/extension-subscript": "catalog:",
+    "@tiptap/extension-superscript": "catalog:",
+    "@tiptap/extension-table": "catalog:",
+    "@tiptap/extension-task-item": "catalog:",
+    "@tiptap/extension-task-list": "catalog:",
+    "@tiptap/extension-text": "catalog:",
+    "@tiptap/pm": "catalog:",
+    "url-slug": "^5.0.1",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3"
+  }
+}

@@ -5,10 +5,10 @@ import {
   schemaMigrationCollections,
   schemaMigrations,
   workspaces
-} from "#backend/db";
+} from "@andesine/server/database";
 import { db } from "#backend/lib/adapters";
 import { loadAuthorizedCollectionTree, type SessionData } from "#backend/lib/policy";
-import { toCollectionID, toEntryID, toUUID, toWorkspaceID } from "#backend/lib/primitives";
+import { toCollectionID, toEntryID, toUUID, toWorkspaceID } from "@andesine/contracts/primitives";
 import { Auth } from "#backend/services/auth";
 import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { CollaborationContext } from "./types";

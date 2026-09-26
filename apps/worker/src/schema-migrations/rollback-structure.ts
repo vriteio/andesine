@@ -1,9 +1,10 @@
-import { schemaMigrations } from "@andesine/backend/db/content-schemas";
-import { workspaces } from "@andesine/backend/db/workspaces";
-import { restoreSchemaEntryMove } from "@andesine/backend/lib/schema/migration/entry-move";
-import { restoreSchemaCollectionMove } from "@andesine/backend/lib/schema/migration/collection-move";
-import { createMigrationWebhookOperation } from "@andesine/backend/lib/webhooks/migration";
-import { createStructureWebhookRecorder } from "@andesine/backend/lib/webhooks/structure";
+import { schemaMigrations, workspaces } from "@andesine/server/database";
+import { restoreSchemaEntryMove, restoreSchemaCollectionMove } from "@andesine/server/schema";
+import {
+  createMigrationWebhookOperation,
+  createStructureWebhookRecorder
+} from "@andesine/server/webhooks/recording";
+import { webhookRetentionPolicy } from "../config";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../database";
 
@@ -60,6 +61,7 @@ const finishMigrationRollback = async (input: FinishMigrationRollbackInput) => {
     }
 
     const webhooks = await createStructureWebhookRecorder({
+      retentionPolicy: webhookRetentionPolicy,
       database: transaction,
       workspaceID: input.workspaceID,
       operation: createMigrationWebhookOperation(input.workspaceID, input.migrationID),

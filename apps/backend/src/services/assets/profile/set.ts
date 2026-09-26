@@ -1,15 +1,15 @@
-import { assets, assetUploads, users, workspaces } from "#backend/db";
-import { auth as authAdapter } from "#backend/lib/adapters/auth";
+import { assets, assetUploads, users, workspaces } from "@andesine/server/database";
 import {
   getProfileImageURL,
   getProfileOwner,
   lockProfileOwner,
   profileOwnerCondition,
   type ProfileImageInput
-} from "#backend/lib/assets/profiles";
+} from "@andesine/server/assets";
+import { auth as authAdapter } from "#backend/lib/adapters/auth";
 import { config } from "#backend/lib/config";
 import { withAuthorization } from "#backend/lib/policy";
-import { toUUID, toWorkspaceID } from "#backend/lib/primitives";
+import { toUUID, toWorkspaceID } from "@andesine/contracts/primitives";
 import { emitWorkspaceStateEvent } from "#backend/events/workspaces";
 import { ORPCError } from "@orpc/server";
 import { and, eq, gt, isNull } from "drizzle-orm";

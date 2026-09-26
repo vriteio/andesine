@@ -1,12 +1,11 @@
-import { type VersionSummary, versionSummaryType } from "#backend/lib/data/entry-version";
+import { versionEventType, type VersionEvent } from "@andesine/contracts/events";
+import { type VersionSummary } from "@andesine/contracts/versions";
 import {
   emitEvent,
   type EmitEvent,
   subscribeToEvent,
   type SubscribeToEvent
 } from "#backend/lib/messaging";
-import { id } from "#backend/lib/primitives";
-import * as z from "zod";
 
 declare module "#backend/lib/messaging/events" {
   interface Events {
@@ -18,29 +17,6 @@ interface VersionDeletion {
   entryID: string;
   id: string;
 }
-
-const versionEventType = z.union([
-  z.object({
-    action: z.literal("version:create"),
-    memberID: id().optional(),
-    data: versionSummaryType
-  }),
-  z.object({
-    action: z.literal("version:update"),
-    memberID: id().optional(),
-    data: versionSummaryType
-  }),
-  z.object({
-    action: z.literal("version:delete"),
-    memberID: id().optional(),
-    data: z.object({
-      entryIDsByVersionID: z.record(id(), id()),
-      ids: z.array(id())
-    })
-  })
-]);
-
-type VersionEvent = z.infer<typeof versionEventType>;
 
 const VERSION_EVENT_BATCH_SIZE = 100;
 const emitVersionEvent: EmitEvent<{
@@ -94,7 +70,6 @@ export {
   emitVersionCreationEvents,
   emitVersionDeletionEvents,
   emitVersionEvent,
-  subscribeToVersionEvents,
-  versionEventType
+  subscribeToVersionEvents
 };
-export type { VersionDeletion, VersionEvent };
+export type { VersionDeletion };

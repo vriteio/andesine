@@ -1,7 +1,7 @@
+import { invitations, workspaces, roles } from "@andesine/server/database";
 import { assertRoleDelegation } from "#backend/lib/policy/delegation";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { db } from "#backend/lib/adapters";
-import { invitations, workspaces, roles } from "#backend/db";
 import { deliverInvite, type InviteDelivery } from "#backend/lib/messaging";
 import { withAuthorization } from "#backend/lib/policy";
 import { and, eq } from "drizzle-orm";

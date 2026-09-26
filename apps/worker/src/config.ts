@@ -1,23 +1,22 @@
-import { configSchema as backendConfigSchema } from "@andesine/backend/lib/config-schema";
+import { encryptionConfigSchema } from "@andesine/server/security/config";
+import { webhookDestinationConfigSchema } from "@andesine/server/webhooks/destination/config";
+import { searchConfigSchema } from "@andesine/server/search/config";
+import { versionRetentionConfigSchema } from "@andesine/server/versioning/config";
+import { createWebhookRetentionPolicy } from "@andesine/server/webhooks/retention";
+import { billingModeConfigSchema } from "@andesine/server/billing/config";
+import { assetConfigSchema } from "@andesine/server/assets/config";
 import * as z from "zod";
-import { assetConfigSchema } from "@andesine/backend/lib/assets/config-schema";
 
-const configSchema = backendConfigSchema
-  .pick({
-    DATABASE_URL: true,
-    ENCRYPTION_KEYS: true,
-    WEBHOOK_ALLOW_HTTP: true,
-    WEBHOOK_DESTINATION_EXCEPTIONS: true,
-    QUEUE_REDIS_URL: true,
-    REDIS_URL: true,
-    TYPESENSE_URL: true,
-    TYPESENSE_API_KEY: true,
-    OPENAI_API_KEY: true,
-    OPENAI_BASE_URL: true,
-    ASSET_ANALYSIS_MODEL: true,
-    SEARCH_ASK_MODEL: true,
-    SEARCH_EMBEDDING_MODEL: true,
-    SEARCH_EMBEDDING_DIMENSIONS: true
+const configSchema = z
+  .object({
+    DATABASE_URL: z.string().describe("PostgreSQL connection URL"),
+    QUEUE_REDIS_URL: z.string().describe("Background job Redis connection URL"),
+    REDIS_URL: z.string().describe("Redis connection URL"),
+    ...encryptionConfigSchema.shape,
+    ...webhookDestinationConfigSchema.shape,
+    ...searchConfigSchema.omit({ SEARCH_ASK_REASONING_EFFORT: true }).shape,
+    ...versionRetentionConfigSchema.shape,
+    ...billingModeConfigSchema.shape
   })
   .extend({
     ...assetConfigSchema.shape,
@@ -33,4 +32,6 @@ const configSchema = backendConfigSchema
   });
 const config = configSchema.parse({ ...process.env });
 
-export { config };
+const webhookRetentionPolicy = createWebhookRetentionPolicy(config);
+
+export { config, webhookRetentionPolicy };

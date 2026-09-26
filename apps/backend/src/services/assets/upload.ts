@@ -1,6 +1,6 @@
-import { assets } from "#backend/db";
+import { assets } from "@andesine/server/database";
+import { getAssetUploadKey } from "@andesine/server/assets";
 import { requireAssetStorage } from "#backend/lib/assets/client";
-import { getAssetUploadKey } from "#backend/lib/assets/storage";
 import { withAuthorization } from "#backend/lib/policy";
 import { enqueueAssetProcessing } from "#backend/lib/queue/assets";
 import { ORPCError } from "@orpc/server";

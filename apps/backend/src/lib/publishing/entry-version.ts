@@ -1,16 +1,16 @@
 import {
-  assertSelector,
-  resolveEntrySlugID,
-  loadPublishedContentPaths,
-  type PublishedEntrySelector
-} from "#backend/lib/content/paths";
-import { publishingSnapshotEntries, entryVersionContributors, entryVersions } from "#backend/db";
-import type { Database } from "#backend/lib/policy";
-import { toUUID } from "#backend/lib/primitives";
+  publishingSnapshotEntries,
+  entryVersionContributors,
+  entryVersions,
+  type DatabaseTransaction as Database
+} from "@andesine/server/database";
+import { resolveEntrySlugID, loadPublishedContentPaths } from "@andesine/server/content";
+import { assertSelector, type PublishedEntrySelector } from "@andesine/contracts/content";
+import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
 import { normalizePublishingChannelCode } from "./channel";
-import { PUBLISHED_CHANNEL_CODE } from "./config";
+import { PUBLISHED_CHANNEL_CODE } from "@andesine/contracts/publishing";
 import { resolvePublishingSnapshot, type ResolvedPublishingSnapshot } from "./snapshot-state";
 
 interface PublishedEntryVersionInput extends PublishedEntrySelector {

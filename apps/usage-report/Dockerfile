@@ -8,7 +8,7 @@ RUN corepack enable
 FROM base AS pruner
 WORKDIR /app
 COPY . .
-RUN pnpm dlx turbo@2.9.14 prune @andesine/stripe-usage-reporter --docker
+RUN pnpm dlx turbo@2.10.8 prune @andesine/stripe-usage-reporter --docker
 
 FROM base AS builder
 WORKDIR /app
@@ -16,7 +16,7 @@ COPY --from=pruner /app/out/json/ ./
 RUN pnpm install --frozen-lockfile
 COPY --from=pruner /app/out/full/ ./
 RUN pnpm build --filter=@andesine/stripe-usage-reporter
-RUN pnpm --config.inject-workspace-packages=true --filter @andesine/stripe-usage-reporter --prod deploy --config.shamefully-hoist=true /app/deploy
+RUN pnpm --config.inject-workspace-packages=true --filter @andesine/stripe-usage-reporter --prod deploy /app/deploy
 
 FROM node:24-alpine AS runner
 ENV NODE_ENV=production

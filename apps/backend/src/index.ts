@@ -9,8 +9,7 @@ import Fastify, { type FastifyRequest } from "fastify";
 import corsPlugin from "@fastify/cors";
 import websocketPlugin from "@fastify/websocket";
 import { webhooksPlugin } from "./webhooks";
-import { auth, pool } from "#backend/lib/adapters";
-import { redis, subscriberRedis } from "#backend/lib/adapters";
+import { auth, pool, redis, subscriberRedis } from "#backend/lib/adapters";
 import { RATE_LIMITS, consumeRateLimit } from "#backend/lib/security";
 import { closeQueues } from "#backend/lib/queue";
 import { startAutomaticVersionQueue, stopAutomaticVersionQueue } from "#backend/lib/versioning";
@@ -217,6 +216,4 @@ process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
 
 export type Router = typeof router;
-export type * from "#backend/db";
 export type * from "#backend/events";
-export type * from "#backend/lib/policy/actions";

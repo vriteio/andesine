@@ -4,11 +4,11 @@ import {
   schemaMigrationCollections,
   schemaMigrationEntries,
   schemaMigrations,
-  schemaVersions
-} from "@andesine/backend/db/content-schemas";
-import { workspaces } from "@andesine/backend/db/workspaces";
-import { contents } from "@andesine/backend/db/contents";
-import { entries } from "@andesine/backend/db/entries";
+  schemaVersions,
+  workspaces,
+  contents,
+  entries
+} from "@andesine/server/database";
 import { and, eq, inArray, isNull, ne } from "drizzle-orm";
 import { db } from "../database";
 

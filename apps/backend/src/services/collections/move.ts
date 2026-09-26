@@ -1,18 +1,29 @@
-import { createStructureWebhookRecorder } from "#backend/lib/webhooks/structure";
-import { assertContentNameAvailable } from "#backend/lib/content/names";
-import { rankBetweenNeighbors, toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
 import {
   collections,
   effectiveSchemaRevisions,
   schemaMigrationCollections,
   schemaMigrations
-} from "#backend/db";
+} from "@andesine/server/database";
+import { createStructureWebhookRecorder } from "@andesine/server/webhooks/recording";
+import { assertContentNameAvailable } from "@andesine/server/content";
+import {
+  createEffectiveSchemaChange,
+  type EffectiveSchemaChangePlan
+} from "@andesine/server/schema";
+import { webhookRetentionPolicy } from "#backend/lib/webhooks/policy";
+import {
+  rankBetweenNeighbors,
+  toCollectionID,
+  toEntryID,
+  toUUID
+} from "@andesine/contracts/primitives";
 import {
   getDisabledEntryIDs,
   getSubtreeEntryIDs,
   isCollectionPublishingEnabled,
   lockPublishingEntries,
-  loadPublishingTree
+  loadPublishingTree,
+  type PublishingEntryStatus
 } from "#backend/lib/publishing";
 import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
@@ -21,13 +32,8 @@ import {
   withAuthorization,
   type AuthorizedServiceInput
 } from "#backend/lib/policy";
-import type { PublishingEntryStatus } from "#backend/lib/publishing";
 import { prepareSchemaMigrationConnections } from "#backend/collaboration";
 import { submitSchemaMigration } from "#backend/lib/queue";
-import {
-  createEffectiveSchemaChange,
-  type EffectiveSchemaChangePlan
-} from "#backend/lib/schema/migration/effective-change";
 
 interface MoveCollectionInput {
   confirmedDataLoss?: boolean;
@@ -165,6 +171,7 @@ const planCollectionMove = withAuthorization<MoveCollectionInput, undefined, Mov
         ? collection.rank
         : rankBetweenNeighbors(destination[index - 1]?.rank, destination[index]?.rank);
     const webhooks = await createStructureWebhookRecorder({
+      retentionPolicy: webhookRetentionPolicy,
       database,
       workspaceID,
       collectionIDs: [collectionID],

@@ -1,9 +1,9 @@
-import { entries } from "#backend/db";
-import type { WorkspaceEvent } from "#backend/events";
+import { entries } from "@andesine/server/database";
+import { type WorkspaceEvent } from "@andesine/contracts/events";
 import { db } from "#backend/lib/adapters";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { and, eq, inArray } from "drizzle-orm";
-import type { EntryAction } from "./actions";
+import { type EntryAction } from "@andesine/contracts/permissions";
 import {
   loadAuthorizedCollectionTree,
   type AuthorizedCollectionTree

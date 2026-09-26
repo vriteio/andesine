@@ -1,12 +1,12 @@
+import { assets, entryAssets } from "@andesine/server/database";
 import { eq, isNotNull } from "drizzle-orm";
-import { assets, entryAssets } from "#backend/db";
 import { config } from "#backend/lib/config";
 import {
   loadEntryAuthorizationSources,
   type EntryAuthorizationSource,
   withAuthorization
 } from "#backend/lib/policy";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { getAsset } from "./get";
 

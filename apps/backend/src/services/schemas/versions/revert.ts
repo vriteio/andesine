@@ -1,27 +1,29 @@
-import { getUserAuthorization } from "#backend/lib/policy";
 import {
   collectionSchemas,
   schemaDraftContributors,
   schemaVersionContributors,
   schemaVersions
-} from "#backend/db";
+} from "@andesine/server/database";
+import { replaceContentDocument } from "@andesine/server/content";
+import { createSchemaEditorDocument, createEffectiveSchemaChange } from "@andesine/server/schema";
+import {
+  getUserAuthorization,
+  withAuthorization,
+  type AuthorizedServiceInput
+} from "#backend/lib/policy";
 import { prepareSchemaMigrationConnections } from "#backend/collaboration";
-import { replaceContentDocument } from "#backend/lib/content";
-import type { SchemaApplicationResult } from "#backend/lib/data";
-import { withAuthorization, type AuthorizedServiceInput } from "#backend/lib/policy";
+import { type SchemaApplicationResult, schemaDefinitionType } from "@andesine/contracts/schema";
 import {
   toCollectionID,
   toSchemaMigrationID,
   toSchemaID,
   toSchemaVersionID,
   toUUID
-} from "#backend/lib/primitives";
-import { createSchemaEditorDocument, schemaDefinitionType } from "#backend/lib/schema";
+} from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, max } from "drizzle-orm";
 import { applyUpdate, Doc, encodeStateAsUpdate } from "yjs";
 import { submitSchemaMigration } from "#backend/lib/queue";
-import { createEffectiveSchemaChange } from "#backend/lib/schema/migration/effective-change";
 import { resolveSchemaVersion } from "./resolve";
 
 interface RevertSchemaVersionInput {

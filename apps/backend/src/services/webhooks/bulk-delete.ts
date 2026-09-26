@@ -1,10 +1,10 @@
 import {
   webhookBulkRevisionInputType,
-  type WebhookBulkRevisionInput
-} from "#backend/contracts/schemas/webhooks";
+  type WebhookBulkRevisionInput,
+  webhookManageRequirements
+} from "@andesine/contracts/webhooks";
 import { withAuthorization } from "#backend/lib/policy";
 import { parseWebhookInput } from "#backend/lib/webhooks/management";
-import { webhookManageRequirements } from "#backend/lib/webhooks/permissions";
 import { deleteWebhook } from "./delete";
 
 const bulkDeleteWebhooks = withAuthorization<WebhookBulkRevisionInput>(

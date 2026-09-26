@@ -1,6 +1,6 @@
+import { type DatabaseTransaction as Database } from "@andesine/server/database";
 import {
   type AuthorizedCollectionTree,
-  type Database,
   type EntryAuthorizationSource,
   loadEntryAuthorizationSources
 } from "#backend/lib/policy";

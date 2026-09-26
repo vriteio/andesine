@@ -1,9 +1,8 @@
+import { findDisallowedElementBlock, FRAGMENT_BLOCK_TYPES } from "@andesine/document";
 import type { MenuItem } from "@andesine/components";
 import type { Editor } from "@tiptap/core";
 import { Fragment, type Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { isBlockSelection } from "#editor/extensions/block-selection";
-import { findDisallowedElementBlock } from "#editor/lib/element";
-import { FRAGMENT_BLOCK_TYPES } from "#editor/schema/fragment";
 import { isPositionInInheritedField } from "#editor/ui/block-utils";
 
 interface ConversionOption {

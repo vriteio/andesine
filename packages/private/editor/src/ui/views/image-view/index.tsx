@@ -1,7 +1,7 @@
 import { ImageResizeHandles } from "./resize-handles";
 import { ImageUploadPreview } from "./upload-preview";
 import { getImageSize, readImageDimensions } from "#editor/lib/image-dimensions";
-import type { ImageAttributes } from "#editor/schema/blocks/image";
+import type { ImageAttributes } from "@andesine/document/tiptap";
 import { createImageDuplicatePrompt } from "./duplicate-prompt";
 import { createImageResize } from "./resize";
 import { BLOCK_CONTROL_SIZE } from "#editor/ui/constants";

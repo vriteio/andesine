@@ -75,7 +75,6 @@
       "cache": false
     },
     "@andesine/backend#openapi:export": {
-      "dependsOn": ["@andesine/sdk#build"],
       "cache": false
     },
     "@andesine/sdk#generate": {

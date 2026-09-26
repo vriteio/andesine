@@ -1,14 +1,8 @@
-import { getProfileImageURL } from "#backend/lib/assets/profiles";
+import { entries, memberships, roles, workspaces } from "@andesine/server/database";
+import { getProfileImageURL } from "@andesine/server/assets";
 import { config } from "#backend/lib/config";
 import { getEffectivePlan } from "#backend/lib/billing";
-import {
-  entries,
-  memberships,
-  roles,
-  type Permission,
-  type Workspace,
-  workspaces
-} from "#backend/db";
+import { type Permission, type Workspace } from "@andesine/contracts/entities";
 import {
   toCollectionID,
   toEntryID,
@@ -17,7 +11,7 @@ import {
   toUserID,
   toUUID,
   toWorkspaceID
-} from "#backend/lib/primitives";
+} from "@andesine/contracts/primitives";
 import { db } from "#backend/lib/adapters";
 import { loadAuthorizedCollectionTree, type SessionData } from "#backend/lib/policy";
 import { and, eq, inArray, isNull } from "drizzle-orm";

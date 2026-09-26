@@ -1,7 +1,7 @@
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey, type EditorState, type Transaction } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
-import { normalizeEntryTitle } from "../schema/title";
+import { normalizeEntryTitle } from "@andesine/document";
 import { Tooltip } from "@andesine/components";
 import { getOwner } from "solid-js";
 import { render } from "solid-js/web";

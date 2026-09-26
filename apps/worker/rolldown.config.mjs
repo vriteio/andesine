@@ -9,37 +9,18 @@ const externals = new Set([
   ...builtinModules,
   ...builtinModules.map((moduleName) => `node:${moduleName}`)
 ]);
-const bundledModules = new Set([
-  "@andesine/sdk/slug",
-  "@andesine/converters/anchors",
-  "@andesine/editor/element",
-  "@andesine/editor/normalize-resource-name",
-  "@andesine/editor/normalize-source-name"
-]);
 
 export default defineConfig({
   cwd: __dirname,
   input: "./src/index.ts",
   platform: "node",
   tsconfig: "./tsconfig.json",
-  resolve: {
-    alias: {
-      "@andesine/backend": path.resolve(__dirname, "../backend/src"),
-      "#backend": path.resolve(__dirname, "../backend/src")
-    }
-  },
   external(id) {
-    if (bundledModules.has(id)) {
+    if (id.startsWith("@andesine/")) {
       return false;
     }
 
-    return (
-      externals.has(id) ||
-      (!id.startsWith(".") &&
-        !id.startsWith("@andesine/backend/") &&
-        !id.startsWith("#backend/") &&
-        !path.isAbsolute(id))
-    );
+    return externals.has(id) || (!id.startsWith(".") && !path.isAbsolute(id));
   },
   output: {
     file: path.resolve(__dirname, "dist/index.js"),

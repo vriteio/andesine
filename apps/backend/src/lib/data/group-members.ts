@@ -1,6 +1,10 @@
-import { groupInvitations, groupMembers, invitations } from "#backend/db";
-import type { db } from "#backend/lib/adapters";
-import { toGroupID, toInviteID, toMembershipID } from "#backend/lib/primitives";
+import {
+  groupInvitations,
+  groupMembers,
+  invitations,
+  type DatabaseTransaction
+} from "@andesine/server/database";
+import { toGroupID, toInviteID, toMembershipID } from "@andesine/contracts/primitives";
 import { and, eq, gt, inArray } from "drizzle-orm";
 
 interface GroupMembersUpdate {
@@ -8,8 +12,6 @@ interface GroupMembersUpdate {
   invitationIDs: string[];
   memberIDs: string[];
 }
-
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const loadGroupMembersUpdates = async (
   database: DatabaseTransaction,

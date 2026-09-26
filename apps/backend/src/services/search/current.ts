@@ -1,9 +1,9 @@
+import { type SearchInput, type SearchResult } from "@andesine/server/search";
+import { loadCurrentContentPaths } from "@andesine/server/content";
 import { withAuthorization } from "#backend/lib/policy";
 import { createDocumentAuthorizer } from "#backend/lib/search/current-scope";
-import type { SearchInput, SearchResult } from "#backend/lib/search/query-types";
 import { search } from "#backend/lib/search/retrieval";
-import { loadCurrentContentPaths } from "#backend/lib/content/paths";
-import { toCollectionID } from "#backend/lib/primitives";
+import { toCollectionID } from "@andesine/contracts/primitives";
 
 const searchCurrent = withAuthorization<SearchInput, undefined, SearchResult>(
   {

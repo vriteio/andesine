@@ -1,7 +1,7 @@
-import type { Router } from "@andesine/backend";
+import type { APIContract } from "@andesine/contracts/api";
 import { createORPCClient, onError, ORPCError } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
-import { type RouterClient } from "@orpc/server";
+import type { ContractRouterClient } from "@orpc/contract";
 import { createAuthClient } from "better-auth/solid";
 import {
   emailOTPClient,
@@ -82,7 +82,7 @@ const link = new RPCLink({
     });
   }
 });
-const client: RouterClient<Router> = createORPCClient(link);
+const client: ContractRouterClient<APIContract> = createORPCClient(link);
 const authClient = createAuthClient({
   baseURL: config.PUBLIC_API_URL,
   basePath: "/auth",
@@ -120,4 +120,22 @@ const authClient = createAuthClient({
 });
 
 export { client, authClient };
-export type * from "@andesine/backend";
+
+export type {
+  Collection,
+  Entry,
+  Group,
+  Invite,
+  Key,
+  KeyPermission,
+  Membership,
+  Permission,
+  Role,
+  UserProfile
+} from "@andesine/contracts/entities";
+export type {
+  CollectionAccess,
+  CollectionAction,
+  EntryAction
+} from "@andesine/contracts/permissions";
+export type { WorkspaceEvent } from "@andesine/contracts/events";

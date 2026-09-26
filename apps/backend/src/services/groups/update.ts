@@ -1,5 +1,3 @@
-import { assertGroupDelegation } from "#backend/lib/policy/delegation-collections";
-import type { SessionData } from "#backend/lib/policy/session";
 import {
   groupInvitations,
   groupMembers,
@@ -7,7 +5,9 @@ import {
   invitations,
   memberships,
   workspaces
-} from "#backend/db";
+} from "@andesine/server/database";
+import { assertGroupDelegation } from "#backend/lib/policy/delegation-collections";
+import type { SessionData } from "#backend/lib/policy/session";
 import { db } from "#backend/lib/adapters";
 import {
   duplicateGroupNameError,
@@ -22,7 +22,7 @@ import {
   toUserID,
   toUUID,
   toWorkspaceID
-} from "#backend/lib/primitives";
+} from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, gt, inArray } from "drizzle-orm";
 

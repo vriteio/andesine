@@ -1,5 +1,5 @@
+import { type DeviceRequestState } from "@andesine/contracts/auth";
 import { APIError } from "better-auth/api";
-import * as z from "zod";
 
 interface DeviceRequestDetails {
   status: string;
@@ -8,25 +8,6 @@ interface DeviceRequestDetails {
   resource?: string | string[];
 }
 
-type DeviceRequestState = z.infer<typeof deviceRequestStateType>;
-
-const deviceUserCodeType = z
-  .string()
-  .max(32)
-  .transform((value) => value.replace(/[\s-]/g, "").toUpperCase())
-  .pipe(
-    z.string().regex(/^[A-HJ-NP-Z2-9]{8}$/, "Enter the eight-character code from your terminal")
-  );
-const deviceRequestStateType = z.enum([
-  "pending",
-  "approved",
-  "denied",
-  "expired",
-  "unavailable",
-  "processed",
-  "account-mismatch",
-  "unsupported"
-]);
 const getDeviceRequestState = (
   details: DeviceRequestDetails,
   expected: { clientID: string; scopes: string[]; resource: string }
@@ -56,10 +37,4 @@ const getDeviceRequestErrorState = (error: unknown): DeviceRequestState => {
   throw error;
 };
 
-export {
-  deviceUserCodeType,
-  deviceRequestStateType,
-  getDeviceRequestState,
-  getDeviceRequestErrorState
-};
-export type { DeviceRequestState };
+export { getDeviceRequestState, getDeviceRequestErrorState };

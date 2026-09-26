@@ -1,7 +1,10 @@
-import { schemaMigrationEntries } from "@andesine/backend/db/content-schemas";
-import { entryVersionContributors, entryVersions } from "@andesine/backend/db/versions";
-import { mapVersionSummary } from "@andesine/backend/lib/data/entry-version";
-import { toWorkspaceID } from "@andesine/backend/lib/primitives";
+import {
+  schemaMigrationEntries,
+  entryVersionContributors,
+  entryVersions
+} from "@andesine/server/database";
+import { mapVersionSummary } from "@andesine/server/data";
+import { toWorkspaceID } from "@andesine/contracts/primitives";
 import { and, eq } from "drizzle-orm";
 import { db } from "../database";
 

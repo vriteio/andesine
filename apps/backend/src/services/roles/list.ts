@@ -1,6 +1,7 @@
-import { toRoleID, toUUID } from "#backend/lib/primitives";
+import { roles } from "@andesine/server/database";
+import { toRoleID, toUUID } from "@andesine/contracts/primitives";
 import { db } from "#backend/lib/adapters";
-import { roles, type Role } from "#backend/db";
+import { type Role } from "@andesine/contracts/entities";
 import { withAuthorization } from "#backend/lib/policy";
 import { eq } from "drizzle-orm";
 

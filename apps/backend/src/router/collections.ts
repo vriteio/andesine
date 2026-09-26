@@ -6,7 +6,7 @@ import {
   emitPublishingEntryUpdates,
   emitPublishingEvent
 } from "#backend/events";
-import { toSchemaMigrationID } from "#backend/lib/primitives";
+import { toSchemaMigrationID } from "@andesine/contracts/primitives";
 import {
   enqueueCurrentCollectionSync,
   enqueueCurrentEntrySync,

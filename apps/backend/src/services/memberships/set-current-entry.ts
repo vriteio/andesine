@@ -1,5 +1,5 @@
-import { entries, memberships } from "#backend/db";
-import { toUUID } from "#backend/lib/primitives";
+import { entries, memberships } from "@andesine/server/database";
+import { toUUID } from "@andesine/contracts/primitives";
 import { and, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { withAuthorization } from "#backend/lib/policy";

@@ -3,18 +3,19 @@ import {
   entries,
   schemaMigrationCollections,
   schemaMigrations,
-  schemaVersions,
-  type Collection,
-  type Entry
-} from "#backend/db";
-import { type CollectionAccess, withAuthorization } from "#backend/lib/policy";
+  schemaVersions
+} from "@andesine/server/database";
+import { type Collection, type Entry } from "@andesine/contracts/entities";
+import { type CollectionAccess } from "@andesine/contracts/permissions";
+import { withAuthorization } from "#backend/lib/policy";
 import {
   toCollectionID,
   toEntryID,
   toSchemaID,
   toSchemaMigrationID
-} from "#backend/lib/primitives";
-import { getPublishingStatusSnapshot, PUBLISHED_CHANNEL_CODE } from "#backend/lib/publishing";
+} from "@andesine/contracts/primitives";
+import { getPublishingStatusSnapshot } from "#backend/lib/publishing";
+import { PUBLISHED_CHANNEL_CODE } from "@andesine/contracts/publishing";
 import { ORPCError } from "@orpc/server";
 import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 

@@ -1,3 +1,9 @@
+import {
+  formatElement,
+  getElementTagName,
+  parseElement,
+  tokenizeElement
+} from "@andesine/document";
 import { EditorState, Prec } from "@codemirror/state";
 import { closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
 import { bracketMatching } from "@codemirror/language";
@@ -18,12 +24,6 @@ import {
   insertNewlineKeepIndent,
   isolateHistory
 } from "@codemirror/commands";
-import {
-  formatElement,
-  getElementTagName,
-  parseElement,
-  tokenizeElement
-} from "../../../lib/element";
 import type { ElementTagSelection } from "../../../lib/element-awareness";
 
 interface ElementCodeEditorOptions {

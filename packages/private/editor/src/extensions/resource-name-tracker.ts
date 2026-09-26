@@ -1,7 +1,7 @@
+import { normalizeResourceName } from "@andesine/document";
 import { Extension } from "@tiptap/core";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { Plugin, PluginKey, type EditorState } from "@tiptap/pm/state";
-import { normalizeResourceName } from "#editor/lib";
 
 interface ResourceNameDetails {
   name: string;

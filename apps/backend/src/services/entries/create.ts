@@ -1,18 +1,32 @@
-import { loadCurrentContentPaths } from "#backend/lib/content/paths";
-import { getAvailableContentName } from "#backend/lib/content/names";
-import { rankBetweenNeighbors, toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
-import { collections, contents, effectiveSchemaRevisions, entries, type Entry } from "#backend/db";
-import type { ContentNode } from "#backend/lib/content";
+import {
+  collections,
+  contents,
+  effectiveSchemaRevisions,
+  entries
+} from "@andesine/server/database";
+import { loadCurrentContentPaths, getAvailableContentName } from "@andesine/server/content";
+import { getResolvedSchemaDefinition, migrateSchemaContentState } from "@andesine/server/schema";
+import {
+  createOutboundEvent,
+  createWebhookOperation,
+  createWebhookRecorder,
+  getWebhookEntryContext
+} from "@andesine/server/webhooks/recording";
+import { webhookRetentionPolicy } from "#backend/lib/webhooks/policy";
+import type { ContentNode } from "@andesine/document";
+import {
+  rankBetweenNeighbors,
+  toCollectionID,
+  toEntryID,
+  toUUID,
+  toWorkspaceID
+} from "@andesine/contracts/primitives";
+import { type Entry } from "@andesine/contracts/entities";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
-import { normalizeEntryName } from "#backend/lib/validation";
+import { normalizeEntryName } from "@andesine/contracts/content";
 import { withAuthorization } from "#backend/lib/policy";
 import type { PublishingEntryStatus } from "#backend/lib/publishing";
-import { getResolvedSchemaDefinition, migrateSchemaContentState } from "#backend/lib/schema";
-import { createOutboundEvent, createWebhookOperation } from "#backend/lib/webhooks/operation";
-import { createWebhookRecorder } from "#backend/lib/webhooks/recorder";
-import { getWebhookEntryContext } from "#backend/lib/webhooks/entry-context";
-import { toWorkspaceID } from "#backend/lib/primitives/id";
 
 interface CreateEntryResult {
   entry: Entry & { path: string; slugPath: string };
@@ -42,7 +56,11 @@ const createEntry = withAuthorization<Partial<Entry>, undefined, CreateEntryResu
     const entryID = input.id ? toUUID(input.id) : crypto.randomUUID();
     const collectionID = input.collectionID ? toUUID(input.collectionID) : null;
     const operation = createWebhookOperation(toWorkspaceID(workspaceID));
-    const recorder = await createWebhookRecorder({ database, operation });
+    const recorder = await createWebhookRecorder({
+      retentionPolicy: webhookRetentionPolicy,
+      database,
+      operation
+    });
     const name = await getAvailableContentName(database, workspaceID, {
       kind: "entry",
       id: entryID,

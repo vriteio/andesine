@@ -1,7 +1,10 @@
+import {
+  SEARCH_INDEXING_DEFAULT_JOB_OPTIONS,
+  SEARCH_INDEXING_QUEUE_NAME
+} from "@andesine/server/queue";
 import { config } from "#backend/lib/config";
 import { Queue, createNodeRedisClient } from "bullmq";
 import { createClient } from "redis";
-import { SEARCH_INDEXING_DEFAULT_JOB_OPTIONS, SEARCH_INDEXING_QUEUE_NAME } from "./constants";
 
 const queueRedisClient = createClient({ url: config.QUEUE_REDIS_URL });
 const queueRedisConnection = createNodeRedisClient(queueRedisClient);

@@ -1,7 +1,8 @@
-import { schemaMigrationCollections, schemaMigrations } from "#backend/db";
-import { mapSchemaMigration, type SchemaMigrationDetails } from "#backend/lib/data";
+import { schemaMigrationCollections, schemaMigrations } from "@andesine/server/database";
+import { mapSchemaMigration } from "#backend/lib/data";
+import { type SchemaMigrationDetails } from "@andesine/contracts/schema";
 import { withAuthorization } from "#backend/lib/policy";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { and, desc, eq, inArray } from "drizzle-orm";
 
 interface GetActiveSchemaMigrationInput {

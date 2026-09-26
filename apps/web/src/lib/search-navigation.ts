@@ -1,4 +1,4 @@
-import { getElementData, getElementSearchText } from "@andesine/editor/element";
+import { getElementData, getElementSearchText } from "@andesine/document";
 import type { EditorInstance } from "@andesine/editor";
 
 interface SearchNavigationTarget {

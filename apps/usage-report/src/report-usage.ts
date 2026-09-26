@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Elastic-2.0
-import { config } from "@andesine/backend/lib/config";
-// Import specific adapters to avoid eager evaluation of other adapters like Redis
-import { pool } from "@andesine/backend/lib/adapters/postgres";
-import { stripe } from "@andesine/backend/lib/adapters/stripe";
+import { config } from "./config";
+import { pool } from "./database";
+import { stripe } from "./stripe";
 
 interface UsageLedgerRow {
   id: string;

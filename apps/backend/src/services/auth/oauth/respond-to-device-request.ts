@@ -1,8 +1,6 @@
 import { auth } from "#backend/lib/adapters/auth";
-import {
-  getDeviceRequestErrorState,
-  type DeviceRequestState
-} from "#backend/lib/auth/device-request";
+import { getDeviceRequestErrorState } from "#backend/lib/auth/device-request";
+import { type DeviceRequestState } from "@andesine/contracts/auth";
 import type { SessionData } from "#backend/lib/policy";
 import { Auth } from "#backend/services/auth";
 import { ORPCError } from "@orpc/server";

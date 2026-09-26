@@ -1,6 +1,10 @@
-import { collectionSchemas, schemaMigrationCollections, schemaMigrations } from "#backend/db";
+import {
+  collectionSchemas,
+  schemaMigrationCollections,
+  schemaMigrations
+} from "@andesine/server/database";
 import type { ServiceResolveContext } from "#backend/lib/policy";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq } from "drizzle-orm";
 

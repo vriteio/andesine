@@ -1,8 +1,12 @@
-import type { ContentNode } from "#backend/lib/content";
+import {
+  entryAssets,
+  entryVersionAssets,
+  entryVersions,
+  type DatabaseTransaction
+} from "@andesine/server/database";
+import type { ContentNode } from "@andesine/document";
 import { config } from "#backend/lib/config";
-import { entryAssets, entryVersionAssets, entryVersions } from "#backend/db";
-import type { db } from "#backend/lib/adapters";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNotNull, or } from "drizzle-orm";
 
@@ -18,8 +22,6 @@ interface VersionRevertTarget {
   schemaRevisionID: string | null;
   versionID: string;
 }
-
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const loadVersionRevertTargets = async (
   database: DatabaseTransaction,

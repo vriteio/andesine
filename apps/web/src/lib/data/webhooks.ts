@@ -5,7 +5,7 @@ import {
   webhookEventNames,
   type WebhookEventDefinition,
   type WebhookEventName
-} from "#backend/lib/webhooks/catalog-definitions";
+} from "@andesine/contracts/webhooks";
 import { client } from "#web/lib/api";
 
 interface WebhookQueryInput {

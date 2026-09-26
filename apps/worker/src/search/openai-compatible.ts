@@ -1,4 +1,4 @@
-import { OpenAICompatibleClient } from "@andesine/backend/lib/search";
+import { OpenAICompatibleClient } from "@andesine/server/search";
 import { config } from "../config";
 
 const openAIClient = new OpenAICompatibleClient({

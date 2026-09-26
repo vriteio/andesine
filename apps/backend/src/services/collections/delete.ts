@@ -1,6 +1,7 @@
-import { createStructureWebhookRecorder } from "#backend/lib/webhooks/structure";
-import { toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
-import { collections, entries, memberships } from "#backend/db";
+import { collections, entries, memberships } from "@andesine/server/database";
+import { createStructureWebhookRecorder } from "@andesine/server/webhooks/recording";
+import { webhookRetentionPolicy } from "#backend/lib/webhooks/policy";
+import { toCollectionID, toEntryID, toUUID } from "@andesine/contracts/primitives";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { withAuthorization } from "#backend/lib/policy";
@@ -48,6 +49,7 @@ const deleteCollections = withAuthorization<DeleteCollectionsInput, undefined, D
     );
 
     const webhooks = await createStructureWebhookRecorder({
+      retentionPolicy: webhookRetentionPolicy,
       database,
       workspaceID,
       collectionIDs: ids,

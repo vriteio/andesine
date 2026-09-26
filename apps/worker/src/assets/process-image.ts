@@ -1,5 +1,5 @@
-import { ASSET_DISPLAY_SIZE, ASSET_THUMBNAIL_SIZE } from "@andesine/backend/lib/assets/storage";
-import type { AssetConfig } from "@andesine/backend/lib/assets/config-schema";
+import { ASSET_DISPLAY_SIZE, ASSET_THUMBNAIL_SIZE } from "@andesine/server/assets";
+import { type AssetConfig } from "@andesine/server/assets/config";
 import sharp from "sharp";
 
 interface ProcessedImageFile {

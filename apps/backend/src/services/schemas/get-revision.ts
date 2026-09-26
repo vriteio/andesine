@@ -1,8 +1,8 @@
-import { effectiveSchemaRevisions } from "#backend/db/content-schemas";
+import { effectiveSchemaRevisions } from "@andesine/server/database";
+import { mapSchemaRevision } from "@andesine/server/schema";
 import { type ServiceResolveContext, withAuthorization } from "#backend/lib/policy";
-import { toUUID } from "#backend/lib/primitives";
-import type { SchemaRevision } from "#backend/lib/schema/contract/recorded";
-import { mapSchemaRevision } from "#backend/lib/schema/recorded";
+import { toUUID } from "@andesine/contracts/primitives";
+import { type SchemaRevision } from "@andesine/contracts/schema";
 import { ORPCError } from "@orpc/server";
 import { and, eq } from "drizzle-orm";
 

@@ -1,7 +1,8 @@
-import { groupInvitations, groupMembers, groups, type Group, invitations } from "#backend/db";
+import { groupInvitations, groupMembers, groups, invitations } from "@andesine/server/database";
+import { type Group } from "@andesine/contracts/entities";
 import { db } from "#backend/lib/adapters";
 import { withAuthorization } from "#backend/lib/policy";
-import { toGroupID, toInviteID, toMembershipID, toUUID } from "#backend/lib/primitives";
+import { toGroupID, toInviteID, toMembershipID, toUUID } from "@andesine/contracts/primitives";
 import { and, asc, eq, gt } from "drizzle-orm";
 
 interface GroupDetails extends Group {

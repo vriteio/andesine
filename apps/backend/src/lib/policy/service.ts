@@ -1,15 +1,23 @@
+import {
+  workspaces,
+  type DatabaseTransaction,
+  type DatabaseClient
+} from "@andesine/server/database";
 import { getEffectivePlan } from "#backend/lib/billing";
-import { workspaces } from "#backend/db";
 import { db } from "#backend/lib/adapters";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";
-import type { CollectionAction, EntryAction } from "./actions";
+import {
+  type CollectionAction,
+  type EntryAction,
+  type AuthorizationRequirements
+} from "@andesine/contracts/permissions";
 import {
   loadAuthorizedCollectionTree,
   type AuthorizedCollectionTree
 } from "./authorized-collection-tree";
-import { assertAuthorizationRequirements, type AuthorizationRequirements } from "./permissions";
+import { assertAuthorizationRequirements } from "./permissions";
 import type { SessionData } from "./session";
 import { assertNoActiveSchemaMigration } from "./schema-migration";
 
@@ -109,9 +117,7 @@ interface WithWorkspaceOptions {
   transaction?: Exclude<TransactionMode, "locked-workspace">;
 }
 
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Database = DatabaseTransaction;
-type DatabaseClient = DatabaseTransaction | typeof db;
 type TransactionMode = "atomic" | "locked-workspace" | "snapshot";
 
 const activeAuthorizationScopes = new WeakSet<AuthorizationScope>();
@@ -296,8 +302,6 @@ export type {
   AuthorizedServiceInput,
   AuthorizedTreeServiceContext,
   AuthorizationScope,
-  Database,
-  DatabaseClient,
   ServiceAuthorizationActions,
   ServiceResolveContext,
   WorkspaceServiceContext

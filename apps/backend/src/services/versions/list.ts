@@ -1,7 +1,8 @@
-import { DEFAULT_PAGE_SIZE } from "#backend/lib/api/limits";
-import { entries, entryVersionContributors, entryVersions } from "#backend/db";
-import { mapVersionSummary, type VersionSummary } from "#backend/lib/data";
-import { toUUID, toVersionID } from "#backend/lib/primitives";
+import { entries, entryVersionContributors, entryVersions } from "@andesine/server/database";
+import { mapVersionSummary } from "@andesine/server/data";
+import { DEFAULT_PAGE_SIZE } from "@andesine/contracts/limits";
+import { type VersionSummary } from "@andesine/contracts/versions";
+import { toUUID, toVersionID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, desc, eq, inArray, lt, or } from "drizzle-orm";
 import { withAuthorization } from "#backend/lib/policy";

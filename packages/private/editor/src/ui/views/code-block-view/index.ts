@@ -1,5 +1,5 @@
 import { codeViews, type CodeBlockBridge } from "./navigation";
-import { leaveCodeBlock } from "../../../schema/blocks/code-block";
+import { leaveCodeBlock } from "#editor/extensions/nodes/code-block";
 import {
   Compartment,
   EditorState,

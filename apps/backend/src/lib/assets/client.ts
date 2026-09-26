@@ -1,6 +1,6 @@
+import { createAssetStorage } from "@andesine/server/assets";
 import { config } from "#backend/lib/config";
 import { ORPCError } from "@orpc/server";
-import { createAssetStorage } from "./storage";
 
 const assetStorage = createAssetStorage(config);
 const requireAssetStorage = () => {

@@ -1,20 +1,20 @@
-import type { db } from "#backend/lib/adapters";
+import { type DatabaseTransaction } from "@andesine/server/database";
 import {
   loadAuthorizedCollectionTree,
   type AuthorizedCollectionTree,
   type SessionData
 } from "#backend/lib/policy";
-import { toUUID } from "#backend/lib/primitives";
-import { loadPublishingChangeSet } from "./change-set";
+import { toUUID } from "@andesine/contracts/primitives";
+import {
+  loadPublishingChangeSet,
+  type PublishingAcceptedCollection,
+  type PublishingChangeSet,
+  type PublishingChangeSetCollection,
+  type PublishingChangeSetEntry,
+  type PublishingWorkingCollection
+} from "./change-set";
 import { resolvePublishingRevertDependencies } from "./revert-dependencies";
 import { resolvePublishingRevertScope, type PublishingRevertSelection } from "./revert-selection";
-import type {
-  PublishingAcceptedCollection,
-  PublishingChangeSet,
-  PublishingChangeSetCollection,
-  PublishingChangeSetEntry,
-  PublishingWorkingCollection
-} from "./change-set";
 
 interface LoadPublishingRevertPlanInput extends PublishingRevertSelection {
   channel: string;
@@ -71,8 +71,6 @@ interface PublishingRevertPlan {
   snapshotID: string;
   workspaceRootID: string | null;
 }
-
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const isPending = (item: PublishingChangeSetCollection | PublishingChangeSetEntry): boolean => {
   return item.status !== "published";

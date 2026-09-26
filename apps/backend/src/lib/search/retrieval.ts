@@ -12,7 +12,7 @@ import {
   type TypesenseSearchParameters,
   type TypesenseSearchResult,
   TypesenseAPIError
-} from "#backend/lib/search";
+} from "@andesine/server/search";
 import { searchOpenAIClient, searchTypesenseClient } from "#backend/lib/search/clients";
 import { ORPCError } from "@orpc/server";
 

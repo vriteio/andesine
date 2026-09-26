@@ -1,5 +1,5 @@
-import { assetAnalyses, assets, workspaces } from "@andesine/backend/db";
-import { IMAGE_SEARCH_COLLECTION_ALIAS, type TypesenseClient } from "@andesine/backend/lib/search";
+import { assetAnalyses, assets, workspaces } from "@andesine/server/database";
+import { IMAGE_SEARCH_COLLECTION_ALIAS, type TypesenseClient } from "@andesine/server/search";
 import { and, eq, isNull, lt, or } from "drizzle-orm";
 import { config } from "../config";
 import { db } from "../database";

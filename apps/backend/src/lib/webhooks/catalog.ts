@@ -1,5 +1,10 @@
-import { webhookEventSchemas, type WebhookEvent, type WebhookEventName } from "./events";
-import { webhookEventDefinitions, type WebhookEventDefinition } from "./catalog-definitions";
+import {
+  webhookEventSchemas,
+  type WebhookEvent,
+  type WebhookEventName,
+  webhookEventDefinitions,
+  type WebhookEventDefinition
+} from "@andesine/contracts/webhooks";
 
 // Adds the synthetic sample used by discovery and test deliveries to each shared definition.
 interface WebhookCatalogEntry<Name extends WebhookEventName> extends WebhookEventDefinition {

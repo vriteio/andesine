@@ -1,8 +1,8 @@
+import { isPublicAddress } from "@andesine/server/security";
 import { ORPCError } from "@orpc/server";
 import { lookup } from "node:dns/promises";
 import { request } from "node:https";
 import { isIP } from "node:net";
-import { isPublicAddress } from "#backend/lib/security/network-address";
 import { checkServerIdentity } from "node:tls";
 import type { IncomingMessage } from "node:http";
 

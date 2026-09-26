@@ -1,10 +1,13 @@
-import type { WebhookConfiguration } from "#backend/contracts/schemas/webhooks";
-import { publishingChannels } from "#backend/db";
+import { publishingChannels, type DatabaseClient } from "@andesine/server/database";
+import {
+  createWebhookScopeAccess,
+  loadWebhookScopeIndex
+} from "@andesine/server/webhooks/recording";
+import { type WebhookConfiguration } from "@andesine/contracts/webhooks";
 import { loadAuthorizedCollectionTree } from "#backend/lib/policy/authorized-collection-tree";
 import { hasAuthPermission } from "#backend/lib/policy/permissions";
-import type { DatabaseClient } from "#backend/lib/policy/service";
 import type { SessionData } from "#backend/lib/policy/session";
-import { toUUID } from "#backend/lib/primitives/id";
+import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
 import {
@@ -12,7 +15,6 @@ import {
   canReadWebhookResource,
   getWebhookRequiredPermissions
 } from "./permissions";
-import { createWebhookScopeAccess, loadWebhookScopeIndex } from "./scope";
 
 interface WebhookAuthorityInput {
   auth: SessionData;

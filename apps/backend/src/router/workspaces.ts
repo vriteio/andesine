@@ -1,7 +1,7 @@
 import { getUserAuthorization } from "#backend/lib/policy";
 import { emitWorkspaceStateEvent } from "#backend/events";
 import { auth } from "#backend/lib/adapters";
-import { toUserID, toUUID } from "#backend/lib/primitives";
+import { toUserID, toUUID } from "@andesine/contracts/primitives";
 import {
   enqueueCurrentEntrySync,
   enqueueCurrentWorkspacePurge,

@@ -1,32 +1,35 @@
 import {
+  workspaces,
+  outboundDeliveries,
+  outboundDeliveryRuns,
+  outboundEvents
+} from "@andesine/server/database";
+import { generateUUID } from "@andesine/server/primitives";
+import { getWebhookConfiguration, encodeWebhookPayload } from "@andesine/server/webhooks/recording";
+import { getDeliveryTime } from "@andesine/server/webhooks/delivery";
+import { getWebhookDeliveryRetention } from "@andesine/server/webhooks/retention";
+import { webhookRetentionPolicy } from "#backend/lib/webhooks/policy";
+import {
   webhookTestInputType,
-  type WebhookTestInput
-} from "#backend/contracts/schemas/webhook-deliveries";
-import { workspaces } from "#backend/db/workspaces";
-import { outboundDeliveries, outboundDeliveryRuns } from "#backend/db/outbound-deliveries";
-import { outboundEvents } from "#backend/db/outbound-events";
+  type WebhookTestInput,
+  webhookEventType,
+  webhookManageRequirements
+} from "@andesine/contracts/webhooks";
 import { withAuthorization } from "#backend/lib/policy";
 import {
-  generateUUID,
   toUUID,
   toWebhookDeliveryID,
   toWebhookEventID,
   toWebhookOperationID
-} from "#backend/lib/primitives/id";
+} from "@andesine/contracts/primitives";
 import { webhookCatalog } from "#backend/lib/webhooks/catalog";
 import { assertWebhookAuthority } from "#backend/lib/webhooks/delegation";
-import { getWebhookConfiguration } from "#backend/lib/webhooks/endpoints";
-import { getDeliveryTime } from "#backend/lib/webhooks/delivery/locking";
-import { webhookEventType } from "#backend/lib/webhooks/events";
 import {
   assertWebhookDestination,
   limitWebhookManagement,
   lockWebhookForUpdate,
   parseWebhookInput
 } from "#backend/lib/webhooks/management";
-import { webhookManageRequirements } from "#backend/lib/webhooks/permissions";
-import { encodeWebhookPayload } from "#backend/lib/webhooks/projection";
-import { getWebhookDeliveryRetention } from "#backend/lib/webhooks/retention";
 import { ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";
 
@@ -62,7 +65,11 @@ const sendWebhookTest = withAuthorization<WebhookTestInput, undefined, WebhookTe
       .from(workspaces)
       .where(eq(workspaces.id, endpoint.workspaceID));
     const now = await getDeliveryTime(database);
-    const retention = getWebhookDeliveryRetention(workspace!.subscriptionPlan, now);
+    const retention = getWebhookDeliveryRetention(
+      workspace!.subscriptionPlan,
+      now,
+      webhookRetentionPolicy
+    );
     const deliveryID = generateUUID();
     const event = webhookEventType.parse({
       ...webhookCatalog[parsed.type].sample,

@@ -1,4 +1,9 @@
-import { getUserAuthorization } from "#backend/lib/policy";
+import {
+  getUserAuthorization,
+  type EntryAuthorizationSource,
+  loadEntryAuthorizationSources,
+  withAuthorization
+} from "#backend/lib/policy";
 import { assertPublishingSnapshot } from "#backend/lib/publishing/precondition";
 import {
   isCollectionPublishingEnabled,
@@ -7,12 +12,7 @@ import {
   type PublishEntryTarget,
   syncEntrySnapshots
 } from "#backend/lib/publishing";
-import {
-  type EntryAuthorizationSource,
-  loadEntryAuthorizationSources,
-  withAuthorization
-} from "#backend/lib/policy";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 
 interface PublishEntryInput {

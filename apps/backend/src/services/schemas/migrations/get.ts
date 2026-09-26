@@ -1,4 +1,5 @@
-import { mapSchemaMigration, type SchemaMigrationDetails } from "#backend/lib/data";
+import { mapSchemaMigration } from "#backend/lib/data";
+import { type SchemaMigrationDetails } from "@andesine/contracts/schema";
 import { withAuthorization } from "#backend/lib/policy";
 import {
   resolveSchemaMigration,

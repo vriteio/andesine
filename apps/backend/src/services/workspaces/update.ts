@@ -1,6 +1,6 @@
-import { toUUID } from "#backend/lib/primitives";
+import { workspaces } from "@andesine/server/database";
+import { toUUID } from "@andesine/contracts/primitives";
 import { db } from "#backend/lib/adapters";
-import { workspaces } from "#backend/db";
 import { withAuthorization } from "#backend/lib/policy";
 import { eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";

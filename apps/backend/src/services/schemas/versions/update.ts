@@ -1,7 +1,8 @@
-import { schemaVersionContributors, schemaVersions } from "#backend/db";
-import { mapSchemaVersion, type SchemaVersionDetails } from "#backend/lib/data";
+import { schemaVersionContributors, schemaVersions } from "@andesine/server/database";
+import { mapSchemaVersion } from "#backend/lib/data";
+import { type SchemaVersionDetails } from "@andesine/contracts/schema";
 import { withAuthorization } from "#backend/lib/policy";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq } from "drizzle-orm";
 import { resolveSchemaVersion } from "./resolve";

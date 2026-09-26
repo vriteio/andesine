@@ -2,15 +2,15 @@ import {
   publishingSnapshotCollections,
   publishingSnapshotEntries,
   entryVersions
-} from "#backend/db";
-import type {
-  PublishedTypeMetadataInput,
-  TypeMetadata
-} from "#backend/contracts/schemas/type-metadata";
+} from "@andesine/server/database";
+import {
+  type PublishedTypeMetadataInput,
+  type TypeMetadata
+} from "@andesine/contracts/type-metadata";
 import { withAuthorization } from "#backend/lib/policy";
-import { toSnapshotID } from "#backend/lib/primitives";
+import { toSnapshotID } from "@andesine/contracts/primitives";
 import { resolvePublishingSnapshot } from "#backend/lib/publishing/snapshot-state";
-import { PUBLISHED_CHANNEL_CODE } from "#backend/lib/publishing/config";
+import { PUBLISHED_CHANNEL_CODE } from "@andesine/contracts/publishing";
 import { selectMetadataCollections } from "#backend/lib/type-metadata/selection";
 import { createMetadataResult } from "#backend/lib/type-metadata/result";
 import { loadMetadataRevisions } from "#backend/lib/type-metadata/revisions";

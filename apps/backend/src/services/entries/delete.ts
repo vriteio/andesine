@@ -1,10 +1,13 @@
-import { toEntryID, toUUID } from "#backend/lib/primitives";
-import { entries, memberships } from "#backend/db";
+import { entries, memberships } from "@andesine/server/database";
+import {
+  createOutboundEvent,
+  createWebhookOperation,
+  createWebhookRecorder,
+  getWebhookEntryContext
+} from "@andesine/server/webhooks/recording";
+import { webhookRetentionPolicy } from "#backend/lib/webhooks/policy";
+import { toEntryID, toUUID, toWorkspaceID } from "@andesine/contracts/primitives";
 import { and, eq, inArray, isNull } from "drizzle-orm";
-import { toWorkspaceID } from "#backend/lib/primitives/id";
-import { createOutboundEvent, createWebhookOperation } from "#backend/lib/webhooks/operation";
-import { createWebhookRecorder } from "#backend/lib/webhooks/recorder";
-import { getWebhookEntryContext } from "#backend/lib/webhooks/entry-context";
 import {
   type EntryAuthorizationSource,
   loadEntryAuthorizationSources,
@@ -34,7 +37,11 @@ const deleteEntries = withAuthorization<
 
     const entryIDs = [...new Set(input.ids)].map(toUUID);
     const operation = createWebhookOperation(toWorkspaceID(workspaceID));
-    const recorder = await createWebhookRecorder({ database, operation });
+    const recorder = await createWebhookRecorder({
+      retentionPolicy: webhookRetentionPolicy,
+      database,
+      operation
+    });
     const deletedAt = new Date();
     const deleted = await (async () => {
       const rows = await database

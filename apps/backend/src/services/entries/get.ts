@@ -1,19 +1,15 @@
+import { contents, entries } from "@andesine/server/database";
 import {
-  assertSelector,
   resolveEntrySlugID,
   loadCurrentContentPaths,
-  type EntrySelector
-} from "#backend/lib/content/paths";
-import { assertRecordedContent } from "#backend/lib/schema/recorded";
-import type { ContentSchemaMetadata } from "#backend/lib/schema/contract/recorded";
-import { contents, entries, type Entry } from "#backend/db";
-import {
-  getContentBlocks,
-  serializeContentDocument,
-  type ContentBlocks,
-  type ContentNode
-} from "#backend/lib/content";
-import { toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
+  serializeContentDocument
+} from "@andesine/server/content";
+import { assertRecordedContent } from "@andesine/server/schema";
+import { getContentBlocks, type ContentBlocks, type ContentNode } from "@andesine/document";
+import { assertSelector, type EntrySelector } from "@andesine/contracts/content";
+import { type ContentSchemaMetadata } from "@andesine/contracts/schema";
+import { type Entry } from "@andesine/contracts/entities";
+import { toCollectionID, toEntryID, toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull, or } from "drizzle-orm";
 import { applyUpdate, Doc } from "yjs";

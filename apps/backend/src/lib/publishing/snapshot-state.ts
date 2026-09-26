@@ -1,10 +1,18 @@
-import { publishingChannels, publishingSnapshots } from "#backend/db";
-import type { db } from "#backend/lib/adapters";
+import {
+  publishingChannels,
+  publishingSnapshots,
+  type DatabaseTransaction,
+  type DatabaseClient
+} from "@andesine/server/database";
+import {
+  createOutboundEvent,
+  createWebhookOperation,
+  createWebhookRecorder
+} from "@andesine/server/webhooks/recording";
+import { webhookRetentionPolicy } from "#backend/lib/webhooks/policy";
 import { getEffectivePlan } from "#backend/lib/billing";
 import { config } from "#backend/lib/config";
-import { toSnapshotID, toUUID, toWorkspaceID } from "#backend/lib/primitives";
-import { createOutboundEvent, createWebhookOperation } from "#backend/lib/webhooks/operation";
-import { createWebhookRecorder } from "#backend/lib/webhooks/recorder";
+import { toSnapshotID, toUUID, toWorkspaceID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, gt, isNull, or } from "drizzle-orm";
 import { normalizePublishingChannelCode } from "./channel";
@@ -37,8 +45,6 @@ interface ResolvePublishingSnapshotByIDInput {
   snapshotID: string;
 }
 
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-type DatabaseClient = DatabaseTransaction | typeof db;
 type ResolvePublishingSnapshotInput =
   ResolveCurrentPublishingSnapshotInput | ResolvePublishingSnapshotByIDInput;
 
@@ -48,7 +54,11 @@ const createInitialPublishingChannel = async (
 ) => {
   const now = new Date();
   const operation = createWebhookOperation(toWorkspaceID(input.workspaceID));
-  const recorder = await createWebhookRecorder({ database, operation });
+  const recorder = await createWebhookRecorder({
+    retentionPolicy: webhookRetentionPolicy,
+    database,
+    operation
+  });
   const [channel] = await database
     .insert(publishingChannels)
     .values({

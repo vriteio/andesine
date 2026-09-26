@@ -1,6 +1,10 @@
-import { assetFiles, assetUploads, assets } from "#backend/db";
+import {
+  assetFiles,
+  assetUploads,
+  assets,
+  type DatabaseTransaction as Database
+} from "@andesine/server/database";
 import { config } from "#backend/lib/config";
-import type { Database } from "#backend/lib/policy";
 import { eq, sql } from "drizzle-orm";
 
 const getAssetStorageUsage = async (database: Database, workspaceID: string): Promise<number> => {

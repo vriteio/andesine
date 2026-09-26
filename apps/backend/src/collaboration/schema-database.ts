@@ -6,16 +6,16 @@ import {
   schemaDraftContributors,
   schemaVersions,
   workspaces
-} from "#backend/db";
-import { emitSchemaEvent } from "#backend/events";
-import { db } from "#backend/lib/adapters";
-import { replaceContentDocument, serializeContentDocument } from "#backend/lib/content";
-import { toCollectionID, toSchemaID, toUUID, toWorkspaceID } from "#backend/lib/primitives";
+} from "@andesine/server/database";
+import { replaceContentDocument, serializeContentDocument } from "@andesine/server/content";
 import {
   createSchemaDefinitionFromEditorDocument,
   createSchemaEditorDocument,
   hashSchemaDefinition
-} from "#backend/lib/schema";
+} from "@andesine/server/schema";
+import { emitSchemaEvent } from "#backend/events";
+import { db } from "#backend/lib/adapters";
+import { toCollectionID, toSchemaID, toUUID, toWorkspaceID } from "@andesine/contracts/primitives";
 import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import { applyUpdate, Doc, encodeStateAsUpdate } from "yjs";
 import { clearPendingContributors, getPendingContributors } from "./activity";

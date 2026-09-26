@@ -1,13 +1,12 @@
-import { assets, assetFiles } from "@andesine/backend/db/assets";
-import { assetUploads } from "@andesine/backend/db/asset-uploads";
+import { assets, assetFiles, assetUploads } from "@andesine/server/database";
 import {
   ASSET_PROFILE_SIZE,
   getOwnedAssetPrefix,
   getOwnedAssetUploadKey,
-  type AssetStorage
-} from "@andesine/backend/lib/assets/storage";
-import { lockProfileOwner } from "@andesine/backend/lib/assets/profiles";
-import type { ProfileImageJobData } from "@andesine/backend/lib/queue/asset-jobs";
+  type AssetStorage,
+  lockProfileOwner
+} from "@andesine/server/assets";
+import { type ProfileImageJobData } from "@andesine/server/queue";
 import { createHash } from "node:crypto";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { db } from "../database";

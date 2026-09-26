@@ -1,11 +1,11 @@
-import { assets, assetUploads } from "#backend/db";
+import { assets, assetUploads } from "@andesine/server/database";
 import {
   getProfileOwner,
   profileOwnerCondition,
   type ProfileImageInput
-} from "#backend/lib/assets/profiles";
+} from "@andesine/server/assets";
 import { withAuthorization } from "#backend/lib/policy";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { and, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 

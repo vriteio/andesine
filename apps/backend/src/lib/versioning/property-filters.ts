@@ -1,9 +1,6 @@
-import { entryVersionProperties as properties } from "#backend/db/version-properties";
-import {
-  normalizePropertyDate,
-  normalizePropertyText,
-  type PropertyFilter
-} from "#backend/lib/content/properties";
+import { entryVersionProperties as properties } from "@andesine/server/database";
+import { normalizePropertyDate, normalizePropertyText } from "@andesine/server/content";
+import { type PropertyFilter } from "@andesine/contracts/search";
 import {
   and,
   eq,

@@ -1,4 +1,3 @@
-import { searchIndexingQueue } from "./client";
 import {
   createCurrentCollectionSyncJob,
   createCurrentEntrySyncJobs,
@@ -15,7 +14,8 @@ import {
   type PublishedEntrySyncInput,
   type PublishedWorkspacePurgeJobData,
   type SearchIndexingJob
-} from "./search-indexing-jobs";
+} from "@andesine/server/queue";
+import { searchIndexingQueue } from "./client";
 
 const SEARCH_INDEXING_SUBMISSION_ATTEMPTS = 3;
 const SEARCH_INDEXING_SUBMISSION_RETRY_DELAY_MS = 250;

@@ -1,12 +1,19 @@
-import { assertSnapshotNames } from "./snapshot-names";
-import { publishingSnapshotChangedError } from "./errors";
 import {
   publishingChannels,
   publishingSnapshotCollections,
   publishingSnapshotEntries,
-  publishingSnapshots
-} from "#backend/db";
-import type { db } from "#backend/lib/adapters";
+  publishingSnapshots,
+  type DatabaseTransaction
+} from "@andesine/server/database";
+import {
+  createOutboundEvent,
+  createWebhookOperation,
+  type WebhookOperation,
+  createWebhookRecorder
+} from "@andesine/server/webhooks/recording";
+import { webhookRetentionPolicy } from "#backend/lib/webhooks/policy";
+import { assertSnapshotNames } from "./snapshot-names";
+import { publishingSnapshotChangedError } from "./errors";
 import type { AuthorizedCollectionTree } from "#backend/lib/policy";
 import {
   toCollectionID,
@@ -14,13 +21,7 @@ import {
   toSnapshotID,
   toUUID,
   toWorkspaceID
-} from "#backend/lib/primitives";
-import {
-  createOutboundEvent,
-  createWebhookOperation,
-  type WebhookOperation
-} from "#backend/lib/webhooks/operation";
-import { createWebhookRecorder } from "#backend/lib/webhooks/recorder";
+} from "@andesine/contracts/primitives";
 import { getPublicationWebhookResources } from "#backend/lib/webhooks/publication";
 import { ORPCError } from "@orpc/server";
 import { and, asc, eq, isNull } from "drizzle-orm";
@@ -69,7 +70,6 @@ interface CommitPublishingSnapshotResult {
   searchSyncEntryIDs: string[];
   snapshotID: string;
 }
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const collectionStatesEqual = (
   previous: PublishingSnapshotCollectionState,
@@ -125,7 +125,11 @@ const commitPublishingSnapshot = async (
     throw new Error("Webhook operation belongs to another workspace");
   }
 
-  const recorder = await createWebhookRecorder({ database, operation });
+  const recorder = await createWebhookRecorder({
+    retentionPolicy: webhookRetentionPolicy,
+    database,
+    operation
+  });
 
   assertUniqueOperations(
     collectionChanges.map(({ collectionID }) => collectionID),

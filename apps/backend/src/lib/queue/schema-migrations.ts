@@ -1,26 +1,28 @@
-import { schemaMigrations } from "#backend/db";
+import { schemaMigrations } from "@andesine/server/database";
+import {
+  restoreSchemaEntryMove,
+  restoreSchemaCollectionMove,
+  type EffectiveSchemaChangePlan
+} from "@andesine/server/schema";
+import { createSchemaMigrationJob, type SchemaMigrationJobData } from "@andesine/server/queue";
 import {
   emitEntryEvent,
   emitCollectionEvent,
   emitPublishingEntryContentUpdates,
   emitSchemaMigrationEvent
 } from "#backend/events";
-import { restoreSchemaEntryMove } from "#backend/lib/schema/migration/entry-move";
-import { restoreSchemaCollectionMove } from "#backend/lib/schema/migration/collection-move";
 import { db } from "#backend/lib/adapters/postgres";
-import type { EffectiveSchemaChangePlan } from "#backend/lib/schema/migration/effective-change";
 import {
   toCollectionID,
   toEntryID,
   toSchemaMigrationID,
   toUUID,
   toWorkspaceID
-} from "#backend/lib/primitives";
+} from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";
 import { searchIndexingQueue } from "./client";
 import { enqueueCurrentEntrySync, enqueuePublishedEntrySync } from "./search-indexing";
-import { createSchemaMigrationJob, type SchemaMigrationJobData } from "./schema-migration-jobs";
 
 interface SubmitSchemaMigrationInput extends EffectiveSchemaChangePlan {
   prepareAffectedContent?(): Promise<void>;

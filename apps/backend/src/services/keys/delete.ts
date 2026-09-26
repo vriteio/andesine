@@ -1,6 +1,6 @@
-import { toUUID } from "#backend/lib/primitives";
+import { apiKeys } from "@andesine/server/database";
+import { toUUID } from "@andesine/contracts/primitives";
 import { db } from "#backend/lib/adapters";
-import { apiKeys } from "#backend/db";
 import { withAuthorization } from "#backend/lib/policy";
 import { and, eq, inArray } from "drizzle-orm";
 

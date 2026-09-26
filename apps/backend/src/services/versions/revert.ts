@@ -1,17 +1,23 @@
-import { assertContentNameAvailable } from "#backend/lib/content/names";
-import { normalizeEntryName } from "#backend/lib/validation/content-name";
+import {
+  entries,
+  entryVersions,
+  publishingChannels,
+  publishingSnapshotEntries
+} from "@andesine/server/database";
+import { assertContentNameAvailable } from "@andesine/server/content";
+import { createWebhookOperation } from "@andesine/server/webhooks/recording";
+import { normalizeEntryName } from "@andesine/contracts/content";
 import {
   createDeferredDocumentReplacements,
   openDocumentContentConnection,
   type ContentConnection,
   type DeferredDocumentReplacements
 } from "#backend/collaboration";
-import { entries, entryVersions, publishingChannels, publishingSnapshotEntries } from "#backend/db";
-import type { VersionDetails } from "#backend/lib/data";
-import { PUBLISHED_CHANNEL_CODE, type PublishingEntryStatus } from "#backend/lib/publishing";
+import { type VersionDetails } from "@andesine/contracts/versions";
+import { PUBLISHED_CHANNEL_CODE } from "@andesine/contracts/publishing";
+import { type PublishingEntryStatus } from "#backend/lib/publishing";
 import { withAuthorization } from "#backend/lib/policy";
-import { toUUID, toVersionID, toWorkspaceID } from "#backend/lib/primitives";
-import { createWebhookOperation } from "#backend/lib/webhooks/operation";
+import { toUUID, toVersionID, toWorkspaceID } from "@andesine/contracts/primitives";
 import { retainRevertedVersionAssets } from "#backend/lib/versioning";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";

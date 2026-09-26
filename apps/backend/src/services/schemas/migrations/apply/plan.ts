@@ -1,26 +1,31 @@
-import { getUserAuthorization } from "#backend/lib/policy";
-import { assertSchemaFieldKeys } from "#backend/lib/schema/errors";
 import {
   collectionSchemas,
   collections,
   schemaDraftContributors,
   schemaVersionContributors,
   schemaVersions
-} from "#backend/db";
-import type { SchemaApplicationResult } from "#backend/lib/data";
-import { type ServiceResolveContext, withAuthorization } from "#backend/lib/policy";
+} from "@andesine/server/database";
+import {
+  assertSchemaFieldKeys,
+  hashSchemaDefinition,
+  createEffectiveSchemaChange
+} from "@andesine/server/schema";
+import {
+  getUserAuthorization,
+  type ServiceResolveContext,
+  withAuthorization
+} from "#backend/lib/policy";
+import {
+  type SchemaApplicationResult,
+  schemaDefinitionType,
+  type SchemaDefinition
+} from "@andesine/contracts/schema";
 import {
   toCollectionID,
   toSchemaMigrationID,
   toSchemaVersionID,
   toUUID
-} from "#backend/lib/primitives";
-import {
-  hashSchemaDefinition,
-  schemaDefinitionType,
-  type SchemaDefinition
-} from "#backend/lib/schema";
-import { createEffectiveSchemaChange } from "#backend/lib/schema/migration/effective-change";
+} from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNotNull, isNull, max } from "drizzle-orm";
 

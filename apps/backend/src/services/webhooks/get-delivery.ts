@@ -1,10 +1,11 @@
+import { getDeliveryTime } from "@andesine/server/webhooks/delivery";
 import {
   webhookDeliveryInputType,
   type WebhookDeliveryInput,
-  type WebhookDeliveryDetails
-} from "#backend/contracts/schemas/webhook-deliveries";
+  type WebhookDeliveryDetails,
+  webhookReadRequirements
+} from "@andesine/contracts/webhooks";
 import { withAuthorization } from "#backend/lib/policy";
-import { getDeliveryTime } from "#backend/lib/webhooks/delivery/locking";
 import {
   describeWebhookDeliveries,
   describeWebhookRuns
@@ -12,7 +13,6 @@ import {
 import { readRetainedWebhookPayload } from "#backend/lib/webhooks/history/payload";
 import { loadWebhookDelivery, loadWebhookRun } from "#backend/lib/webhooks/history/records";
 import { parseWebhookInput } from "#backend/lib/webhooks/management";
-import { webhookReadRequirements } from "#backend/lib/webhooks/permissions";
 
 const getWebhookDelivery = withAuthorization<
   WebhookDeliveryInput,

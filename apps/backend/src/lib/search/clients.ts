@@ -1,6 +1,5 @@
+import { OpenAICompatibleClient, TypesenseClient } from "@andesine/server/search";
 import { config } from "#backend/lib/config";
-import { OpenAICompatibleClient } from "./openai-compatible";
-import { TypesenseClient } from "./typesense";
 
 const searchTypesenseClient = new TypesenseClient({
   url: config.TYPESENSE_URL,

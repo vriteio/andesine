@@ -1,6 +1,12 @@
-import { assetUploads, assets, entries, workspaces } from "#backend/db";
-import { type Database, type ServiceResolveContext } from "#backend/lib/policy";
-import { toUUID } from "#backend/lib/primitives";
+import {
+  assetUploads,
+  assets,
+  entries,
+  workspaces,
+  type DatabaseTransaction as Database
+} from "@andesine/server/database";
+import { type ServiceResolveContext } from "#backend/lib/policy";
+import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
 

@@ -1,35 +1,12 @@
-import type { KeyPermission, Permission } from "#backend/db";
+import {
+  type AuthorizationRequirements,
+  hasPermission,
+  keyPermissionRequirements
+} from "@andesine/contracts/permissions";
+import { type KeyPermission, type Permission } from "@andesine/contracts/entities";
 import { ORPCError } from "@orpc/server";
 import { getUserAuthorization, type SessionData } from "./session";
-import { keyPermissionRequirements } from "./permission-requirements";
 
-interface TypedAuthorizationRequirements {
-  key?: KeyPermission[] | true;
-  session?: Permission[] | true;
-  oauth?: Permission[] | true;
-}
-interface ParsedPermission {
-  access: string;
-  resource: string;
-}
-
-type AuthorizationRequirements = TypedAuthorizationRequirements | true;
-
-const parsePermission = (permission: string): ParsedPermission => {
-  const [accessOrResource, readResource] = permission.split(":");
-
-  return readResource
-    ? { resource: readResource, access: accessOrResource }
-    : { resource: accessOrResource, access: "write" };
-};
-const hasPermission = (granted: string, required: string): boolean => {
-  const grantedPermission = parsePermission(granted);
-  const requiredPermission = parsePermission(required);
-
-  if (grantedPermission.resource !== requiredPermission.resource) return false;
-
-  return grantedPermission.access === "write" || requiredPermission.access === "read";
-};
 const isAdminAuthorization = (auth: SessionData): boolean => {
   return getUserAuthorization(auth)?.admin === true;
 };
@@ -101,7 +78,5 @@ export {
   assertAuthorizationRequirements,
   hasAuthorizationRequirements,
   hasAuthPermission,
-  hasPermission,
   isAdminAuthorization
 };
-export type { AuthorizationRequirements };

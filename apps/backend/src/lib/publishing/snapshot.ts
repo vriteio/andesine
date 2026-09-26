@@ -1,5 +1,5 @@
 import { getCurrentDocumentContent } from "#backend/collaboration";
-import { toEntryID, toUUID } from "#backend/lib/primitives";
+import { toEntryID, toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 
 const SNAPSHOT_BATCH_SIZE = 20;

@@ -1,9 +1,16 @@
-import { createStructureWebhookRecorder } from "#backend/lib/webhooks/structure";
-import type { WebhookOperation } from "#backend/lib/webhooks/operation";
-import { assertContentTreeNames } from "#backend/lib/content/names";
-import { collections, entries, memberships } from "#backend/db";
-import type { db } from "#backend/lib/adapters";
-import { createEffectiveSchemaChange } from "#backend/lib/schema/migration/effective-change";
+import {
+  collections,
+  entries,
+  memberships,
+  type DatabaseTransaction
+} from "@andesine/server/database";
+import {
+  createStructureWebhookRecorder,
+  type WebhookOperation
+} from "@andesine/server/webhooks/recording";
+import { assertContentTreeNames } from "@andesine/server/content";
+import { createEffectiveSchemaChange } from "@andesine/server/schema";
+import { webhookRetentionPolicy } from "#backend/lib/webhooks/policy";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { resolvePublishingRevertRanks } from "./revert-order";
 import type {
@@ -32,8 +39,6 @@ interface ApplyPublishingRevertStructureResult {
   restoredCollections: RevertedCollection[];
   restoredEntries: RevertedEntry[];
 }
-
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const restoreCollection = async (
   database: DatabaseTransaction,
@@ -194,6 +199,7 @@ const applyPublishingRevertStructure = async (
   webhookOperation?: WebhookOperation
 ): Promise<ApplyPublishingRevertStructureResult> => {
   const webhooks = await createStructureWebhookRecorder({
+    retentionPolicy: webhookRetentionPolicy,
     database,
     workspaceID,
     operation: webhookOperation,

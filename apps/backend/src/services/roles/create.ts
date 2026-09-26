@@ -1,8 +1,9 @@
+import { roles } from "@andesine/server/database";
 import { assertRoleDelegation } from "#backend/lib/policy/delegation";
 import type { SessionData } from "#backend/lib/policy/session";
-import { toRoleID, toUUID } from "#backend/lib/primitives";
+import { toRoleID, toUUID } from "@andesine/contracts/primitives";
 import { db } from "#backend/lib/adapters";
-import { type Permission, roles, type Role } from "#backend/db";
+import { type Permission, type Role } from "@andesine/contracts/entities";
 import { withAuthorization } from "#backend/lib/policy";
 import {
   duplicateRoleNameError,

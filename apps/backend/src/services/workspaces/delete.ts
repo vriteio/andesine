@@ -9,12 +9,9 @@ import {
   memberships,
   users,
   workspaces
-} from "#backend/db";
-import {
-  getWorkspaceAssetPrefix,
-  getWorkspaceAssetStagingPrefix
-} from "#backend/lib/assets/storage";
-import { toEntryID, toUUID, toWorkspaceID } from "#backend/lib/primitives";
+} from "@andesine/server/database";
+import { getWorkspaceAssetPrefix, getWorkspaceAssetStagingPrefix } from "@andesine/server/assets";
+import { toEntryID, toUUID, toWorkspaceID } from "@andesine/contracts/primitives";
 import { db } from "#backend/lib/adapters";
 import { deleteWorkspacePublishingSnapshots } from "#backend/lib/publishing";
 import { withAuthorization } from "#backend/lib/policy";

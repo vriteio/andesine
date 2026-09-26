@@ -1,10 +1,13 @@
+import {
+  type WebhookResourceScope,
+  type WebhookScopeIndex,
+  type WebhookEventResource
+} from "@andesine/server/webhooks/recording";
 import type {
   PublishingSnapshotCollectionState,
   PublishingSnapshotEntryState
 } from "#backend/lib/publishing/snapshot-validation";
-import { toCollectionID, toEntryID } from "#backend/lib/primitives/id";
-import type { WebhookResourceScope, WebhookScopeIndex } from "./scope";
-import type { WebhookEventResource } from "./recording-context";
+import { toCollectionID, toEntryID } from "@andesine/contracts/primitives";
 
 interface PublicationWebhookResourcesInput {
   index: WebhookScopeIndex;

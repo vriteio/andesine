@@ -1,13 +1,13 @@
-import { auth as authAdapter } from "#backend/lib/adapters/auth";
-import { emitWorkspaceStateEvent } from "#backend/events/workspaces";
-import { toUUID } from "#backend/lib/primitives";
-import { assets, users, workspaces } from "#backend/db";
+import { assets, users, workspaces } from "@andesine/server/database";
 import {
   cancelProfileUploads,
   getProfileOwner,
   lockProfileOwner,
   type ProfileImageInput
-} from "#backend/lib/assets/profiles";
+} from "@andesine/server/assets";
+import { auth as authAdapter } from "#backend/lib/adapters/auth";
+import { emitWorkspaceStateEvent } from "#backend/events/workspaces";
+import { toUUID } from "@andesine/contracts/primitives";
 import { withAuthorization } from "#backend/lib/policy";
 import { eq } from "drizzle-orm";
 

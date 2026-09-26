@@ -1,7 +1,7 @@
-import { entries, publishingChannels, publishingSnapshotEntries } from "#backend/db";
+import { entries, publishingChannels, publishingSnapshotEntries } from "@andesine/server/database";
 import { mapPublishingChannel, type PublishingChannel } from "#backend/lib/data";
 import { withAuthorization } from "#backend/lib/policy";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { and, asc, count, desc, eq, inArray, isNull, or } from "drizzle-orm";
 
 interface PublishingChannelListItem extends PublishingChannel {

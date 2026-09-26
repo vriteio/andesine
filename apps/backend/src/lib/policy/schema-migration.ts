@@ -1,9 +1,13 @@
-import { toSchemaMigrationID } from "#backend/lib/primitives";
-import { collections, schemaMigrationCollections, schemaMigrations } from "#backend/db";
-import { toUUID } from "#backend/lib/primitives";
+import {
+  collections,
+  schemaMigrationCollections,
+  schemaMigrations,
+  type DatabaseClient
+} from "@andesine/server/database";
+import { toSchemaMigrationID, toUUID } from "@andesine/contracts/primitives";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
-import type { DatabaseClient, ServiceAuthorizationActions } from "./service";
+import type { ServiceAuthorizationActions } from "./service";
 
 const BLOCKED_COLLECTION_ACTIONS = new Set([
   "collection:create-child",

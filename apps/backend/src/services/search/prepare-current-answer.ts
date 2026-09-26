@@ -1,9 +1,9 @@
+import { type AskInput, type AskSource } from "@andesine/server/search";
+import { loadCurrentContentPaths } from "@andesine/server/content";
 import { withAuthorization } from "#backend/lib/policy";
 import { createDocumentAuthorizer } from "#backend/lib/search/current-scope";
-import type { AskInput, AskSource } from "#backend/lib/search/query-types";
 import { prepareAnswer, type PreparedAnswer } from "#backend/lib/search/answers";
-import { loadCurrentContentPaths } from "#backend/lib/content/paths";
-import { toCollectionID } from "#backend/lib/primitives";
+import { toCollectionID } from "@andesine/contracts/primitives";
 
 const prepareCurrentAnswer = withAuthorization<AskInput, undefined, PreparedAnswer<AskSource>>(
   {

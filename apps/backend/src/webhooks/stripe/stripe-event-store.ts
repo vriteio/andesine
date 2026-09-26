@@ -1,5 +1,5 @@
+import { invitations, stripeWebhookEvents, workspaces } from "@andesine/server/database";
 // SPDX-License-Identifier: Elastic-2.0
-import { invitations, stripeWebhookEvents, workspaces } from "#backend/db";
 import { db } from "#backend/lib/adapters";
 import { and, eq, ne, sql } from "drizzle-orm";
 import type Stripe from "stripe";

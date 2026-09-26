@@ -1,34 +1,34 @@
-import { storeVersionProperties } from "@andesine/backend/lib/versioning/properties";
-import { workspaces } from "@andesine/backend/db/workspaces";
-import { retainVersionAssets, syncEntryAssets } from "@andesine/backend/lib/assets/references";
 import {
+  workspaces,
   effectiveSchemaRevisions,
   schemaMigrationEntries,
-  schemaMigrations
-} from "@andesine/backend/db/content-schemas";
-import { contents } from "@andesine/backend/db/contents";
-import { entries } from "@andesine/backend/db/entries";
-import {
+  schemaMigrations,
+  contents,
+  entries,
   entryVersionActivity,
   entryVersionActivityContributors,
   entryVersionContributors,
   entryVersions
-} from "@andesine/backend/db/versions";
-import { hashContentDocument, type ContentNode } from "@andesine/backend/lib/content";
-import { toEntryID } from "@andesine/backend/lib/primitives/id";
-import { createWebhookRecorder } from "@andesine/backend/lib/webhooks/recorder";
-import { recordSavedEntryWebhooks } from "@andesine/backend/lib/webhooks/entry-save";
+} from "@andesine/server/database";
+import { storeVersionProperties } from "@andesine/server/versioning";
+import { retainVersionAssets, syncEntryAssets } from "@andesine/server/assets";
+import { hashContentDocument } from "@andesine/server/content";
 import {
-  migrateSchemaContentState,
-  replaceSchemaContentState
-} from "@andesine/backend/lib/schema/migration";
-import { getResolvedSchemaDefinition } from "@andesine/backend/lib/schema/inheritance";
-import { and, eq, sql } from "drizzle-orm";
-import { db } from "../database";
-import {
+  createWebhookRecorder,
+  recordSavedEntryWebhooks,
   createMigrationWebhookOperation,
   getSavedMigrationContentHash
-} from "@andesine/backend/lib/webhooks/migration";
+} from "@andesine/server/webhooks/recording";
+import {
+  migrateSchemaContentState,
+  replaceSchemaContentState,
+  getResolvedSchemaDefinition
+} from "@andesine/server/schema";
+import { webhookRetentionPolicy } from "../config";
+import type { ContentNode } from "@andesine/document";
+import { toEntryID } from "@andesine/contracts/primitives";
+import { and, eq, sql } from "drizzle-orm";
+import { db } from "../database";
 
 interface MigrationEntryInput {
   entryID: string;
@@ -108,7 +108,11 @@ const processMigrationEntry = async (
     if (!row.targetRevisionID) throw new Error("Schema migration target revision is missing");
 
     const operation = createMigrationWebhookOperation(input.workspaceID, input.migrationID);
-    const recorder = await createWebhookRecorder({ database: transaction, operation });
+    const recorder = await createWebhookRecorder({
+      retentionPolicy: webhookRetentionPolicy,
+      database: transaction,
+      operation
+    });
     const sourceDocument = row.document || createEmptyDocument(row.entryName);
     const migrated = migrateSchemaContentState({
       document: sourceDocument,
@@ -283,7 +287,11 @@ const rollbackMigrationEntry = async (input: MigrationEntryInput): Promise<void>
     if (row.entryStatus !== "completed" || row.migrationStatus !== "rolling_back") return;
 
     const operation = createMigrationWebhookOperation(input.workspaceID, input.migrationID);
-    const recorder = await createWebhookRecorder({ database: transaction, operation });
+    const recorder = await createWebhookRecorder({
+      retentionPolicy: webhookRetentionPolicy,
+      database: transaction,
+      operation
+    });
     const restored = replaceSchemaContentState(row.contentState, row.recoveryDocument);
     const hash = hashContentDocument(restored.document);
     const contentChanged =

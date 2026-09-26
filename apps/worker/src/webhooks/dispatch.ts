@@ -1,22 +1,22 @@
-import type { db } from "@andesine/backend/lib/adapters/postgres";
-import type { SecretEncryption } from "@andesine/backend/lib/security/encryption";
-import type { ClaimedDeliveryRun } from "@andesine/backend/lib/webhooks/delivery/claim";
-import type { DeliveryAttemptResult } from "@andesine/backend/lib/webhooks/delivery/outcome";
-import type { WebhookDestinationConfig } from "@andesine/backend/lib/webhooks/destination-config";
+import { type Database } from "@andesine/server/database";
+import { type SecretEncryption } from "@andesine/server/security";
+import {
+  type ClaimedDeliveryRun,
+  type DeliveryAttemptResult
+} from "@andesine/server/webhooks/delivery";
 import {
   parseWebhookDestination,
-  WebhookDestinationError
-} from "@andesine/backend/lib/webhooks/destination";
-import {
+  WebhookDestinationError,
   loadWebhookHTTPTarget,
   WebhookDispatchUnavailableError
-} from "@andesine/backend/lib/webhooks/http-target";
-import { signWebhookPayload } from "@andesine/backend/lib/webhooks/signing";
+} from "@andesine/server/webhooks/destination";
+import { type WebhookDestinationConfig } from "@andesine/server/webhooks/destination/config";
+import { signWebhookPayload } from "@andesine/server/webhooks/signing";
 import { sendWebhookRequest } from "./transport";
 import { parseRetryAfter } from "./retry-after";
 
 interface DispatchWebhookHTTPInput {
-  database: typeof db;
+  database: Database;
   claim: ClaimedDeliveryRun;
   encryption: SecretEncryption;
   config: WebhookDestinationConfig;

@@ -1,7 +1,7 @@
+import { type workspaces } from "@andesine/server/database";
 // SPDX-License-Identifier: Elastic-2.0
 import { config } from "#backend/lib/config";
 import { isTerminalSubscription } from "#backend/lib/policy";
-import type { workspaces } from "#backend/db";
 import type Stripe from "stripe";
 
 interface StripeSubscriptionResolution {

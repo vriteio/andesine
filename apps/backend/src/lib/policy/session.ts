@@ -4,8 +4,8 @@ import {
   permissionType,
   type KeyPermission,
   type Permission
-} from "#backend/db";
-import type { WorkspaceEvent } from "#backend/events";
+} from "@andesine/contracts/entities";
+import { type WorkspaceEvent } from "@andesine/contracts/events";
 import * as z from "zod";
 
 interface UserAuthorization {

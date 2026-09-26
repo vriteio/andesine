@@ -1,14 +1,18 @@
-import { assertContentNameAvailable } from "#backend/lib/content/names";
-import { toUUID } from "#backend/lib/primitives";
-import { entries, type Entry } from "#backend/db";
+import { entries } from "@andesine/server/database";
+import { assertContentNameAvailable } from "@andesine/server/content";
+import {
+  createOutboundEvent,
+  createWebhookOperation,
+  createWebhookRecorder,
+  getWebhookEntryContext
+} from "@andesine/server/webhooks/recording";
+import { webhookRetentionPolicy } from "#backend/lib/webhooks/policy";
+import { toUUID, toWorkspaceID } from "@andesine/contracts/primitives";
+import { type Entry } from "@andesine/contracts/entities";
 import { and, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
-import { normalizeEntryName } from "#backend/lib/validation";
+import { normalizeEntryName } from "@andesine/contracts/content";
 import { withAuthorization } from "#backend/lib/policy";
-import { toWorkspaceID } from "#backend/lib/primitives/id";
-import { createOutboundEvent, createWebhookOperation } from "#backend/lib/webhooks/operation";
-import { createWebhookRecorder } from "#backend/lib/webhooks/recorder";
-import { getWebhookEntryContext } from "#backend/lib/webhooks/entry-context";
 
 interface UpdateEntryInput extends Partial<Pick<Entry, "name">> {
   id: string;
@@ -52,7 +56,11 @@ const updateEntry = withAuthorization<UpdateEntryInput, ResolvedUpdateEntry, Upd
     if (name === resolved.entry.name) return {};
 
     const operation = createWebhookOperation(toWorkspaceID(workspaceID));
-    const recorder = await createWebhookRecorder({ database, operation });
+    const recorder = await createWebhookRecorder({
+      retentionPolicy: webhookRetentionPolicy,
+      database,
+      operation
+    });
     const context = getWebhookEntryContext(recorder.before, resolved.entry);
 
     await assertContentNameAvailable(database, workspaceID, {

@@ -4,10 +4,10 @@ import { type Component, createMemo, createSignal, For, Show } from "solid-js";
 import type { SetStoreFunction } from "solid-js/store";
 import {
   webhookCatalogEvents,
-  webhookEventCategories,
   type WebhookCatalogEvent,
   type WebhookEventType
 } from "#web/lib/data";
+import { webhookEventCategories } from "@andesine/contracts/webhooks";
 import { Setting } from "../setting";
 import { SettingsSection } from "../settings-section";
 import type { WebhookDraft } from "./configuration";

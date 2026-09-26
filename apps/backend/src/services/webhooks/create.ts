@@ -1,20 +1,23 @@
-import {
-  webhookCreateInputType,
-  type WebhookCreateInput,
-  type WebhookSecretResult
-} from "#backend/contracts/schemas/webhooks";
-import { webhookEndpoints } from "#backend/db/webhooks";
-import { config } from "#backend/lib/config";
-import { withAuthorization } from "#backend/lib/policy";
-import { generateUUID, toUUID, toWebhookID } from "#backend/lib/primitives/id";
-import { createSecretEncryption } from "#backend/lib/security/encryption";
-import { assertWebhookAuthority } from "#backend/lib/webhooks/delegation";
-import { getDeliveryTime } from "#backend/lib/webhooks/delivery/locking";
+import { webhookEndpoints } from "@andesine/server/database";
+import { generateUUID } from "@andesine/server/primitives";
+import { createSecretEncryption } from "@andesine/server/security";
+import { getDeliveryTime } from "@andesine/server/webhooks/delivery";
 import {
   countWebhookEndpoints,
   describeWebhookEndpoints,
   MAX_WORKSPACE_WEBHOOKS
-} from "#backend/lib/webhooks/endpoints";
+} from "@andesine/server/webhooks/recording";
+import { createWebhookSecrets } from "@andesine/server/webhooks/signing";
+import {
+  webhookCreateInputType,
+  type WebhookCreateInput,
+  type WebhookSecretResult,
+  webhookManageRequirements
+} from "@andesine/contracts/webhooks";
+import { config } from "#backend/lib/config";
+import { withAuthorization } from "#backend/lib/policy";
+import { toUUID, toWebhookID } from "@andesine/contracts/primitives";
+import { assertWebhookAuthority } from "#backend/lib/webhooks/delegation";
 import {
   assertWebhookDestination,
   assertWebhookWorkspace,
@@ -22,8 +25,6 @@ import {
   parseWebhookInput,
   recordWebhookRevision
 } from "#backend/lib/webhooks/management";
-import { webhookManageRequirements } from "#backend/lib/webhooks/permissions";
-import { createWebhookSecrets } from "#backend/lib/webhooks/secrets";
 import { ORPCError } from "@orpc/server";
 
 const createWebhook = withAuthorization<WebhookCreateInput, undefined, WebhookSecretResult>(

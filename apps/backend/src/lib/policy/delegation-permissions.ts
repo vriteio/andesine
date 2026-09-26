@@ -1,5 +1,5 @@
-import { keyPermissionRequirements } from "./permission-requirements";
-import type { KeyPermission, Permission } from "#backend/db";
+import { keyPermissionRequirements } from "@andesine/contracts/permissions";
+import { type KeyPermission, type Permission } from "@andesine/contracts/entities";
 import { hasAuthPermission, isAdminAuthorization } from "./permissions";
 import type { SessionData } from "./session";
 

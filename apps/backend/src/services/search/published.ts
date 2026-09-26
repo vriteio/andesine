@@ -1,12 +1,12 @@
+import { type PublishedSearchInput, type PublishedSearchResult } from "@andesine/server/search";
 import { withAuthorization } from "#backend/lib/policy";
 import {
   createDocumentAuthorizer,
   resolvePublishedScope
 } from "#backend/lib/search/published-scope";
-import type { PublishedSearchInput, PublishedSearchResult } from "#backend/lib/search/query-types";
 import { search } from "#backend/lib/search/retrieval";
 import { normalizePublishingChannelCode } from "#backend/lib/publishing";
-import { toSnapshotID } from "#backend/lib/primitives";
+import { toSnapshotID } from "@andesine/contracts/primitives";
 
 const searchPublished = withAuthorization<PublishedSearchInput, undefined, PublishedSearchResult>(
   {

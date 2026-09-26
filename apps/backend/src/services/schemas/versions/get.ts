@@ -1,5 +1,6 @@
-import { schemaVersionContributors } from "#backend/db";
-import { mapSchemaVersion, type SchemaVersionDetails } from "#backend/lib/data";
+import { schemaVersionContributors } from "@andesine/server/database";
+import { mapSchemaVersion } from "#backend/lib/data";
+import { type SchemaVersionDetails } from "@andesine/contracts/schema";
 import { withAuthorization } from "#backend/lib/policy";
 import { and, eq } from "drizzle-orm";
 import { type SchemaVersionInput, resolveSchemaVersion } from "./resolve";

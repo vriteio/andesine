@@ -1,28 +1,14 @@
 import { UniqueID as BaseUniqueID } from "@tiptap/extension-unique-id";
+import { DOCUMENT_ID_NODE_TYPES } from "@andesine/document/tiptap";
 import { nanoid } from "nanoid";
 
-const UniqueID = BaseUniqueID.configure({
+const UniqueID = BaseUniqueID.extend({
+  addGlobalAttributes() {
+    return [];
+  }
+}).configure({
   attributeName: "id",
-  types: [
-    "paragraph",
-    "bulletList",
-    "orderedList",
-    "taskList",
-    "blockquote",
-    "horizontalRule",
-    "codeBlock",
-    "element",
-    "image",
-    "heading",
-    "fragment",
-    "property",
-    "listItem",
-    "taskItem",
-    "table",
-    "tableRow",
-    "tableCell",
-    "tableHeader"
-  ],
+  types: [...DOCUMENT_ID_NODE_TYPES],
   generateID: () => nanoid()
 });
 

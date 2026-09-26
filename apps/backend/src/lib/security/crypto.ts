@@ -1,5 +1,5 @@
 import { createHash, randomBytes, createCipheriv, createDecipheriv } from "node:crypto";
-import { bytesToBase62 } from "#backend/lib/primitives";
+import { bytesToBase62 } from "@andesine/contracts/primitives";
 
 const ENCRYPTION_ALGORITHM = "aes-256-gcm";
 

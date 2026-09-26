@@ -1,8 +1,9 @@
-import { entries, entryVersionContributors, entryVersions } from "#backend/db";
-import { toUUID } from "#backend/lib/primitives";
+import { entries, entryVersionContributors, entryVersions } from "@andesine/server/database";
+import { mapVersionSummary } from "@andesine/server/data";
+import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
-import { mapVersionSummary, type VersionSummary } from "#backend/lib/data";
+import { type VersionSummary } from "@andesine/contracts/versions";
 import { withAuthorization } from "#backend/lib/policy";
 
 interface UpdateVersionInput {

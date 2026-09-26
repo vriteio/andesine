@@ -2,9 +2,9 @@ import {
   collections,
   entries,
   publishingSnapshotCollections,
-  publishingSnapshotEntries
-} from "#backend/db";
-import type { db } from "#backend/lib/adapters";
+  publishingSnapshotEntries,
+  type DatabaseTransaction
+} from "@andesine/server/database";
 import { ORPCError } from "@orpc/server";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import type {
@@ -38,8 +38,6 @@ interface WorkingCollection {
   publishingEnabled: boolean;
   rank: string;
 }
-
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const getPublishedCollectionPath = (
   collectionsByID: Map<string, WorkingCollection>,

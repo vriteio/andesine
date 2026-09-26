@@ -1,0 +1,120 @@
+{
+  "name": "@andesine/server",
+  "type": "module",
+  "private": true,
+  "exports": {
+    "./database": {
+      "types": "./src/database/index.ts",
+      "default": "./src/database/index.ts"
+    },
+    "./assets": {
+      "types": "./src/assets/index.ts",
+      "default": "./src/assets/index.ts"
+    },
+    "./content": {
+      "types": "./src/content/index.ts",
+      "default": "./src/content/index.ts"
+    },
+    "./data": {
+      "types": "./src/data/index.ts",
+      "default": "./src/data/index.ts"
+    },
+    "./primitives": {
+      "types": "./src/primitives/index.ts",
+      "default": "./src/primitives/index.ts"
+    },
+    "./publishing": {
+      "types": "./src/publishing/index.ts",
+      "default": "./src/publishing/index.ts"
+    },
+    "./queue": {
+      "types": "./src/queue/index.ts",
+      "default": "./src/queue/index.ts"
+    },
+    "./schema": {
+      "types": "./src/schema/index.ts",
+      "default": "./src/schema/index.ts"
+    },
+    "./search": {
+      "types": "./src/search/index.ts",
+      "default": "./src/search/index.ts"
+    },
+    "./security": {
+      "types": "./src/security/index.ts",
+      "default": "./src/security/index.ts"
+    },
+    "./versioning": {
+      "types": "./src/versioning/index.ts",
+      "default": "./src/versioning/index.ts"
+    },
+    "./webhooks/cleanup": {
+      "types": "./src/webhooks/cleanup/index.ts",
+      "default": "./src/webhooks/cleanup/index.ts"
+    },
+    "./webhooks/delivery": {
+      "types": "./src/webhooks/delivery/index.ts",
+      "default": "./src/webhooks/delivery/index.ts"
+    },
+    "./webhooks/destination": {
+      "types": "./src/webhooks/destination/index.ts",
+      "default": "./src/webhooks/destination/index.ts"
+    },
+    "./webhooks/recording": {
+      "types": "./src/webhooks/recording.ts",
+      "default": "./src/webhooks/recording.ts"
+    },
+    "./webhooks/retention": {
+      "types": "./src/webhooks/retention.ts",
+      "default": "./src/webhooks/retention.ts"
+    },
+    "./webhooks/signing": {
+      "types": "./src/webhooks/signing/index.ts",
+      "default": "./src/webhooks/signing/index.ts"
+    },
+    "./billing/config": {
+      "types": "./src/billing/config-schema.ts",
+      "default": "./src/billing/config-schema.ts"
+    },
+    "./assets/config": {
+      "types": "./src/assets/config-schema.ts",
+      "default": "./src/assets/config-schema.ts"
+    },
+    "./search/config": {
+      "types": "./src/search/config-schema.ts",
+      "default": "./src/search/config-schema.ts"
+    },
+    "./security/config": {
+      "types": "./src/security/encryption-config.ts",
+      "default": "./src/security/encryption-config.ts"
+    },
+    "./versioning/config": {
+      "types": "./src/versioning/config-schema.ts",
+      "default": "./src/versioning/config-schema.ts"
+    },
+    "./webhooks/destination/config": {
+      "types": "./src/webhooks/destination-config.ts",
+      "default": "./src/webhooks/destination-config.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@andesine/contracts": "workspace:*",
+    "@andesine/document": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "pg": "catalog:",
+    "@andesine/converters": "workspace:*",
+    "@andesine/sdk": "workspace:*",
+    "@aws-sdk/client-s3": "catalog:",
+    "@orpc/server": "catalog:",
+    "bullmq": "catalog:",
+    "yjs": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.2",
+    "@types/pg": "catalog:",
+    "typescript": "6.0.3"
+  }
+}

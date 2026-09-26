@@ -1,4 +1,4 @@
-import { oauthClients, oauthClientResources } from "#backend/db/oauth";
+import { oauthClients, oauthClientResources } from "@andesine/server/database";
 import { CLI_CLIENT_ID, CLI_GRANTS, CLI_SCOPES } from "#backend/lib/auth/oauth";
 import { db } from "#backend/lib/adapters/postgres";
 import { config } from "#backend/lib/config";

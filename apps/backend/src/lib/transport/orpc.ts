@@ -4,7 +4,7 @@ import {
 } from "@orpc/server/plugins";
 import { os } from "@orpc/server";
 import type { SessionData } from "#backend/lib/policy";
-import type { ORPCMeta } from "#backend/contracts/base";
+import { type ORPCMeta } from "@andesine/contracts/api/base";
 
 interface ORPCContext extends RequestHeadersPluginContext, ResponseHeadersPluginContext {}
 interface WSORPCContext {

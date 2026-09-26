@@ -1,8 +1,5 @@
-import {
-  hashContentDocument,
-  replaceContentDocument,
-  type ContentNode
-} from "#backend/lib/content";
+import { hashContentDocument, replaceContentDocument } from "@andesine/server/content";
+import type { ContentNode } from "@andesine/document";
 import { getContentSnapshot } from "./document";
 import { setPersistedDocumentSchemaRevision, type ContentConnection } from "./operations";
 import type { ContentSnapshot } from "./types";

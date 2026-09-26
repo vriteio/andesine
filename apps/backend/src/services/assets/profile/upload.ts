@@ -1,19 +1,17 @@
-import { assets, assetUploads } from "#backend/db";
-import { requireAssetStorage } from "#backend/lib/assets/client";
+import { assets, assetUploads } from "@andesine/server/database";
 import {
   cancelProfileUploads,
   getProfileOwner,
   lockProfileOwner,
-  type ProfileImageInput
-} from "#backend/lib/assets/profiles";
-import { getAssetStorageLimit, getAssetStorageUsage } from "#backend/lib/assets/quota";
-import {
+  type ProfileImageInput,
   getOwnedAssetUploadKey,
   getProfileImageReservationBytes
-} from "#backend/lib/assets/storage";
+} from "@andesine/server/assets";
+import { requireAssetStorage } from "#backend/lib/assets/client";
+import { getAssetStorageLimit, getAssetStorageUsage } from "#backend/lib/assets/quota";
 import { config } from "#backend/lib/config";
 import { withAuthorization } from "#backend/lib/policy";
-import { toAssetID, toUUID } from "#backend/lib/primitives";
+import { toAssetID, toUUID } from "@andesine/contracts/primitives";
 import { enqueueProfileImageProcessing } from "#backend/lib/queue/assets";
 import { ORPCError } from "@orpc/server";
 import { createHash } from "node:crypto";

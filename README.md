@@ -34,6 +34,28 @@ Vrite is an open-source, collaborative space to create, manage, and deploy produ
 
 Learn more about all the features of Vrite and how to use them from the [official Usage Guide](https://docs.vrite.io).
 
+## Server configuration
+
+Set `BILLING_ENABLED=true` or `BILLING_ENABLED=false` in the backend, worker, and usage reporter.
+All three deployments must use the same value. A missing or invalid value stops startup.
+Use a shared deployment variable where possible. With billing disabled, all Pro features remain
+available and the reporter skips usage reporting.
+
+| Application    | Stripe settings required when billing is enabled                                                                                                 |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Backend        | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRO_SEAT_PRICE_ID`, `STRIPE_PRO_API_CALL_PRICE_ID`, `STRIPE_PRO_API_CALL_METER_EVENT_NAME` |
+| Worker         | None                                                                                                                                             |
+| Usage reporter | `STRIPE_SECRET_KEY`, `STRIPE_PRO_API_CALL_METER_EVENT_NAME`                                                                                      |
+
+The reporter always requires `DATABASE_URL`. It does not require backend host, authentication,
+email, Redis, or search configuration. Match its database, Stripe account, and meter event name
+to the backend. Match `VERSION_RETENTION_DAYS` and `PRO_VERSION_RETENTION_DAYS` between backend
+and worker; both version cleanup and webhook recording use these durations. See [.env.example](.env.example)
+for the other settings.
+
+Before deploying this refactor, set the explicit billing mode on all three applications. Stripe
+credentials no longer select the mode. Existing deployments without this variable will fail startup.
+
 ## Links
 
 - 🔥 [**Try out Vrite**](https://app.vrite.io)

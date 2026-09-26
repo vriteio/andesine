@@ -3,7 +3,7 @@ import { Auth } from "#backend/services/auth";
 import { assertAuthorizationRequirements, type SessionData } from "#backend/lib/policy";
 import { ORPCError } from "@orpc/server";
 import { base } from "../orpc";
-import { isPublicAPI } from "#backend/contracts/base";
+import { isPublicAPI } from "@andesine/contracts/api/base";
 import { setErrorResponseHeaders } from "../error";
 import { config } from "#backend/lib/config";
 import { Billing } from "#backend/services/billing";

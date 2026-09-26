@@ -5,14 +5,14 @@ import {
   effectiveSchemaRevisions,
   schemaMigrationCollections,
   schemaMigrations
-} from "#backend/db";
-import type { TypeMetadataInput, TypeMetadata } from "#backend/contracts/schemas/type-metadata";
+} from "@andesine/server/database";
+import { mapSchemaRevision } from "@andesine/server/schema";
+import { type TypeMetadataInput, type TypeMetadata } from "@andesine/contracts/type-metadata";
 import { withAuthorization } from "#backend/lib/policy";
-import { toSchemaMigrationID } from "#backend/lib/primitives";
+import { toSchemaMigrationID } from "@andesine/contracts/primitives";
 import { selectMetadataCollections } from "#backend/lib/type-metadata/selection";
 import { createMetadataResult } from "#backend/lib/type-metadata/result";
 import { loadMetadataRevisions } from "#backend/lib/type-metadata/revisions";
-import { mapSchemaRevision } from "#backend/lib/schema/recorded";
 import { and, eq, inArray, isNull, or } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 

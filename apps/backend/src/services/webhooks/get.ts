@@ -1,10 +1,9 @@
-import type { WebhookEndpoint } from "#backend/contracts/schemas/webhooks";
+import { getDeliveryTime } from "@andesine/server/webhooks/delivery";
+import { describeWebhookEndpoints, loadWebhookEndpoint } from "@andesine/server/webhooks/recording";
+import { type WebhookEndpoint, webhookReadRequirements } from "@andesine/contracts/webhooks";
 import { withAuthorization } from "#backend/lib/policy";
-import { publicID } from "#backend/lib/primitives/id";
-import { getDeliveryTime } from "#backend/lib/webhooks/delivery/locking";
-import { describeWebhookEndpoints, loadWebhookEndpoint } from "#backend/lib/webhooks/endpoints";
+import { publicID } from "@andesine/contracts/primitives";
 import { parseWebhookInput } from "#backend/lib/webhooks/management";
-import { webhookReadRequirements } from "#backend/lib/webhooks/permissions";
 
 interface GetWebhookInput {
   id: string;

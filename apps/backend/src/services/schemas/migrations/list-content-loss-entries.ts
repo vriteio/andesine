@@ -1,9 +1,9 @@
-import { entries, schemaMigrationEntries } from "#backend/db";
-import type { SchemaMigrationContentLossEntry } from "#backend/lib/data";
-import { DEFAULT_PAGE_SIZE } from "#backend/lib/api/limits";
+import { entries, schemaMigrationEntries } from "@andesine/server/database";
+import { type SchemaMigrationContentLossEntry } from "@andesine/contracts/schema";
+import { DEFAULT_PAGE_SIZE } from "@andesine/contracts/limits";
 import { toPage, type Page, type PageInput } from "#backend/lib/api/pagination";
 import { withAuthorization } from "#backend/lib/policy";
-import { toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
+import { toCollectionID, toEntryID, toUUID } from "@andesine/contracts/primitives";
 import {
   resolveSchemaMigration,
   type GetSchemaMigrationInput,

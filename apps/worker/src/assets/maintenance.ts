@@ -1,26 +1,24 @@
-import { IMAGE_SEARCH_COLLECTION_ALIAS, type TypesenseClient } from "@andesine/backend/lib/search";
-import { users } from "@andesine/backend/db/users";
-import { lockProfileOwner } from "@andesine/backend/lib/assets/profiles";
 import {
+  users,
   assetAnalyses,
   assets,
   entryAssets,
-  entryVersionAssets
-} from "@andesine/backend/db/assets";
-import { assetStorageDeletions, assetUploads } from "@andesine/backend/db/asset-uploads";
-import { workspaces } from "@andesine/backend/db/workspaces";
-import { entries } from "@andesine/backend/db/entries";
+  entryVersionAssets,
+  assetStorageDeletions,
+  assetUploads,
+  workspaces,
+  entries
+} from "@andesine/server/database";
+import { IMAGE_SEARCH_COLLECTION_ALIAS, type TypesenseClient } from "@andesine/server/search";
 import {
+  lockProfileOwner,
   getOwnedAssetPrefix,
   getOwnedAssetUploadKey,
   getOwnedAssetStagingPrefix,
   type AssetOwner,
   type AssetStorage
-} from "@andesine/backend/lib/assets/storage";
-import {
-  ASSET_PROCESS_JOB_NAME,
-  PROFILE_IMAGE_JOB_NAME
-} from "@andesine/backend/lib/queue/asset-jobs";
+} from "@andesine/server/assets";
+import { ASSET_PROCESS_JOB_NAME, PROFILE_IMAGE_JOB_NAME } from "@andesine/server/queue";
 import { and, eq, exists, gt, inArray, isNotNull, isNull, lt, lte, or, sql } from "drizzle-orm";
 import type { Queue } from "bullmq";
 import { config } from "../config";

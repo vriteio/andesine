@@ -1,10 +1,9 @@
-import { memberships, users } from "#backend/db";
-import { sendEmail } from "#backend/lib/adapters";
+import { memberships, users } from "@andesine/server/database";
+import { sendEmail, db } from "#backend/lib/adapters";
 import { config } from "#backend/lib/config";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { db } from "#backend/lib/adapters";
-import { toInviteID } from "#backend/lib/primitives";
+import { toInviteID } from "@andesine/contracts/primitives";
 
 type InviteDelivery = "sent" | "manual" | "failed";
 interface DeliverableInvite {

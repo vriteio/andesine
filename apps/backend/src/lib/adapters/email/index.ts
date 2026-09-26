@@ -3,7 +3,7 @@ import {
   type EmailTemplates,
   getEmailContent,
   getEmailSubject
-} from "../../../../../../packages/private/templates/src";
+} from "@andesine/templates";
 import { createEmailSender } from "./sender";
 
 const emailSender = createEmailSender();

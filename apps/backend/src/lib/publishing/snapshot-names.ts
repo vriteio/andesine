@@ -1,10 +1,9 @@
+import { entryVersions, type DatabaseTransaction as Database } from "@andesine/server/database";
 import { toContentSlug } from "@andesine/sdk/slug";
-import { entryVersions } from "#backend/db/versions";
-import { normalizeCollectionName, normalizeEntryName } from "#backend/lib/validation/content-name";
-import { toCollectionID, toEntryID } from "#backend/lib/primitives";
+import { normalizeCollectionName, normalizeEntryName } from "@andesine/contracts/content";
+import { toCollectionID, toEntryID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, inArray } from "drizzle-orm";
-import type { Database } from "#backend/lib/policy";
 import type {
   PublishingSnapshotCollectionState,
   PublishingSnapshotEntryState

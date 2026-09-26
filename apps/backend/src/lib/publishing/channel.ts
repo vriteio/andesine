@@ -1,15 +1,6 @@
-import { normalizeResourceName } from "@andesine/editor/normalize-resource-name";
+import { publishingChannelCodeType } from "@andesine/contracts/publishing";
 import { ORPCError } from "@orpc/server";
-import * as z from "zod";
 
-const publishingChannelCodeType = z
-  .string()
-  .trim()
-  .min(1)
-  .max(50)
-  .transform((code) => normalizeResourceName(code, "channel"))
-  .pipe(z.string());
-const publishingChannelNameType = z.string().trim().min(1).max(50);
 const normalizePublishingChannelCode = (code: string): string => {
   const result = publishingChannelCodeType.safeParse(code);
 
@@ -22,4 +13,4 @@ const normalizePublishingChannelCode = (code: string): string => {
   return result.data;
 };
 
-export { normalizePublishingChannelCode, publishingChannelCodeType, publishingChannelNameType };
+export { normalizePublishingChannelCode };

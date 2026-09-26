@@ -1,11 +1,11 @@
+import {
+  WebhookDestinationError,
+  type WebhookDestination
+} from "@andesine/server/webhooks/destination";
 import { Resolver } from "node:dns/promises";
 import { randomInt } from "node:crypto";
 import { BlockList, connect, isIP, type Socket } from "node:net";
 import { connect as connectTLS, checkServerIdentity } from "node:tls";
-import {
-  WebhookDestinationError,
-  type WebhookDestination
-} from "@andesine/backend/lib/webhooks/destination";
 
 const resolveAddresses = async (hostname: string, signal: AbortSignal): Promise<string[]> => {
   signal.throwIfAborted();

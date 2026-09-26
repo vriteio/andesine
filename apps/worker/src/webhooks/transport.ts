@@ -1,7 +1,7 @@
+import { type WebhookDestination } from "@andesine/server/webhooks/destination";
+import { type WebhookSignatureHeaders } from "@andesine/server/webhooks/signing";
 import { Agent as HTTPAgent, request as requestHTTP } from "node:http";
 import { Agent as HTTPSAgent, request as requestHTTPS } from "node:https";
-import type { WebhookDestination } from "@andesine/backend/lib/webhooks/destination";
-import type { WebhookSignatureHeaders } from "@andesine/backend/lib/webhooks/signing";
 import { connectWebhookDestination } from "./connection";
 
 interface WebhookHTTPResponse {

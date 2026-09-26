@@ -1,4 +1,4 @@
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { redis } from "#backend/lib/adapters";
 import { getUserSessionCacheKey, parseSessionData } from "#backend/lib/policy";
 

@@ -7,7 +7,12 @@ import {
   type PublishingRevertSelection
 } from "#backend/lib/publishing";
 import { type AuthorizedCollectionTree, withAuthorization } from "#backend/lib/policy";
-import { toCollectionID, toEntryID, toSnapshotID, toVersionID } from "#backend/lib/primitives";
+import {
+  toCollectionID,
+  toEntryID,
+  toSnapshotID,
+  toVersionID
+} from "@andesine/contracts/primitives";
 
 interface ChannelContentEntry {
   canPublish: boolean;

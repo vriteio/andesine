@@ -1,5 +1,3 @@
-import { storeVersionProperties } from "#backend/lib/versioning/properties";
-import { retainVersionAssets } from "#backend/lib/assets/references";
 import {
   contents,
   entries,
@@ -10,13 +8,16 @@ import {
   publishingSnapshotEntries,
   publishingSnapshots,
   workspaces
-} from "#backend/db";
+} from "@andesine/server/database";
+import { storeVersionProperties } from "@andesine/server/versioning";
+import { retainVersionAssets } from "@andesine/server/assets";
+import { mapVersionSummary } from "@andesine/server/data";
 import { db } from "#backend/lib/adapters";
 import { config } from "#backend/lib/config";
 import { emitVersionDeletionEvents, emitVersionEvent } from "#backend/events/versions";
-import { mapVersionSummary, type VersionSummary } from "#backend/lib/data/entry-version";
+import { type VersionSummary } from "@andesine/contracts/versions";
 import { deletePublishingSnapshots } from "#backend/lib/publishing";
-import { toEntryID, toVersionID, toWorkspaceID } from "#backend/lib/primitives";
+import { toEntryID, toVersionID, toWorkspaceID } from "@andesine/contracts/primitives";
 import { and, desc, eq, inArray, isNull, lt, lte, notExists, sql } from "drizzle-orm";
 import { AUTOMATIC_VERSION_QUEUE_INTERVAL_MS } from "./config";
 

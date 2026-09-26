@@ -1,3 +1,4 @@
+import { collections, entries } from "@andesine/server/database";
 import {
   subscribeToCollectionEvents,
   subscribeToEntryEvents,
@@ -8,10 +9,9 @@ import {
   subscribeToSchemaEvents,
   subscribeToWorkspaceStateEvents
 } from "#backend/events";
-import { collections, entries } from "#backend/db";
 import { db } from "#backend/lib/adapters";
 import { hasAuthPermission, isSessionAuthorizationEvent } from "#backend/lib/policy";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { type Hocuspocus, type WebSocketLike } from "@hocuspocus/server";
 import { eq } from "drizzle-orm";
 import { resetSchemaContentDocument, resetSchemaContentDocuments } from "./schema-content";

@@ -1,9 +1,9 @@
-import { users } from "#backend/db";
+import { users } from "@andesine/server/database";
+import { getProfileImageURL } from "@andesine/server/assets";
 import { db } from "#backend/lib/adapters/postgres";
-import { getProfileImageURL } from "#backend/lib/assets/profiles";
 import { config } from "#backend/lib/config";
 import { getUserAuthorization, type SessionData } from "#backend/lib/policy";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
 

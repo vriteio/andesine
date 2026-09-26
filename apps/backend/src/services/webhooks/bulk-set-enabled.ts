@@ -1,11 +1,11 @@
 import {
   webhookBulkEnabledInputType,
   type WebhookBulkEnabledInput,
-  type WebhookEndpoint
-} from "#backend/contracts/schemas/webhooks";
+  type WebhookEndpoint,
+  webhookManageRequirements
+} from "@andesine/contracts/webhooks";
 import { withAuthorization } from "#backend/lib/policy";
 import { parseWebhookInput } from "#backend/lib/webhooks/management";
-import { webhookManageRequirements } from "#backend/lib/webhooks/permissions";
 import { updateWebhook } from "./update";
 
 // Each webhook goes through the full update checks in one shared transaction.

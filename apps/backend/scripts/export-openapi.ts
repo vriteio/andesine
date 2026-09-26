@@ -1,8 +1,8 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { format, resolveConfig } from "prettier";
-import { createAPIContract } from "../src/contracts";
-import { generateOpenAPI } from "../src/contracts/openapi";
+import { createAPIContract } from "@andesine/contracts/api";
+import { generateOpenAPI } from "@andesine/contracts/openapi";
 
 const output = path.resolve(import.meta.dirname, "../../../packages/public/sdk/openapi.json");
 const document = await generateOpenAPI(createAPIContract(), "https://api.andesine.app");

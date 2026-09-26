@@ -1,51 +1,11 @@
+import { workspaceEventType, type WorkspaceEvent } from "@andesine/contracts/events";
 import { type SubscribeToEvent, subscribeToEvent } from "#backend/lib/messaging";
-import { entryEventType } from "./entries";
-import { groupEventType } from "./groups";
-import { keyEventType } from "./keys";
-import { membershipEventType } from "./memberships";
-import { collectionEventType } from "./collections";
-import { roleEventType } from "./roles";
-import { schemaVersionEventType } from "./schema-versions";
-import { schemaMigrationEventType } from "./schema-migrations";
-import { schemaEventType } from "./schemas";
-import { publishingEventType } from "./publishing";
-import { versionEventType } from "./versions";
-import { webhookEventType } from "./webhooks";
-import { workspaceStateEventType } from "./workspaces";
-import * as z from "zod";
 
 declare module "#backend/lib/messaging/events" {
   interface Events {
     [workspaceEvent: string]: WorkspaceEvent;
   }
 }
-
-const workspaceEventType = z.union([
-  entryEventType,
-  collectionEventType,
-  groupEventType,
-  membershipEventType,
-  roleEventType,
-  schemaVersionEventType,
-  schemaMigrationEventType,
-  schemaEventType,
-  publishingEventType,
-  versionEventType,
-  keyEventType,
-  webhookEventType,
-  workspaceStateEventType
-]);
-const workspaceSettingsEventType = z.union([
-  groupEventType,
-  membershipEventType,
-  roleEventType,
-  keyEventType,
-  webhookEventType,
-  workspaceStateEventType
-]);
-
-type WorkspaceEvent = z.infer<typeof workspaceEventType>;
-type WorkspaceSettingsEvent = z.infer<typeof workspaceSettingsEventType>;
 
 const subscribeToWorkspaceEvents: SubscribeToEvent<{
   [workspaceID: string]: WorkspaceEvent;
@@ -56,8 +16,8 @@ const subscribeToWorkspaceEvents: SubscribeToEvent<{
   });
 };
 
-export { workspaceEventType, workspaceSettingsEventType, subscribeToWorkspaceEvents };
-export type { WorkspaceEvent, WorkspaceSettingsEvent };
+export { subscribeToWorkspaceEvents };
+
 export * from "./entries";
 export * from "./groups";
 export * from "./collections";

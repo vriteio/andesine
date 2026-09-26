@@ -2,13 +2,11 @@ import {
   publishingChannels,
   publishingSnapshotCollections,
   publishingSnapshotEntries,
-  publishingSnapshots
-} from "#backend/db";
-import type { db } from "#backend/lib/adapters";
+  publishingSnapshots,
+  type DatabaseTransaction
+} from "@andesine/server/database";
 import { and, eq, inArray, notExists } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const snapshotCollectionChildren = alias(
   publishingSnapshotCollections,

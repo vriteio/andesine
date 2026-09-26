@@ -1,4 +1,5 @@
-import { subscribeToWorkspaceEvents, workspaceEventType } from "#backend/events";
+import { type WorkspaceEvent, workspaceEventType } from "@andesine/contracts/events";
+import { subscribeToWorkspaceEvents } from "#backend/events";
 import { viaIterator } from "#backend/lib/messaging";
 import {
   type SessionData,
@@ -43,7 +44,7 @@ const createWorkspaceEventStream = async function* (input: {
 const listenToWorkspaceEvents = withAuthorization<
   { signal?: AbortSignal },
   undefined,
-  { events: AsyncGenerator }
+  { events: AsyncGenerator<WorkspaceEvent, void, unknown> }
 >({}, async ({ auth, input }) => ({
   events: createWorkspaceEventStream({ auth, signal: input.signal })
 }));

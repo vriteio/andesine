@@ -1,5 +1,5 @@
+import { normalizeResourceName } from "@andesine/document";
 import { Input, Tooltip } from "@andesine/components";
-import { normalizeResourceName } from "@andesine/editor/normalize-resource-name";
 import { type Component, createEffect, createSignal, Show } from "solid-js";
 
 interface FilterInputProps {

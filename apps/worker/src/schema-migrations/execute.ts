@@ -3,11 +3,8 @@ import {
   schemaMigrationCollections,
   schemaMigrationEntries,
   schemaMigrations
-} from "@andesine/backend/db/content-schemas";
-import {
-  createCurrentEntrySyncJobs,
-  createPublishedEntrySyncJobs
-} from "@andesine/backend/lib/queue/search-indexing-jobs";
+} from "@andesine/server/database";
+import { createCurrentEntrySyncJobs, createPublishedEntrySyncJobs } from "@andesine/server/queue";
 import {
   toCollectionID,
   toEntryID,
@@ -15,7 +12,7 @@ import {
   toSchemaMigrationID,
   toUUID,
   toWorkspaceID
-} from "@andesine/backend/lib/primitives";
+} from "@andesine/contracts/primitives";
 import { and, eq, inArray } from "drizzle-orm";
 import type { Queue } from "bullmq";
 import { db } from "../database";

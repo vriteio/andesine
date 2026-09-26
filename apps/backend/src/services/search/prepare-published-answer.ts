@@ -1,12 +1,12 @@
+import { type PublishedAskInput, type PublishedAskSource } from "@andesine/server/search";
 import { withAuthorization } from "#backend/lib/policy";
 import {
   createDocumentAuthorizer,
   resolvePublishedScope
 } from "#backend/lib/search/published-scope";
-import type { PublishedAskInput, PublishedAskSource } from "#backend/lib/search/query-types";
 import { prepareAnswer, type PreparedAnswer } from "#backend/lib/search/answers";
 import { normalizePublishingChannelCode } from "#backend/lib/publishing";
-import { toSnapshotID } from "#backend/lib/primitives";
+import { toSnapshotID } from "@andesine/contracts/primitives";
 
 const preparePublishedAnswer = withAuthorization<
   PublishedAskInput,

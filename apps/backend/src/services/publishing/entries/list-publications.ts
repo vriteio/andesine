@@ -4,9 +4,10 @@ import {
   entryVersionContributors,
   entryVersions,
   publishingChannels
-} from "#backend/db";
-import { mapVersionSummary, type VersionSummary } from "#backend/lib/data";
-import { toUUID } from "#backend/lib/primitives";
+} from "@andesine/server/database";
+import { mapVersionSummary } from "@andesine/server/data";
+import { type VersionSummary } from "@andesine/contracts/versions";
+import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { withAuthorization } from "#backend/lib/policy";

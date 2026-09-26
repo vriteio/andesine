@@ -3,11 +3,6 @@
     "target": "ES2021",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "baseUrl": ".",
-    "paths": {
-      "@andesine/backend/*": ["../backend/src/*"],
-      "#backend/*": ["../backend/src/*"]
-    },
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,

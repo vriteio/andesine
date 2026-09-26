@@ -5,8 +5,12 @@ import {
 import type { SessionData } from "#backend/lib/policy/session";
 import type * as z from "zod";
 import { webhookCatalog } from "./catalog";
-import type { WebhookEventName, webhookReadPermissionType } from "./events";
-import { webhookReadRequirements, webhookManageRequirements } from "./permission-requirements";
+import {
+  type WebhookEventName,
+  type webhookReadPermissionType,
+  webhookReadRequirements,
+  webhookManageRequirements
+} from "@andesine/contracts/webhooks";
 
 type WebhookReadPermission = z.infer<typeof webhookReadPermissionType>;
 

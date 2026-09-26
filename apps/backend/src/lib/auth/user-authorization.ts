@@ -1,4 +1,4 @@
-import { memberships, roles, users, workspaces } from "#backend/db";
+import { memberships, roles, users, workspaces } from "@andesine/server/database";
 import { db, redis } from "#backend/lib/adapters";
 import {
   toMembershipID,
@@ -7,7 +7,7 @@ import {
   toUUID,
   toWorkspaceID,
   publicID
-} from "#backend/lib/primitives";
+} from "@andesine/contracts/primitives";
 import { getUserSessionCacheKey, parseSessionData, type SessionData } from "#backend/lib/policy";
 import { and, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";

@@ -1,4 +1,4 @@
-import { canonicalElementValue } from "../../lib/element";
+import { canonicalElementValue } from "@andesine/document";
 import type { JSONContent } from "@tiptap/core";
 
 const CONTENT_IDENTITY_BLOCKS = new Set([

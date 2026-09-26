@@ -1,13 +1,14 @@
+import { outboundDeliveryAttempts } from "@andesine/server/database";
+import { getDeliveryTime } from "@andesine/server/webhooks/delivery";
 import {
   webhookAttemptListInputType,
   type WebhookAttemptListInput,
-  type WebhookAttempt
-} from "#backend/contracts/schemas/webhook-deliveries";
-import { outboundDeliveryAttempts } from "#backend/db/outbound-deliveries";
+  type WebhookAttempt,
+  webhookReadRequirements
+} from "@andesine/contracts/webhooks";
 import { toPage, type Page } from "#backend/lib/api/pagination";
 import { withAuthorization } from "#backend/lib/policy";
-import { toUUID } from "#backend/lib/primitives/id";
-import { getDeliveryTime } from "#backend/lib/webhooks/delivery/locking";
+import { toUUID } from "@andesine/contracts/primitives";
 import { describeWebhookAttempt } from "#backend/lib/webhooks/history/describe";
 import {
   loadWebhookDelivery,
@@ -15,7 +16,6 @@ import {
   loadWebhookAttempt
 } from "#backend/lib/webhooks/history/records";
 import { parseWebhookInput } from "#backend/lib/webhooks/management";
-import { webhookReadRequirements } from "#backend/lib/webhooks/permissions";
 import { and, desc, eq, lt } from "drizzle-orm";
 
 const listWebhookAttempts = withAuthorization<

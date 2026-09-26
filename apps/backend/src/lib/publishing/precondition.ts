@@ -1,6 +1,8 @@
-import { publishingChannels } from "#backend/db";
-import type { Database } from "#backend/lib/policy";
-import { toUUID } from "#backend/lib/primitives";
+import {
+  publishingChannels,
+  type DatabaseTransaction as Database
+} from "@andesine/server/database";
+import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
 import { normalizePublishingChannelCode } from "./channel";

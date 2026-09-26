@@ -1,4 +1,10 @@
 import {
+  findDisallowedElementBlock,
+  MAX_FRAGMENT_NAME_LENGTH,
+  FRAGMENT_BLOCK_TYPES,
+  type FragmentBlockType
+} from "@andesine/document";
+import {
   Combobox,
   DropdownMenu,
   Input,
@@ -10,9 +16,6 @@ import type { Editor } from "@tiptap/core";
 import clsx from "clsx";
 import { createEffect, createSignal, onCleanup, onMount, Show, type JSX } from "solid-js";
 import { getResourceNameDetails } from "#editor/extensions/resource-name-tracker";
-import { findDisallowedElementBlock } from "#editor/lib/element";
-import { MAX_FRAGMENT_NAME_LENGTH } from "#editor/schema";
-import { FRAGMENT_BLOCK_TYPES, type FragmentBlockType } from "#editor/schema/fragment";
 
 interface FragmentAttrs {
   name: string;

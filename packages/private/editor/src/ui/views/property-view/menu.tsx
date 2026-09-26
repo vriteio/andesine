@@ -3,7 +3,7 @@ import type { Editor } from "@tiptap/core";
 import clsx from "clsx";
 import { createEffect, createSignal, onCleanup, onMount, Show, type JSX } from "solid-js";
 import { getResourceNameDetails } from "#editor/extensions/resource-name-tracker";
-import { MAX_PROPERTY_NAME_LENGTH } from "#editor/schema";
+import { MAX_PROPERTY_NAME_LENGTH } from "@andesine/document";
 
 interface PropertyAttrs {
   type: "text" | "number" | "checkbox" | "date" | "url" | "select" | "multi-select";

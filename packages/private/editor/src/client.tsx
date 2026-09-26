@@ -1,42 +1,43 @@
-import { TitleValidation, titleValidationKey } from "./extensions/title-validation";
-import { createCodeBlockNavigation } from "./ui/views/code-block-view/navigation";
-import { formatCodeBlock, getCodeFormatParser } from "./lib/code-format";
-import { Element } from "./schema/blocks/element";
-import { Elements } from "./extensions/elements";
-import { Images } from "./extensions/images";
 import {
-  MAX_ENTRY_TITLE_LENGTH,
-  normalizeEntryTitle,
+  DocumentIDs,
   Title,
-  createDocument,
+  EntryDocument,
+  CollectionSchemaDocument,
   Text,
   Paragraph,
-  CodeBlock,
   HardBreak,
-  Heading,
-  Link,
-  Bold,
-  Code,
-  Italic,
-  HorizontalRule,
   Image,
   Blockquote,
-  Highlight,
-  Superscript,
-  Subscript,
-  Strike,
   BulletList,
   OrderedList,
   TaskList,
-  TaskItem,
   ListItem,
   Property,
   Fragment,
-  Table,
   TableCell,
   TableHeader,
   TableRow
-} from "./schema";
+} from "@andesine/document/tiptap";
+import { TitleValidation, titleValidationKey } from "./extensions/title-validation";
+import { createCodeBlockNavigation } from "./ui/views/code-block-view/navigation";
+import { formatCodeBlock, getCodeFormatParser } from "./lib/code-format";
+import { Element } from "#editor/extensions/nodes/element";
+import { Elements } from "./extensions/elements";
+import { Images } from "./extensions/images";
+import { MAX_ENTRY_TITLE_LENGTH, normalizeEntryTitle } from "@andesine/document";
+import { CodeBlock } from "#editor/extensions/nodes/code-block";
+import { Heading } from "#editor/extensions/nodes/heading";
+import { Link } from "#editor/extensions/marks/link";
+import { Bold } from "#editor/extensions/marks/bold";
+import { Code } from "#editor/extensions/marks/code";
+import { Italic } from "#editor/extensions/marks/italic";
+import { HorizontalRule } from "#editor/extensions/nodes/horizontal-rule";
+import { Highlight } from "#editor/extensions/marks/highlight";
+import { Superscript } from "#editor/extensions/marks/superscript";
+import { Subscript } from "#editor/extensions/marks/subscript";
+import { Strike } from "#editor/extensions/marks/strike";
+import { TaskItem } from "#editor/extensions/nodes/task-item";
+import { Table } from "#editor/extensions/nodes/table";
 import { BubbleMenu } from "./ui/menus/bubble-menu";
 import { BlockSelection as BlockSelectionMenu } from "./ui/block-selection";
 import {
@@ -70,7 +71,6 @@ import {
   VersionDiff
 } from "./extensions";
 import { DragHandleMenu } from "./ui/drag-handle";
-
 import type { EditorProps } from "./client-types";
 import { useEditorProvider } from "./use-editor-provider";
 import {
@@ -141,7 +141,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
         : [];
     const extensions = [
       // Basic
-      createDocument(editorMode),
+      editorMode === "entry" ? EntryDocument : CollectionSchemaDocument,
       Paragraph,
       Text,
       HardBreak,
@@ -249,6 +249,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
       // Other
       ResourceNameTracker,
       ...schemaExtensions,
+      DocumentIDs,
       UniqueID,
       Gapcursor,
       Dropcursor,

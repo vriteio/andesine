@@ -1,6 +1,6 @@
-import { schemaMigrations } from "@andesine/backend/db/content-schemas";
-import { createSchemaMigrationJob } from "@andesine/backend/lib/queue/schema-migration-jobs";
-import { toSchemaMigrationID, toWorkspaceID } from "@andesine/backend/lib/primitives";
+import { schemaMigrations } from "@andesine/server/database";
+import { createSchemaMigrationJob } from "@andesine/server/queue";
+import { toSchemaMigrationID, toWorkspaceID } from "@andesine/contracts/primitives";
 import { and, eq, isNull, lte, or } from "drizzle-orm";
 import type { Queue } from "bullmq";
 import { db } from "../database";

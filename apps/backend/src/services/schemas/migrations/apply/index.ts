@@ -2,7 +2,7 @@ import {
   getCurrentSchemaDefinition,
   prepareSchemaMigrationConnections
 } from "#backend/collaboration";
-import type { SchemaApplicationResult } from "#backend/lib/data";
+import { type SchemaApplicationResult } from "@andesine/contracts/schema";
 import type { AuthorizedServiceInput } from "#backend/lib/policy";
 import { submitSchemaMigration } from "#backend/lib/queue";
 import { ORPCError } from "@orpc/server";

@@ -1,6 +1,10 @@
-import { getUserAuthorization } from "#backend/lib/policy";
+import { collections } from "@andesine/server/database";
+import {
+  getUserAuthorization,
+  filterAuthorizedEntryIDs,
+  withAuthorization
+} from "#backend/lib/policy";
 import { assertPublishingSnapshot } from "#backend/lib/publishing/precondition";
-import { collections } from "#backend/db";
 import {
   assertEntrySnapshotsSynced,
   getSubtreeEntryIDs,
@@ -13,11 +17,10 @@ import {
   type PublishingEntryStatus,
   syncEntrySnapshots
 } from "#backend/lib/publishing";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
-import type { VersionSummary } from "#backend/lib/data";
+import { type VersionSummary } from "@andesine/contracts/versions";
 import { and, eq, inArray, isNull } from "drizzle-orm";
-import { filterAuthorizedEntryIDs, withAuthorization } from "#backend/lib/policy";
 
 interface PublishCollectionInput {
   collectionIDs: string[];

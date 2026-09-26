@@ -1,4 +1,4 @@
-import { toSnapshotID } from "#backend/lib/primitives";
+import { toSnapshotID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 
 const publishingSnapshotChangedError = (

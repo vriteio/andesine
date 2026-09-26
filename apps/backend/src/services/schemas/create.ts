@@ -1,23 +1,18 @@
-import { getUserAuthorization } from "#backend/lib/policy";
 import {
   collectionSchemas,
   schemaDraftContributors,
   schemaVersionContributors,
   schemaVersions
-} from "#backend/db";
+} from "@andesine/server/database";
+import { replaceContentDocument } from "@andesine/server/content";
+import { createSchemaEditorDocument, hashSchemaDefinition } from "@andesine/server/schema";
+import { getUserAuthorization, withAuthorization } from "#backend/lib/policy";
+import { mapLocalCollectionSchema, mapSchemaVersionSummary } from "#backend/lib/data";
 import {
-  mapLocalCollectionSchema,
-  mapSchemaVersionSummary,
-  type LocalCollectionSchema
-} from "#backend/lib/data";
-import { replaceContentDocument } from "#backend/lib/content";
-import { withAuthorization } from "#backend/lib/policy";
-import { toUUID } from "#backend/lib/primitives";
-import {
-  createEmptySchemaDefinition,
-  createSchemaEditorDocument,
-  hashSchemaDefinition
-} from "#backend/lib/schema";
+  type LocalCollectionSchema,
+  createEmptySchemaDefinition
+} from "@andesine/contracts/schema";
+import { toUUID } from "@andesine/contracts/primitives";
 import { and, eq } from "drizzle-orm";
 import { Doc, encodeStateAsUpdate } from "yjs";
 import { type CollectionSchemaInput, resolveLocalCollectionSchema } from "./resolve";

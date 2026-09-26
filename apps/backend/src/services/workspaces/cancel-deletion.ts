@@ -1,6 +1,6 @@
-import { workspaces } from "#backend/db";
+import { workspaces } from "@andesine/server/database";
 import { db } from "#backend/lib/adapters";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { and, eq } from "drizzle-orm";
 
 const cancelWorkspaceDeletion = async (input: {

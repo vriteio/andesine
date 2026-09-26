@@ -1,18 +1,18 @@
+import { webhookEndpoints } from "@andesine/server/database";
+import { getDeliveryTime } from "@andesine/server/webhooks/delivery";
+import { getWebhookConfiguration } from "@andesine/server/webhooks/recording";
 import {
   webhookRevisionInputType,
-  type WebhookRevisionInput
-} from "#backend/contracts/schemas/webhooks";
-import { webhookEndpoints } from "#backend/db/webhooks";
+  type WebhookRevisionInput,
+  webhookManageRequirements
+} from "@andesine/contracts/webhooks";
 import { withAuthorization } from "#backend/lib/policy";
-import { getDeliveryTime } from "#backend/lib/webhooks/delivery/locking";
-import { getWebhookConfiguration } from "#backend/lib/webhooks/endpoints";
 import {
   lockWebhookForUpdate,
   parseWebhookInput,
   reconcileWebhookConfiguration,
   recordWebhookRevision
 } from "#backend/lib/webhooks/management";
-import { webhookManageRequirements } from "#backend/lib/webhooks/permissions";
 import { and, eq } from "drizzle-orm";
 
 const deleteWebhook = withAuthorization<WebhookRevisionInput>(

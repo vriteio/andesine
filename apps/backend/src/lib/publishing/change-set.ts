@@ -1,14 +1,14 @@
-import { publishingSnapshotChangedError } from "./errors";
 import {
   collections,
   contents,
   entries,
   entryVersions,
   publishingSnapshotCollections,
-  publishingSnapshotEntries
-} from "#backend/db";
-import type { db } from "#backend/lib/adapters";
-import { toUUID } from "#backend/lib/primitives";
+  publishingSnapshotEntries,
+  type DatabaseTransaction
+} from "@andesine/server/database";
+import { publishingSnapshotChangedError } from "./errors";
+import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { normalizePublishingChannelCode } from "./channel";
@@ -23,8 +23,6 @@ import type {
 import { resolvePublishingSnapshot } from "./snapshot-state";
 import { getReorderedItemIDs, getSnapshotSubtreeCollectionIDs } from "./snapshot-status";
 import { getSubtreeCollectionIDs, isCollectionPublishingEnabled, loadPublishingTree } from "./tree";
-
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const loadPublishingChangeSet = async (
   database: DatabaseTransaction,

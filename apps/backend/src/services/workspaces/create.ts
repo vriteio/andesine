@@ -1,8 +1,10 @@
-import { collections, memberships, roles, type Permission, users, workspaces } from "#backend/db";
-import { rankBetweenNeighbors, toUUID, toWorkspaceID } from "#backend/lib/primitives";
+import { collections, memberships, roles, users, workspaces } from "@andesine/server/database";
+import { type Permission } from "@andesine/contracts/entities";
+import { rankBetweenNeighbors, toUUID, toWorkspaceID } from "@andesine/contracts/primitives";
 import { db } from "#backend/lib/adapters";
-import { createInitialPublishingChannel, PUBLISHED_CHANNEL_CODE } from "#backend/lib/publishing";
-import { ROOT_COLLECTION_NAME } from "#backend/lib/validation";
+import { createInitialPublishingChannel } from "#backend/lib/publishing";
+import { PUBLISHED_CHANNEL_CODE } from "@andesine/contracts/publishing";
+import { ROOT_COLLECTION_NAME } from "@andesine/contracts/content";
 import { eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 

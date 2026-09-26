@@ -1,4 +1,4 @@
-import { rankBetweenNeighbors } from "#backend/lib/primitives";
+import { rankBetweenNeighbors } from "@andesine/contracts/primitives";
 
 interface SnapshotEntryPosition {
   collectionID: string | null;

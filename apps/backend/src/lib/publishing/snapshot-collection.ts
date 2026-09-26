@@ -2,9 +2,9 @@ import {
   collections,
   entries,
   publishingSnapshotCollections,
-  publishingSnapshotEntries
-} from "#backend/db";
-import type { db } from "#backend/lib/adapters";
+  publishingSnapshotEntries,
+  type DatabaseTransaction
+} from "@andesine/server/database";
 import type { AuthorizedCollectionTree } from "#backend/lib/policy";
 import { ORPCError } from "@orpc/server";
 import { and, asc, eq, inArray, isNull } from "drizzle-orm";
@@ -36,8 +36,6 @@ interface WorkingCollectionNode {
   publishingEnabled: boolean;
   rank: string;
 }
-
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const getDescendantIDs = <Node extends { parentID: string | null }>(
   nodesByID: Map<string, Node>,

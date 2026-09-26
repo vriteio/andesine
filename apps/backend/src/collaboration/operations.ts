@@ -1,16 +1,14 @@
-import { collectionSchemas, entries } from "#backend/db";
-import { db } from "#backend/lib/adapters";
+import { collectionSchemas, entries } from "@andesine/server/database";
 import {
   hashContentDocument,
   replaceContentDocument,
-  serializeContentDocument,
-  type ContentNode
-} from "#backend/lib/content";
-import { toUUID } from "#backend/lib/primitives";
-import {
-  createSchemaDefinitionFromEditorDocument,
-  type SchemaDefinition
-} from "#backend/lib/schema";
+  serializeContentDocument
+} from "@andesine/server/content";
+import { createSchemaDefinitionFromEditorDocument } from "@andesine/server/schema";
+import type { ContentNode } from "@andesine/document";
+import { db } from "#backend/lib/adapters";
+import { toUUID } from "@andesine/contracts/primitives";
+import { type SchemaDefinition } from "@andesine/contracts/schema";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
 import { getContentSnapshot, setDocumentTitle } from "./document";

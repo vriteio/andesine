@@ -8,13 +8,13 @@ import {
   type PublishedCollectionSyncJobData,
   type PublishedEntrySyncJobData,
   type PublishedWorkspacePurgeJobData
-} from "@andesine/backend/lib/queue/search-indexing-jobs";
+} from "@andesine/server/queue";
 import {
   buildPublishedSearchDocuments,
   PUBLISHED_SEARCH_COLLECTION_ALIAS,
   type PublishedSearchDocumentWithEmbedding,
   type TypesenseClient
-} from "@andesine/backend/lib/search";
+} from "@andesine/server/search";
 import type { Queue } from "bullmq";
 import type { JobHandler } from "../jobs";
 import { createEmbeddings } from "./openai-compatible";

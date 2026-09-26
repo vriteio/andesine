@@ -1,19 +1,19 @@
-import { getUserAuthorization } from "#backend/lib/policy";
-import { collectionSchemas, collections, schemaVersions } from "#backend/db";
+import { collectionSchemas, collections, schemaVersions } from "@andesine/server/database";
 import {
+  createEffectiveSchemaChange,
+  type EffectiveSchemaChangePlan
+} from "@andesine/server/schema";
+import {
+  getUserAuthorization,
   withAuthorization,
   type AuthorizedServiceInput,
   type ServiceResolveContext
 } from "#backend/lib/policy";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import { prepareSchemaMigrationConnections } from "#backend/collaboration";
 import { submitSchemaMigration } from "#backend/lib/queue";
-import {
-  createEffectiveSchemaChange,
-  type EffectiveSchemaChangePlan
-} from "#backend/lib/schema/migration/effective-change";
 
 interface DeleteCollectionSchemaInput {
   confirmedDataLoss: boolean;

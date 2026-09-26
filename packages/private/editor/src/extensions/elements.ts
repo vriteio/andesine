@@ -1,8 +1,3 @@
-import { Extension, type EditorEvents } from "@tiptap/core";
-import { NodeSelection, Plugin, TextSelection } from "@tiptap/pm/state";
-import type { ResolvedPos, Slice } from "@tiptap/pm/model";
-import { dropPoint } from "@tiptap/pm/transform";
-import { ySyncPluginKey } from "@tiptap/y-tiptap";
 import {
   type ElementContent,
   canonicalElementValue,
@@ -10,7 +5,12 @@ import {
   findDisallowedElementBlock,
   getElementData,
   normalizeElementAttributes
-} from "../lib/element";
+} from "@andesine/document";
+import { Extension, type EditorEvents } from "@tiptap/core";
+import { NodeSelection, Plugin, TextSelection } from "@tiptap/pm/state";
+import type { ResolvedPos, Slice } from "@tiptap/pm/model";
+import { dropPoint } from "@tiptap/pm/transform";
+import { ySyncPluginKey } from "@tiptap/y-tiptap";
 
 interface ElementsOptions {
   notify?(type: "success" | "error", text: string): void;

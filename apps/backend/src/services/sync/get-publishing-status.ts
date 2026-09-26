@@ -1,11 +1,11 @@
+import { entries } from "@andesine/server/database";
 import {
   getPublishingStatusSnapshot,
   type PublishedEntryRoot,
   type PublishedCollectionRoot
 } from "#backend/lib/publishing";
-import { entries } from "#backend/db";
 import { withAuthorization } from "#backend/lib/policy";
-import { toEntryID, toUUID } from "#backend/lib/primitives";
+import { toEntryID, toUUID } from "@andesine/contracts/primitives";
 import { and, eq, inArray } from "drizzle-orm";
 
 interface GetPublishingStatusInput {

@@ -1,6 +1,7 @@
-import { createStructureWebhookRecorder } from "#backend/lib/webhooks/structure";
-import { collections } from "#backend/db";
-import { toUUID } from "#backend/lib/primitives";
+import { collections } from "@andesine/server/database";
+import { createStructureWebhookRecorder } from "@andesine/server/webhooks/recording";
+import { webhookRetentionPolicy } from "#backend/lib/webhooks/policy";
+import { toUUID } from "@andesine/contracts/primitives";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { withAuthorization } from "#backend/lib/policy";
@@ -35,6 +36,7 @@ const setCollectionRestricted = withAuthorization<SetCollectionRestrictedInput>(
     if (collection.restricted === input.restricted) return;
 
     const webhooks = await createStructureWebhookRecorder({
+      retentionPolicy: webhookRetentionPolicy,
       database,
       workspaceID,
       collectionIDs: [input.id]

@@ -6,12 +6,12 @@ import {
   type CurrentCollectionSyncJobData,
   type CurrentEntrySyncJobData,
   type CurrentWorkspacePurgeJobData
-} from "@andesine/backend/lib/queue/search-indexing-jobs";
+} from "@andesine/server/queue";
 import {
   buildCurrentSearchDocuments,
   CURRENT_SEARCH_COLLECTION_ALIAS,
   type TypesenseClient
-} from "@andesine/backend/lib/search";
+} from "@andesine/server/search";
 import type { Queue } from "bullmq";
 import { createEmbeddings } from "./openai-compatible";
 import { loadCurrentCollectionEntryIDs, loadCurrentEntrySource } from "./current-data";

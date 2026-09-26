@@ -1,6 +1,6 @@
-import { collectionSchemas, entries } from "#backend/db";
+import { collectionSchemas, entries } from "@andesine/server/database";
 import { db } from "#backend/lib/adapters";
-import { toEntryID, toSchemaID, toUUID } from "#backend/lib/primitives";
+import { toEntryID, toSchemaID, toUUID } from "@andesine/contracts/primitives";
 import type { Hocuspocus } from "@hocuspocus/server";
 import { and, inArray, isNull } from "drizzle-orm";
 import type { CollaborationContext } from "./types";

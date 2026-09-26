@@ -1,33 +1,17 @@
-import { type SchemaVersionSummary, schemaVersionSummaryType } from "#backend/lib/data";
+import { schemaVersionEventType, type SchemaVersionEvent } from "@andesine/contracts/events";
+import { type SchemaVersionSummary } from "@andesine/contracts/schema";
 import {
   emitEvent,
   type EmitEvent,
   subscribeToEvent,
   type SubscribeToEvent
 } from "#backend/lib/messaging";
-import { id } from "#backend/lib/primitives";
-import * as z from "zod";
 
 declare module "#backend/lib/messaging/events" {
   interface Events {
     [schemaVersionEvent: `${string}:schema-versions`]: SchemaVersionEvent;
   }
 }
-
-const schemaVersionEventType = z.union([
-  z.object({
-    action: z.literal("schema-version:create"),
-    memberID: id().optional(),
-    data: z.lazy(() => schemaVersionSummaryType)
-  }),
-  z.object({
-    action: z.literal("schema-version:update"),
-    memberID: id().optional(),
-    data: z.lazy(() => schemaVersionSummaryType)
-  })
-]);
-
-type SchemaVersionEvent = z.infer<typeof schemaVersionEventType>;
 
 const emitSchemaVersionEvent: EmitEvent<{
   [workspaceID: string]: SchemaVersionEvent;
@@ -56,10 +40,4 @@ const subscribeToSchemaVersionEvents: SubscribeToEvent<{
   });
 };
 
-export {
-  emitSchemaVersionCreationEvents,
-  emitSchemaVersionEvent,
-  schemaVersionEventType,
-  subscribeToSchemaVersionEvents
-};
-export type { SchemaVersionEvent };
+export { emitSchemaVersionCreationEvents, emitSchemaVersionEvent, subscribeToSchemaVersionEvents };

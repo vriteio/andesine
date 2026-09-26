@@ -3,9 +3,9 @@ import { config } from "#backend/lib/config";
 import { CLI_CLIENT_ID, CLI_SCOPES } from "#backend/lib/auth/oauth";
 import {
   getDeviceRequestState,
-  getDeviceRequestErrorState,
-  type DeviceRequestState
+  getDeviceRequestErrorState
 } from "#backend/lib/auth/device-request";
+import { type DeviceRequestState } from "@andesine/contracts/auth";
 import { assertDeviceRequestAccess } from "#backend/lib/auth/device-request-access";
 import type { SessionData } from "#backend/lib/policy";
 import { Auth } from "#backend/services/auth";

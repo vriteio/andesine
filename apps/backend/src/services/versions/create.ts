@@ -1,7 +1,3 @@
-import { getVersionDetails } from "#backend/lib/versioning/details";
-import { storeVersionProperties } from "#backend/lib/versioning/properties";
-import { retainVersionAssets } from "#backend/lib/assets/references";
-import { getCurrentDocumentContent, type ContentSnapshot } from "#backend/collaboration";
 import {
   contents,
   entries,
@@ -9,10 +5,14 @@ import {
   entryVersionActivityContributors,
   entryVersionContributors,
   entryVersions
-} from "#backend/db";
-import { getContentTitle } from "#backend/lib/content";
-import { type VersionDetails, type VersionReason } from "#backend/lib/data";
-import { toUUID } from "#backend/lib/primitives";
+} from "@andesine/server/database";
+import { storeVersionProperties } from "@andesine/server/versioning";
+import { retainVersionAssets } from "@andesine/server/assets";
+import { getContentTitle } from "@andesine/document";
+import { getVersionDetails } from "#backend/lib/versioning/details";
+import { getCurrentDocumentContent, type ContentSnapshot } from "#backend/collaboration";
+import { type VersionDetails, type VersionReason } from "@andesine/contracts/versions";
+import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
 import { type ServiceResolveContext, withAuthorization } from "#backend/lib/policy";

@@ -1,10 +1,9 @@
-import { cleanupWebhookWorkspace } from "@andesine/backend/lib/webhooks/cleanup";
-import { scanWebhookCleanup } from "@andesine/backend/lib/webhooks/scan-cleanup";
-import { scanWebhookFailureControls } from "@andesine/backend/lib/webhooks/delivery/scan-failures";
+import { cleanupWebhookWorkspace, scanWebhookCleanup } from "@andesine/server/webhooks/cleanup";
 import {
+  scanWebhookFailureControls,
   maintainWebhookEndpoint,
   type MaintainWebhookEndpointInput
-} from "@andesine/backend/lib/webhooks/delivery/maintain-endpoint";
+} from "@andesine/server/webhooks/delivery";
 import { db } from "../database";
 import { publishWebhookUpdate, type PublishEvent } from "./events";
 

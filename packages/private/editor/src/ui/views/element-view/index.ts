@@ -1,3 +1,10 @@
+import {
+  normalizeElementAttributes,
+  getElementTagName,
+  parseElement,
+  tokenizeElement,
+  type ElementData
+} from "@andesine/document";
 import { isPositionInInheritedField } from "../../block-utils";
 import { untrack } from "solid-js";
 import type { EditorView as CodeEditorView } from "@codemirror/view";
@@ -10,13 +17,6 @@ import { renderElementTag } from "./tag-presence";
 import { createElementDiffView } from "../../../extensions/version-diff/element";
 import { closeHistory } from "@tiptap/pm/history";
 import { yUndoPluginKey } from "@tiptap/y-tiptap";
-import {
-  normalizeElementAttributes,
-  getElementTagName,
-  parseElement,
-  tokenizeElement,
-  type ElementData
-} from "../../../lib/element";
 
 interface ElementViewOptions {
   owner: unknown;

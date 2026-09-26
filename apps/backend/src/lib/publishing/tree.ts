@@ -1,5 +1,4 @@
-import { collections, entries } from "#backend/db";
-import type { db } from "#backend/lib/adapters";
+import { collections, entries, type DatabaseTransaction } from "@andesine/server/database";
 import { and, asc, eq, inArray, isNull, or } from "drizzle-orm";
 
 interface PublishingCollection {
@@ -13,8 +12,6 @@ interface PublishingTree {
   collections: PublishingCollection[];
   rootID: string;
 }
-
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const loadPublishingTree = async (
   tx: DatabaseTransaction,

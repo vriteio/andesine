@@ -2,7 +2,7 @@ import {
   SCHEMA_MIGRATION_JOB_NAME,
   SCHEMA_MIGRATION_PROCESSING_ATTEMPTS,
   type SchemaMigrationJobData
-} from "@andesine/backend/lib/queue/schema-migration-jobs";
+} from "@andesine/server/queue";
 import type { JobHandler } from "../jobs";
 import {
   executeSchemaMigration,

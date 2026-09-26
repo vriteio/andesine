@@ -1,6 +1,6 @@
+import { memberships, workspaces } from "@andesine/server/database";
 // SPDX-License-Identifier: Elastic-2.0
-import { memberships, workspaces } from "#backend/db";
-import { toUUID, toWorkspaceID } from "#backend/lib/primitives";
+import { toUUID, toWorkspaceID } from "@andesine/contracts/primitives";
 import { db, stripe } from "#backend/lib/adapters";
 import { config } from "#backend/lib/config";
 import { ORPCError } from "@orpc/server";

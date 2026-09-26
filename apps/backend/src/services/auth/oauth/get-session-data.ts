@@ -1,6 +1,6 @@
 import { auth } from "#backend/lib/adapters/auth";
 import { resolveUserAuthorization } from "#backend/lib/auth/user-authorization";
-import { toUserID } from "#backend/lib/primitives";
+import { toUserID } from "@andesine/contracts/primitives";
 import type { SessionData } from "#backend/lib/policy";
 import { APIError } from "better-auth/api";
 import { ORPCError } from "@orpc/server";

@@ -1,21 +1,23 @@
+import { webhookEndpoints } from "@andesine/server/database";
+import { createSecretEncryption } from "@andesine/server/security";
+import { getDeliveryTime } from "@andesine/server/webhooks/delivery";
+import {
+  describeWebhookEndpoints,
+  getWebhookConfiguration,
+  loadWebhookEndpoint
+} from "@andesine/server/webhooks/recording";
+import { createWebhookSecrets } from "@andesine/server/webhooks/signing";
 import { isDeepStrictEqual } from "node:util";
 import {
   webhookConfigurationType,
   webhookUpdateInputType,
   type WebhookUpdateInput,
-  type WebhookUpdateResult
-} from "#backend/contracts/schemas/webhooks";
-import { webhookEndpoints } from "#backend/db/webhooks";
+  type WebhookUpdateResult,
+  webhookManageRequirements
+} from "@andesine/contracts/webhooks";
 import { config } from "#backend/lib/config";
 import { withAuthorization } from "#backend/lib/policy";
-import { createSecretEncryption } from "#backend/lib/security/encryption";
 import { assertWebhookAuthority } from "#backend/lib/webhooks/delegation";
-import { getDeliveryTime } from "#backend/lib/webhooks/delivery/locking";
-import {
-  describeWebhookEndpoints,
-  getWebhookConfiguration,
-  loadWebhookEndpoint
-} from "#backend/lib/webhooks/endpoints";
 import {
   assertWebhookDestination,
   limitWebhookManagement,
@@ -24,8 +26,6 @@ import {
   reconcileWebhookConfiguration,
   recordWebhookRevision
 } from "#backend/lib/webhooks/management";
-import { webhookManageRequirements } from "#backend/lib/webhooks/permissions";
-import { createWebhookSecrets } from "#backend/lib/webhooks/secrets";
 import { and, eq } from "drizzle-orm";
 
 const updateWebhook = withAuthorization<WebhookUpdateInput, undefined, WebhookUpdateResult>(

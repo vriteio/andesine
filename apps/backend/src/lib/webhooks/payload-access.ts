@@ -1,18 +1,17 @@
-import { entries } from "#backend/db";
-import { loadAuthorizedCollectionTree } from "#backend/lib/policy/authorized-collection-tree";
-import { hasAuthPermission, hasAuthorizationRequirements } from "#backend/lib/policy/permissions";
-import type { DatabaseClient } from "#backend/lib/policy/service";
-import type { SessionData } from "#backend/lib/policy/session";
-import { toCollectionID, toUUID } from "#backend/lib/primitives/id";
-import { and, eq } from "drizzle-orm";
-import { webhookCatalog } from "./catalog";
-import type { WebhookEvent } from "./events";
+import { entries, type DatabaseClient } from "@andesine/server/database";
 import {
   getRestrictedWebhookScopeIDs,
   loadWebhookScopeIndex,
   type WebhookResourceScope
-} from "./scope";
-import { canReadWebhookResource, webhookReadRequirements } from "./permissions";
+} from "@andesine/server/webhooks/recording";
+import { loadAuthorizedCollectionTree } from "#backend/lib/policy/authorized-collection-tree";
+import { hasAuthPermission, hasAuthorizationRequirements } from "#backend/lib/policy/permissions";
+import type { SessionData } from "#backend/lib/policy/session";
+import { toCollectionID, toUUID } from "@andesine/contracts/primitives";
+import { and, eq } from "drizzle-orm";
+import { webhookCatalog } from "./catalog";
+import { type WebhookEvent, webhookReadRequirements } from "@andesine/contracts/webhooks";
+import { canReadWebhookResource } from "./permissions";
 
 interface WebhookPayloadAccessInput {
   auth: SessionData;

@@ -1,5 +1,5 @@
-import { entries } from "#backend/db";
-import type { VersionDetails } from "#backend/lib/data/entry-version";
+import { entries } from "@andesine/server/database";
+import { type VersionDetails } from "@andesine/contracts/versions";
 import {
   loadPublishedEntryVersion,
   type PublishedEntryVersionInput,
@@ -7,7 +7,7 @@ import {
 } from "#backend/lib/publishing/entry-version";
 import { getVersionDetails } from "#backend/lib/versioning/details";
 import { withAuthorization } from "#backend/lib/policy";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq } from "drizzle-orm";
 

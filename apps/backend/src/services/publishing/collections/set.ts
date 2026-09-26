@@ -1,7 +1,12 @@
-import { createStructureWebhookRecorder } from "#backend/lib/webhooks/structure";
-import { getUserAuthorization } from "#backend/lib/policy";
+import { collections, publishingChannels } from "@andesine/server/database";
+import { createStructureWebhookRecorder } from "@andesine/server/webhooks/recording";
+import { webhookRetentionPolicy } from "#backend/lib/webhooks/policy";
+import {
+  getUserAuthorization,
+  filterAuthorizedEntryIDs,
+  withAuthorization
+} from "#backend/lib/policy";
 import { assertPublishingSnapshot } from "#backend/lib/publishing/precondition";
-import { collections, publishingChannels } from "#backend/db";
 import {
   assertEntrySnapshotsSynced,
   getDisabledEntryIDs,
@@ -9,18 +14,17 @@ import {
   isCollectionPublishingEnabled,
   loadAuthorizedSnapshotRemovalEntries,
   loadPublishingTree,
-  PUBLISHED_CHANNEL_CODE,
   publishEntries,
   resolveCollectionSnapshotChanges,
   syncEntrySnapshots,
-  type CommitPublishingSnapshotResult
+  type CommitPublishingSnapshotResult,
+  type PublishingEntryStatus
 } from "#backend/lib/publishing";
-import { toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
-import type { VersionSummary } from "#backend/lib/data";
-import type { PublishingEntryStatus } from "#backend/lib/publishing";
+import { PUBLISHED_CHANNEL_CODE } from "@andesine/contracts/publishing";
+import { toCollectionID, toEntryID, toUUID } from "@andesine/contracts/primitives";
+import { type VersionSummary } from "@andesine/contracts/versions";
 import { ORPCError } from "@orpc/server";
 import { and, eq, inArray, isNull } from "drizzle-orm";
-import { filterAuthorizedEntryIDs, withAuthorization } from "#backend/lib/policy";
 import { unpublishCollection } from "./unpublish";
 
 interface SetCollectionPublishingResult {
@@ -127,7 +131,12 @@ const commitCollectionsPublishing = withAuthorization<
 
     const collectionIDs = [...new Set(input.collectionIDs.map(toUUID))];
 
-    const webhooks = await createStructureWebhookRecorder({ database, workspaceID, collectionIDs });
+    const webhooks = await createStructureWebhookRecorder({
+      retentionPolicy: webhookRetentionPolicy,
+      database,
+      workspaceID,
+      collectionIDs
+    });
 
     const currentCollections = await database
       .select({

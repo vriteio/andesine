@@ -1,49 +1,16 @@
-import { keyType } from "#backend/db";
+import { keyEventType, type KeyEvent } from "@andesine/contracts/events";
 import {
   emitEvent,
   type EmitEvent,
   subscribeToEvent,
   type SubscribeToEvent
 } from "#backend/lib/messaging";
-import { id } from "#backend/lib/primitives";
-import * as z from "zod";
 
 declare module "#backend/lib/messaging/events" {
   interface Events {
     [keyEvent: `${string}:keys`]: KeyEvent;
   }
 }
-
-const keyEventType = z.union([
-  z.object({
-    action: z.literal("key:create"),
-    memberID: id().optional(),
-    data: keyType
-  }),
-  z.object({
-    action: z.literal("key:update"),
-    memberID: id().optional(),
-    data: z.object({
-      ...keyType.pick({ id: true }).shape,
-      ...keyType.omit({ id: true }).partial().shape
-    })
-  }),
-  z.object({
-    action: z.literal("key:delete"),
-    memberID: id().optional(),
-    data: z.object({ ids: z.array(keyType.shape.id) })
-  }),
-  z.object({
-    action: z.literal("key:rotate"),
-    memberID: id().optional(),
-    data: z.object({
-      previousKeyID: keyType.shape.id,
-      key: keyType
-    })
-  })
-]);
-
-type KeyEvent = z.infer<typeof keyEventType>;
 
 const emitKeyEvent: EmitEvent<{
   [workspaceID: string]: KeyEvent;
@@ -59,5 +26,4 @@ const subscribeToKeyEvents: SubscribeToEvent<{
   });
 };
 
-export { keyEventType, emitKeyEvent, subscribeToKeyEvents };
-export type { KeyEvent };
+export { emitKeyEvent, subscribeToKeyEvents };

@@ -1,9 +1,9 @@
-import { entries } from "#backend/db";
+import { entries, type DatabaseClient as Database } from "@andesine/server/database";
 import { db } from "#backend/lib/adapters";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, inArray, isNull } from "drizzle-orm";
-import type { EntryAction } from "./actions";
+import { type EntryAction } from "@andesine/contracts/permissions";
 import type { AuthorizedCollectionTree } from "./authorized-collection-tree";
 
 interface EntryAuthorizationSource {
@@ -23,9 +23,6 @@ interface AuthorizeEntryIDsInput extends LoadEntryAuthorizationSourcesInput {
   action: EntryAction;
   authorization: AuthorizedCollectionTree;
 }
-
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-type Database = DatabaseTransaction | typeof db;
 
 const loadEntryAuthorizationSources = async (
   input: LoadEntryAuthorizationSourcesInput

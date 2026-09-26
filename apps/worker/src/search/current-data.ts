@@ -1,9 +1,7 @@
+import { collections, contents, entries } from "@andesine/server/database";
+import { type CurrentSearchDocumentSource } from "@andesine/server/search";
 import { toContentSlug } from "@andesine/sdk/slug";
-import { collections } from "@andesine/backend/db/collections";
-import { contents } from "@andesine/backend/db/contents";
-import { entries } from "@andesine/backend/db/entries";
-import type { CurrentSearchDocumentSource } from "@andesine/backend/lib/search";
-import { toCollectionID, toEntryID, toUUID } from "@andesine/backend/lib/primitives";
+import { toCollectionID, toEntryID, toUUID } from "@andesine/contracts/primitives";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "../database";
 

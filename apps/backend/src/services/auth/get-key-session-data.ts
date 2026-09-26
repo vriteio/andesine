@@ -1,6 +1,6 @@
-import { workspaces } from "#backend/db";
+import { workspaces } from "@andesine/server/database";
 import { verifyAPIKey } from "#backend/lib/data";
-import { toKeyID, toWorkspaceID } from "#backend/lib/primitives";
+import { toKeyID, toWorkspaceID } from "@andesine/contracts/primitives";
 import { db, redis } from "#backend/lib/adapters";
 import { parseSessionData, type SessionData } from "#backend/lib/policy";
 import { eq } from "drizzle-orm";

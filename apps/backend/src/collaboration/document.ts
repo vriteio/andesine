@@ -1,9 +1,6 @@
-import {
-  hashContentDocument,
-  serializeContentDocument,
-  normalizeContentElements
-} from "#backend/lib/content";
-import { entryName } from "#backend/lib/validation";
+import { hashContentDocument, serializeContentDocument } from "@andesine/server/content";
+import { normalizeContentElements } from "@andesine/document";
+import { entryName } from "@andesine/contracts/content";
 import { type Doc, XmlElement, XmlText } from "yjs";
 import type { ContentSnapshot } from "./types";
 

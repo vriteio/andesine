@@ -1,10 +1,13 @@
-import { findDisallowedElementBlock } from "../lib/element";
+import {
+  findDisallowedElementBlock,
+  FRAGMENT_BLOCK_TYPES,
+  type FragmentBlockType
+} from "@andesine/document";
 import { Extension } from "@tiptap/core";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { Plugin } from "@tiptap/pm/state";
 import { ySyncPluginKey } from "@tiptap/y-tiptap";
 import type { EditorMode } from "#editor/client-types";
-import { FRAGMENT_BLOCK_TYPES, type FragmentBlockType } from "#editor/schema/fragment";
 import { isPositionInInheritedField, rangeContainsInheritedField } from "#editor/ui/block-utils";
 
 interface SchemaConstraintsOptions {

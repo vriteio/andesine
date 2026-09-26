@@ -1,6 +1,6 @@
 export * from "./channel";
 export * from "./change-set";
-export * from "./config";
+
 export * from "./publication";
 export * from "./revert-plan";
 export * from "./revert-authorization";

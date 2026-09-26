@@ -1,7 +1,7 @@
-import { commonErrors } from "#backend/contracts/errors";
+import { commonErrors } from "@andesine/contracts/api/errors";
 import { validateORPCError } from "@orpc/contract";
 import { withErrorHints } from "#backend/lib/transport/error";
-import { generateOpenAPI } from "#backend/contracts/openapi";
+import { generateOpenAPI } from "@andesine/contracts/openapi";
 import { config } from "#backend/lib/config";
 import { consumeRateLimit, RATE_LIMITS } from "#backend/lib/security";
 import { Auth } from "#backend/services/auth";

@@ -4,6 +4,153 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@aws-sdk/client-s3':
+      specifier: ^3.1127.0
+      version: 3.1127.0
+    '@orpc/client':
+      specifier: ^1.14.14
+      version: 1.14.14
+    '@orpc/contract':
+      specifier: ^1.14.14
+      version: 1.14.14
+    '@orpc/openapi':
+      specifier: ^1.14.14
+      version: 1.14.14
+    '@orpc/openapi-client':
+      specifier: ^1.14.14
+      version: 1.14.14
+    '@orpc/server':
+      specifier: ^1.14.14
+      version: 1.14.14
+    '@orpc/zod':
+      specifier: ^1.14.14
+      version: 1.14.14
+    '@tiptap/core':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-blockquote':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-bold':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-bubble-menu':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-bullet-list':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-code':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-code-block':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-collaboration':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-collaboration-caret':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-document':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-drag-handle':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-dropcursor':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-gapcursor':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-hard-break':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-highlight':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-horizontal-rule':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-italic':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-link':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-list-item':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-node-range':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-ordered-list':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-paragraph':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-strike':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-subscript':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-superscript':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-table':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-task-item':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-task-list':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-text':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/extension-unique-id':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/pm':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/suggestion':
+      specifier: 3.30.2
+      version: 3.30.2
+    '@tiptap/y-tiptap':
+      specifier: 3.0.9
+      version: 3.0.9
+    '@types/pg':
+      specifier: ^8.20.3
+      version: 8.20.3
+    base-x:
+      specifier: ^5.0.1
+      version: 5.0.1
+    bullmq:
+      specifier: ^6.3.1
+      version: 6.3.1
+    drizzle-orm:
+      specifier: ^0.45.2
+      version: 0.45.2
+    lexorank:
+      specifier: ^1.0.5
+      version: 1.0.5
+    pg:
+      specifier: ^8.22.0
+      version: 8.22.0
+    yjs:
+      specifier: ^13.6.32
+      version: 13.6.32
+    zod:
+      specifier: 4.4.3
+      version: 4.4.3
+
 importers:
 
   .:
@@ -44,17 +191,23 @@ importers:
 
   apps/backend:
     dependencies:
+      '@andesine/contracts':
+        specifier: workspace:*
+        version: link:../../packages/private/contracts
       '@andesine/converters':
         specifier: workspace:*
         version: link:../../packages/public/converters
-      '@andesine/editor':
+      '@andesine/document':
         specifier: workspace:*
-        version: link:../../packages/private/editor
+        version: link:../../packages/private/document
+      '@andesine/server':
+        specifier: workspace:*
+        version: link:../../packages/private/server
       '@andesine/templates':
         specifier: workspace:*
         version: link:../../packages/private/templates
       '@aws-sdk/client-s3':
-        specifier: ^3.1127.0
+        specifier: 'catalog:'
         version: 3.1127.0
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.1127.0
@@ -84,44 +237,53 @@ importers:
         specifier: ^4.4.0
         version: 4.4.0(srvx@0.12.5)(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32)
       '@orpc/contract':
-        specifier: ^1.14.14
+        specifier: 'catalog:'
         version: 1.14.14
       '@orpc/openapi':
-        specifier: ^1.14.14
+        specifier: 'catalog:'
         version: 1.14.14(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2)
       '@orpc/server':
-        specifier: ^1.14.14
+        specifier: 'catalog:'
         version: 1.14.14(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2)
       '@orpc/zod':
-        specifier: ^1.14.14
+        specifier: 'catalog:'
         version: 1.14.14(@orpc/contract@1.14.14)(@orpc/server@1.14.14(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2))(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2)(zod@4.4.3)
+      '@react-email/components':
+        specifier: 1.0.12
+        version: 1.0.12(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@react-email/render':
+        specifier: 2.1.0
+        version: 2.1.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       base-x:
-        specifier: ^5.0.1
+        specifier: 'catalog:'
         version: 5.0.1
       better-auth:
         specifier: 1.7.5
         version: 1.7.5(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@5.20260911.1)(@types/pg@8.20.3)(kysely@0.29.4)(pg@8.22.0))(next@16.2.6(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(sass@1.100.0))(pg@8.22.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(solid-js@1.9.14)
       bullmq:
-        specifier: ^6.3.1
+        specifier: 'catalog:'
         version: 6.3.1(ioredis@5.6.1)(pg@8.22.0)(redis@6.2.0)
       date-fns:
         specifier: ^4.4.0
         version: 4.4.0
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@5.20260911.1)(@types/pg@8.20.3)(kysely@0.29.4)(pg@8.22.0)
       fastify:
         specifier: ^5.11.2
         version: 5.11.2
       lexorank:
-        specifier: ^1.0.5
+        specifier: 'catalog:'
         version: 1.0.5
       nodemailer:
         specifier: ^9.0.4
         version: 9.0.4
       pg:
-        specifier: ^8.22.0
+        specifier: 'catalog:'
         version: 8.22.0
+      react:
+        specifier: 19.2.8
+        version: 19.2.8
       redis:
         specifier: ^6.2.0
         version: 6.2.0
@@ -135,10 +297,10 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7(yjs@13.6.32)
       yjs:
-        specifier: ^13.6.32
+        specifier: 'catalog:'
         version: 13.6.32
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@andesine/sdk':
@@ -151,7 +313,7 @@ importers:
         specifier: ^8.0.1
         version: 8.0.1
       '@types/pg':
-        specifier: ^8.20.3
+        specifier: 'catalog:'
         version: 8.20.3
       '@types/ws':
         specifier: ^8.18.1
@@ -226,30 +388,24 @@ importers:
 
   apps/usage-report:
     dependencies:
-      '@andesine/backend':
+      '@andesine/server':
         specifier: workspace:*
-        version: link:../backend
-      base-x:
-        specifier: ^5.0.1
-        version: 5.0.1
-      drizzle-orm:
-        specifier: ^0.45.2
-        version: 0.45.2(@cloudflare/workers-types@5.20260911.1)(@types/pg@8.20.3)(kysely@0.29.4)(pg@8.22.0)
+        version: link:../../packages/private/server
       pg:
-        specifier: ^8.22.0
+        specifier: 'catalog:'
         version: 8.22.0
       stripe:
         specifier: ^22.4.0
         version: 22.4.0(@types/node@26.1.2)
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@types/node':
         specifier: ^26.1.2
         version: 26.1.2
       '@types/pg':
-        specifier: ^8.20.3
+        specifier: 'catalog:'
         version: 8.20.3
       rolldown:
         specifier: ^1.2.2
@@ -263,6 +419,12 @@ importers:
       '@andesine/components':
         specifier: workspace:*
         version: link:../../packages/private/components
+      '@andesine/contracts':
+        specifier: workspace:*
+        version: link:../../packages/private/contracts
+      '@andesine/document':
+        specifier: workspace:*
+        version: link:../../packages/private/document
       '@andesine/editor':
         specifier: workspace:*
         version: link:../../packages/private/editor
@@ -297,13 +459,16 @@ importers:
         specifier: ^2.2.509
         version: 2.2.509
       '@orpc/client':
-        specifier: ^1.14.14
+        specifier: 'catalog:'
+        version: 1.14.14
+      '@orpc/contract':
+        specifier: 'catalog:'
         version: 1.14.14
       '@orpc/openapi-client':
-        specifier: ^1.14.14
+        specifier: 'catalog:'
         version: 1.14.14
       '@orpc/server':
-        specifier: ^1.14.14
+        specifier: 'catalog:'
         version: 1.14.14(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2)
       '@signaldb/core':
         specifier: ^1.8.1
@@ -333,7 +498,7 @@ importers:
         specifier: ^5.101.4
         version: 5.101.4(solid-js@1.9.14)
       base-x:
-        specifier: ^5.0.1
+        specifier: 'catalog:'
         version: 5.0.1
       better-auth:
         specifier: 1.7.5
@@ -351,7 +516,7 @@ importers:
         specifier: ^8.0.3
         version: 8.0.3
       lexorank:
-        specifier: ^1.0.5
+        specifier: 'catalog:'
         version: 1.0.5
       marked:
         specifier: 15.0.12
@@ -366,12 +531,9 @@ importers:
         specifier: ^4.0.0
         version: 4.0.0
       yjs:
-        specifier: ^13.6.32
+        specifier: 'catalog:'
         version: 13.6.32
     devDependencies:
-      '@andesine/backend':
-        specifier: workspace:*
-        version: link:../backend
       '@andesine/sdk':
         specifier: workspace:*
         version: link:../../packages/public/sdk
@@ -414,29 +576,41 @@ importers:
 
   apps/worker:
     dependencies:
-      '@andesine/backend':
+      '@andesine/contracts':
         specifier: workspace:*
-        version: link:../backend
+        version: link:../../packages/private/contracts
+      '@andesine/document':
+        specifier: workspace:*
+        version: link:../../packages/private/document
+      '@andesine/server':
+        specifier: workspace:*
+        version: link:../../packages/private/server
       '@aws-sdk/client-s3':
-        specifier: ^3.1127.0
+        specifier: 'catalog:'
         version: 3.1127.0
+      '@orpc/contract':
+        specifier: 'catalog:'
+        version: 1.14.14
       '@orpc/server':
-        specifier: ^1.14.14
+        specifier: 'catalog:'
         version: 1.14.14(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2)
+      '@orpc/zod':
+        specifier: 'catalog:'
+        version: 1.14.14(@orpc/contract@1.14.14)(@orpc/server@1.14.14(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2))(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2)(zod@4.4.3)
       base-x:
-        specifier: ^5.0.1
+        specifier: 'catalog:'
         version: 5.0.1
       bullmq:
-        specifier: ^6.3.1
+        specifier: 'catalog:'
         version: 6.3.1(ioredis@5.6.1)(pg@8.22.0)(redis@6.2.0)
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@5.20260911.1)(@types/pg@8.20.3)(kysely@0.29.4)(pg@8.22.0)
       lexorank:
-        specifier: ^1.0.5
+        specifier: 'catalog:'
         version: 1.0.5
       pg:
-        specifier: ^8.22.0
+        specifier: 'catalog:'
         version: 8.22.0
       redis:
         specifier: ^6.2.0
@@ -444,8 +618,11 @@ importers:
       sharp:
         specifier: ^0.35.4
         version: 0.35.4(@types/node@26.1.2)
+      yjs:
+        specifier: 'catalog:'
+        version: 13.6.32
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@andesine/sdk':
@@ -455,7 +632,7 @@ importers:
         specifier: ^26.1.2
         version: 26.1.2
       '@types/pg':
-        specifier: ^8.20.3
+        specifier: 'catalog:'
         version: 8.20.3
       rolldown:
         specifier: ^1.2.2
@@ -522,11 +699,124 @@ importers:
         specifier: ^3.1.8
         version: 3.1.8
 
+  packages/private/contracts:
+    dependencies:
+      '@andesine/document':
+        specifier: workspace:*
+        version: link:../document
+      '@orpc/contract':
+        specifier: 'catalog:'
+        version: 1.14.14
+      '@orpc/openapi':
+        specifier: 'catalog:'
+        version: 1.14.14(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2)
+      '@orpc/zod':
+        specifier: 'catalog:'
+        version: 1.14.14(@orpc/contract@1.14.14)(@orpc/server@1.14.14(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2))(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2)(zod@4.4.3)
+      base-x:
+        specifier: 'catalog:'
+        version: 5.0.1
+      lexorank:
+        specifier: 'catalog:'
+        version: 1.0.5
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
+  packages/private/document:
+    dependencies:
+      '@tiptap/core':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/pm@3.30.2)
+      '@tiptap/extension-blockquote':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/extension-bold':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
+      '@tiptap/extension-bullet-list':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
+      '@tiptap/extension-code':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
+      '@tiptap/extension-code-block':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/extension-document':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
+      '@tiptap/extension-hard-break':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
+      '@tiptap/extension-highlight':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
+      '@tiptap/extension-horizontal-rule':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/extension-italic':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
+      '@tiptap/extension-link':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/extension-list-item':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
+      '@tiptap/extension-ordered-list':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
+      '@tiptap/extension-paragraph':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
+      '@tiptap/extension-strike':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
+      '@tiptap/extension-subscript':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/extension-superscript':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/extension-table':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/extension-task-item':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
+      '@tiptap/extension-task-list':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
+      '@tiptap/extension-text':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
+      '@tiptap/pm':
+        specifier: 'catalog:'
+        version: 3.30.2
+      url-slug:
+        specifier: ^5.0.1
+        version: 5.0.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   packages/private/editor:
     dependencies:
       '@andesine/components':
         specifier: workspace:*
         version: link:../components
+      '@andesine/document':
+        specifier: workspace:*
+        version: link:../document
       '@codemirror/autocomplete':
         specifier: ^6.20.3
         version: 6.20.3
@@ -564,103 +854,43 @@ importers:
         specifier: ^1.5.3
         version: 1.5.3(solid-js@1.9.14)
       '@tiptap/core':
-        specifier: 3.30.2
+        specifier: 'catalog:'
         version: 3.30.2(@tiptap/pm@3.30.2)
-      '@tiptap/extension-blockquote':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
-      '@tiptap/extension-bold':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
       '@tiptap/extension-bubble-menu':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
-      '@tiptap/extension-bullet-list':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
-      '@tiptap/extension-code':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
-      '@tiptap/extension-code-block':
-        specifier: 3.30.2
+        specifier: 'catalog:'
         version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
       '@tiptap/extension-collaboration':
-        specifier: ^3.30.2
+        specifier: 'catalog:'
         version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@tiptap/y-tiptap@3.0.9(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.2)(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32))(yjs@13.6.32)
       '@tiptap/extension-collaboration-caret':
-        specifier: ^3.30.2
+        specifier: 'catalog:'
         version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@tiptap/y-tiptap@3.0.9(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.2)(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32))
-      '@tiptap/extension-document':
-        specifier: 3.30.2
-        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
       '@tiptap/extension-drag-handle':
-        specifier: ^3.30.2
+        specifier: 'catalog:'
         version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/extension-collaboration@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@tiptap/y-tiptap@3.0.9(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.2)(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32))(yjs@13.6.32))(@tiptap/extension-node-range@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@tiptap/y-tiptap@3.0.9(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.2)(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32))
       '@tiptap/extension-dropcursor':
-        specifier: ^3.30.2
+        specifier: 'catalog:'
         version: 3.30.2(@tiptap/extensions@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
       '@tiptap/extension-gapcursor':
-        specifier: ^3.30.2
+        specifier: 'catalog:'
         version: 3.30.2(@tiptap/extensions@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
-      '@tiptap/extension-hard-break':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
-      '@tiptap/extension-highlight':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
-      '@tiptap/extension-horizontal-rule':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
-      '@tiptap/extension-italic':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
-      '@tiptap/extension-link':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
-      '@tiptap/extension-list-item':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
       '@tiptap/extension-node-range':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
-      '@tiptap/extension-ordered-list':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
-      '@tiptap/extension-paragraph':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
-      '@tiptap/extension-strike':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
-      '@tiptap/extension-subscript':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
-      '@tiptap/extension-superscript':
-        specifier: ^3.30.2
+        specifier: 'catalog:'
         version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
       '@tiptap/extension-table':
-        specifier: 3.30.2
+        specifier: 'catalog:'
         version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
-      '@tiptap/extension-task-item':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
-      '@tiptap/extension-task-list':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
-      '@tiptap/extension-text':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
       '@tiptap/extension-unique-id':
-        specifier: ^3.30.2
+        specifier: 'catalog:'
         version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
       '@tiptap/pm':
-        specifier: 3.30.2
+        specifier: 'catalog:'
         version: 3.30.2
       '@tiptap/suggestion':
-        specifier: ^3.30.2
+        specifier: 'catalog:'
         version: 3.30.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
       '@tiptap/y-tiptap':
-        specifier: ^3.0.9
+        specifier: 'catalog:'
         version: 3.0.9(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.2)(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32)
       clsx:
         specifier: ^2.1.1
@@ -677,16 +907,59 @@ importers:
       tippy.js:
         specifier: ^6.3.7
         version: 6.3.7
-      url-slug:
-        specifier: ^5.0.1
-        version: 5.0.1
       yjs:
-        specifier: ^13.6.32
+        specifier: 'catalog:'
         version: 13.6.32
     devDependencies:
       vite:
         specifier: ^8.2.0
         version: 8.2.0(@types/node@26.1.2)(esbuild@0.28.1)(jiti@2.7.0)(sass-embedded@1.100.0)(sass@1.100.0)(terser@5.51.2)(tsx@4.23.5)(yaml@2.9.0)
+
+  packages/private/server:
+    dependencies:
+      '@andesine/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@andesine/converters':
+        specifier: workspace:*
+        version: link:../../public/converters
+      '@andesine/document':
+        specifier: workspace:*
+        version: link:../document
+      '@andesine/sdk':
+        specifier: workspace:*
+        version: link:../../public/sdk
+      '@aws-sdk/client-s3':
+        specifier: 'catalog:'
+        version: 3.1127.0
+      '@orpc/server':
+        specifier: 'catalog:'
+        version: 1.14.14(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2)
+      bullmq:
+        specifier: 'catalog:'
+        version: 6.3.1(ioredis@5.6.1)(pg@8.22.0)(redis@6.2.0)
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.2(@cloudflare/workers-types@5.20260911.1)(@types/pg@8.20.3)(kysely@0.29.4)(pg@8.22.0)
+      pg:
+        specifier: 'catalog:'
+        version: 8.22.0
+      yjs:
+        specifier: 'catalog:'
+        version: 13.6.32
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@types/node':
+        specifier: 26.1.2
+        version: 26.1.2
+      '@types/pg':
+        specifier: 'catalog:'
+        version: 8.20.3
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/private/templates:
     dependencies:

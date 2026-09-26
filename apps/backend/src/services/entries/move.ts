@@ -1,5 +1,3 @@
-import { assertContentNameAvailable } from "#backend/lib/content/names";
-import { rankBetweenNeighbors, toEntryID, toUUID } from "#backend/lib/primitives";
 import {
   collections,
   contents,
@@ -8,19 +6,32 @@ import {
   schemaMigrationCollections,
   schemaMigrationEntries,
   schemaMigrations
-} from "#backend/db";
-import { isCollectionPublishingEnabled, loadPublishingTree } from "#backend/lib/publishing";
+} from "@andesine/server/database";
+import { assertContentNameAvailable } from "@andesine/server/content";
+import { type EffectiveSchemaChangePlan } from "@andesine/server/schema";
+import {
+  createOutboundEvent,
+  createWebhookOperation,
+  createWebhookRecorder,
+  getWebhookEntryContext
+} from "@andesine/server/webhooks/recording";
+import { webhookRetentionPolicy } from "#backend/lib/webhooks/policy";
+import {
+  rankBetweenNeighbors,
+  toEntryID,
+  toUUID,
+  toWorkspaceID
+} from "@andesine/contracts/primitives";
+import {
+  isCollectionPublishingEnabled,
+  loadPublishingTree,
+  type PublishingEntryStatus
+} from "#backend/lib/publishing";
 import { and, desc, eq, gt, inArray, isNull, lt, ne } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { withAuthorization, type AuthorizedServiceInput } from "#backend/lib/policy";
-import type { PublishingEntryStatus } from "#backend/lib/publishing";
 import { prepareSchemaMigrationConnections } from "#backend/collaboration";
 import { submitSchemaMigration } from "#backend/lib/queue";
-import type { EffectiveSchemaChangePlan } from "#backend/lib/schema/migration/effective-change";
-import { toWorkspaceID } from "#backend/lib/primitives/id";
-import { createOutboundEvent, createWebhookOperation } from "#backend/lib/webhooks/operation";
-import { createWebhookRecorder } from "#backend/lib/webhooks/recorder";
-import { getWebhookEntryContext } from "#backend/lib/webhooks/entry-context";
 
 interface MoveEntryInput {
   confirmedDataLoss?: boolean;
@@ -165,7 +176,13 @@ const planEntryMove = withAuthorization<MoveEntryInput, ResolvedMoveEntry, MoveE
     const positionChanged =
       sourceCollectionID !== destinationCollectionID || resolved.sourceOrder !== rank;
     const operation = createWebhookOperation(toWorkspaceID(workspaceID));
-    const recorder = positionChanged ? await createWebhookRecorder({ database, operation }) : null;
+    const recorder = positionChanged
+      ? await createWebhookRecorder({
+          retentionPolicy: webhookRetentionPolicy,
+          database,
+          operation
+        })
+      : null;
 
     if (positionChanged) {
       await database

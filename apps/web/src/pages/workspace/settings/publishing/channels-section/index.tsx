@@ -1,7 +1,7 @@
+import { normalizeResourceName } from "@andesine/document";
 import { Card, IconButton } from "@andesine/components";
 import { createAsync, revalidate } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
-import { normalizeResourceName } from "@andesine/editor/normalize-resource-name";
 import { type Component, createSignal, Show, Suspense, useTransition } from "solid-js";
 import { ActionConfirmationDialog } from "#web/components/action-confirmation-dialog";
 import { Tree, TREE_ROOT_ID, type TreeMap, TreeSkeleton } from "#web/components/tree";

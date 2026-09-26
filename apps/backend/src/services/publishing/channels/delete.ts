@@ -1,9 +1,13 @@
+import { publishingChannels, publishingSnapshots } from "@andesine/server/database";
+import {
+  createOutboundEvent,
+  createWebhookOperation,
+  createWebhookRecorder
+} from "@andesine/server/webhooks/recording";
+import { webhookRetentionPolicy } from "#backend/lib/webhooks/policy";
 import { assertPublishingSnapshot } from "#backend/lib/publishing/precondition";
-import { publishingChannels, publishingSnapshots } from "#backend/db";
 import { withAuthorization } from "#backend/lib/policy";
-import { toSnapshotID, toWorkspaceID } from "#backend/lib/primitives";
-import { createOutboundEvent, createWebhookOperation } from "#backend/lib/webhooks/operation";
-import { createWebhookRecorder } from "#backend/lib/webhooks/recorder";
+import { toSnapshotID, toWorkspaceID } from "@andesine/contracts/primitives";
 import {
   getPublishingSnapshotExpiry,
   normalizePublishingChannelCode
@@ -29,7 +33,11 @@ const deleteChannel = withAuthorization<DeleteChannelInput, undefined, DeleteCha
     const now = new Date();
     const expiresAt = getPublishingSnapshotExpiry(auth.subscriptionPlan, now);
     const operation = createWebhookOperation(toWorkspaceID(workspaceID));
-    const recorder = await createWebhookRecorder({ database, operation });
+    const recorder = await createWebhookRecorder({
+      retentionPolicy: webhookRetentionPolicy,
+      database,
+      operation
+    });
 
     await assertPublishingSnapshot(database, workspaceID, input.code, input.expectedSnapshotID);
 

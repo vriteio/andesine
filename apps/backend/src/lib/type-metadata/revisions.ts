@@ -1,6 +1,8 @@
-import { effectiveSchemaRevisions } from "#backend/db";
-import type { Database } from "#backend/lib/policy";
-import { mapSchemaRevision } from "#backend/lib/schema/recorded";
+import {
+  effectiveSchemaRevisions,
+  type DatabaseTransaction as Database
+} from "@andesine/server/database";
+import { mapSchemaRevision } from "@andesine/server/schema";
 import { and, eq, inArray } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 

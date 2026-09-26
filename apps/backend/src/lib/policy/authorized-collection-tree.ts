@@ -3,18 +3,22 @@ import {
   collectionMemberRoles,
   groupMembers,
   roles,
-  type Collection,
-  type KeyPermission,
-  type Permission
-} from "#backend/db";
+  type DatabaseClient as Database
+} from "@andesine/server/database";
+import { loadCollectionTree } from "@andesine/server/data";
+import { type Collection, type KeyPermission, type Permission } from "@andesine/contracts/entities";
 import { db } from "#backend/lib/adapters";
-import { loadCollectionTree } from "#backend/lib/data";
-import { toCollectionID, toUUID } from "#backend/lib/primitives";
+import { toCollectionID, toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq } from "drizzle-orm";
-import type { CollectionAccess, CollectionAction, EntryAction } from "./actions";
+import {
+  type CollectionAccess,
+  type CollectionAction,
+  type EntryAction,
+  hasPermission
+} from "@andesine/contracts/permissions";
 import type { EntryAuthorizationSource } from "./authorized-entry-sources";
-import { hasAuthPermission, hasPermission, isAdminAuthorization } from "./permissions";
+import { hasAuthPermission, isAdminAuthorization } from "./permissions";
 import { getUserAuthorization, type SessionData } from "./session";
 
 interface AuthorizedCollectionNode {
@@ -42,9 +46,6 @@ interface SubtreeAccessSummary {
   canUnpublish: boolean;
   fullyVisible: boolean;
 }
-
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-type Database = DatabaseTransaction | typeof db;
 
 const COLLECTION_CONTENT_ACTIONS: CollectionAction[] = [
   "collection:create-child",

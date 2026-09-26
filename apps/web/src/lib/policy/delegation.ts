@@ -1,5 +1,5 @@
 import { useWorkspace } from "#web/context/workspace";
-import { keyPermissionRequirements } from "#backend/lib/policy/permission-requirements";
+import { keyPermissionRequirements } from "@andesine/contracts/permissions";
 import type { KeyPermission, Permission } from "#web/lib/api";
 
 const useDelegationPermissions = () => {

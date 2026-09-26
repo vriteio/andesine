@@ -1,3 +1,6 @@
+import { collectionSchemas, entryVersions, schemaVersions } from "@andesine/server/database";
+import { loadCollectionTree } from "@andesine/server/data";
+import { createWebhookOperation, type WebhookOperation } from "@andesine/server/webhooks/recording";
 import {
   createDeferredDocumentReplacements,
   getContentSnapshot,
@@ -5,14 +8,8 @@ import {
   type ContentConnection,
   type DeferredDocumentReplacements
 } from "#backend/collaboration";
-import {
-  collectionSchemas,
-  entryVersions,
-  schemaVersions,
-  type Collection,
-  type Entry
-} from "#backend/db";
-import { loadCollectionTree, type VersionDetails } from "#backend/lib/data";
+import { type Collection, type Entry } from "@andesine/contracts/entities";
+import { type VersionDetails } from "@andesine/contracts/versions";
 import {
   applyPublishingRevertStructure,
   getPublishingRevertAuthorizationActions,
@@ -29,8 +26,7 @@ import {
   toUUID,
   toVersionID,
   toWorkspaceID
-} from "#backend/lib/primitives";
-import { createWebhookOperation, type WebhookOperation } from "#backend/lib/webhooks/operation";
+} from "@andesine/contracts/primitives";
 import {
   loadVersionRevertTargets,
   retainRevertedVersionAssets,

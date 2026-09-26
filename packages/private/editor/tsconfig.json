@@ -10,7 +10,6 @@
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
     "isolatedModules": true,
-    "skipLibCheck": true,
-    "paths": { "#editor/*": ["./src/*"] }
+    "skipLibCheck": true
   }
 }

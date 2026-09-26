@@ -1,0 +1,122 @@
+{
+  "name": "@andesine/contracts",
+  "type": "module",
+  "private": true,
+  "exports": {
+    "./api": {
+      "types": "./src/api/index.ts",
+      "default": "./src/api/index.ts"
+    },
+    "./api/base": {
+      "types": "./src/api/base.ts",
+      "default": "./src/api/base.ts"
+    },
+    "./api/errors": {
+      "types": "./src/api/errors.ts",
+      "default": "./src/api/errors.ts"
+    },
+    "./assets": {
+      "types": "./src/assets/index.ts",
+      "default": "./src/assets/index.ts"
+    },
+    "./auth": {
+      "types": "./src/auth/index.ts",
+      "default": "./src/auth/index.ts"
+    },
+    "./collections": {
+      "types": "./src/collections/index.ts",
+      "default": "./src/collections/index.ts"
+    },
+    "./content": {
+      "types": "./src/content/index.ts",
+      "default": "./src/content/index.ts"
+    },
+    "./entities": {
+      "types": "./src/entities/index.ts",
+      "default": "./src/entities/index.ts"
+    },
+    "./entries": {
+      "types": "./src/entries/index.ts",
+      "default": "./src/entries/index.ts"
+    },
+    "./errors": {
+      "types": "./src/errors/index.ts",
+      "default": "./src/errors/index.ts"
+    },
+    "./events": {
+      "types": "./src/events/index.ts",
+      "default": "./src/events/index.ts"
+    },
+    "./instance": {
+      "types": "./src/instance/index.ts",
+      "default": "./src/instance/index.ts"
+    },
+    "./limits": {
+      "types": "./src/limits.ts",
+      "default": "./src/limits.ts"
+    },
+    "./memberships": {
+      "types": "./src/memberships/index.ts",
+      "default": "./src/memberships/index.ts"
+    },
+    "./openapi": {
+      "types": "./src/openapi/index.ts",
+      "default": "./src/openapi/index.ts"
+    },
+    "./pagination": {
+      "types": "./src/pagination/index.ts",
+      "default": "./src/pagination/index.ts"
+    },
+    "./paths": {
+      "types": "./src/paths/index.ts",
+      "default": "./src/paths/index.ts"
+    },
+    "./permissions": {
+      "types": "./src/permissions/index.ts",
+      "default": "./src/permissions/index.ts"
+    },
+    "./primitives": {
+      "types": "./src/primitives/index.ts",
+      "default": "./src/primitives/index.ts"
+    },
+    "./publishing": {
+      "types": "./src/publishing/index.ts",
+      "default": "./src/publishing/index.ts"
+    },
+    "./schema": {
+      "types": "./src/schema/index.ts",
+      "default": "./src/schema/index.ts"
+    },
+    "./search": {
+      "types": "./src/search/index.ts",
+      "default": "./src/search/index.ts"
+    },
+    "./type-metadata": {
+      "types": "./src/type-metadata/index.ts",
+      "default": "./src/type-metadata/index.ts"
+    },
+    "./versions": {
+      "types": "./src/versions/index.ts",
+      "default": "./src/versions/index.ts"
+    },
+    "./webhooks": {
+      "types": "./src/webhooks/index.ts",
+      "default": "./src/webhooks/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@andesine/document": "workspace:*",
+    "@orpc/contract": "catalog:",
+    "@orpc/openapi": "catalog:",
+    "@orpc/zod": "catalog:",
+    "base-x": "catalog:",
+    "lexorank": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3"
+  }
+}

@@ -1,5 +1,5 @@
 import { useDelegationPermissions } from "#web/lib/policy/delegation";
-import { type Membership, type Role, type UserProfile } from "#backend/db";
+import { type Membership, type Role, type UserProfile } from "@andesine/contracts/entities";
 import { useTree, TreeItem } from "#web/components/tree";
 import { type Card, DropdownArea, DropdownMenu, IconButton } from "@andesine/components";
 import clsx from "clsx";

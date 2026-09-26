@@ -1,20 +1,19 @@
-import { assetAnalyses, assetFiles, assets } from "@andesine/backend/db/assets";
-import { assetUploads } from "@andesine/backend/db/asset-uploads";
-import { entries } from "@andesine/backend/db/entries";
-import { workspaces } from "@andesine/backend/db/workspaces";
 import {
-  getAssetPrefix,
-  getAssetUploadKey,
-  type AssetStorage
-} from "@andesine/backend/lib/assets/storage";
-import type { AssetProcessJobData } from "@andesine/backend/lib/queue/asset-jobs";
+  assetAnalyses,
+  assetFiles,
+  assets,
+  assetUploads,
+  entries,
+  workspaces,
+  type DatabaseClient as AssetDatabase
+} from "@andesine/server/database";
+import { getAssetPrefix, getAssetUploadKey, type AssetStorage } from "@andesine/server/assets";
+import { type AssetProcessJobData } from "@andesine/server/queue";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { config } from "../config";
 import { db } from "../database";
 import { InvalidImageError, processImage } from "./process-image";
-
-type AssetDatabase = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const loadProcessingAsset = async (database: AssetDatabase, data: AssetProcessJobData) => {
   const [row] = await database

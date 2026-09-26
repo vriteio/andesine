@@ -2,7 +2,7 @@ import { createRef } from "@andesine/components";
 import type { EditorMode } from "#editor/client-types";
 import type { Editor } from "@tiptap/core";
 import type { ResolvedPos } from "@tiptap/pm/model";
-import { FRAGMENT_BLOCK_TYPES, type FragmentBlockType } from "#editor/schema/fragment";
+import { FRAGMENT_BLOCK_TYPES, type FragmentBlockType } from "@andesine/document";
 import type { SlashMenuItem } from "./component";
 
 const isInsideTableCell = ($pos: ResolvedPos): boolean => {

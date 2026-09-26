@@ -1,6 +1,6 @@
+import { workspaces } from "@andesine/server/database";
 // SPDX-License-Identifier: Elastic-2.0
-import { workspaces } from "#backend/db";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { db, stripe } from "#backend/lib/adapters";
 import { ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";

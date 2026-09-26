@@ -1,19 +1,19 @@
-import { getUserAuthorization } from "#backend/lib/policy";
+import { publishingSnapshotEntries } from "@andesine/server/database";
+import {
+  getUserAuthorization,
+  type EntryAuthorizationSource,
+  loadEntryAuthorizationSources,
+  withAuthorization
+} from "#backend/lib/policy";
 import { assertPublishingSnapshot } from "#backend/lib/publishing/precondition";
-import { publishingSnapshotEntries } from "#backend/db";
 import {
   commitPublishingSnapshot,
   resolvePublishingSnapshot,
   type CommitPublishingSnapshotResult,
   type PublishingEntryStatus
 } from "#backend/lib/publishing";
-import { toEntryID, toUUID } from "#backend/lib/primitives";
+import { toEntryID, toUUID } from "@andesine/contracts/primitives";
 import { and, eq, inArray } from "drizzle-orm";
-import {
-  type EntryAuthorizationSource,
-  loadEntryAuthorizationSources,
-  withAuthorization
-} from "#backend/lib/policy";
 
 interface UnpublishEntryInput {
   entryIDs: string[];

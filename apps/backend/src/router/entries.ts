@@ -1,7 +1,7 @@
 import { getUserAuthorization } from "#backend/lib/policy";
 import { updateDocumentTitle } from "#backend/collaboration";
 import { emitEntryEvent, emitPublishingEntryUpdates } from "#backend/events";
-import { toSchemaMigrationID } from "#backend/lib/primitives";
+import { toSchemaMigrationID } from "@andesine/contracts/primitives";
 import { enqueueCurrentEntrySync, enqueuePublishedEntrySync } from "#backend/lib/queue";
 import { authorized } from "#backend/lib/transport/middleware/authorized";
 import { Entries } from "#backend/services/entries";

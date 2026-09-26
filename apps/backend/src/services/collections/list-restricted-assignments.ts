@@ -1,5 +1,9 @@
-import { collectionGroupRoles, collectionMemberRoles, collections } from "#backend/db";
-import { toGroupID, toMembershipID, toRoleID, toUUID } from "#backend/lib/primitives";
+import {
+  collectionGroupRoles,
+  collectionMemberRoles,
+  collections
+} from "@andesine/server/database";
+import { toGroupID, toMembershipID, toRoleID, toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
 import { withAuthorization } from "#backend/lib/policy";

@@ -1,8 +1,8 @@
+import { entries, entryVersionContributors, entryVersions } from "@andesine/server/database";
 import { getVersionDetails } from "#backend/lib/versioning/details";
-import { entries, entryVersionContributors, entryVersions } from "#backend/db";
-import { type VersionDetails } from "#backend/lib/data";
+import { type VersionDetails } from "@andesine/contracts/versions";
 import { type ServiceResolveContext, withAuthorization } from "#backend/lib/policy";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
 

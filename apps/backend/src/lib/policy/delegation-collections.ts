@@ -3,14 +3,14 @@ import {
   collectionMemberRoles,
   collections,
   roles,
-  type Permission
-} from "#backend/db";
+  type DatabaseClient
+} from "@andesine/server/database";
+import { type Permission } from "@andesine/contracts/entities";
 import { and, eq, isNull } from "drizzle-orm";
 import { loadAuthorizedCollectionTree } from "./authorized-collection-tree";
-import type { DatabaseClient } from "./service";
 import type { SessionData } from "./session";
 import { isAdminAuthorization } from "./permissions";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 
 const assertCollectionRoleDelegation = async (
   auth: SessionData,

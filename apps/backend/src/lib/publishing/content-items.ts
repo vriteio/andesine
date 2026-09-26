@@ -1,13 +1,17 @@
-import { effectiveSchemaRevisions, entryVersionContributors, entryVersions } from "#backend/db";
-import { getContentBlocks } from "#backend/lib/content";
-import { mapVersionSummary } from "#backend/lib/data/entry-version";
-import type { Database } from "#backend/lib/policy";
-import { toUUID } from "#backend/lib/primitives";
-import { assertRecordedContentRevision, mapSchemaRevision } from "#backend/lib/schema/recorded";
+import {
+  effectiveSchemaRevisions,
+  entryVersionContributors,
+  entryVersions,
+  type DatabaseTransaction as Database
+} from "@andesine/server/database";
+import { mapVersionSummary } from "@andesine/server/data";
+import { assertRecordedContentRevision, mapSchemaRevision } from "@andesine/server/schema";
+import { getContentBlocks } from "@andesine/document";
+import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, inArray } from "drizzle-orm";
 import { loadPublishedAssets } from "./content-assets";
-import type { publishedEntrySummaryType } from "#backend/contracts/schemas/content";
+import { type publishedEntrySummaryType } from "@andesine/contracts/content";
 import type * as z from "zod";
 
 type PublishedEntrySummary = z.infer<typeof publishedEntrySummaryType>;

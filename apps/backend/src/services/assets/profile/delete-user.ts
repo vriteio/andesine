@@ -1,7 +1,7 @@
-import { assets, assetStorageDeletions, users } from "#backend/db";
+import { assets, assetStorageDeletions, users } from "@andesine/server/database";
+import { getUserAssetPrefix, getUserAssetStagingPrefix } from "@andesine/server/assets";
 import { db } from "#backend/lib/adapters/postgres";
-import { getUserAssetPrefix, getUserAssetStagingPrefix } from "#backend/lib/assets/storage";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { eq } from "drizzle-orm";
 
 // Called only from the authenticated account-deletion hook.

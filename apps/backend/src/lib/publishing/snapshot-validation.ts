@@ -1,5 +1,10 @@
-import { collections, entries, entryVersions, lexoRank } from "#backend/db";
-import type { db } from "#backend/lib/adapters";
+import {
+  collections,
+  entries,
+  entryVersions,
+  type DatabaseTransaction
+} from "@andesine/server/database";
+import { lexoRank } from "@andesine/contracts/entities";
 import { ORPCError } from "@orpc/server";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 
@@ -18,8 +23,6 @@ interface PublishingSnapshotEntryState {
   rank: string;
   versionID: string;
 }
-
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const rankType = lexoRank();
 const assertUniqueOperations = (

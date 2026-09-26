@@ -1,23 +1,31 @@
-import { assertRecordedContent } from "#backend/lib/schema/recorded";
-import { storeVersionProperties } from "#backend/lib/versioning/properties";
-import { publishingSnapshotChangedError } from "./errors";
-import { retainVersionAssets } from "#backend/lib/assets/references";
 import {
   contents,
   entries,
   entryVersionActivity,
   entryVersionActivityContributors,
   entryVersionContributors,
-  entryVersions
-} from "#backend/db";
-import type { db } from "#backend/lib/adapters";
+  entryVersions,
+  type DatabaseTransaction
+} from "@andesine/server/database";
+import { assertRecordedContent } from "@andesine/server/schema";
+import { storeVersionProperties } from "@andesine/server/versioning";
+import { retainVersionAssets } from "@andesine/server/assets";
+import { hashContentDocument } from "@andesine/server/content";
+import { mapVersionSummary } from "@andesine/server/data";
+import {
+  createWebhookOperation,
+  type WebhookOperation,
+  createWebhookRecorder
+} from "@andesine/server/webhooks/recording";
+import {
+  getPublishingContentDocument,
+  initializePublishingContent
+} from "@andesine/server/publishing";
+import { webhookRetentionPolicy } from "#backend/lib/webhooks/policy";
+import { publishingSnapshotChangedError } from "./errors";
 import type { AuthorizedCollectionTree } from "#backend/lib/policy";
-import { hashContentDocument } from "#backend/lib/content";
-import { mapVersionSummary, type VersionSummary } from "#backend/lib/data/entry-version";
-import { toEntryID, toUUID, toVersionID, toWorkspaceID } from "#backend/lib/primitives";
-import { createWebhookOperation, type WebhookOperation } from "#backend/lib/webhooks/operation";
-import { createWebhookRecorder } from "#backend/lib/webhooks/recorder";
-import { getPublishingContentDocument, initializePublishingContent } from "./initialize-content";
+import { type VersionSummary } from "@andesine/contracts/versions";
+import { toEntryID, toUUID, toVersionID, toWorkspaceID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { commitPublishingSnapshot, type CommitPublishingSnapshotResult } from "./snapshot-commit";
@@ -46,7 +54,6 @@ interface PublishEntriesResult {
   publishedEntries: number;
   snapshot: CommitPublishingSnapshotResult | null;
 }
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const lockPublishingEntries = async (
   tx: DatabaseTransaction,
@@ -87,7 +94,11 @@ const publishEntries = async (
     throw new Error("Webhook operation belongs to another workspace");
   }
 
-  const recorder = await createWebhookRecorder({ database: tx, operation });
+  const recorder = await createWebhookRecorder({
+    retentionPolicy: webhookRetentionPolicy,
+    database: tx,
+    operation
+  });
 
   if (input.entries.length === 0) {
     let snapshot: CommitPublishingSnapshotResult | null = null;

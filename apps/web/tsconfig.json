@@ -15,9 +15,7 @@
     "types": ["vite/client", "node"],
     "isolatedModules": true,
     "paths": {
-      "#web/*": ["./src/*"],
-      "#backend/*": ["../backend/src/*"],
-      "#editor/*": ["../../packages/private/editor/src/*"]
+      "#web/*": ["./src/*"]
     }
   },
   "include": ["./src/**/*.ts", "./src/**/*.tsx"],

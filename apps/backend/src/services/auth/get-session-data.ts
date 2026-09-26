@@ -1,5 +1,5 @@
 import { auth } from "#backend/lib/adapters";
-import { toUserID } from "#backend/lib/primitives";
+import { toUserID } from "@andesine/contracts/primitives";
 import { getUserAuthorization, type SessionData } from "#backend/lib/policy";
 import { resolveUserAuthorization } from "#backend/lib/auth/user-authorization";
 import { getEffectivePlan } from "#backend/lib/billing";

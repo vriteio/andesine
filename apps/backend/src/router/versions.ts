@@ -1,6 +1,6 @@
 import { getUserAuthorization, type SessionData } from "#backend/lib/policy";
 import { emitPublishingEntryUpdates, emitVersionEvent } from "#backend/events";
-import { type VersionDetails, type VersionSummary } from "#backend/lib/data";
+import { type VersionDetails, type VersionSummary } from "@andesine/contracts/versions";
 import { authorized } from "#backend/lib/transport/middleware/authorized";
 import { Versions } from "#backend/services/versions";
 import { api } from "./implement";

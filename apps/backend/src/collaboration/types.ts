@@ -1,4 +1,4 @@
-import type { ContentNode } from "#backend/lib/content";
+import type { ContentNode } from "@andesine/document";
 import type { SessionData } from "#backend/lib/policy";
 
 interface CollaborationContext {

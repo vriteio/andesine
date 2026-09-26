@@ -1,17 +1,22 @@
+import {
+  webhookEndpointRevisions,
+  workspaces,
+  type DatabaseTransaction
+} from "@andesine/server/database";
+import {
+  parseWebhookDestination,
+  WebhookDestinationError
+} from "@andesine/server/webhooks/destination";
+import { reconcileWebhookEndpoint } from "@andesine/server/webhooks/delivery";
+import { loadWebhookEndpoint } from "@andesine/server/webhooks/recording";
 import { isIP } from "node:net";
-import type { WebhookConfiguration } from "#backend/contracts/schemas/webhooks";
-import { webhookEndpointRevisions } from "#backend/db/webhooks";
-import { workspaces } from "#backend/db/workspaces";
-import type { DatabaseTransaction } from "#backend/lib/adapters/postgres";
+import { type WebhookConfiguration } from "@andesine/contracts/webhooks";
 import { config } from "#backend/lib/config";
-import { toUUID } from "#backend/lib/primitives/id";
+import { toUUID } from "@andesine/contracts/primitives";
 import { consumeRateLimit } from "#backend/lib/security/rate-limit";
 import { ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";
 import type { ZodType } from "zod";
-import { parseWebhookDestination, WebhookDestinationError } from "./destination";
-import { reconcileWebhookEndpoint } from "./delivery/maintain-endpoint";
-import { loadWebhookEndpoint } from "./endpoints";
 
 const parseWebhookInput = <T>(schema: ZodType<T>, input: unknown): T => {
   const result = schema.safeParse(input);

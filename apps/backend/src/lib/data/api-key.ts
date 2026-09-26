@@ -1,5 +1,6 @@
-import { apiKeys, type Key } from "#backend/db";
-import { toKeyID } from "#backend/lib/primitives";
+import { apiKeys } from "@andesine/server/database";
+import { type Key } from "@andesine/contracts/entities";
+import { toKeyID } from "@andesine/contracts/primitives";
 import { db } from "#backend/lib/adapters";
 import { hashKey } from "#backend/lib/security";
 import { eq } from "drizzle-orm";

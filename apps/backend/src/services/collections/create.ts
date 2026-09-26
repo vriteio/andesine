@@ -1,13 +1,14 @@
-import { createStructureWebhookRecorder } from "#backend/lib/webhooks/structure";
-import { loadCurrentContentPaths } from "#backend/lib/content/paths";
-import { getAvailableContentName } from "#backend/lib/content/names";
-import { rankBetweenNeighbors, toCollectionID, toUUID } from "#backend/lib/primitives";
-import { collections, effectiveSchemaRevisions, type Collection } from "#backend/db";
+import { collections, effectiveSchemaRevisions } from "@andesine/server/database";
+import { createStructureWebhookRecorder } from "@andesine/server/webhooks/recording";
+import { loadCurrentContentPaths, getAvailableContentName } from "@andesine/server/content";
+import { loadCollectionTree } from "@andesine/server/data";
+import { webhookRetentionPolicy } from "#backend/lib/webhooks/policy";
+import { rankBetweenNeighbors, toCollectionID, toUUID } from "@andesine/contracts/primitives";
+import { type Collection } from "@andesine/contracts/entities";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
-import { loadCollectionTree } from "#backend/lib/data";
 import { withAuthorization } from "#backend/lib/policy";
-import { normalizeCollectionName, ROOT_COLLECTION_NAME } from "#backend/lib/validation";
+import { normalizeCollectionName, ROOT_COLLECTION_NAME } from "@andesine/contracts/content";
 
 interface CreateCollectionInput extends Partial<Pick<Collection, "id" | "name" | "restricted">> {
   parentID?: string;
@@ -93,6 +94,7 @@ const createCollection = withAuthorization<
     const rank = rankBetweenNeighbors(lastSibling?.rank);
 
     const webhooks = await createStructureWebhookRecorder({
+      retentionPolicy: webhookRetentionPolicy,
       database,
       workspaceID,
       collectionIDs: [collectionID]

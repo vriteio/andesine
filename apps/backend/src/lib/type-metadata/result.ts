@@ -1,8 +1,8 @@
-import type { TypeMetadata, TypeMetadataInput } from "#backend/contracts/schemas/type-metadata";
-import type { createContentPaths } from "#backend/lib/content/paths";
-import type { SchemaRevision } from "#backend/lib/schema/contract/recorded";
-import { hashSchemaValue } from "#backend/lib/schema/contract/hash";
-import { toCollectionID, toEntryID, toSchemaRevisionID } from "#backend/lib/primitives";
+import { type createContentPaths } from "@andesine/server/content";
+import { hashSchemaValue } from "@andesine/server/schema";
+import { type TypeMetadata, type TypeMetadataInput } from "@andesine/contracts/type-metadata";
+import { type SchemaRevision } from "@andesine/contracts/schema";
+import { toCollectionID, toEntryID, toSchemaRevisionID } from "@andesine/contracts/primitives";
 import type { MetadataCollectionSource } from "./selection";
 
 interface MetadataSchemaAssociation {

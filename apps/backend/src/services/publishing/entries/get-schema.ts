@@ -1,10 +1,10 @@
+import { loadRecordedSchema } from "@andesine/server/schema";
 import { withPublicWorkspace } from "#backend/lib/policy";
 import {
   loadPublishedEntryVersion,
   type PublishedEntryVersionInput
 } from "#backend/lib/publishing/entry-version";
-import { loadRecordedSchema } from "#backend/lib/schema/recorded";
-import type { SchemaRevision } from "#backend/lib/schema/contract/recorded";
+import { type SchemaRevision } from "@andesine/contracts/schema";
 
 const getPublishedEntrySchema = withPublicWorkspace<
   PublishedEntryVersionInput,

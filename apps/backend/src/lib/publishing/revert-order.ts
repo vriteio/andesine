@@ -2,9 +2,9 @@ import {
   collections,
   entries,
   publishingSnapshotCollections,
-  publishingSnapshotEntries
-} from "#backend/db";
-import type { db } from "#backend/lib/adapters";
+  publishingSnapshotEntries,
+  type DatabaseTransaction
+} from "@andesine/server/database";
 import { and, eq, isNull } from "drizzle-orm";
 import type { PublishingRevertPlan } from "./revert-plan";
 import { resolveSnapshotEntryRanks } from "./snapshot-entry-order";
@@ -13,8 +13,6 @@ interface PublishingRevertRanks {
   collections: Map<string, string>;
   entries: Map<string, string>;
 }
-
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const resolvePublishingRevertRanks = async (
   database: DatabaseTransaction,

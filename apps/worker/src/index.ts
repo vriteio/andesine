@@ -1,29 +1,25 @@
-import { indexAssetSearch } from "./assets/search";
-import { analyzeAsset, scheduleAssetAnalyses } from "./assets/analyze";
-import { processProfileImage } from "./assets/process-profile";
-import { createAssetStorage } from "@andesine/backend/lib/assets/storage";
+import { createAssetStorage } from "@andesine/server/assets";
 import {
   ASSET_ANALYSIS_JOB_NAME,
   ASSET_PROCESS_JOB_NAME,
   PROFILE_IMAGE_JOB_NAME,
   type ProfileImageJobData,
-  type AssetProcessJobData
-} from "@andesine/backend/lib/queue/asset-jobs";
-import { processAsset } from "./assets/process";
-import { maintainAssets } from "./assets/maintenance";
-import {
+  type AssetProcessJobData,
   SEARCH_INDEXING_DEFAULT_JOB_OPTIONS,
-  SEARCH_INDEXING_QUEUE_NAME
-} from "@andesine/backend/lib/queue/constants";
-import {
+  SEARCH_INDEXING_QUEUE_NAME,
   SCHEMA_MIGRATION_JOB_NAME,
   type SchemaMigrationJobData
-} from "@andesine/backend/lib/queue/schema-migration-jobs";
+} from "@andesine/server/queue";
 import {
   createSearchCollectionDefinitions,
   ensureSearchCollections,
   TypesenseClient
-} from "@andesine/backend/lib/search";
+} from "@andesine/server/search";
+import { indexAssetSearch } from "./assets/search";
+import { analyzeAsset, scheduleAssetAnalyses } from "./assets/analyze";
+import { processProfileImage } from "./assets/process-profile";
+import { processAsset } from "./assets/process";
+import { maintainAssets } from "./assets/maintenance";
 import { Queue, Worker, createNodeRedisClient } from "bullmq";
 import { createClient } from "redis";
 import { config } from "./config";

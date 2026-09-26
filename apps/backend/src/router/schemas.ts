@@ -1,7 +1,7 @@
 import { getUserAuthorization } from "#backend/lib/policy";
 import { emitSchemaEvent, emitSchemaVersionEvent } from "#backend/events";
 import { toSchemaVersionSummary } from "#backend/lib/data";
-import { toCollectionID, toSchemaID, toSchemaMigrationID } from "#backend/lib/primitives";
+import { toCollectionID, toSchemaID, toSchemaMigrationID } from "@andesine/contracts/primitives";
 import { authorized } from "#backend/lib/transport/middleware/authorized";
 import { Schema } from "#backend/services/schemas";
 import { api } from "./implement";

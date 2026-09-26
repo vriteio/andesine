@@ -1,12 +1,14 @@
-import type { WebhookEndpoint } from "#backend/contracts/schemas/webhooks";
-import { pageInputType } from "#backend/contracts/schemas/pagination";
+import { getDeliveryTime } from "@andesine/server/webhooks/delivery";
+import {
+  describeWebhookEndpoints,
+  listWebhookEndpoints
+} from "@andesine/server/webhooks/recording";
+import { type WebhookEndpoint, webhookReadRequirements } from "@andesine/contracts/webhooks";
+import { pageInputType } from "@andesine/contracts/pagination";
 import { toPage, type Page, type PageInput } from "#backend/lib/api/pagination";
 import { withAuthorization } from "#backend/lib/policy";
-import { publicID } from "#backend/lib/primitives/id";
-import { getDeliveryTime } from "#backend/lib/webhooks/delivery/locking";
-import { describeWebhookEndpoints, listWebhookEndpoints } from "#backend/lib/webhooks/endpoints";
+import { publicID } from "@andesine/contracts/primitives";
 import { parseWebhookInput } from "#backend/lib/webhooks/management";
-import { webhookReadRequirements } from "#backend/lib/webhooks/permissions";
 
 const listWebhooks = withAuthorization<PageInput, undefined, Page<WebhookEndpoint>>(
   { permissions: webhookReadRequirements, transaction: "snapshot" },

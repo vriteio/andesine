@@ -1,13 +1,18 @@
-import { loadCurrentContentPaths, type CollectionSelector } from "#backend/lib/content/paths";
-import { toCollectionID } from "#backend/lib/primitives";
+import {
+  effectiveSchemaRevisions,
+  schemaVersionContributors,
+  schemaVersions
+} from "@andesine/server/database";
+import { loadCurrentContentPaths } from "@andesine/server/content";
+import { type CollectionSelector } from "@andesine/contracts/content";
+import { toCollectionID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
-import { effectiveSchemaRevisions, schemaVersionContributors, schemaVersions } from "#backend/db";
 import {
   mapEffectiveCollectionSchema,
   mapLocalCollectionSchema,
-  mapSchemaVersionSummary,
-  type CollectionSchemaDetails
+  mapSchemaVersionSummary
 } from "#backend/lib/data";
+import { type CollectionSchemaDetails } from "@andesine/contracts/schema";
 import { withAuthorization } from "#backend/lib/policy";
 import { and, eq } from "drizzle-orm";
 import { resolveLocalCollectionSchema } from "./resolve";
