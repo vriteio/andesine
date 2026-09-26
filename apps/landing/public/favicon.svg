@@ -1,10 +1,10 @@
 <svg width="64px" height="64px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg"
   xmlns:xlink="http://www.w3.org/1999/xlink">
   <defs>
-    <linearGradient x1="80.2744283%" y1="7.54730851%" x2="20.8504217%" y2="93.093388%" id="gradient">
-      <stop stop-color="#FFA166" offset="0%"></stop>
-      <stop stop-color="#EF4444" offset="53.048514%"></stop>
-      <stop stop-color="#FFA166" offset="100%"></stop>
+    <linearGradient x1="0%" y1="100%" x2="100%" y2="0%" id="gradient">
+      <stop stop-color="#f88f52" offset="0%"></stop>
+      <stop stop-color="#ff3617" offset="50%"></stop>
+      <stop stop-color="#f88f52" offset="100%"></stop>
     </linearGradient>
   </defs>
   <path

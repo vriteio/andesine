@@ -1,12 +1,6 @@
 > [!IMPORTANT]
 > This is a WIP branch for _Andesine_ (the v2 rewrite of Vrite). For the latest stable version of Vrite, please check out the [main branch](https://github.com/vriteio/andesine/tree/main)
 
-<p align="center">
-    <a href="https://vrite.io">
-        <img src=".github/assets/cover.png"/>
-    </a>
-    <h1 align="center">Open-source, collaborative developer content platform</h1>
-</p>
 <h4 align="center">
   <a href="https://docs.vrite.io">Usage Guide</a> |
   <a href="https://vrite.io">Website</a> |
