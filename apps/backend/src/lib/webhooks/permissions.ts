@@ -1,4 +1,3 @@
-import type { AuthorizationRequirements } from "#backend/lib/policy/permissions";
 import {
   assertAuthorizationRequirements,
   hasAuthorizationRequirements
@@ -7,19 +6,10 @@ import type { SessionData } from "#backend/lib/policy/session";
 import type * as z from "zod";
 import { webhookCatalog } from "./catalog";
 import type { WebhookEventName, webhookReadPermissionType } from "./events";
+import { webhookReadRequirements, webhookManageRequirements } from "./permission-requirements";
 
 type WebhookReadPermission = z.infer<typeof webhookReadPermissionType>;
 
-const webhookReadRequirements = {
-  session: ["read:webhooks"],
-  key: ["read:webhooks"],
-  oauth: ["read:webhooks"]
-} satisfies AuthorizationRequirements;
-const webhookManageRequirements = {
-  session: ["webhooks"],
-  key: ["webhooks"],
-  oauth: ["webhooks"]
-} satisfies AuthorizationRequirements;
 const assertWebhookReadAccess = (auth: SessionData): void => {
   assertAuthorizationRequirements(auth, webhookReadRequirements);
 };

@@ -4,7 +4,7 @@ import { authenticatedContract, baseContract } from "./base";
 import {
   webhookReadRequirements,
   webhookManageRequirements
-} from "#backend/lib/webhooks/permissions";
+} from "#backend/lib/webhooks/permission-requirements";
 import { pageInputType, paginationType } from "./schemas/pagination";
 import {
   webhookCreateInputType,
