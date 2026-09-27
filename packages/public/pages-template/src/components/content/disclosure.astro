@@ -1,0 +1,26 @@
+---
+interface Props {
+  title: string;
+  open?: boolean;
+}
+
+const { title, open } = Astro.props;
+---
+
+<details
+  open={open}
+  class="my-2 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_0_12px_0px] shadow-gray-200"
+>
+  <summary
+    class="not-prose flex cursor-pointer list-none items-center justify-between gap-2 min-h-9 px-4 py-1.5 font-semibold text-gray-900 transition duration-200 ease-out @hover:bg-gray-100 focus-visible:bg-gray-100 [[open]>&]:bg-gray-100 [&::-webkit-details-marker]:hidden"
+  >
+    {title}
+    <span
+      aria-hidden="true"
+      class="i-lucide:chevron-right h-4.5 w-4.5 shrink-0 text-gray-400 transition-transform duration-200 [[open]>summary>&]:rotate-90"
+    ></span>
+  </summary>
+  <div class="border-t border-gray-200 px-4 py-3 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+    <slot />
+  </div>
+</details>

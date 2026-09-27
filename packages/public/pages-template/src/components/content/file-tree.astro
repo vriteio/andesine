@@ -1,0 +1,47 @@
+---
+import type { FileTreeItem } from "@andesine/pages";
+import { readFileTreeItems } from "@andesine/pages/astro";
+
+interface Props {
+  /** Items, added by the Andesine MDX plugin; nested levels get their items. */
+  items: string | FileTreeItem[];
+  nested?: boolean;
+}
+
+// Matches the app's explorer: 1.75rem rows, 24px gray icons, and a guide line per level.
+const { nested } = Astro.props;
+const items = readFileTreeItems(Astro.props.items);
+---
+
+<ul class:list={["not-prose flex flex-col gap-0.5 font-medium text-gray-700", !nested && "my-2"]}>
+  {
+    items.map((item) => (
+      <li class="flex flex-col">
+        <div class="flex min-h-7 items-center gap-1 pl-0.5">
+          <span class="flex h-6 w-6 shrink-0 items-center justify-center">
+            <span
+              aria-hidden="true"
+              class:list={[
+                "h-6 w-6 text-gray-400",
+                item.type === "folder"
+                  ? "i-material-symbols:folder-open-rounded"
+                  : "i-lucide:file-text"
+              ]}
+            />
+          </span>
+          <span class="line-clamp-1 flex-1">{item.name}</span>
+        </div>
+        {item.children.length > 0 && (
+          <div class="mt-0.5 flex">
+            <div class="flex min-w-3.5 justify-end pl-0.5">
+              <div class="h-full w-px rounded-full bg-gray-300" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <Astro.self items={item.children} nested />
+            </div>
+          </div>
+        )}
+      </li>
+    ))
+  }
+</ul>

@@ -1,0 +1,16 @@
+---
+// Wraps an ordered list; each item is one step, and its first paragraph is the step title.
+---
+
+<div
+  class:list={[
+    "my-2 [&>ol]:(list-none p-0 [counter-reset:step])",
+    "[&>ol>li]:(relative m-0 pl-11 [counter-increment:step]) [&>ol>li:not(:last-child)]:pb-4",
+    "[&>ol>li]:before:(absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-lg bg-white text-sm font-medium text-gray-700 shadow-md shadow-gray-200 outline outline-1 -outline-offset-1 outline-gray-200 content-[counter(step)])",
+    "[&>ol>li]:after:(absolute bottom-0 left-3.5 top-9 w-px rounded-full bg-gray-200 content-[''])",
+    "[&>ol>li>p:first-child]:(mb-0 mt-0.5 font-semibold text-gray-900)",
+    "[&>ol>li>*+*]:mt-1 [&>ol>li>*:last-child]:mb-0"
+  ]}
+>
+  <slot />
+</div>

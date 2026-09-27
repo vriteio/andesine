@@ -1,0 +1,34 @@
+---
+import { ScrollArea } from "../primitives/scroll-area";
+import { CopyButton } from "./copy-button";
+
+interface Props {
+  "data-language"?: string;
+  "data-title"?: string;
+  [attribute: string]: unknown;
+}
+
+// Shiki's inline background and class are replaced by the card styles.
+const {
+  "data-language": language,
+  "data-title": title,
+  "class": _class,
+  "style": _style,
+  ...rest
+} = Astro.props;
+---
+
+<figure
+  data-code
+  class="not-prose my-2 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_0_12px_0px] shadow-gray-200 [[data-code-group]_&]:(my-0 rounded-none border-none shadow-none)"
+>
+  <figcaption
+    class="flex h-9 items-center justify-between gap-2 border-b border-gray-200 pl-3 pr-1 [[data-code-group]_&]:hidden"
+  >
+    <span class="truncate font-mono text-xs text-gray-500">{title ?? language}</span>
+    <CopyButton client:visible />
+  </figcaption>
+  <ScrollArea client:visible orientation="horizontal">
+    <pre {...rest} class="p-4 font-mono text-sm leading-6 text-gray-700"><slot /></pre>
+  </ScrollArea>
+</figure>

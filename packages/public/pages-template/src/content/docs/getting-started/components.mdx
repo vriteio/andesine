@@ -1,0 +1,156 @@
+---
+title: Components
+description: Use callouts, tabs, code groups, and other components in MDX pages.
+order: 3
+---
+
+MDX pages can use the components below without imports. `src/components/content/`
+holds the components, and `index.ts` lists the names that pages can use.
+
+## Callouts
+
+<Callout title="Note">A callout shows information that the reader must not miss.</Callout>
+
+<Callout type="tip">Use `type` to show a tip, a warning, or a danger callout.</Callout>
+
+<Callout type="warning" title="Warning">
+  Check the result before you continue.
+</Callout>
+
+<Callout type="danger" title="Danger">
+  This action deletes data permanently.
+</Callout>
+
+```mdx
+<Callout type="tip" title="Tip">
+  Callout content.
+</Callout>
+```
+
+## Code
+
+Code blocks show their `title`, or else their language, and a copy button.
+
+```ts title="andesine.config.ts"
+import { defineConfig } from "@andesine/pages";
+
+export default defineConfig({ name: "Docs", site: "https://docs.example.com" });
+```
+
+A code group puts code blocks into tabs. All code groups on the site share the
+selected tab when they have a tab with the same label.
+
+<CodeGroup>
+
+```sh title="npm"
+npm install
+```
+
+```sh title="pnpm"
+pnpm install
+```
+
+```sh title="yarn"
+yarn install
+```
+
+</CodeGroup>
+
+## Tabs
+
+<Tabs syncKey="platform">
+  <Tab label="macOS">Open the **Terminal** app.</Tab>
+  <Tab label="Windows">Open **PowerShell**.</Tab>
+  <Tab label="Linux">Open your terminal emulator.</Tab>
+</Tabs>
+
+Tabs with the same `syncKey` share their selection:
+
+<Tabs syncKey="platform">
+  <Tab label="macOS">Press `Cmd` + `Space`.</Tab>
+  <Tab label="Windows">Press the `Windows` key.</Tab>
+  <Tab label="Linux">Use the application menu.</Tab>
+</Tabs>
+
+## Steps
+
+<Steps>
+
+1. Install the dependencies
+
+   Run `npm install` in the project directory.
+
+2. Set the site name
+
+   Change `name` in `andesine.config.ts`.
+
+3. Build the site
+
+   Run `npm run build`.
+
+</Steps>
+
+## File tree
+
+<FileTree>
+
+- src/
+  - content/
+    - docs/
+      - index.mdx
+  - layouts/
+    - page.astro
+- andesine.config.ts
+- uno.config.ts
+
+</FileTree>
+
+## Cards
+
+<CardGrid>
+  <Card title="Configuration" icon="i-lucide:settings" href="../configuration/">
+    Change the site settings.
+  </Card>
+  <Card title="Writing pages" icon="i-lucide:file-text" href="../writing-pages/">
+    Add Markdown and MDX pages.
+  </Card>
+</CardGrid>
+
+## Disclosure
+
+<Disclosure title="Why MDX?">
+  MDX lets pages use components. Plain Markdown pages get the same text styles, but no components.
+</Disclosure>
+
+## Visibility
+
+`Visibility` shows content to one audience. Content `for="humans"` is only on the
+web page. Content `for="agents"` is only in the Markdown version of the page, which
+AI agents read. Blocks cannot be nested.
+
+<Visibility for="humans">
+  Select **Copy page** at the top of this page to copy its Markdown.
+</Visibility>
+
+<Visibility for="agents">
+  The web page shows a "Copy page" button here. Fetch this page's URL with `index.md` added to get
+  the same Markdown.
+</Visibility>
+
+```mdx
+<Visibility for="humans">Select **Settings** in the header.</Visibility>
+
+<Visibility for="agents">Edit `andesine.config.ts` to change the settings.</Visibility>
+```
+
+## Text
+
+Text can have **bold**, _italic_, `inline code`, and [links](../configuration/).
+
+> A quotation, with a source below it.
+
+| Component  | Interactive |
+| ---------- | ----------- |
+| Callout    | No          |
+| Tabs       | Yes         |
+| Code group | Yes         |

@@ -1,0 +1,118 @@
+---
+import type { Element, RootContent } from "hast";
+import { toHtml } from "hast-util-to-html";
+import { isElement, readElement, toFileTreeItems } from "../runtime.js";
+
+interface Props {
+  nodes: RootContent[];
+  /** The template's content components, keyed by element name, and `pre` for code. */
+  components: Record<string, unknown>;
+}
+
+const { nodes, components } = Astro.props;
+const marker = "@@andesine-children@@";
+// Subtrees without custom elements or code blocks render as one HTML string.
+const isPlain = (node: RootContent): boolean =>
+  !isElement(node) ||
+  (!node.properties.dataAndesineElement && node.tagName !== "pre" && node.children.every(isPlain));
+const getComponent = (name: string): any => {
+  if (!components[name]) throw new Error(`The template has no component for <${name}>.`);
+
+  return components[name];
+};
+const getLabels = (items: Element[], label: (item: Element) => string): string[] => {
+  const labels = items.map(label);
+
+  if (new Set(labels).size !== labels.length) {
+    throw new Error(`Tabs need a unique label for each tab: ${labels.join(", ")}.`);
+  }
+
+  return labels;
+};
+// Andesine code blocks have no titles, so a repeated language gets a number, e.g. `bash 2`.
+const getCodeLabels = (items: Element[]): string[] => {
+  const counts = new Map<string, number>();
+
+  return items.map((pre) => {
+    const language = String(pre.properties.dataLanguage || "Code");
+    const count = (counts.get(language) ?? 0) + 1;
+
+    counts.set(language, count);
+
+    return count > 1 ? `${language} ${count}` : language;
+  });
+};
+---
+
+{
+  nodes.map((node) => {
+    if (isPlain(node)) return <Fragment set:html={toHtml(node)} />;
+
+    const element = node as Element;
+    const custom = readElement(element);
+    const children = element.children.filter(isElement);
+
+    if (custom?.name === "Tabs") {
+      const Component = getComponent("Tabs");
+      const labels = getLabels(children, (tab) => String(readElement(tab)?.props.label));
+
+      return (
+        <Component values={JSON.stringify(labels)} syncKey={custom.props.syncKey}>
+          {(index: number) => (
+            <Astro.self nodes={children[index]!.children} components={components} />
+          )}
+        </Component>
+      );
+    }
+
+    if (custom?.name === "CodeGroup") {
+      const Component = getComponent("CodeGroup");
+      const labels = getCodeLabels(children);
+
+      return (
+        <Component values={JSON.stringify(labels)}>
+          {(index: number) => <Astro.self nodes={[children[index]!]} components={components} />}
+        </Component>
+      );
+    }
+
+    if (custom?.name === "FileTree") {
+      const Component = getComponent("FileTree");
+
+      return <Component items={JSON.stringify(toFileTreeItems(children[0]!))} />;
+    }
+
+    if (custom) {
+      const Component = getComponent(custom.name);
+
+      return (
+        <Component {...custom.props}>
+          <Astro.self nodes={element.children} components={components} />
+        </Component>
+      );
+    }
+
+    if (element.tagName === "pre" && components.pre) {
+      const Code = getComponent("pre");
+
+      return (
+        <Code data-language={element.properties.dataLanguage}>
+          <Fragment set:html={toHtml(element.children)} />
+        </Code>
+      );
+    }
+
+    // Keeps the element, and renders its children with this component.
+    const [open, close] = toHtml({ ...element, children: [{ type: "text", value: marker }] }).split(
+      marker
+    );
+
+    return (
+      <>
+        <Fragment set:html={open} />
+        <Astro.self nodes={element.children} components={components} />
+        <Fragment set:html={close} />
+      </>
+    );
+  })
+}

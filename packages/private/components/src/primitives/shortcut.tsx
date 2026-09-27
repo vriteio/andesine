@@ -1,25 +1,35 @@
 import clsx from "clsx";
-import { type Component, createMemo, For, Switch, Match } from "solid-js";
+import { type Component, createMemo, createSignal, For, Switch, Match, onMount } from "solid-js";
 
 interface ShortcutProps {
+  /** Keys joined with `+`, e.g. `$mod+k`. `$mod` is Command on Apple devices and Ctrl elsewhere. */
   shortcut: string;
   class?: string;
 }
 
 const Shortcut: Component<ShortcutProps> = (props) => {
+  // Detected after mount, so the server and hydration render the same keys.
+  const [isApple, setIsApple] = createSignal(false);
   const shortcutPieces = createMemo(() => {
     return props.shortcut.split("+").map((piece) => {
-      return piece.toLowerCase().trim();
+      const key = piece.toLowerCase().trim();
+
+      return key === "$mod" && !isApple() ? "ctrl" : key;
     });
   });
 
+  onMount(() => setIsApple(/Mac|iPhone|iPad/.test(navigator.userAgent)));
+
   return (
-    <span class={clsx(":base: font-mono flex items-center justify-center", props.class)}>
+    <kbd class={clsx(":base: font-mono flex items-center justify-center", props.class)}>
       <For each={shortcutPieces()}>
         {(piece) => (
           <Switch>
             <Match when={piece === "$mod"}>
               <span class="inline-block i-lucide:command" />
+            </Match>
+            <Match when={piece === "ctrl" || (piece === "alt" && !isApple())}>
+              <span class="pr-0.5 leading-[1] font-light">{piece === "ctrl" ? "Ctrl" : "Alt"}</span>
             </Match>
             <Match when={piece === "alt"}>
               <span class="inline-block i-lucide:option" />
@@ -44,7 +54,7 @@ const Shortcut: Component<ShortcutProps> = (props) => {
           </Switch>
         )}
       </For>
-    </span>
+    </kbd>
   );
 };
 

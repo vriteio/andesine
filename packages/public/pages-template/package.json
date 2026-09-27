@@ -1,0 +1,41 @@
+{
+  "name": "@andesine/pages-template",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "check": "astro check",
+    "preview": "astro preview"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@andesine/pages": "workspace:*",
+    "@andesine/ui": "workspace:*",
+    "@ark-ui/solid": "5.38.0",
+    "@astrojs/mdx": "8.0.1",
+    "@astrojs/node": "11.1.6",
+    "@astrojs/solid-js": "7.0.2",
+    "@fontsource-variable/jetbrains-mono": "5.3.0",
+    "@fontsource-variable/nunito": "5.3.0",
+    "@fontsource/nunito": "^5.3.0",
+    "@resvg/resvg-js": "^2.6.2",
+    "astro": "7.3.1",
+    "clsx": "^2.1.1",
+    "satori": "^0.33.5",
+    "solid-js": "^1.9.14"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@iconify/json": "^2.2.509",
+    "@types/node": "26.1.2",
+    "@unocss/astro": "66.7.5",
+    "@unocss/reset": "66.7.5",
+    "typescript": "6.0.3",
+    "unocss": "66.7.5"
+  }
+}

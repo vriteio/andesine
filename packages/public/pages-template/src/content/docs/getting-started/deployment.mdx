@@ -1,0 +1,106 @@
+---
+title: Deployment
+description: Put the site on a static host, a Node.js server, or a serverless platform.
+order: 4
+---
+
+The host that a site needs depends on its sources.
+
+| Sources    | Build output                    | Hosts                                         |
+| ---------- | ------------------------------- | --------------------------------------------- |
+| Files only | Static files in `dist/`         | Any static host                               |
+| Andesine   | Static pages, and server routes | A Node.js server, Vercel, Netlify, Cloudflare |
+
+Andesine search and AI answers use server routes at `/_andesine/`, which keep the
+API key on the server. With `rendering: "ssr"`, pages and page lists use server
+routes too. All other pages stay static files, and only the server routes run on
+the server.
+
+## Node.js
+
+This is the default. `astro.config.ts` adds the `@astrojs/node` adapter when the
+site has an Andesine source.
+
+```sh
+npm run build
+node dist/server/entry.mjs
+```
+
+Set `ANDESINE_API_KEY` in the server environment. `HOST` and `PORT` set the
+address of the server.
+
+## Vercel and Netlify
+
+Replace the Node.js adapter with the adapter of the platform:
+
+```sh
+npm uninstall @astrojs/node
+npm install @astrojs/vercel
+```
+
+```ts title="astro.config.ts"
+import vercel from "@astrojs/vercel";
+
+export default defineConfig({
+  adapter: config.sources.some((source) => source.type === "andesine") ? vercel() : undefined
+  // ...
+});
+```
+
+For Netlify, use `@astrojs/netlify` and `netlify()`. The platform serves the
+static pages from its CDN, and runs the server routes as one function. Set
+`ANDESINE_API_KEY` in the project settings, for builds and for functions.
+
+<Callout type="note">
+  The limit of 10 AI questions a minute for each visitor is kept in the memory of each function
+  instance, so on serverless platforms it is less strict. The Andesine API applies its own limits
+  too.
+</Callout>
+
+## Cloudflare
+
+Cloudflare Workers support build-time Andesine sources. Request-time sources are
+not supported, because the social image renderer and the icon sets need Node.js.
+
+```sh
+npm uninstall @astrojs/node
+npm install @astrojs/cloudflare
+npm install --save-dev wrangler
+```
+
+Build the pages with Node.js, so that social images can use the native renderer:
+
+```ts title="astro.config.ts"
+import cloudflare from "@astrojs/cloudflare";
+
+export default defineConfig({
+  adapter: config.sources.some((source) => source.type === "andesine")
+    ? cloudflare({ prerenderEnvironment: "node" })
+    : undefined
+  // ...
+});
+```
+
+Add a `wrangler.jsonc` with the name of the Worker:
+
+```jsonc title="wrangler.jsonc"
+{
+  "name": "docs",
+  "compatibility_date": "2026-09-25"
+}
+```
+
+Set the API key as a secret of the Worker:
+
+```sh
+npx wrangler secret put ANDESINE_API_KEY
+```
+
+The build also needs `ANDESINE_API_KEY` in its environment, for example in the
+settings of Workers Builds.
+
+## Content updates
+
+Build-time sources show new publications after the next build. Start a build from
+a deploy hook of the platform when you publish. Request-time sources show new
+publications on the next request.

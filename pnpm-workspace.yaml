@@ -58,3 +58,6 @@ allowBuilds:
   sqlite3: false
   workerd: true
 minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - "@andesine/sdk@0.1.0"
+  - "@andesine/converters@0.1.0"

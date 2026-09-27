@@ -1,0 +1,44 @@
+---
+import type { PageContext } from "@andesine/pages";
+import { IconButton } from "../primitives/button";
+
+interface Props {
+  page: PageContext;
+}
+
+const { page } = Astro.props;
+const { site } = page;
+const updated =
+  page.updatedAt &&
+  new Intl.DateTimeFormat(site.language, { dateStyle: "long", timeZone: "UTC" }).format(
+    new Date(page.updatedAt)
+  );
+---
+
+<!-- A line with one item keeps it at the start: icons go left when they wrap or have no date. -->
+<footer class="flex min-h-8 flex-wrap items-center justify-between gap-4">
+  {
+    updated && (
+      <p class="text-sm text-gray-400">
+        Last updated <time datetime={page.updatedAt}>{updated}</time>
+      </p>
+    )
+  }
+  {
+    site.socialLinks.length > 0 && (
+      <div class="flex items-center gap-1">
+        {site.socialLinks.map((link) => (
+          <IconButton
+            link={link.href}
+            icon={link.icon}
+            variant="text"
+            text="softer"
+            size="small"
+            aria-label={link.label}
+            title={link.label}
+          />
+        ))}
+      </div>
+    )
+  }
+</footer>

@@ -1,0 +1,164 @@
+---
+title: Configuration
+description: Change the site settings in andesine.config.ts.
+order: 1
+---
+
+`andesine.config.ts` exports the site settings with `defineConfig()`. The build
+stops with a list of errors when a setting is not valid.
+
+## Site settings
+
+| Setting       | Description                                                                    |
+| ------------- | ------------------------------------------------------------------------------ |
+| `name`        | The site name, in the header and the page titles.                              |
+| `description` | The default page description.                                                  |
+| `site`        | The public URL of the site.                                                    |
+| `base`        | The URL path of the site. The default is `/`.                                  |
+| `logo`        | An image `src`, its `format` (`icon` or `full`), and `title` to show the name. |
+| `favicon`     | An image path for the browser tab icon.                                        |
+| `brand`       | The `primary`, `secondary`, and `tertiary` brand colors.                       |
+| `links`       | Icon links at the top of the navigation, with an `icon`.                       |
+| `cta`         | The main action link in the header, with an optional icon.                     |
+| `socialLinks` | Icon links in the footer, with a `label` and an `icon`.                        |
+| `pageActions` | The page actions menu, or `false` to hide it.                                  |
+| `agents`      | `instructions` and a `skill` file for AI agents.                               |
+| `social`      | Images for link previews. See below.                                           |
+
+A logo with `format: "icon"` is a square mark next to the site name. A logo with
+`format: "full"` is a wordmark, followed by a bar and the site name; set `alt` to
+the text in the image:
+
+```ts
+logo: { src: "./src/assets/logo.svg", format: "full", alt: "Andesine" }
+```
+
+Relative image paths are relative to `andesine.config.ts`.
+
+## Outputs
+
+Each page has a Markdown version at its URL plus `index.md`, for example
+`/getting-started/index.md`, and at its URL with `.md` instead of the last slash,
+for example `/getting-started.md`. The site also has `sitemap.xml`, `llms.txt`
+(also at `/.well-known/llms.txt`), `llms-full.txt` with all pages in one file,
+`robots.txt`, and a not-found page. Pages with `searchHidden: true` are not in
+`sitemap.xml` and the `llms` files, and have `noindex`.
+
+The site also has a `skill.md` for AI agents, after the
+[Agent Skills](https://agentskills.io/specification) format. It says what the
+documentation covers and how to read it, with the main topics of each section.
+Agents find it in `/.well-known/agent-skills/index.json` and
+`/.well-known/skills/index.json`. To write your own skill, set `agents.skill` to
+its path. The file needs frontmatter with a `name` and a `description`:
+
+```ts
+agents: {
+  skill: "./SKILL.md";
+}
+```
+
+Each page has an image for link previews at its URL plus `social.png`. The
+template's `src/components/social/card.ts` sets its design: the logo, the page's
+group, title, and description. `social.background` sets a background image for all
+cards. With `social.generate: false`, pages use `social.image` instead. Use a PNG
+or JPEG image, because social sites do not show SVG images.
+
+```ts
+social: {
+  background: "./src/assets/social-background.png";
+}
+```
+
+Each page has schema.org data for search engines and agents, and shows its last
+update date when it is known. A URL with `?q=`, for example `/?q=install`, opens
+the search with that query.
+
+A request for a page URL with `Accept: text/markdown` gets the Markdown version,
+and a missing Markdown page gets a Markdown 404 with links to related pages. This
+works for pages that render on the server, and in development. Static hosts send
+built pages as files, so add a rewrite rule on the host. For example, on Vercel:
+
+```json
+{
+  "rewrites": [
+    {
+      "source": "/:path*/",
+      "has": [{ "type": "header", "key": "accept", "value": ".*text/markdown.*" }],
+      "destination": "/:path*/index.md"
+    }
+  ]
+}
+```
+
+`agents.instructions` adds site-wide guidance for AI agents to each Markdown
+page, `llms.txt`, and `llms-full.txt`:
+
+```ts
+agents: {
+  instructions: "Use the v2 SDK in all examples.";
+}
+```
+
+The page actions menu copies the page or its link, opens its Markdown version,
+and opens AI chat services with the page as context. `openIn` sets the services:
+
+```ts
+pageActions: {
+  openIn: ["chatgpt", "claude", "perplexity"];
+}
+```
+
+## Sources
+
+A source supplies pages. A files source reads the Markdown and MDX files in a
+directory:
+
+```ts
+sources: [{ id: "docs", type: "files", directory: "src/content/docs" }];
+```
+
+Set `mount` to put the pages of a source below a URL path, for example
+`mount: "/guides/"`.
+
+## Andesine sources
+
+An Andesine source reads the latest publication of an Andesine collection:
+
+```ts
+sources: [{ id: "platform", type: "andesine", collection: "coll_...", mount: "/platform/" }];
+```
+
+Set `ANDESINE_API_KEY` in `.env` or in the build environment. With the default
+`rendering: "ssg"`, the build reads the publication and copies its images into the
+site. With `rendering: "ssr"`, the server reads the navigation tree and the current
+page for each request. Sites with Andesine sources need a server; see
+[Deployment](../deployment/).
+
+These entry properties control the pages. All of them are optional.
+
+| Property       | Type     | Description                                     |
+| -------------- | -------- | ----------------------------------------------- |
+| `description`  | Text     | The page summary.                               |
+| `searchHidden` | Checkbox | Removes the page from search and agent files.   |
+| `toc`          | Checkbox | Shows the table of contents. The default is on. |
+| `layout`       | Select   | `docs`, or `wide` for a page without a ToC.     |
+
+URLs come from the entry slugs, and navigation labels from the entry names.
+Collections become navigation groups. An entry with the slug `index` is the
+landing page of its collection, and takes the collection's name. Content can use the same components as
+MDX pages, with the same names and props.
+
+## Sections
+
+Sections put sources into tabs. When you set sections, each source must be in
+one section:
+
+```ts
+sections: [
+  { id: "guides", label: "Guides", icon: "i-lucide:book-open", sources: ["docs"] },
+  { id: "reference", label: "Reference", icon: "i-lucide:braces", sources: ["api"] }
+];
+```
+
+Sections show as tabs in the header. With `sectionsDisplay: "navigation"`, they
+show as links at the top of the navigation instead, before the `links`.

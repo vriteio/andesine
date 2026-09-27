@@ -60,7 +60,7 @@ export default tseslint.config(
           allowDefaultProject: [
             "*.config.ts",
             "apps/*/*.config.ts",
-            "packages/public/*/*.config.ts"
+            "packages/public/*/rolldown.config.ts"
           ]
         },
         tsconfigRootDir: import.meta.dirname

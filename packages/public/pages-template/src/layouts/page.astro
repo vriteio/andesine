@@ -1,0 +1,194 @@
+---
+import type { PageContext } from "@andesine/pages";
+import nunito from "@fontsource-variable/nunito/files/nunito-latin-wght-normal.woff2?url";
+import { PageScrollShadow } from "../components/effects/page-scroll-shadow";
+import { PageScrollbar } from "../components/effects/page-scrollbar";
+import Footer from "../components/layout/footer.astro";
+import { GroupLabel } from "../components/layout/group-label";
+import Header from "../components/layout/header.astro";
+import { MobileNavigation } from "../components/layout/mobile-navigation";
+import { Outline } from "../components/layout/outline";
+import { PageActions } from "../components/layout/page-actions";
+import { Sidebar } from "../components/layout/sidebar";
+import "@unocss/reset/tailwind.css";
+import "../styles/global.css";
+
+interface Props {
+  page: PageContext;
+}
+
+const { page } = Astro.props;
+const { site } = page;
+const wide = page.layout === "wide";
+const hasTabs = page.sections.length > 0 && site.sectionsDisplay === "tabs";
+// Without tabs, sections show at the top of the navigation.
+const navigationSections = hasTabs ? [] : page.sections;
+const group = page.breadcrumbs.at(-1);
+const storageKey = `${site.storageKey}:navigation`;
+// The header is 4rem high, and 6.5rem with the section tabs.
+const stickyClass = hasTabs ? "top-26 h-[calc(100dvh-6.5rem)]" : "top-16 h-[calc(100dvh-4rem)]";
+---
+
+<!doctype html>
+<html lang={site.language} class={hasTabs ? "scroll-pt-30" : "scroll-pt-20"}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#f9fafb" />
+    <title>{page.meta.title}</title>
+    <!-- Ready for the first frame, so page transitions do not show the fallback font. -->
+    <link rel="preload" href={nunito} as="font" type="font/woff2" crossorigin />
+    {page.meta.description && <meta name="description" content={page.meta.description} />}
+    {page.canonical && <link rel="canonical" href={page.canonical} />}
+    {page.noindex && <meta name="robots" content="noindex" />}
+    {page.markdown && <link rel="alternate" type="text/markdown" href={page.markdown} />}
+    <link rel="sitemap" href={`${site.href}sitemap.xml`} />
+    {site.favicon && <link rel="icon" href={site.favicon} />}
+    <meta name="generator" content="Andesine Pages" />
+    <meta property="og:type" content={page.meta.type} />
+    {/* Open Graph needs a region, e.g. `en_US`; a language alone is not valid. */}
+    {
+      /[-_]/.test(site.language) && (
+        <meta property="og:locale" content={site.language.replace("-", "_")} />
+      )
+    }
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={page.title} />
+    {page.meta.description && <meta property="og:description" content={page.meta.description} />}
+    {page.canonical && <meta property="og:url" content={page.canonical} />}
+    {
+      page.meta.type === "article" && page.updatedAt && (
+        <meta property="article:modified_time" content={page.updatedAt} />
+      )
+    }
+    {
+      page.image && (
+        <>
+          <meta property="og:image" content={page.image.url} />
+          <meta property="og:image:alt" content={page.title} />
+          {page.image.width && (
+            <meta property="og:image:width" content={String(page.image.width)} />
+          )}
+          {page.image.height && (
+            <meta property="og:image:height" content={String(page.image.height)} />
+          )}
+          <meta name="twitter:image" content={page.image.url} />
+        </>
+      )
+    }
+    <meta name="twitter:card" content={page.image ? "summary_large_image" : "summary"} />
+    {
+      page.structuredData && (
+        <script is:inline type="application/ld+json" set:html={page.structuredData} />
+      )
+    }
+  </head>
+  <body>
+    <a
+      href="#main-content"
+      class="sr-only focus:(not-sr-only fixed left-4 top-4 z-90 rounded-lg bg-white px-3 py-2 text-sm font-medium text-gray-900 shadow-md outline outline-2 outline-tertiary)"
+    >
+      Skip to content
+    </a>
+    <!-- For agents that read the HTML; hidden from people and screen readers. -->
+    <a href={`${site.href}llms.txt`} class="sr-only" tabindex="-1" aria-hidden="true">
+      Documentation index for AI agents: {`${site.href}llms.txt`}
+    </a>
+    <div
+      class="mx-auto grid min-h-screen max-w-[90rem] grid-cols-1 content-start md:grid-cols-[17rem_minmax(0,1fr)] xl:grid-cols-[17rem_minmax(0,1fr)_17rem]"
+    >
+      <Header page={page} />
+      <Sidebar
+        client:media="(min-width: 768px)"
+        navigation={page.navigation}
+        sections={navigationSections}
+        links={site.links}
+        storageKey={storageKey}
+        class:list={["hidden md:(sticky block) [view-transition-name:sidebar]", stickyClass]}
+      />
+      <main
+        id="main-content"
+        class:list={[
+          "relative min-w-0 w-full justify-self-center px-4 pb-16 pt-6 md:px-8 [view-transition-name:content]",
+          wide ? "max-w-screen-lg xl:col-span-2" : "max-w-screen-md"
+        ]}
+      >
+        <!-- Starts at the page top, so the sticky shadows align with the viewport from the start. -->
+        <div
+          class:list={[
+            "pointer-events-none absolute inset-x-0 bottom-0 z-10",
+            hasTabs ? "-top-26" : "-top-16"
+          ]}
+        >
+          <PageScrollShadow client:idle topClass={hasTabs ? "top-26" : "top-16"} />
+        </div>
+        <article class="flex flex-col">
+          {
+            group && (
+              <div class="flex min-h-7 items-center justify-between gap-4">
+                <GroupLabel group={group} />
+                {page.actions && page.markdown && (
+                  <PageActions client:idle actions={page.actions} markdown={page.markdown} />
+                )}
+              </div>
+            )
+          }
+          <div class="flex items-start justify-between gap-4">
+            <h1 class="min-w-0 text-3xl font-semibold text-gray-900">{page.title}</h1>
+            {/* Without a group label, the actions sit centered on the title's first line. */}
+            {
+              !group && page.actions && page.markdown && (
+                <div class="mt-1 shrink-0">
+                  <PageActions client:idle actions={page.actions} markdown={page.markdown} />
+                </div>
+              )
+            }
+          </div>
+          {page.description && <p class="text-lg text-gray-500">{page.description}</p>}
+          {
+            page.fragments.summary && (
+              <div class="prose mt-4 max-w-none border-b border-gray-200 pb-6 text-gray-600 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                <slot name="summary" />
+              </div>
+            )
+          }
+          <div class="prose max-w-none">
+            <slot />
+          </div>
+          {
+            page.fragments.aside && (
+              <aside
+                aria-label="More information"
+                class="prose prose-sm mt-10 max-w-none border-t border-gray-200 pt-6 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+              >
+                <slot name="aside" />
+              </aside>
+            )
+          }
+        </article>
+        {
+          (page.updatedAt || site.socialLinks.length > 0) && (
+            <div class="mt-10">
+              <Footer page={page} />
+            </div>
+          )
+        }
+      </main>
+      {
+        !wide && page.headings.length > 0 && (
+          <aside class:list={["hidden xl:(sticky flex flex-col px-4 pb-8 pt-6)", stickyClass]}>
+            <Outline client:media="(min-width: 1280px)" headings={page.headings} />
+          </aside>
+        )
+      }
+    </div>
+    <PageScrollbar client:idle />
+    <MobileNavigation
+      client:media="(max-width: 767.9px)"
+      page={{ site, navigation: page.navigation }}
+      sections={navigationSections}
+      storageKey={storageKey}
+    />
+  </body>
+</html>

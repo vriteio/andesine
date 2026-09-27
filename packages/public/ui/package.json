@@ -1,0 +1,66 @@
+{
+  "name": "@andesine/ui",
+  "version": "0.1.0",
+  "description": "Headless documentation components for Andesine Pages",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "exports": {
+    "./solid": {
+      "types": "./dist/solid/types/index.d.ts",
+      "solid": "./dist/solid/source/index.jsx",
+      "browser": "./dist/solid/client/index.js",
+      "node": "./dist/solid/server/index.js",
+      "default": "./dist/solid/server/index.js"
+    }
+  },
+  "scripts": {
+    "build": "rolldown -c rolldown.config.ts",
+    "typecheck": "tsc --noEmit",
+    "prepack": "turbo run lint:package --filter=@andesine/ui",
+    "lint:package": "publint --strict"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "peerDependencies": {
+    "solid-js": "^1.9.14"
+  },
+  "devDependencies": {
+    "@babel/core": "7.29.7",
+    "babel-preset-solid": "1.9.12",
+    "publint": "0.3.24",
+    "rolldown": "^1.2.2",
+    "rolldown-plugin-dts": "^0.28.6",
+    "solid-js": "1.9.14",
+    "typescript": "6.0.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vriteio/andesine.git",
+    "directory": "packages/public/ui"
+  },
+  "homepage": "https://github.com/vriteio/andesine/tree/andesine/packages/public/ui#readme",
+  "bugs": {
+    "url": "https://github.com/vriteio/andesine/issues"
+  },
+  "keywords": [
+    "andesine",
+    "documentation",
+    "headless",
+    "solid"
+  ],
+  "dependencies": {
+    "@ark-ui/solid": "5.38.0"
+  }
+}

@@ -1,0 +1,26 @@
+---
+interface Props {
+  type?: "note" | "tip" | "warning" | "danger";
+  title?: string;
+}
+
+const { type = "note", title } = Astro.props;
+const icons = {
+  note: "i-lucide:info text-gray-500",
+  tip: "i-lucide:lightbulb bg-gradient-to-tr",
+  warning: "i-lucide:triangle-alert text-amber-500",
+  danger: "i-lucide:octagon-alert text-red-500"
+};
+---
+
+<aside
+  role="note"
+  data-type={type}
+  class="my-2 flex gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-[0_0_12px_0px] shadow-gray-200"
+>
+  <span aria-hidden="true" class:list={["mt-1 h-5 w-5 shrink-0", icons[type]]}></span>
+  <div class="min-w-0 flex-1">
+    {title && <p class="not-prose font-semibold text-gray-900">{title}</p>}
+    <div class="[&>*:first-child]:mt-0 [&>*:last-child]:mb-0"><slot /></div>
+  </div>
+</aside>

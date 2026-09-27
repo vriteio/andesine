@@ -1,0 +1,35 @@
+---
+import config from "virtual:andesine/config";
+import Layout from "virtual:andesine/layout";
+import { components } from "virtual:andesine/components";
+import Content from "../content.astro";
+import { getStaticPaths as getPaths, renderRoute } from "../../runtime.js";
+
+export const getStaticPaths = () => getPaths(config);
+
+const { route } = Astro.props;
+
+if (route.type === "redirect") return Astro.redirect(route.target);
+
+const { Content: FileContent, nodes, summary, aside, iconCSS, page } = await renderRoute(route);
+---
+
+<Layout page={page}>
+  {iconCSS && <style is:inline set:html={iconCSS} />}
+  {summary && <Content slot="summary" nodes={summary.children} components={components} />}
+  {aside && <Content slot="aside" nodes={aside.children} components={components} />}
+  {
+    route.indexed ? (
+      <div data-pagefind-body data-pagefind-filter={`source:${route.sourceID}`}>
+        <span data-pagefind-meta="title" hidden>
+          {page.title}
+        </span>
+        <FileContent components={components} />
+      </div>
+    ) : FileContent ? (
+      <FileContent components={components} />
+    ) : (
+      <Content nodes={nodes.children} components={components} />
+    )
+  }
+</Layout>

@@ -1,0 +1,12 @@
+---
+import config from "virtual:andesine/config";
+import Layout from "virtual:andesine/layout";
+import { getNotFoundContext } from "../../runtime.js";
+
+const page = await getNotFoundContext(config);
+---
+
+<Layout page={page}>
+  <p>This page does not exist, or it moved to a different address.</p>
+  <p><a href={page.site.href}>Go to the home page</a></p>
+</Layout>

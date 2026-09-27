@@ -1,0 +1,35 @@
+---
+title: Writing pages
+description: Add Markdown and MDX pages, and control their URLs and navigation.
+order: 2
+---
+
+Each `.md` or `.mdx` file in a files source is one page. The file path gives the
+URL and the place in the navigation.
+
+## URLs and navigation
+
+- `guides/setup.md` has the URL `/guides/setup/`.
+- `guides/index.md` has the URL `/guides/`. It is the landing page of the
+  `guides` group.
+- A folder without an index page becomes a group with a label from the folder
+  name.
+
+Items sort by `order`, then by path.
+
+## Frontmatter
+
+| Field              | Default  | Description                                                                                  |
+| ------------------ | -------- | -------------------------------------------------------------------------------------------- |
+| `title`            | Required | The page title.                                                                              |
+| `description`      | None     | The page summary.                                                                            |
+| `slug`             | None     | A URL path that replaces the file path.                                                      |
+| `navigationLabel`  | `title`  | The label in the navigation.                                                                 |
+| `navigationHidden` | `false`  | Removes the page from the navigation.                                                        |
+| `searchHidden`     | `false`  | Removes the page from search.                                                                |
+| `order`            | `0`      | The position among items in the same group.                                                  |
+| `toc`              | `true`   | Shows the table of contents.                                                                 |
+| `layout`           | `docs`   | `docs`, or `wide` for a page without a ToC.                                                  |
+| `updatedAt`        | None     | The date of the last change, e.g. `2026-09-27`. It shows in the page footer and the sitemap. |
+
+The build stops when a field is not valid, or when two pages use the same URL.

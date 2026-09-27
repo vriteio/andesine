@@ -1,0 +1,104 @@
+{
+  "name": "@andesine/pages",
+  "version": "0.1.0",
+  "description": "Astro documentation framework for Andesine and local content",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./integration": {
+      "types": "./dist/integration.d.ts",
+      "import": "./dist/integration.js"
+    },
+    "./collections": {
+      "types": "./dist/collections.d.ts",
+      "import": "./dist/collections.js"
+    },
+    "./astro": {
+      "types": "./dist/astro.d.ts",
+      "import": "./dist/astro.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js"
+    }
+  },
+  "scripts": {
+    "build": "rolldown -c rolldown.config.ts",
+    "typecheck": "tsc --noEmit",
+    "prepack": "turbo run lint:package --filter=@andesine/pages",
+    "lint:package": "publint --strict"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "peerDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "astro": "^7.3.1",
+    "satori": "^0.33.5",
+    "vite": "^8.0.13"
+  },
+  "dependencies": {
+    "@andesine/converters": "workspace:*",
+    "@andesine/sdk": "workspace:*",
+    "@iconify/json": "^2.2.509",
+    "@iconify/utils": "^3.1.4",
+    "hast-util-to-html": "9.0.5",
+    "marked": "15.0.12",
+    "pagefind": "1.5.2",
+    "satori-html": "^0.3.2",
+    "shiki": "^4.4.3",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "@types/hast": "^3.0.4",
+    "@types/node": "^26.1.2",
+    "astro": "7.3.1",
+    "publint": "0.3.24",
+    "rolldown": "^1.2.2",
+    "rolldown-plugin-dts": "^0.28.6",
+    "satori": "^0.33.5",
+    "typescript": "6.0.3",
+    "vite": "8.2.0"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vriteio/andesine.git",
+    "directory": "packages/public/pages"
+  },
+  "homepage": "https://github.com/vriteio/andesine/tree/andesine/packages/public/pages#readme",
+  "bugs": {
+    "url": "https://github.com/vriteio/andesine/issues"
+  },
+  "keywords": [
+    "andesine",
+    "astro",
+    "astro-integration",
+    "documentation"
+  ],
+  "peerDependenciesMeta": {
+    "@resvg/resvg-js": {
+      "optional": true
+    },
+    "satori": {
+      "optional": true
+    }
+  }
+}
