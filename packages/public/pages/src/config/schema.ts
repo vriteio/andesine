@@ -66,7 +66,9 @@ const sectionSchema = z
     id: identifierSchema,
     label: z.string().min(1),
     icon: iconSchema.optional(),
-    sources: z.array(identifierSchema).min(1)
+    sources: z.array(identifierSchema).min(1),
+    /** Links at the top of the navigation on this section's pages, after the site's links. */
+    links: z.array(iconLinkSchema).default([])
   })
   .strict();
 const filesSourceSchema = z
@@ -81,10 +83,8 @@ const andesineSourceSchema = z
   .object({
     id: identifierSchema,
     type: z.literal("andesine"),
-    /** ID of the published collection. */
+    /** ID of the published collection. The build reads its latest publication. */
     collection: z.string().min(1),
-    /** `ssg` reads the latest publication at build time; `ssr` reads it for each request. */
-    rendering: z.enum(["ssg", "ssr"]).default("ssg"),
     mount: pathSchema.default("/"),
     apiURL: z.url({ protocol: /^https?$/ }).optional(),
     /** Name of the environment variable with the API key. The key itself is never in config. */
@@ -93,7 +93,22 @@ const andesineSourceSchema = z
     answers: z.boolean().default(true)
   })
   .strict();
-const sourceSchema = z.discriminatedUnion("type", [filesSourceSchema, andesineSourceSchema]);
+const openAPISourceSchema = z
+  .object({
+    id: identifierSchema,
+    type: z.literal("openapi"),
+    /** An OpenAPI 3.0 or 3.1 file, relative to the project root, or an HTTPS URL. */
+    spec: z.string().min(1),
+    mount: pathSchema.default("/"),
+    /** Makes a landing page for each tag with a description. Without it, tags only group pages. */
+    tagPages: z.boolean().default(true)
+  })
+  .strict();
+const sourceSchema = z.discriminatedUnion("type", [
+  filesSourceSchema,
+  andesineSourceSchema,
+  openAPISourceSchema
+]);
 const configSchema = z
   .object({
     name: z.string().min(1),
@@ -122,13 +137,6 @@ const configSchema = z
   .superRefine((config, context) => {
     const sourceIDs = new Set<string>();
     const sectionSources = new Map<string, string>();
-    const renderings = (ids: string[]): Set<boolean> => {
-      return new Set(
-        config.sources
-          .filter((source) => ids.includes(source.id))
-          .map((source) => source.type === "andesine" && source.rendering === "ssr")
-      );
-    };
 
     config.sources.forEach((source, index) => {
       if (sourceIDs.has(source.id)) {
@@ -167,40 +175,6 @@ const configSchema = z
       });
     });
 
-    // A request-time source owns its mount, so its route cannot hide other pages.
-    config.sources.forEach((source, index) => {
-      const isLive = source.type === "andesine" && source.rendering === "ssr";
-      const overlap = config.sources.find(
-        (other) => other !== source && other.mount.startsWith(source.mount)
-      );
-
-      if (isLive && overlap) {
-        context.addIssue({
-          code: "custom",
-          path: ["sources", index, "mount"],
-          message: `Request-time source "${source.id}" needs its own mount; "${overlap.id}" uses ${overlap.mount}.`
-        });
-      }
-    });
-
-    if (!config.sections.length && renderings([...sourceIDs]).size > 1) {
-      context.addIssue({
-        code: "custom",
-        path: ["sections"],
-        message: "Put build-time and request-time sources in separate sections."
-      });
-    }
-
-    config.sections.forEach((section, index) => {
-      if (renderings(section.sources).size < 2) return;
-
-      context.addIssue({
-        code: "custom",
-        path: ["sections", index, "sources"],
-        message: `Section "${section.id}" mixes build-time and request-time sources.`
-      });
-    });
-
     if (!config.sections.length) return;
 
     config.sources.forEach((source, index) => {
@@ -219,6 +193,7 @@ type PagesConfig = z.output<typeof configSchema>;
 type SourceConfig = PagesConfig["sources"][number];
 type FilesSourceConfig = Extract<SourceConfig, { type: "files" }>;
 type AndesineSourceConfig = Extract<SourceConfig, { type: "andesine" }>;
+type OpenAPISourceConfig = Extract<SourceConfig, { type: "openapi" }>;
 type SectionConfig = PagesConfig["sections"][number];
 type LinkConfig = z.output<typeof linkSchema>;
 type IconLinkConfig = PagesConfig["links"][number];
@@ -231,6 +206,7 @@ export type {
   SourceConfig,
   FilesSourceConfig,
   AndesineSourceConfig,
+  OpenAPISourceConfig,
   SectionConfig,
   LinkConfig,
   IconLinkConfig,

@@ -25,9 +25,14 @@ export default defineConfig({
   socialLinks: [
     { label: "GitHub", href: "https://github.com/vriteio/vrite", icon: "i-mdi:github" }
   ],
+  sections: [
+    { id: "guides", label: "Guides", icon: "i-lucide:book-open", sources: ["docs"] },
+    { id: "reference", label: "API reference", icon: "i-lucide:braces", sources: ["api"] }
+  ],
   sources: [
     collection
-      ? { id: "andesine", type: "andesine", collection }
-      : { id: "docs", type: "files", directory: "src/content/docs" }
+      ? { id: "docs", type: "andesine", collection }
+      : { id: "docs", type: "files", directory: "src/content/docs" },
+    { id: "api", type: "openapi", spec: "src/api/openapi.yaml", mount: "/api/" }
   ]
 });

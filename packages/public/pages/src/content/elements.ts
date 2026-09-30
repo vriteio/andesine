@@ -31,6 +31,20 @@ const elementSchemas = {
   Disclosure: z.object({ title: z.string().min(1), open: z.boolean().optional() }).strict(),
   Figure: z.object({ caption: z.string().min(1) }).strict(),
   FileTree: noProps,
+  // An API operation from an OpenAPI source; `id` is its operation ID.
+  Operation: z
+    .object({
+      source: z.string().min(1),
+      id: z.string().min(1),
+      anchor: z.string().optional(),
+      description: z.boolean().optional(),
+      authentication: z.boolean().optional(),
+      parameters: z.boolean().optional(),
+      requestBody: z.boolean().optional(),
+      responses: z.boolean().optional(),
+      examples: z.boolean().optional()
+    })
+    .strict(),
   Steps: noProps,
   Tab: z.object({ label: z.string().min(1) }).strict(),
   Tabs: z.object({ syncKey: z.string().optional() }).strict(),

@@ -40,3 +40,5 @@ const readFileTreeItems = (items: string | FileTreeItem[]): FileTreeItem[] => {
 };
 
 export { renderTabs, readFileTreeItems };
+export { getOperationView } from "./sources/openapi/embed";
+export type { OperationProps } from "./sources/openapi/embed";

@@ -7,8 +7,13 @@ interface ScrollAreaProps {
   class?: string;
   viewportClass?: string;
   contentClass?: string;
+  /** Classes of the scrollbar and its thumb, e.g. to change their size or insets. */
+  scrollbarClass?: string;
+  thumbClass?: string;
   /** Fades the top and bottom edges while content scrolls past them. Vertical only. */
   shadow?: boolean;
+  /** The session storage key of a saved scroll position, restored before the first paint. */
+  scrollKey?: string;
   viewportRef?(element: HTMLDivElement): void;
 }
 
@@ -38,6 +43,7 @@ const ScrollArea: ParentComponent<ScrollAreaProps> = (props) => {
     >
       <ArkScrollArea.Viewport
         ref={props.viewportRef}
+        data-scroll-key={props.scrollKey}
         class={clsx(
           "peer",
           ":base: w-full [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
@@ -78,10 +84,13 @@ const ScrollArea: ParentComponent<ScrollAreaProps> = (props) => {
               orientation={props.orientation ?? "vertical"}
               class={clsx(
                 scrollbarClass,
-                horizontal() ? ":base: h-3 flex-col px-2.5" : ":base: w-3 py-2.5"
+                horizontal() ? ":base: h-3 flex-col px-2.5" : ":base: w-3 py-2.5",
+                props.scrollbarClass
               )}
             >
-              <ArkScrollArea.Thumb class={clsx(thumbClass, horizontal() ? "h-full" : "w-full")} />
+              <ArkScrollArea.Thumb
+                class={clsx(thumbClass, horizontal() ? "h-full" : "w-full", props.thumbClass)}
+              />
             </ArkScrollArea.Scrollbar>
           </Show>
         )}

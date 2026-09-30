@@ -44,7 +44,7 @@ const ContentTabs: Component<TabsProps> = (props) => {
       >
         <Tabs.List
           class={clsx(
-            "relative flex min-w-0 text-gray-500",
+            "relative flex min-w-0 overflow-x-auto text-gray-500",
             variant() === "code"
               ? "h-full flex-1 gap-1 text-xs"
               : "h-full w-full items-center gap-1 bg-gray-100 px-1 text-sm"
@@ -63,7 +63,7 @@ const ContentTabs: Component<TabsProps> = (props) => {
           </Show>
         </Tabs.List>
         <Show when={variant() === "code"}>
-          <div class="ml-auto flex items-center">
+          <div class="ml-auto flex shrink-0 items-center">
             <CopyButton />
           </div>
         </Show>

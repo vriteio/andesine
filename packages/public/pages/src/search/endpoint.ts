@@ -24,7 +24,7 @@ const handleSearch = async (request: Request, config: PagesConfig): Promise<Resp
 
   try {
     const [resolve, { results }] = await Promise.all([
-      createPageResolver(source, config.base, client),
+      createPageResolver(source, config.base),
       client.search.published(
         {
           query: body.query,

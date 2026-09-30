@@ -50,7 +50,7 @@ const SearchPalette: Component<SearchPaletteProps> = (props) => {
       <button
         type="button"
         aria-keyshortcuts="Meta+K Control+K"
-        class="flex h-8 w-full cursor-pointer items-center gap-2 rounded-lg bg-white px-2 text-sm text-gray-500 shadow-md outline outline-1 -outline-offset-1 outline-gray-200 transition duration-200 ease-out @hover:bg-gray-100 focus-visible:bg-gray-100"
+        class="flex h-8 w-full cursor-pointer items-center gap-2 rounded-lg px-2 text-sm text-gray-500 bg-gray-100 transition duration-200 ease-out @hover:bg-gray-200 focus-visible:bg-gray-200"
         onClick={() => palette.setOpen(true)}
       >
         <span aria-hidden="true" class="i-tabler:search h-4 w-4 shrink-0" />

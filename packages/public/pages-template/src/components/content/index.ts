@@ -9,8 +9,9 @@ import Figure from "./figure.astro";
 import Steps from "./steps.astro";
 import Tab from "./tab.astro";
 import Tabs from "./tabs.astro";
+import Operation from "../reference/operation.astro";
 
-/** Components for MDX content: custom elements, and `pre` for code blocks. */
+/** Components for MDX content: custom elements, `pre` for code blocks, and API operations. */
 const components = {
   Callout,
   Card,
@@ -19,6 +20,7 @@ const components = {
   Disclosure,
   FileTree,
   Figure,
+  Operation,
   Steps,
   Tab,
   Tabs,

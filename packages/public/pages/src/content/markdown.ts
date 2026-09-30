@@ -9,8 +9,14 @@ interface MarkdownOptions {
 }
 
 const rewriteLinks = (node: ContentNode, linkURL: (href: string) => string): ContentNode => {
+  const props = node.attrs?.props as Record<string, unknown> | undefined;
+  const href = props?.href;
+  const isLinkedCard =
+    node.type === "element" && node.attrs?.name === "Card" && typeof href === "string";
+
   return {
     ...node,
+    attrs: isLinkedCard ? { ...node.attrs, props: { ...props, href: linkURL(href) } } : node.attrs,
     marks: node.marks?.map((mark) => {
       return mark.type === "link" && typeof mark.attrs?.href === "string"
         ? { ...mark, attrs: { ...mark.attrs, href: linkURL(mark.attrs.href) } }
@@ -72,8 +78,13 @@ const rewriteLine = (line: string, base: URL): string => {
               return `${start}${wrapped ? `<${url}>` : url}`;
             })
             .replace(
-              /^(\s{0,3}\[[^\]]+\]:\s*)(\S+)/,
-              (_, start: string, target: string) => `${start}${toAbsolute(target, base)}`
+              /^(\s{0,3}\[[^\]]+\]:\s*)(<[^>]*>|\S+)/,
+              (_, start: string, target: string) => {
+                const wrapped = target.startsWith("<");
+                const url = toAbsolute(wrapped ? target.slice(1, -1) : target, base);
+
+                return `${start}${wrapped ? `<${url}>` : url}`;
+              }
             )
             .replace(
               /\b(href|src)=(["'])([^"']+)\2/g,

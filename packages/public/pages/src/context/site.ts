@@ -8,7 +8,7 @@ const createSearchSources = (config: PagesConfig): SearchSourceContext[] => {
       label:
         config.sections.find((section) => section.sources.includes(source.id))?.label ??
         config.name,
-      type: source.type === "files" ? "pagefind" : "andesine"
+      type: source.type === "andesine" ? "andesine" : "pagefind"
     };
   });
 };

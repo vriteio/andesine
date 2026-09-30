@@ -1,3 +1,4 @@
+import { parse } from "yaml";
 import type { PagesConfig } from "../config";
 import { toSHA256 } from "../hash";
 import type { Catalog } from "./catalog";
@@ -21,18 +22,18 @@ const toSkillName = (value: string): string => {
       .replace(/^-+|-+$/g, "") || "docs"
   );
 };
-const readField = (frontmatter: string, name: string): string | undefined => {
-  return new RegExp(`^${name}:\\s*(.+)$`, "m")
-    .exec(frontmatter)?.[1]
-    ?.trim()
-    .replace(/^(["'])(.*)\1$/, "$2");
-};
 /** Reads the name and description of your own skill file, after the agentskills.io format. */
 const readSkill = (content: string): Skill => {
-  const frontmatter = /^---\n([\s\S]*?)\n---/.exec(content)?.[1] ?? "";
-  const name = readField(frontmatter, "name");
-  const description = readField(frontmatter, "description");
-  const isValid = name === toSkillName(name ?? "") && !!description;
+  const frontmatter = /^(?:\uFEFF)?---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(content)?.[1] ?? "";
+  const metadata: unknown = parse(frontmatter);
+  const fields =
+    typeof metadata === "object" && metadata !== null ? (metadata as Record<string, unknown>) : {};
+  const { name, description } = fields;
+  const isValid =
+    typeof name === "string" &&
+    name === toSkillName(name) &&
+    typeof description === "string" &&
+    !!description.trim();
 
   if (!isValid) {
     throw new Error(

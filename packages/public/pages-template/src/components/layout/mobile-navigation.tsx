@@ -8,7 +8,7 @@ import { NavigationTree } from "./navigation-tree";
 import { PoweredBy } from "./powered-by";
 
 interface MobileNavigationProps {
-  page: Pick<PageContext, "site" | "navigation">;
+  page: Pick<PageContext, "site" | "links" | "navigation">;
   /** Sections to show above the navigation, when the header has no tabs. */
   sections: SectionContext[];
   storageKey: string;
@@ -35,8 +35,8 @@ const MobileNavigation: Component<MobileNavigationProps> = (props) => (
       <a href={props.page.site.href} class="text-gray-900">
         <Logo site={props.page.site} />
       </a>
-      <Show when={props.sections.length || props.page.site.links.length}>
-        <NavigationLinks sections={props.sections} links={props.page.site.links} />
+      <Show when={props.sections.length || props.page.links.length}>
+        <NavigationLinks sections={props.sections} links={props.page.links} />
       </Show>
       <NavigationTree
         items={props.page.navigation}

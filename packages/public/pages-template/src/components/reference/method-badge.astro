@@ -1,0 +1,18 @@
+---
+import { getMethodColor } from "./methods";
+
+interface Props {
+  method: string;
+}
+
+const { method } = Astro.props;
+---
+
+<span
+  class:list={[
+    "shrink-0 rounded-md bg-gray-100 font-mono text-sm font-bold uppercase",
+    getMethodColor(method)
+  ]}
+>
+  {method}
+</span>

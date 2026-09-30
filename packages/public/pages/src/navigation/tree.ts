@@ -25,6 +25,7 @@ const createNavigationItems = (nodes: SourceNode[], trail: SourceNode[]): Naviga
       id: node.id,
       label: node.label,
       href: node.page?.href,
+      method: node.method,
       current: node === trail.at(-1),
       active: trail.includes(node),
       children: node.children ? createNavigationItems(node.children, trail) : []

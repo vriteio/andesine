@@ -87,6 +87,9 @@ export default defineConfig({
   content: {
     // Scan the sources too: Astro and Solid escape `&`, `>`, and `'` in compiled class strings.
     filesystem: ["src/**/*.{astro,tsx}"],
+    // Class maps in the template's TypeScript modules too, e.g. the HTTP method colors; not
+    // dependencies' JavaScript, which would add stray rules.
+    pipeline: { include: [/\.(astro|[jt]sx|mdx?|html)($|\?)/, /[\\/]src[\\/].+\.ts($|\?)/] },
     // Extract icon names used in the config.
     inline: [JSON.stringify(config)]
   },

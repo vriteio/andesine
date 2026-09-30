@@ -1,0 +1,252 @@
+---
+import type { CodeView, MediaView } from "@andesine/pages";
+import { getOperationView, type OperationProps } from "@andesine/pages/astro";
+import Callout from "../content/callout.astro";
+import CodeBlock from "../content/code-block.astro";
+import CodeGroup from "../content/code-group.astro";
+import { CopyButton } from "../content/copy-button";
+import { ScrollArea } from "../primitives/scroll-area";
+import Fields from "./fields.astro";
+import MethodBadge from "./method-badge.astro";
+import { descriptionClass, labelClass, nameClass, requiredClass } from "./styles";
+
+/** A reference page passes `view`; an embed passes `source` and `id`, like the MDX component. */
+type Props = OperationProps;
+
+const view = await getOperationView(Astro.props);
+// Embeds sit under the headings of their page.
+const Heading = view.embedded ? "h3" : "h2";
+const [server] = view.servers;
+const serverURL = server?.url.replace(/\/$/, "") ?? "";
+const successStatus = view.responses.find((response) => response.status.startsWith("2"))?.status;
+const headingClass = view.embedded
+  ? "not-prose scroll-mt-30 text-lg font-semibold text-gray-900"
+  : "not-prose scroll-mt-30 text-xl font-semibold text-gray-900";
+const toMediaTypes = (contents: MediaView[]): string => {
+  return contents.map((media) => media.type).join(", ");
+};
+const toLabels = (examples: CodeView[]): string => {
+  return JSON.stringify(examples.map((example) => example.label));
+};
+---
+
+<div
+  class:list={[
+    "grid gap-8",
+    view.embedded
+      ? "my-6 border-y border-gray-200 py-6"
+      : "mt-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.8fr)] xl:items-start"
+  ]}
+>
+  <div class="flex min-w-0 flex-col gap-8">
+    <div class="flex flex-col gap-3">
+      {
+        view.embedded && (
+          <a
+            href={view.href}
+            class="not-prose group flex w-fit items-center gap-1.5 text-lg font-semibold text-gray-900"
+          >
+            {view.title}
+            <span
+              aria-hidden="true"
+              class="i-lucide:arrow-up-right h-4.5 w-4.5 text-gray-400 transition duration-200 ease-out group-hover:text-gray-700"
+            />
+          </a>
+        )
+      }
+      {
+        view.deprecated && (
+          <div class="[&>aside]:my-0">
+            <Callout type="warning">
+              This operation is deprecated. Do not use it in new code.
+            </Callout>
+          </div>
+        )
+      }
+      <div
+        class="not-prose flex min-w-0 items-center gap-2 h-9 rounded-xl bg-gray-100 pl-3 pr-1.25"
+      >
+        <MethodBadge method={view.method} />
+        {/* Long URLs scroll on one line; the badge and the copy button stay in place. */}
+        <ScrollArea
+          client:visible
+          orientation="horizontal"
+          class="min-w-0 flex-1 self-stretch"
+          contentClass="flex h-full items-center"
+          scrollbarClass="h-1.5 px-0"
+          thumbClass="border-0"
+        >
+          <code class="whitespace-nowrap font-mono text-sm text-gray-700">
+            {serverURL && <span class="text-gray-400">{serverURL}</span>}{view.path}
+          </code>
+        </ScrollArea>
+        <div class="flex shrink-0 items-center">
+          <CopyButton client:visible text={`${serverURL}${view.path}`} label="Copy URL" />
+        </div>
+      </div>
+      {view.description && <div class:list={descriptionClass} set:html={view.description} />}
+    </div>
+    {
+      view.security.length > 0 && (
+        <section class="flex flex-col gap-3">
+          <Heading id={`${view.anchor}authentication`} class={headingClass}>
+            Authentication
+          </Heading>
+          <div role="list" class="divide-y divide-gray-200">
+            {view.security.map((requirement) => (
+              <div role="listitem" class="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
+                {requirement.length === 0 && (
+                  <span class="text-base text-gray-500">No authentication</span>
+                )}
+                {requirement.map((scheme) => (
+                  <div class="flex flex-col gap-1">
+                    <div class="flex flex-wrap items-baseline gap-x-2">
+                      <code class={nameClass}>{scheme.id}</code>
+                      <span class="font-mono text-xs text-gray-500">{scheme.label}</span>
+                    </div>
+                    {scheme.description && (
+                      <div class:list={descriptionClass} set:html={scheme.description} />
+                    )}
+                    {scheme.scopes.length > 0 && (
+                      <p class="not-prose text-sm text-gray-500">
+                        Scopes: {scheme.scopes.join(", ")}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </section>
+      )
+    }
+    {
+      view.parameters.map((group) => (
+        <section class="flex flex-col gap-3">
+          <Heading id={group.id} class={headingClass}>
+            {group.label}
+          </Heading>
+          <Fields fields={group.fields} />
+        </section>
+      ))
+    }
+    {
+      view.requestBody && (
+        <section class="flex flex-col gap-3">
+          <div class="flex flex-wrap items-baseline justify-between gap-x-2">
+            <Heading id={view.requestBody.id} class={headingClass}>
+              Request body
+              {view.requestBody.required && (
+                <span title="Required" class={requiredClass}>
+                  *
+                </span>
+              )}
+            </Heading>
+            <span class:list={[labelClass, "font-mono"]}>
+              {toMediaTypes(view.requestBody.contents)}
+            </span>
+          </div>
+          {view.requestBody.description && (
+            <div class:list={descriptionClass} set:html={view.requestBody.description} />
+          )}
+          {view.requestBody.contents.map((media, _, contents) => (
+            <div id={media.id} class="flex flex-col gap-3">
+              {contents.length > 1 && <p class:list={[labelClass, "font-mono"]}>{media.type}</p>}
+              <Fields fields={media.schema ? [media.schema] : []} expanded />
+            </div>
+          ))}
+        </section>
+      )
+    }
+    {
+      view.responses.length > 0 && (
+        <section class="flex flex-col gap-3">
+          <Heading id={`${view.anchor}responses`} class={headingClass}>
+            Responses
+          </Heading>
+          <div class="flex flex-col gap-2">
+            {view.responses.map((response) => {
+              const hasBody = response.headers.length + response.contents.length > 0;
+
+              return (
+                <details
+                  id={response.id}
+                  open={response.status === successStatus}
+                  class="scroll-mt-30 overflow-hidden rounded-xl border border-gray-200 bg-white"
+                >
+                  <summary class="flex cursor-pointer list-none items-center gap-2 px-3 py-2 transition duration-200 ease-out @hover:bg-gray-100 focus-visible:bg-gray-100 [&::-webkit-details-marker]:hidden">
+                    <span
+                      aria-hidden="true"
+                      class="i-lucide:chevron-right h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200 [[open]>summary>&]:rotate-90"
+                    />
+                    <span class="font-mono text-sm font-semibold text-gray-900">
+                      {response.status}
+                    </span>
+                    {response.label && (
+                      <span class="text-base text-gray-500">{response.label}</span>
+                    )}
+                    <span class:list={[labelClass, "ml-auto font-mono"]}>
+                      {toMediaTypes(response.contents)}
+                    </span>
+                  </summary>
+                  <div class="flex flex-col gap-3 border-t border-gray-200 px-3 py-3">
+                    {response.description && (
+                      <div class:list={descriptionClass} set:html={response.description} />
+                    )}
+                    {response.headers.length > 0 && (
+                      <div class="flex flex-col gap-2">
+                        <p class={labelClass}>Headers</p>
+                        <Fields fields={response.headers} />
+                      </div>
+                    )}
+                    {response.contents.map((media, _, contents) => (
+                      <div id={media.id} class="flex flex-col gap-3">
+                        {contents.length > 1 && (
+                          <p class:list={[labelClass, "font-mono"]}>{media.type}</p>
+                        )}
+                        <Fields fields={media.schema ? [media.schema] : []} expanded />
+                      </div>
+                    ))}
+                    {!hasBody && !response.description && (
+                      <p class="not-prose text-base text-gray-500">No content.</p>
+                    )}
+                  </div>
+                </details>
+              );
+            })}
+          </div>
+        </section>
+      )
+    }
+  </div>
+  {
+    view.examples.length + view.responseExamples.length > 0 && (
+      <aside aria-label="Examples" class="order-first flex min-w-0 flex-col gap-4 xl:order-none">
+        {view.examples.length > 0 && (
+          <div class="flex flex-col gap-1">
+            <p class={labelClass}>Request</p>
+            <CodeGroup values={toLabels(view.examples)}>
+              {(index: number) => (
+                <CodeBlock data-language={view.examples[index]!.language}>
+                  <Fragment set:html={view.examples[index]!.html} />
+                </CodeBlock>
+              )}
+            </CodeGroup>
+          </div>
+        )}
+        {view.responseExamples.length > 0 && (
+          <div class="flex flex-col gap-1">
+            <p class={labelClass}>Response</p>
+            <CodeGroup values={toLabels(view.responseExamples)}>
+              {(index: number) => (
+                <CodeBlock data-language={view.responseExamples[index]!.language}>
+                  <Fragment set:html={view.responseExamples[index]!.html} />
+                </CodeBlock>
+              )}
+            </CodeGroup>
+          </div>
+        )}
+      </aside>
+    )
+  }
+</div>

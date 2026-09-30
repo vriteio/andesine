@@ -58,6 +58,7 @@ const createPageContext = (options: PageContextOptions): Omit<PageContext, "head
     },
     layout: page.layout,
     sections: toSectionContexts(options.sections, section),
+    links: [...options.site.links, ...section.links],
     navigation: createNavigationItems(section.navigation, trail),
     breadcrumbs,
     previous: position > 0 ? toPageLink(order[position - 1]) : undefined,

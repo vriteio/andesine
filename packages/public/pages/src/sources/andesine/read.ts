@@ -48,40 +48,28 @@ const toReadError = (source: AndesineSourceConfig, error: unknown): Error => {
   return new Error(`${label}: the Andesine read failed (${error.status}, ${error.code}).`);
 };
 /**
- * Reads the latest publication of a collection, or only the entry that `select` returns. All
- * reads use the tree's snapshot, so the tree and the entries always agree.
+ * Reads the latest publication of a collection. All reads use the snapshot of the first one,
+ * so the tree and the entries always agree.
  */
-const readPublication = async (
-  source: AndesineSourceConfig,
-  signal?: AbortSignal,
-  select?: (tree: PublishedTree) => string | undefined
-): Promise<Publication> => {
+const readPublication = async (source: AndesineSourceConfig): Promise<Publication> => {
   const client = createClient({ baseURL: source.apiURL, apiKey: getAPIKey(source) });
   const entries: PublishedEntryContent[] = [];
 
   try {
-    const tree = await client.content.getTree(
-      { collectionID: source.collection, channel: "published" },
-      { signal }
-    );
+    const tree = await client.content.getTree({
+      collectionID: source.collection,
+      channel: "published"
+    });
     const snapshot = client.atSnapshot(tree.snapshotID);
-    const entryID = select?.(tree);
-
-    if (select) {
-      return { tree, entries: entryID ? [await snapshot.get({ entryID }, { signal })] : [] };
-    }
 
     for await (const page of paginatePages((cursor) => {
-      return snapshot.listEntries(
-        {
-          collectionID: source.collection,
-          descendants: true,
-          includeContent: true,
-          limit: 100,
-          cursor
-        },
-        { signal }
-      );
+      return snapshot.listEntries({
+        collectionID: source.collection,
+        descendants: true,
+        includeContent: true,
+        limit: 100,
+        cursor
+      });
     })) {
       entries.push(...page.data);
     }

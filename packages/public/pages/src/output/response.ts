@@ -8,14 +8,4 @@ const textResponse = (body: string | null, type: string, init: ResponseInit = {}
     }
   });
 };
-/** Never replace an outage with stale content. */
-const unavailableResponse = (error: unknown): Response => {
-  console.error(error);
-
-  return textResponse("The documentation is not available now. Try again later.", "text/plain", {
-    status: 503,
-    headers: { "Retry-After": "30", "Cache-Control": "no-store" }
-  });
-};
-
-export { textResponse, unavailableResponse };
+export { textResponse };

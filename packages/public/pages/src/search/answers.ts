@@ -82,7 +82,7 @@ const handleAnswer = async (
 
   try {
     [resolve, events] = await Promise.all([
-      createPageResolver(source, config.base, client),
+      createPageResolver(source, config.base),
       client.search.askPublishedStream(
         {
           question: body.question,

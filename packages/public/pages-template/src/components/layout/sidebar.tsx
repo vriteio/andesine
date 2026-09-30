@@ -18,11 +18,13 @@ interface SidebarProps {
 }
 
 const Sidebar: Component<SidebarProps> = (props) => {
+  const scrollKey = (): string => `${props.storageKey}:scroll`;
+
   let viewport: HTMLDivElement | undefined;
 
   createScrollMemory({
     container: () => viewport,
-    key: `${props.storageKey}:scroll`,
+    key: scrollKey(),
     current: () => viewport?.querySelector<HTMLElement>("[aria-current='page']")
   });
 
@@ -31,6 +33,7 @@ const Sidebar: Component<SidebarProps> = (props) => {
       <ScrollArea
         shadow
         class="h-full"
+        scrollKey={scrollKey()}
         viewportRef={(element) => (viewport = element)}
         contentClass="flex min-h-full flex-col px-3 pt-4"
       >

@@ -1,4 +1,4 @@
-import type { PagesConfig } from "../config";
+import type { IconLinkConfig, PagesConfig } from "../config";
 import { toHref, toSegments } from "../routing/paths";
 import type { SourceData, SourceNode } from "../sources";
 import { flattenTree } from "./tree";
@@ -7,6 +7,7 @@ interface Section {
   id: string;
   label: string;
   icon?: string;
+  links: IconLinkConfig[];
   /** URL of the first page, or of the first source mount. */
   href: string;
   sources: SourceData[];
@@ -14,9 +15,9 @@ interface Section {
 }
 
 const createSection = (
-  config: Pick<Section, "id" | "label" | "icon">,
+  config: Pick<Section, "id" | "label" | "icon" | "links">,
   sources: SourceData[],
-  /** Used when no source is loaded, e.g. for request-time sources in a static build. */
+  /** Used when the sources have no pages. */
   fallbackHref: string
 ): Section => {
   const navigation = sources.flatMap((source) => source.navigation);
@@ -35,7 +36,11 @@ const createSections = (config: PagesConfig, sources: SourceData[]): Section[] =
 
   if (!config.sections.length) {
     return [
-      createSection({ id: "default", label: config.name }, sources, mountHref(sources[0]?.id))
+      createSection(
+        { id: "default", label: config.name, links: [] },
+        sources,
+        mountHref(sources[0]?.id)
+      )
     ];
   }
 

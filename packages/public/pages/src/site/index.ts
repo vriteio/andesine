@@ -1,7 +1,7 @@
 import type { MarkdownHeading } from "astro";
 import { render } from "astro:content";
 import type { Root } from "hast";
-import { isLiveSource, type PagesConfig } from "../config";
+import type { PagesConfig } from "../config";
 import {
   createPageContext,
   createPageMeta,
@@ -14,8 +14,11 @@ import { createNavigationItems, createSections } from "../navigation";
 import { getSocialImage } from "../context/image";
 import type { SocialCardData } from "../social/types";
 import { createMarkdownPage } from "../output/markdown";
-import { createRoutes, toHref, toSegments, type RedirectRoute, type Route } from "../routing";
+import { createRoutes, type RedirectRoute, type Route } from "../routing";
+import { prepareMarkdown, type HighlightOptions } from "../content/prepare";
 import { loadStaticSources, type SourceData, type SourcePage } from "../sources";
+import { toOpenAPIMarkdown } from "../sources/openapi/markdown";
+import { createOperationView, type OperationView } from "../sources/openapi/view";
 
 interface PageRouteData {
   type: "page";
@@ -52,7 +55,9 @@ interface SocialPath {
 interface RenderedRoute {
   /** Astro content of a file page. */
   Content?: unknown;
-  /** HTML syntax tree of an Andesine page. */
+  /** The operation of an OpenAPI operation page. */
+  operation?: OperationView;
+  /** HTML syntax tree of an Andesine page, or of an OpenAPI overview or tag page. */
   nodes?: Root;
   summary?: Root;
   aside?: Root;
@@ -72,27 +77,13 @@ const toParam = (href: string, base: string): string | undefined => {
   return decodeURIComponent(href.slice(base.length)).replace(/\/$/, "") || undefined;
 };
 
-/** The URL path of a source mount. */
-const toMountHref = (config: PagesConfig, mount: string): string => {
-  return toHref(toSegments(config.base, "Site base"), toSegments(mount, "Mount"));
-};
-/**
- * Creates the routes of loaded sources, with the page context of each page. With `href`, only
- * the route at that URL is created.
- */
-const createSiteRoutes = (
-  config: PagesConfig,
-  sources: SourceData[],
-  href?: string
-): SiteRoute[] => {
+/** Creates the routes of loaded sources, with the page context of each page. */
+const createSiteRoutes = (config: PagesConfig, sources: SourceData[]): SiteRoute[] => {
   const sections = createSections(config, sources);
   const site = createSiteContext(config);
   const shownSections = config.sections.length ? sections : [];
-  const routes = createRoutes(config.base, sections).filter((route) => {
-    return href === undefined || route.href === href;
-  });
 
-  return routes.map((route: Route) => {
+  return createRoutes(config.base, sections).map((route: Route) => {
     return {
       href: route.href,
       route:
@@ -103,7 +94,7 @@ const createSiteRoutes = (
               content: route.page.content,
               toc: route.page.toc,
               sourceID: route.page.sourceID,
-              indexed: route.page.content.type === "file" && !route.page.searchHidden,
+              indexed: route.page.content.type !== "andesine" && !route.page.searchHidden,
               markdown: createMarkdownPage(config, route.page),
               context: createPageContext({
                 site,
@@ -118,17 +109,6 @@ const createSiteRoutes = (
 };
 const getStaticPaths = async (config: PagesConfig): Promise<StaticPath[]> => {
   const routes = createSiteRoutes(config, await loadStaticSources(config));
-  const liveMounts = config.sources
-    .filter(isLiveSource)
-    .map((source) => toMountHref(config, source.mount));
-  // Request-time sources own their mounts, so a built page there would never show.
-  const hidden = routes.find(({ href }) => liveMounts.some((mount) => href.startsWith(mount)));
-
-  if (hidden) {
-    throw new Error(
-      `The page at ${hidden.href} is in the mount of a request-time source. Move the page or change the mount.`
-    );
-  }
 
   return routes.map(({ href, route }) => {
     return {
@@ -182,6 +162,7 @@ const getNotFoundContext = async (config: PagesConfig): Promise<PageContext> => 
     fragments: { summary: false, aside: false },
     layout: "docs",
     sections: config.sections.length ? toSectionContexts(sections) : [],
+    links: [...site.links, ...(sections[0]?.links ?? [])],
     navigation: createNavigationItems(sections[0]?.navigation ?? [], []),
     breadcrumbs: [],
     headings: [],
@@ -192,7 +173,37 @@ const getNotFoundContext = async (config: PagesConfig): Promise<PageContext> => 
 const toOutline = (headings: HeadingContext[], toc: boolean): HeadingContext[] => {
   return toc ? headings.filter((heading) => heading.depth >= 2 && heading.depth <= 3) : [];
 };
-const renderRoute = async (route: PageRouteData): Promise<RenderedRoute> => {
+const renderRoute = async (
+  route: PageRouteData,
+  highlight: HighlightOptions
+): Promise<RenderedRoute> => {
+  if (route.content.type === "openapi" && route.content.operation) {
+    const { operation, model, links } = route.content;
+
+    return {
+      operation: await createOperationView(operation, model, {
+        highlight,
+        title: route.context.title,
+        href: links.operations[operation.id]!
+      }),
+      page: { ...route.context, headings: [] }
+    };
+  }
+
+  // Overview and tag pages show their Markdown.
+  if (route.content.type === "openapi") {
+    const prepared = await prepareMarkdown(
+      toOpenAPIMarkdown(route.content, (href) => href),
+      highlight
+    );
+
+    return {
+      nodes: prepared.nodes,
+      iconCSS: prepared.iconCSS,
+      page: { ...route.context, headings: toOutline(prepared.headings, route.toc) }
+    };
+  }
+
   if (route.content.type === "andesine") {
     return {
       nodes: route.content.nodes,
@@ -219,13 +230,11 @@ const renderRoute = async (route: PageRouteData): Promise<RenderedRoute> => {
 };
 
 export {
-  toMountHref,
   createSiteRoutes,
   getStaticPaths,
   getMarkdownPaths,
   getSocialPaths,
   getNotFoundContext,
-  renderRoute,
-  toSocialData
+  renderRoute
 };
-export type { PageRouteData, SiteRoute, StaticPath, MarkdownPath, SocialPath, RenderedRoute };
+export type { SiteRoute, StaticPath, MarkdownPath, SocialPath, RenderedRoute };

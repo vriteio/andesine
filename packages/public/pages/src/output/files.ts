@@ -1,11 +1,10 @@
 import type { PagesConfig } from "../config";
 import type { Catalog } from "./catalog";
-import { createPageBody, toLine } from "./markdown";
+import { createPageBody, toLabel, toLine } from "./markdown";
 
 const escapeXML = (value: string): string => {
   return value.replace(/[&<>"]/g, (character) => `&#${character.charCodeAt(0)};`);
 };
-const toLabel = (value: string): string => toLine(value).replace(/[[\]\\]/g, "\\$&");
 const createSitemap = (config: PagesConfig, catalog: Catalog): string => {
   const urls = catalog.pages.map((page) => {
     const location = `<loc>${escapeXML(new URL(page.href, config.site).href)}</loc>`;
@@ -38,7 +37,8 @@ const createLLMs = (config: PagesConfig, catalog: Catalog): string => {
 
       return `## ${toLine(section.label)}\n\n${links.join("\n")}`;
     });
-  const links = [...config.links, ...(config.cta ? [config.cta] : [])].map(
+  const sectionLinks = config.sections.flatMap((section) => section.links);
+  const links = [...config.links, ...sectionLinks, ...(config.cta ? [config.cta] : [])].map(
     (link) => `- [${toLabel(link.label)}](${new URL(link.href, config.site).href})`
   );
   // The llms.txt format marks links that agents can skip as "Optional".

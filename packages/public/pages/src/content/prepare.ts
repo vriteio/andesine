@@ -1,5 +1,6 @@
 import type { ContentNode } from "@andesine/converters";
 import { toHTMLAST, type HTMLOptions } from "@andesine/converters/html";
+import { fromMarkdown } from "@andesine/converters/markdown";
 import type { Element, ElementContent, Root } from "hast";
 import { bundledLanguages, codeToHast, type BundledLanguage } from "shiki";
 import type { HeadingContext } from "../context";
@@ -27,14 +28,16 @@ interface PreparedContent {
   iconCSS: string;
 }
 
-/** Highlights a converter code block with the site's Shiki theme. */
-const highlight = async (pre: Element, options: HighlightOptions): Promise<Element> => {
-  const code = pre.children.find((child): child is Element => child.type === "element");
-  const language = String(code?.properties.dataLanguage ?? "text");
+/** Highlights code with the site's Shiki theme, as a `pre` element. */
+const highlightCode = async (
+  text: string,
+  language: string,
+  options: HighlightOptions
+): Promise<Element> => {
   const lang = language in bundledLanguages ? (language as BundledLanguage) : "text";
   // Astro's default config has an empty `themes` object.
   const hasThemes = Object.keys(options.themes ?? {}).length > 0;
-  const root = await codeToHast(getText(code ?? pre), {
+  const root = await codeToHast(text, {
     lang,
     ...(hasThemes
       ? { themes: options.themes, defaultColor: options.defaultColor }
@@ -45,6 +48,16 @@ const highlight = async (pre: Element, options: HighlightOptions): Promise<Eleme
   highlighted.properties.dataLanguage = language;
 
   return highlighted;
+};
+/** Highlights a converter code block. */
+const highlight = (pre: Element, options: HighlightOptions): Promise<Element> => {
+  const code = pre.children.find((child): child is Element => child.type === "element");
+
+  return highlightCode(
+    getText(code ?? pre),
+    String(code?.properties.dataLanguage ?? "text"),
+    options
+  );
 };
 
 /**
@@ -117,5 +130,34 @@ const prepareContent = async (
   return { nodes: root, headings, iconCSS: await createIconCSS(icons) };
 };
 
-export { prepareContent };
+/** Prepares Markdown, such as OpenAPI descriptions, like Andesine content. Images keep their URLs. */
+const prepareMarkdown = async (
+  markdown: string,
+  highlight: HighlightOptions
+): Promise<PreparedContent> => {
+  const document = await fromMarkdown(markdown, {
+    document: "fragment",
+    imageAssetID: (image) => image.url,
+    // Content has no raw HTML or footnotes: HTML is left out, and footnotes become text.
+    decode: {
+      nodes: {
+        html: () => null,
+        footnoteReference: (node) => {
+          return { type: "text", text: `[${"label" in node ? node.label : ""}]` };
+        },
+        footnoteDefinition: (node, context) => {
+          return "children" in node ? context.children(node.children) : null;
+        }
+      }
+    }
+  });
+
+  return prepareContent(document, {
+    imageURL: (image) => String(image.attrs?.assetID),
+    linkURL: (href) => href,
+    highlight
+  });
+};
+
+export { highlightCode, prepareContent, prepareMarkdown };
 export type { HighlightOptions, PrepareOptions, PreparedContent };

@@ -1,7 +1,7 @@
 ---
 title: Deployment
 description: Put the site on a static host, a Node.js server, or a serverless platform.
-order: 4
+order: 5
 ---
 
 The host that a site needs depends on its sources.
@@ -12,8 +12,7 @@ The host that a site needs depends on its sources.
 | Andesine   | Static pages, and server routes | A Node.js server, Vercel, Netlify, Cloudflare |
 
 Andesine search and AI answers use server routes at `/_andesine/`, which keep the
-API key on the server. With `rendering: "ssr"`, pages and page lists use server
-routes too. All other pages stay static files, and only the server routes run on
+API key on the server. All pages are static files, and only these routes run on
 the server.
 
 ## Node.js
@@ -59,8 +58,8 @@ static pages from its CDN, and runs the server routes as one function. Set
 
 ## Cloudflare
 
-Cloudflare Workers support build-time Andesine sources. Request-time sources are
-not supported, because the social image renderer and the icon sets need Node.js.
+Cloudflare Workers can run the search and AI answer routes, and serve the pages as
+static assets.
 
 ```sh
 npm uninstall @astrojs/node
@@ -101,6 +100,5 @@ settings of Workers Builds.
 
 ## Content updates
 
-Build-time sources show new publications after the next build. Start a build from
-a deploy hook of the platform when you publish. Request-time sources show new
-publications on the next request.
+Andesine sources show new publications after the next build. Start a build from a
+deploy hook of the platform when you publish, e.g. with an Andesine webhook.

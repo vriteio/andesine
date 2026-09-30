@@ -1,4 +1,4 @@
-import { type Accessor, createEffect, createSignal, onCleanup, onMount } from "solid-js";
+import { type Accessor, createEffect, createSignal, on, onCleanup, onMount } from "solid-js";
 import { isApplePlatform } from "../../core/platform";
 import { type Answer, type AnswerOptions, createAnswer } from "./create-answer";
 import { type ListNavigation, createListNavigation } from "./create-list-navigation";
@@ -101,6 +101,7 @@ const createSearchPalette = <TResults, TItem extends SearchPaletteItem, TAnswer 
   });
 
   let results: HTMLElement | undefined;
+  let resumeSearch = false;
   // Streaming answers keep the view at the end until the reader scrolls up.
   let follow = true;
 
@@ -109,12 +110,21 @@ const createSearchPalette = <TResults, TItem extends SearchPaletteItem, TAnswer 
     navigation.setActive(0);
   });
 
-  createEffect(() => {
-    if (open()) return;
+  createEffect(
+    on(open, (isOpen) => {
+      if (isOpen) {
+        if (resumeSearch) search.setQuery(search.query());
 
-    search.cancel();
-    answer?.cancel();
-  });
+        resumeSearch = false;
+
+        return;
+      }
+
+      resumeSearch = search.status() === "loading";
+      search.cancel();
+      answer?.cancel();
+    })
+  );
 
   createEffect(() => {
     answer?.turns();

@@ -23,10 +23,5 @@ const getDeliveryURL = (asset: PublishedAsset, entryID: string): string => {
 
   return url.href;
 };
-/** Uses the delivery URLs. They can expire, so use this only for request-time pages. */
-const deliveryAssets: AssetStore = {
-  resolve: async (asset, entryID) => getDeliveryURL(asset, entryID)
-};
-
-export { assetPath, assetFile, mimeTypes, getAssetPrefix, getDeliveryURL, deliveryAssets };
+export { assetPath, assetFile, mimeTypes, getAssetPrefix, getDeliveryURL };
 export type { AssetStore };

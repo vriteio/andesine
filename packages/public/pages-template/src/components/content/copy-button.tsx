@@ -2,8 +2,14 @@ import { createClipboard } from "@andesine/ui/solid";
 import type { Component } from "solid-js";
 import { IconButton } from "../primitives/button";
 
-/** Copies the visible code block inside the closest `[data-code]` element. */
-const CopyButton: Component = () => {
+interface CopyButtonProps {
+  /** Copied in place of the closest code block. */
+  text?: string;
+  label?: string;
+}
+
+/** Copies `text`, or the visible code block inside the closest `[data-code]` element. */
+const CopyButton: Component<CopyButtonProps> = (props) => {
   const clipboard = createClipboard();
   const icon = (): string => {
     if (clipboard.status() === true) return "i-lucide:check";
@@ -12,6 +18,12 @@ const CopyButton: Component = () => {
     return "i-lucide:copy";
   };
   const copy = (event: MouseEvent): void => {
+    if (props.text !== undefined) {
+      void clipboard.copy(props.text);
+
+      return;
+    }
+
     const root = (event.currentTarget as HTMLElement).closest("[data-code], [data-code-group]");
     const pre = Array.from(root?.querySelectorAll("pre") ?? []).find((element) => {
       return element.getClientRects().length > 0;
@@ -27,7 +39,7 @@ const CopyButton: Component = () => {
         variant="text"
         size="xs"
         text="softer"
-        aria-label="Copy code"
+        aria-label={props.label ?? "Copy code"}
         onClick={copy}
       />
       <span role="status" class="sr-only">

@@ -42,11 +42,11 @@ const SectionTabs: Component<SectionTabsProps> = (props) => {
                     )
               )}
             >
-              {/* Shown until the indicator is measured; named, so page transitions move it. */}
+              {/* Shown until the indicator is measured. */}
               <Show when={section.current && !indicator.position()}>
                 <span
                   aria-hidden="true"
-                  class="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-gradient-to-r [view-transition-name:section-indicator]"
+                  class="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-gradient-to-r"
                 />
               </Show>
               <Show when={section.icon}>
@@ -68,7 +68,7 @@ const SectionTabs: Component<SectionTabsProps> = (props) => {
         {(position) => (
           <span
             aria-hidden="true"
-            class="pointer-events-none absolute bottom-0 h-0.5 translate-y-[0.5px] rounded-full bg-gradient-to-r transition-[left,width] duration-200 ease-out [view-transition-name:section-indicator]"
+            class="pointer-events-none absolute bottom-0 h-0.5 translate-y-[0.5px] rounded-full bg-gradient-to-r transition-[left,width] duration-200 ease-out"
             style={{
               left: `${position().left + 8}px`,
               width: `${Math.max(0, position().width - 16)}px`

@@ -67,6 +67,8 @@ interface NavigationItem {
   label: string;
   /** Groups without a landing page have no URL. */
   href?: string;
+  /** The HTTP method of an API operation, e.g. `get`. */
+  method?: string;
   current: boolean;
   /** The item contains the current page. */
   active: boolean;
@@ -130,8 +132,11 @@ interface PageContext {
   description?: string;
   meta: PageMeta;
   fragments: PageFragments;
-  layout: "docs" | "wide";
+  /** `reference` fills the content area on wide screens, for API operations and their examples. */
+  layout: "docs" | "wide" | "reference";
   sections: SectionContext[];
+  /** Links at the top of the navigation: the site's links, then the current section's. */
+  links: IconLinkConfig[];
   navigation: NavigationItem[];
   /** The groups that contain the page, from the section root. */
   breadcrumbs: BreadcrumbItem[];

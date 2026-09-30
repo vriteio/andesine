@@ -1,5 +1,7 @@
 import type { Root } from "hast";
 import type { HeadingContext } from "../context";
+import type { OpenAPILinks } from "./openapi/markdown";
+import type { ApiModel, ApiOperation, ApiTag } from "./openapi/model";
 
 interface FileEntry {
   id: string;
@@ -26,6 +28,17 @@ interface AndesineContent {
   aside?: Root;
 }
 
+interface OpenAPIContent {
+  type: "openapi";
+  /** The whole API, which the page's schemas refer to. */
+  model: ApiModel;
+  links: OpenAPILinks;
+  /** Set on operation pages. */
+  operation?: ApiOperation;
+  /** Set on tag landing pages. */
+  tag?: ApiTag;
+}
+
 interface SourcePage {
   sourceID: string;
   id: string;
@@ -34,14 +47,14 @@ interface SourcePage {
   title: string;
   description?: string;
   toc: boolean;
-  layout: "docs" | "wide";
+  layout: "docs" | "wide" | "reference";
   /** Leaves the page out of search. Search results are not access control. */
   searchHidden: boolean;
   /** The page's Markdown alternative, without the title and description. */
   markdown: string;
   /** ISO date of the last content change, when known. */
   updatedAt?: string;
-  content: FileContent | AndesineContent;
+  content: FileContent | AndesineContent | OpenAPIContent;
 }
 
 interface SourceNode {
@@ -49,6 +62,8 @@ interface SourceNode {
   label: string;
   /** The page of a leaf, or the landing page of a group. */
   page?: SourcePage;
+  /** The HTTP method of an API operation, e.g. `get`. */
+  method?: string;
   /** Present for groups only. */
   children?: SourceNode[];
 }
@@ -62,4 +77,12 @@ interface SourceData {
   navigation: SourceNode[];
 }
 
-export type { FileEntry, FileContent, AndesineContent, SourcePage, SourceNode, SourceData };
+export type {
+  FileEntry,
+  FileContent,
+  AndesineContent,
+  OpenAPIContent,
+  SourcePage,
+  SourceNode,
+  SourceData
+};

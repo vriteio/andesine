@@ -2,6 +2,7 @@ import type { CustomRecord } from "pagefind";
 import type { PagesConfig } from "../config";
 import { filterVisibility } from "../content/visibility";
 import { loadFilesSource } from "../sources/files/load";
+import { loadOpenAPISource } from "../sources/openapi/stored";
 import { toSearchText } from "./text";
 
 /**
@@ -9,17 +10,20 @@ import { toSearchText } from "./text";
  * Built sites index the rendered pages instead.
  */
 const getSearchRecords = async (config: PagesConfig): Promise<CustomRecord[]> => {
+  const options = { base: config.base, site: config.site };
   const sources = await Promise.all(
     config.sources.flatMap((source) => {
-      return source.type === "files"
-        ? [loadFilesSource(source, { base: config.base, site: config.site })]
-        : [];
+      if (source.type === "files") return [loadFilesSource(source, options)];
+      if (source.type === "openapi") return [loadOpenAPISource(source, options)];
+
+      return [];
     })
   );
 
   return sources.flatMap((source) => {
     return source.pages.flatMap((page): CustomRecord[] => {
-      const text = page.content.type === "file" ? (page.content.entry.body ?? "") : "";
+      // OpenAPI pages use their Markdown alternative, which has their fields.
+      const text = page.content.type === "file" ? (page.content.entry.body ?? "") : page.markdown;
       // Like the built index, which reads the rendered page.
       const body = toSearchText(filterVisibility(text, "humans"));
 

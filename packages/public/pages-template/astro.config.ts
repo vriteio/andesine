@@ -7,11 +7,17 @@ import { andesine } from "@andesine/pages/integration";
 import config from "./andesine.config";
 
 export default defineConfig({
-  // Andesine sources need a server for search and request-time pages; other sites are static.
+  // Andesine sources need a server for search and AI answers; other sites are static.
   adapter: config.sources.some((source) => source.type === "andesine")
     ? node({ mode: "standalone" })
     : undefined,
   server: { host: true, allowedHosts: [".local"] },
   markdown: { shikiConfig: { theme: "github-light" } },
-  integrations: [mdx(), solid(), unoCSS(), andesine()]
+  integrations: [
+    mdx(),
+    solid(),
+    // The reset loads just before the UnoCSS rules; utilities then override it in every build.
+    unoCSS({ injectReset: "@unocss/reset/tailwind.css" }),
+    andesine()
+  ]
 });

@@ -10,7 +10,6 @@ import { MobileNavigation } from "../components/layout/mobile-navigation";
 import { Outline } from "../components/layout/outline";
 import { PageActions } from "../components/layout/page-actions";
 import { Sidebar } from "../components/layout/sidebar";
-import "@unocss/reset/tailwind.css";
 import "../styles/global.css";
 
 interface Props {
@@ -19,7 +18,7 @@ interface Props {
 
 const { page } = Astro.props;
 const { site } = page;
-const wide = page.layout === "wide";
+const wide = page.layout !== "docs";
 const hasTabs = page.sections.length > 0 && site.sectionsDisplay === "tabs";
 // Without tabs, sections show at the top of the navigation.
 const navigationSections = hasTabs ? [] : page.sections;
@@ -37,7 +36,7 @@ const stickyClass = hasTabs ? "top-26 h-[calc(100dvh-6.5rem)]" : "top-16 h-[calc
     <meta name="color-scheme" content="light" />
     <meta name="theme-color" content="#f9fafb" />
     <title>{page.meta.title}</title>
-    <!-- Ready for the first frame, so page transitions do not show the fallback font. -->
+    <!-- Ready for the first frame, so pages do not show the fallback font. -->
     <link rel="preload" href={nunito} as="font" type="font/woff2" crossorigin />
     {page.meta.description && <meta name="description" content={page.meta.description} />}
     {page.canonical && <link rel="canonical" href={page.canonical} />}
@@ -103,15 +102,17 @@ const stickyClass = hasTabs ? "top-26 h-[calc(100dvh-6.5rem)]" : "top-16 h-[calc
         client:media="(min-width: 768px)"
         navigation={page.navigation}
         sections={navigationSections}
-        links={site.links}
+        links={page.links}
         storageKey={storageKey}
-        class:list={["hidden md:(sticky block) [view-transition-name:sidebar]", stickyClass]}
+        class:list={["hidden md:(sticky block)", stickyClass]}
       />
       <main
         id="main-content"
         class:list={[
-          "relative min-w-0 w-full justify-self-center px-4 pb-16 pt-6 md:px-8 [view-transition-name:content]",
-          wide ? "max-w-screen-lg xl:col-span-2" : "max-w-screen-md"
+          "relative min-w-0 w-full justify-self-center px-4 pb-16 pt-6 md:px-8",
+          page.layout === "docs" && "max-w-screen-md",
+          page.layout === "wide" && "max-w-screen-lg xl:col-span-2",
+          page.layout === "reference" && "max-w-screen-lg xl:(col-span-2 max-w-none)"
         ]}
       >
         <!-- Starts at the page top, so the sticky shadows align with the viewport from the start. -->
@@ -186,7 +187,7 @@ const stickyClass = hasTabs ? "top-26 h-[calc(100dvh-6.5rem)]" : "top-16 h-[calc
     <PageScrollbar client:idle />
     <MobileNavigation
       client:media="(max-width: 767.9px)"
-      page={{ site, navigation: page.navigation }}
+      page={{ site, links: page.links, navigation: page.navigation }}
       sections={navigationSections}
       storageKey={storageKey}
     />

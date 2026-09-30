@@ -30,7 +30,7 @@ const withVary = (response: Response): Response => {
 
 /**
  * Serves a page's Markdown to requests that prefer it. Hosts serve built pages as files, so this
- * works for request-time pages, and for all pages in development.
+ * works in development only; a host can add the same rule for `Accept: text/markdown`.
  */
 export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname } = context.url;

@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { AstroIntegration } from "astro";
-import { isLiveSource, type PagesConfig } from "./config";
+import type { PagesConfig } from "./config";
 import { mdxComponents } from "./content/mdx-components";
 import { shikiCodeTitle } from "./content/shiki-code-title";
 import { copyAssets, serveAssets } from "./integration/assets";
@@ -38,9 +38,7 @@ const pageLists = {
 };
 
 const getBuildSourceIDs = (config: PagesConfig): string[] => {
-  return config.sources
-    .filter((source) => source.type === "andesine" && source.rendering === "ssg")
-    .map((source) => source.id);
+  return config.sources.filter((source) => source.type === "andesine").map((source) => source.id);
 };
 const andesine = (options: AndesineOptions = {}): AstroIntegration => {
   let config: PagesConfig;
@@ -70,7 +68,6 @@ const andesine = (options: AndesineOptions = {}): AstroIntegration => {
         const loaded = await loadConfig(configPath);
         const { dependencies } = loaded;
         const processor = astroConfig.markdown.processor as MarkdownProcessor | undefined;
-        const hasLiveSource = loaded.config.sources.some(isLiveSource);
         const isCloudflare = astroConfig.adapter?.name === "@astrojs/cloudflare";
 
         config = loaded.config;
@@ -127,65 +124,35 @@ const andesine = (options: AndesineOptions = {}): AstroIntegration => {
           order: "pre"
         });
 
-        if (config.sources.some((source) => !isLiveSource(source))) {
-          injectRoute({
-            pattern: "/[...path]",
-            entrypoint: new URL("./astro/routes/static.astro", import.meta.url),
-            prerender: true
-          });
-          injectRoute({
-            pattern: "/[...path]/index.md",
-            entrypoint: new URL("./astro/routes/markdown.js", import.meta.url),
-            prerender: true
-          });
-          injectRoute({
-            pattern: "/[...path].md",
-            entrypoint: new URL("./astro/routes/markdown-alias.js", import.meta.url),
-            prerender: true
-          });
+        injectRoute({
+          pattern: "/[...path]",
+          entrypoint: new URL("./astro/routes/static.astro", import.meta.url),
+          prerender: true
+        });
+        injectRoute({
+          pattern: "/[...path]/index.md",
+          entrypoint: new URL("./astro/routes/markdown.js", import.meta.url),
+          prerender: true
+        });
+        injectRoute({
+          pattern: "/[...path].md",
+          entrypoint: new URL("./astro/routes/markdown-alias.js", import.meta.url),
+          prerender: true
+        });
 
-          if (config.social.generate) {
-            injectRoute({
-              pattern: "/[...path]/social.png",
-              entrypoint: new URL("./astro/routes/social.js", import.meta.url),
-              prerender: true
-            });
-          }
+        if (config.social.generate) {
+          injectRoute({
+            pattern: "/[...path]/social.png",
+            entrypoint: new URL("./astro/routes/social.js", import.meta.url),
+            prerender: true
+          });
         }
 
-        // Each request-time source owns its mount; the config schema checks for overlaps.
-        for (const source of config.sources.filter(isLiveSource)) {
-          injectRoute({
-            pattern: `${source.mount}[...path]`,
-            entrypoint: new URL("./astro/routes/live.astro", import.meta.url),
-            prerender: false
-          });
-          injectRoute({
-            pattern: `${source.mount}[...path]/index.md`,
-            entrypoint: new URL("./astro/routes/live-markdown.js", import.meta.url),
-            prerender: false
-          });
-          injectRoute({
-            pattern: `${source.mount}[...path].md`,
-            entrypoint: new URL("./astro/routes/live-markdown-alias.js", import.meta.url),
-            prerender: false
-          });
-
-          if (config.social.generate) {
-            injectRoute({
-              pattern: `${source.mount}[...path]/social.png`,
-              entrypoint: new URL("./astro/routes/live-social.js", import.meta.url),
-              prerender: false
-            });
-          }
-        }
-
-        // The page lists include request-time pages, so they are built for each request then.
         for (const [pattern, name] of Object.entries(pageLists)) {
           injectRoute({
             pattern,
             entrypoint: new URL(`./astro/routes/${name}.js`, import.meta.url),
-            prerender: !hasLiveSource
+            prerender: true
           });
         }
 
@@ -232,7 +199,7 @@ const andesine = (options: AndesineOptions = {}): AstroIntegration => {
       "astro:build:done": async ({ logger }) => {
         await copyAssets(cache, output, getBuildSourceIDs(config));
 
-        if (config.sources.some((source) => source.type === "files")) {
+        if (config.sources.some((source) => source.type !== "andesine")) {
           await writePagefindIndex(fileURLToPath(output));
           logger.info("Wrote the local search index.");
         }

@@ -73,10 +73,10 @@ Each page has schema.org data for search engines and agents, and shows its last
 update date when it is known. A URL with `?q=`, for example `/?q=install`, opens
 the search with that query.
 
-A request for a page URL with `Accept: text/markdown` gets the Markdown version,
-and a missing Markdown page gets a Markdown 404 with links to related pages. This
-works for pages that render on the server, and in development. Static hosts send
-built pages as files, so add a rewrite rule on the host. For example, on Vercel:
+In development, a request for a page URL with `Accept: text/markdown` gets the
+Markdown version. In production, documentation pages are static files. Add a
+rewrite rule on the host to serve the page's `index.md` file for these requests.
+For example, on Vercel:
 
 ```json
 {
@@ -128,11 +128,10 @@ An Andesine source reads the latest publication of an Andesine collection:
 sources: [{ id: "platform", type: "andesine", collection: "coll_...", mount: "/platform/" }];
 ```
 
-Set `ANDESINE_API_KEY` in `.env` or in the build environment. With the default
-`rendering: "ssg"`, the build reads the publication and copies its images into the
-site. With `rendering: "ssr"`, the server reads the navigation tree and the current
-page for each request. Sites with Andesine sources need a server; see
-[Deployment](../deployment/).
+Set `ANDESINE_API_KEY` in `.env` or in the build environment. The build reads the
+latest publication and copies its images into the site. To show a new
+publication, build the site again, e.g. from a publish webhook. Sites with Andesine
+sources need a server for search and AI answers; see [Deployment](../deployment/).
 
 These entry properties control the pages. All of them are optional.
 
@@ -143,10 +142,25 @@ These entry properties control the pages. All of them are optional.
 | `toc`          | Checkbox | Shows the table of contents. The default is on. |
 | `layout`       | Select   | `docs`, or `wide` for a page without a ToC.     |
 
+Icons in content, such as a card's `icon`, can come from any Iconify set.
+
 URLs come from the entry slugs, and navigation labels from the entry names.
 Collections become navigation groups. An entry with the slug `index` is the
 landing page of its collection, and takes the collection's name. Content can use the same components as
 MDX pages, with the same names and props.
+
+## OpenAPI sources
+
+An OpenAPI source makes an API reference from an OpenAPI 3.0 or 3.1 spec, at
+build time:
+
+```ts
+sources: [{ id: "api", type: "openapi", spec: "src/api/openapi.yaml", mount: "/api/" }];
+```
+
+Set `spec` to a file in the project, or to an HTTPS URL. Set `tagPages: false` to
+leave out the landing pages that tag descriptions make. See
+[API reference](../api-reference/) for the pages it makes and for embeds.
 
 ## Sections
 
@@ -162,3 +176,15 @@ sections: [
 
 Sections show as tabs in the header. With `sectionsDisplay: "navigation"`, they
 show as links at the top of the navigation instead, before the `links`.
+
+A section can have its own `links`, with the same fields as the site's `links`.
+Its pages show them at the top of the navigation, after the site's links:
+
+```ts
+{
+  id: "reference",
+  label: "Reference",
+  sources: ["api"],
+  links: [{ label: "Status", href: "https://status.example.com", icon: "i-lucide:activity" }]
+}
+```

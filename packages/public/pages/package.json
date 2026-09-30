@@ -57,11 +57,14 @@
     "@andesine/sdk": "workspace:*",
     "@iconify/json": "^2.2.509",
     "@iconify/utils": "^3.1.4",
+    "@scalar/json-magic": "0.15.2",
+    "@scalar/openapi-parser": "0.29.7",
     "hast-util-to-html": "9.0.5",
     "marked": "15.0.12",
     "pagefind": "1.5.2",
     "satori-html": "^0.3.2",
     "shiki": "^4.4.3",
+    "yaml": "2.9.0",
     "zod": "^4.5.4"
   },
   "devDependencies": {

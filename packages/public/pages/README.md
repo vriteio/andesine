@@ -55,11 +55,15 @@ build stops when two pages use the same URL.
 | `layout`     | `src/layouts/page.astro`          | Page layout, relative to the root.       |
 | `components` | `src/components/content/index.ts` | MDX component map, relative to the root. |
 
-Andesine sources read the latest publication with `@andesine/sdk`. Build-time
-(`ssg`) sources load in a content collection and copy their images into the build;
-request-time (`ssr`) sources load for each request and need a server adapter.
+Andesine sources read the latest publication with `@andesine/sdk` at build time.
+They load in a content collection and copy their images into the build.
 Content converts with `@andesine/converters`, so heading IDs match Andesine search
 and answers, and renders with the same component map as MDX.
+
+OpenAPI sources read an OpenAPI 3.0 or 3.1 spec at build time, from a file or an
+HTTPS URL, and make overview, tag, and operation pages. The template's `Operation`
+component renders operations with `getOperationView()` from `@andesine/pages/astro`,
+on reference pages and in embeds (`<Operation source="api" id="..." />`).
 
 ## Search
 

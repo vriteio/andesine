@@ -179,8 +179,7 @@ const createAndesinePages = async (
 };
 /**
  * Maps a publication tree to navigation, like the app's explorer: collections first, then
- * entries. Entries without a prepared page get a page with their title only, which is enough for
- * navigation, e.g. when a request prepares only its own page.
+ * entries. The pages come from the same snapshot as the tree, so each entry has one.
  */
 const createAndesineSource = (
   source: AndesineSourceConfig,
@@ -189,28 +188,9 @@ const createAndesineSource = (
   prepared: SourcePage[]
 ): SourceData => {
   const toPageHref = createHrefResolver(source, base, tree.slugPath);
-  const byID = new Map(prepared.map((page) => [page.id, page]));
-  const pages = listTreeEntries(tree).map((item): SourcePage => {
-    return (
-      byID.get(item.entry.id) ?? {
-        sourceID: source.id,
-        id: item.entry.id,
-        href: toPageHref(item.entry.slugPath),
-        title: getTitle(item),
-        toc: true,
-        layout: "docs",
-        searchHidden: false,
-        markdown: "",
-        content: {
-          type: "andesine",
-          nodes: { type: "root", children: [] },
-          headings: [],
-          iconCSS: ""
-        }
-      }
-    );
-  });
-  const pagesByID = new Map(pages.map((page) => [page.id, page]));
+  // Copies, so changes to a page, e.g. operation links, never change the stored publication.
+  const pagesByID = new Map(prepared.map((page) => [page.id, { ...page }]));
+  const pages = listTreeEntries(tree).map((item) => pagesByID.get(item.entry.id)!);
   const toNode = (page: SourcePage): SourceNode => {
     return { id: `${source.id}:${page.id}`, label: page.title, page };
   };
@@ -246,5 +226,5 @@ const createAndesineSource = (
   };
 };
 
-export { createAndesineSource, createAndesinePages, createHrefResolver, listTreeEntries };
-export type { LoadOptions, HrefResolver };
+export { createAndesineSource, createAndesinePages };
+export type { LoadOptions };

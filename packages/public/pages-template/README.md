@@ -13,10 +13,11 @@ Astro integration. `@andesine/ui/solid` supplies headless components.
 | `uno.config.ts`          | UnoCSS theme, layers, and transformers.        |
 | `src/content.config.ts`  | Content collections for the sources.           |
 | `src/content/docs/`      | The pages of the `docs` files source.          |
+| `src/api/openapi.yaml`   | The example spec of the `api` OpenAPI source.  |
 | `src/layouts/page.astro` | The page layout. It receives one `page` prop.  |
 | `.env.example`           | The Andesine API key variable.                 |
 | `src/styles/global.css`  | Fonts, base styles, and scrollbars.            |
-| `src/components/`        | Styled primitives and layout components.       |
+| `src/components/`        | Styled primitives, layout, and API reference.  |
 
 ## Styles
 

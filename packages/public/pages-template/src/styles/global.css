@@ -70,46 +70,6 @@ html::-webkit-scrollbar {
   box-shadow: inset 2px 0 4px 0 rgb(0 0 0 / 5%);
 }
 
-/* Page transitions */
-/* Browsers with cross-document view transitions keep the old page until the new one is ready,
-   then crossfade. The header and the sidebar have names, so they stay in place. */
-@view-transition {
-  navigation: auto;
-}
-
-/* The old content fades out fast; the new content fades in while it rises. */
-::view-transition-group(content) {
-  animation: none;
-}
-
-::view-transition-old(content) {
-  animation: 100ms ease-out both page-fade-out;
-}
-
-::view-transition-new(content) {
-  animation: 200ms ease-out 50ms both page-rise;
-}
-
-/* Highlights move from the old current item to the new one. */
-::view-transition-group(navigation-highlight),
-::view-transition-group(section-indicator) {
-  animation-duration: 200ms;
-  animation-timing-function: ease-out;
-}
-
-@keyframes page-fade-out {
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes page-rise {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-}
-
 /* Outline skeleton */
 /* Outline text shows as skeleton lines until its guide is measured; without scripts, as text. */
 @media (scripting: enabled) {
@@ -122,12 +82,6 @@ html::-webkit-scrollbar {
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
-    animation: none !important;
-  }
-
   html {
     scroll-behavior: auto;
   }

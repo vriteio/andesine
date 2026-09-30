@@ -2,6 +2,8 @@ import type { PagesConfig } from "../config";
 import type { SourcePage } from "../sources";
 
 const toLine = (value: string): string => value.replace(/\s+/g, " ").trim();
+/** Text for Markdown link labels, with brackets and backslashes escaped. */
+const toLabel = (value: string): string => toLine(value).replace(/[[\]\\]/g, "\\$&");
 const toQuote = (text: string): string => {
   return text
     .split("\n")
@@ -37,4 +39,4 @@ const createMarkdownPage = (config: PagesConfig, page: SourcePage): string => {
   return `${createAgentNote(config)}\n\n${createPageBody(page)}\n`;
 };
 
-export { toLine, getLLMsURL, createAgentNote, createPageBody, createMarkdownPage };
+export { toLine, toLabel, getLLMsURL, createAgentNote, createPageBody, createMarkdownPage };

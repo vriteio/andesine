@@ -2,7 +2,6 @@ import { AndesineAPIError, createClient, type PublishedSearchResult } from "@and
 import type { z } from "zod";
 import type { AndesineSourceConfig, PagesConfig } from "../config";
 import { loadAndesineSource } from "../sources/andesine/stored";
-import { createHrefResolver } from "../sources/andesine/load";
 import { getAPIKey } from "../sources/andesine/read";
 
 interface RequestOptions<T> {
@@ -20,18 +19,10 @@ interface AndesineRequest<T> {
   signal: AbortSignal;
 }
 
-interface CachedResolver {
-  resolver: Promise<PageResolver>;
-  expiresAt: number;
-}
-
 type RequestResult<T> = { request: AndesineRequest<T> } | { response: Response };
-type PageResolver = (
-  result: Pick<PublishedSearchResult, "entryID" | "slugPath" | "properties">
-) => string | undefined;
+type PageResolver = (result: Pick<PublishedSearchResult, "entryID">) => string | undefined;
 
-const resolverTTL = 60_000;
-const resolvers = new Map<string, CachedResolver>();
+const resolvers = new Map<string, Promise<PageResolver>>();
 
 const parseJSON = (text: string): unknown => {
   try {
@@ -45,11 +36,6 @@ const json = (body: unknown, status = 200, headers: Record<string, string> = {})
     status,
     headers: { "Cache-Control": "private, no-store", ...headers }
   });
-};
-const isSearchHidden = (result: Pick<PublishedSearchResult, "properties">): boolean => {
-  return result.properties.some(
-    (property) => property.key === "searchHidden" && property.booleanValue === true
-  );
 };
 /** Reads a body of up to `maxSize` characters; larger bodies give `undefined`. */
 const readText = async (request: Request, maxSize: number): Promise<string | undefined> => {
@@ -114,51 +100,24 @@ const readRequest = async <T extends { source: string }>(
   }
 };
 /**
- * Maps results to page URLs. Build-time sources use their built pages, so results for pages
- * published after the build have no URL and are left out.
+ * Maps results to page URLs, from the built pages. Results for pages that were published after
+ * the build have no URL and are left out. The pages do not change, so each source loads once.
  */
-const loadPageResolver = async (
-  source: AndesineSourceConfig,
-  base: string,
-  client: ReturnType<typeof createClient>
-): Promise<PageResolver> => {
-  if (source.rendering === "ssg") {
-    const { pages } = await loadAndesineSource(source, base);
-    const shown = new Map(
-      pages.filter((page) => !page.searchHidden).map((page) => [page.id, page])
-    );
+const createPageResolver = (source: AndesineSourceConfig, base: string): Promise<PageResolver> => {
+  if (!resolvers.has(source.id)) {
+    const resolver = loadAndesineSource(source, base).then(({ pages }): PageResolver => {
+      const shown = new Map(
+        pages.filter((page) => !page.searchHidden).map((page) => [page.id, page])
+      );
 
-    return (result) => shown.get(result.entryID)?.href;
+      return (result) => shown.get(result.entryID)?.href;
+    });
+
+    resolvers.set(source.id, resolver);
+    resolver.catch(() => resolvers.delete(source.id));
   }
 
-  const tree = await client.content.getTree(
-    { collectionID: source.collection, channel: "published" },
-    { signal: AbortSignal.timeout(15_000) }
-  );
-  const toHref = createHrefResolver(source, base, tree.collection.slugPath);
-
-  return (result) => {
-    return isSearchHidden(result) ? undefined : toHref(result.slugPath);
-  };
-};
-/** Keeps each source's resolver for a short time, as it only changes with a new publication. */
-const createPageResolver = (
-  source: AndesineSourceConfig,
-  base: string,
-  client: ReturnType<typeof createClient>
-): Promise<PageResolver> => {
-  const cached = resolvers.get(source.id);
-
-  if (cached && cached.expiresAt > Date.now()) return cached.resolver;
-
-  const resolver = loadPageResolver(source, base, client);
-
-  resolvers.set(source.id, { resolver, expiresAt: Date.now() + resolverTTL });
-  resolver.catch(() => {
-    if (resolvers.get(source.id)?.resolver === resolver) resolvers.delete(source.id);
-  });
-
-  return resolver;
+  return resolvers.get(source.id)!;
 };
 const toAnchorHash = (anchor?: string): string => (anchor ? `#${encodeURIComponent(anchor)}` : "");
 /** Maps API failures to a response; only unexpected failures are logged. */

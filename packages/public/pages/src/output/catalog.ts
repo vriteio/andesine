@@ -1,8 +1,6 @@
-import { isLiveSource, type PagesConfig } from "../config";
-import type { HighlightOptions } from "../content/prepare";
+import type { PagesConfig } from "../config";
 import { createSections, flattenTree } from "../navigation";
 import { loadStaticSources, type SourcePage } from "../sources";
-import { loadLiveSource } from "../sources/andesine/live";
 
 interface CatalogTopic {
   label: string;
@@ -12,7 +10,7 @@ interface CatalogTopic {
 
 interface CatalogSection {
   label: string;
-  /** Pages in navigation order. */
+  /** Pages in navigation order, followed by pages hidden from navigation. */
   pages: SourcePage[];
   /** The top-level navigation items. */
   topics: CatalogTopic[];
@@ -24,29 +22,20 @@ interface Catalog {
 }
 
 /** Lists the public pages of all sources. Pages that are hidden from search are left out. */
-const loadCatalog = async (
-  config: PagesConfig,
-  highlight: HighlightOptions,
-  signal?: AbortSignal
-): Promise<Catalog> => {
-  const [staticSources, liveSources] = await Promise.all([
-    loadStaticSources(config),
-    Promise.all(
-      config.sources
-        .filter(isLiveSource)
-        .map((source) => loadLiveSource(source, config.base, config.site, highlight, signal))
-    )
-  ]);
-  const sources = [...staticSources, ...liveSources];
+const loadCatalog = async (config: PagesConfig): Promise<Catalog> => {
+  const sources = await loadStaticSources(config);
   const isPublic = (page?: SourcePage): page is SourcePage => Boolean(page && !page.searchHidden);
 
   return {
     sections: createSections(config, sources).map((section) => {
+      const pages = [
+        ...flattenTree(section.navigation).map((node) => node.page),
+        ...section.sources.flatMap((source) => source.pages)
+      ].filter(isPublic);
+
       return {
         label: section.label,
-        pages: flattenTree(section.navigation)
-          .map((node) => node.page)
-          .filter(isPublic),
+        pages: [...new Set(pages)],
         topics: section.navigation.flatMap((node) => {
           const page = flattenTree([node])
             .map((item) => item.page)

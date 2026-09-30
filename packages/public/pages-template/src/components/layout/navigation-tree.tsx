@@ -2,6 +2,7 @@ import type { NavigationItem } from "@andesine/pages";
 import { NavigationTree as Tree } from "@andesine/ui/solid";
 import clsx from "clsx";
 import { type Component, For, Show } from "solid-js";
+import { getMethodColor, getMethodLabel } from "../reference/methods";
 
 interface NavigationTreeProps {
   items: NavigationItem[];
@@ -26,6 +27,7 @@ interface ItemLinkProps {
 const indent = (depth: number): string => `calc(${depth} * (0.875rem + 1px))`;
 const rowClass =
   "relative isolate flex h-7.5 min-w-0 items-center rounded-lg px-2 transition duration-200 ease-out";
+const currentTextClass = "bg-gradient-to-tr bg-[length:125%_auto] bg-clip-text text-transparent";
 const hoverClass =
   "@hover:(bg-gradient-to-r from-gray-500/10 to-transparent) focus-visible:(bg-gradient-to-r from-gray-500/10 to-transparent)";
 
@@ -42,10 +44,9 @@ const ItemLink: Component<ItemLinkProps> = (props) => (
     title={props.item.label}
   >
     <Show when={props.item.current}>
-      {/* A named element, so page transitions move it from the old current item to the new one. */}
       <span
         aria-hidden="true"
-        class="pointer-events-none absolute inset-y-0 right-0 -z-1 rounded-lg bg-gradient-to-r from-secondary/10 via-primary/10 to-transparent [view-transition-name:navigation-highlight]"
+        class="pointer-events-none absolute inset-y-0 right-0 -z-1 rounded-lg bg-gradient-to-r from-secondary/10 via-primary/10 to-transparent"
         style={{ left: `calc(-1 * ${indent(props.depth)})` }}
       />
       <For each={Array.from({ length: props.depth }, (_, index) => index)}>
@@ -58,15 +59,19 @@ const ItemLink: Component<ItemLinkProps> = (props) => (
         )}
       </For>
     </Show>
-    <span
-      class={clsx(
-        "truncate",
-        props.item.current &&
-          "bg-gradient-to-tr bg-[length:125%_auto] bg-clip-text text-transparent"
+    <Show when={props.item.method}>
+      {(method) => (
+        <span
+          class={clsx(
+            "mr-2 w-9 shrink-0 font-mono text-[0.625rem] font-bold",
+            props.item.current ? currentTextClass : getMethodColor(method())
+          )}
+        >
+          {getMethodLabel(method())}
+        </span>
       )}
-    >
-      {props.item.label}
-    </span>
+    </Show>
+    <span class={clsx("truncate", props.item.current && currentTextClass)}>{props.item.label}</span>
   </Tree.Link>
 );
 const Chevron: Component = () => (
