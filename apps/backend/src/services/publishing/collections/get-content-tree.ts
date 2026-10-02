@@ -6,7 +6,12 @@ import {
 import { createContentPaths } from "@andesine/server/content";
 import { type CollectionSelector } from "@andesine/contracts/content";
 import { withPublicWorkspace } from "#backend/lib/policy";
-import { normalizePublishingChannelCode, resolvePublishingSnapshot } from "#backend/lib/publishing";
+import {
+  assertInCollectionScope,
+  normalizePublishingChannelCode,
+  resolveCollectionScope,
+  resolvePublishingSnapshot
+} from "#backend/lib/publishing";
 import { PUBLISHED_CHANNEL_CODE } from "@andesine/contracts/publishing";
 import {
   toCollectionID,
@@ -45,6 +50,8 @@ interface PublishedContentTree {
 interface GetPublishedContentTreeInput extends CollectionSelector {
   channel?: string;
   snapshotID?: string;
+  /** The collections that a publishable key can read. */
+  collectionScope?: string[];
 }
 
 const getPublishedContentTree = withPublicWorkspace<
@@ -70,6 +77,9 @@ const getPublishedContentTree = withPublicWorkspace<
     );
   const paths = createContentPaths(collectionRows);
   const collectionID = paths.resolveCollection(input) ?? null;
+
+  assertInCollectionScope(resolveCollectionScope(paths, input.collectionScope), collectionID);
+
   const entryRows = await database
     .select({
       id: publishingSnapshotEntries.entryID,

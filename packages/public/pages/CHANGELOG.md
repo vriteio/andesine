@@ -89,3 +89,7 @@
   Markdown syntax, like the built index.
 - Add a generated `skill.md` with agentskills.io and `skills` CLI discovery
   indexes, and the `agents.skill` option for your own skill file.
+- Add the `publicKey` option to Andesine sources. With a publishable key, search and
+  AI answers call the Andesine API from browsers, and the build writes a JSON map of
+  entry URLs in place of the `/_andesine/` server routes, so the site stays static.
+  Without a secret key, the build also reads the content with the publishable key.

@@ -1,6 +1,22 @@
-import type { PagesConfig } from "../config";
-import type { SearchSourceContext, SiteContext } from "./types";
+import type { PagesConfig, SourceConfig } from "../config";
+import type { AndesineAPIContext, SearchSourceContext, SiteContext } from "./types";
 
+const defaultAPIURL = "https://api.andesine.app";
+
+/** Direct API access for a source with a publishable key. */
+const toAPIContext = (
+  config: PagesConfig,
+  source: SourceConfig
+): AndesineAPIContext | undefined => {
+  if (source.type !== "andesine" || !source.publicKey) return undefined;
+
+  return {
+    url: (source.apiURL ?? defaultAPIURL).replace(/\/$/, ""),
+    key: source.publicKey,
+    collection: source.collection,
+    pages: `${config.base}_andesine/pages/${source.id}.json`
+  };
+};
 const createSearchSources = (config: PagesConfig): SearchSourceContext[] => {
   return config.sources.map((source) => {
     return {
@@ -8,7 +24,8 @@ const createSearchSources = (config: PagesConfig): SearchSourceContext[] => {
       label:
         config.sections.find((section) => section.sources.includes(source.id))?.label ??
         config.name,
-      type: source.type === "andesine" ? "andesine" : "pagefind"
+      type: source.type === "andesine" ? "andesine" : "pagefind",
+      api: toAPIContext(config, source)
     };
   });
 };
@@ -37,7 +54,8 @@ const createSiteContext = (config: PagesConfig): SiteContext => {
           pagefind: `${config.base}pagefind/`,
           answers: answers && {
             endpoint: `${config.base}_andesine/answers/`,
-            source: answers.id
+            source: answers.id,
+            api: toAPIContext(config, answers)
           }
         }
       : undefined

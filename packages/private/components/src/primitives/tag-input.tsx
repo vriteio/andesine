@@ -2,6 +2,7 @@ import { type Component, createSignal, Show } from "solid-js";
 import { Input } from "./input";
 import { TagList } from "./tag-list";
 import { Tooltip } from "./tooltip";
+import clsx from "clsx";
 
 interface TagInputProps {
   values: string[];
@@ -12,6 +13,8 @@ interface TagInputProps {
   maxLength?: number;
   maxValues?: number;
   placeholder?: string;
+  inputClass?: string;
+  tagListClass?: string;
   validate?(values: string[]): string | undefined;
   setValues?(values: string[]): void;
 }
@@ -44,7 +47,7 @@ const TagInput: Component<TagInputProps> = (props) => {
   return (
     <div class=":base: flex w-full min-w-0 flex-col gap-1">
       <Input
-        class=":base-2: w-full min-w-0 bg-gray-50"
+        class={clsx(":base-2: w-full min-w-0 bg-gray-50", props.inputClass)}
         label={props.label}
         size="small"
         color="contrast"
@@ -85,7 +88,12 @@ const TagInput: Component<TagInputProps> = (props) => {
         )}
       />
       <Show when={Boolean(props.values.length)}>
-        <TagList values={props.values} disabled={props.disabled} setValues={setValues} />
+        <TagList
+          values={props.values}
+          disabled={props.disabled}
+          setValues={setValues}
+          class={props.tagListClass}
+        />
       </Show>
     </div>
   );

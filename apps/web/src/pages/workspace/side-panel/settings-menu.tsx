@@ -81,6 +81,7 @@ const SettingsMenu: Component = () => {
     const roleActive = isRoute("/role") || editingRole;
     const groupActive = isRoute("/group") || editingGroup;
     const keyActive = isRoute("/key") || editingKey;
+    const publishableKey = keyActive && location.query.kind === "publishable";
     const editingWebhook = Boolean(params.webhookID);
     const viewingEvents = editingWebhook && location.pathname.endsWith("/events");
     const webhookActive = isRoute("/webhook") || editingWebhook;
@@ -165,11 +166,9 @@ const SettingsMenu: Component = () => {
                   visible: hasPermission("read:api_keys") || hasPermission("read:webhooks"),
                   subItems: [
                     {
-                      icon: "i-lucide:key-round",
-                      label: editingKey ? "Edit key" : "Create key",
-                      href: editingKey
-                        ? `${settingsPath()}/key/${encodeURIComponent(params.keyID!)}`
-                        : `${settingsPath()}/key`,
+                      icon: publishableKey ? "i-tabler:circle-key" : "i-lucide:key-round",
+                      label: `${editingKey ? "Edit" : "Create"} ${publishableKey ? "publishable" : "secret"} key`,
+                      href: `${editingKey ? `${settingsPath()}/key/${encodeURIComponent(params.keyID!)}` : `${settingsPath()}/key`}?kind=${publishableKey ? "publishable" : "secret"}`,
                       active: keyActive,
                       visible: Boolean(params.keyID) || hasPermission("read:api_keys")
                     },

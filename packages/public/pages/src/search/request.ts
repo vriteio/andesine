@@ -1,8 +1,9 @@
-import { AndesineAPIError, createClient, type PublishedSearchResult } from "@andesine/sdk";
+import { AndesineAPIError, createClient } from "@andesine/sdk";
 import type { z } from "zod";
 import type { AndesineSourceConfig, PagesConfig } from "../config";
 import { loadAndesineSource } from "../sources/andesine/stored";
 import { getAPIKey } from "../sources/andesine/read";
+import type { PageResolver } from "./items";
 
 interface RequestOptions<T> {
   schema: z.ZodType<T>;
@@ -20,7 +21,6 @@ interface AndesineRequest<T> {
 }
 
 type RequestResult<T> = { request: AndesineRequest<T> } | { response: Response };
-type PageResolver = (result: Pick<PublishedSearchResult, "entryID">) => string | undefined;
 
 const resolvers = new Map<string, Promise<PageResolver>>();
 
@@ -119,7 +119,6 @@ const createPageResolver = (source: AndesineSourceConfig, base: string): Promise
 
   return resolvers.get(source.id)!;
 };
-const toAnchorHash = (anchor?: string): string => (anchor ? `#${encodeURIComponent(anchor)}` : "");
 /** Maps API failures to a response; only unexpected failures are logged. */
 const toErrorResponse = (
   error: unknown,
@@ -132,5 +131,5 @@ const toErrorResponse = (
   return limited ? json({ error: messages.limited }, 429) : json({ error: messages.failed }, 502);
 };
 
-export { readRequest, createPageResolver, toAnchorHash, toErrorResponse, json };
-export type { AndesineRequest, PageResolver };
+export { readRequest, createPageResolver, toErrorResponse, json };
+export type { AndesineRequest };

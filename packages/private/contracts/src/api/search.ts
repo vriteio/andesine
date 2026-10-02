@@ -37,7 +37,7 @@ const searchContract = baseContract.prefix("/search").router({
       path: "/published"
     })
     .meta({ example: { query: "installation", channel: "published", limit: 10 } })
-    .meta({ required: { session: true, key: ["read:publishing"] } })
+    .meta({ publishable: true, required: { session: true, key: ["read:publishing"] } })
     .input(publishedSearchInputType)
     .output(publishedSearchResultType),
   askCurrent: baseContract
@@ -66,6 +66,7 @@ const searchContract = baseContract.prefix("/search").router({
       path: "/published/ask"
     })
     .meta({
+      publishable: true,
       required: { session: true, key: ["ai-answers", "read:publishing"] },
       trackUsage: true,
       example: { question: "How do I install Andesine?", channel: "published" }
@@ -98,6 +99,7 @@ const searchContract = baseContract.prefix("/search").router({
         "Emits sources, textDelta, and completed events over SSE. Uses the same inputs, permissions, and rate limit as complete answers. Stream errors use SSE error frames. Never reconnect automatically."
     })
     .meta({
+      publishable: true,
       required: { session: true, key: ["ai-answers", "read:publishing"] },
       trackUsage: true,
       usageTiming: "generation"

@@ -6,6 +6,8 @@ import { type assetDeliveryVariants } from "@andesine/contracts/assets";
 import { toCollectionID, toEntryID, toSnapshotID } from "@andesine/contracts/primitives";
 import { type VersionSummary } from "@andesine/contracts/versions";
 import { withPublicWorkspace } from "#backend/lib/policy";
+import { loadPublishedContentPaths } from "@andesine/server/content";
+import { assertInCollectionScope, resolveCollectionScope } from "#backend/lib/publishing";
 import { loadPublishedEntryVersion } from "#backend/lib/publishing/entry-version";
 import { getVersionDetails } from "#backend/lib/versioning/details";
 import { type ContentSchemaMetadata } from "@andesine/contracts/schema";
@@ -36,6 +38,8 @@ interface PublishedEntryContent {
 }
 
 interface PublishedEntryContentInput extends PublishedEntrySelector {
+  /** The collections that a publishable key can read. */
+  collectionScope?: string[];
   expectedSchemaHash?: string;
   channel?: string;
   snapshotID?: string;
@@ -46,6 +50,16 @@ const getPublishedEntryContent = withPublicWorkspace<
   PublishedEntryContent
 >({ transaction: "atomic" }, async ({ database, input, workspaceID }) => {
   const source = await loadPublishedEntryVersion(database, workspaceID, input);
+
+  if (input.collectionScope) {
+    const paths = await loadPublishedContentPaths(database, workspaceID, source.snapshot.id);
+
+    assertInCollectionScope(
+      resolveCollectionScope(paths, input.collectionScope),
+      source.collectionID
+    );
+  }
+
   const { document, schema, ...version } = await getVersionDetails(
     database,
     source.version,

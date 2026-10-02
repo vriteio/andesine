@@ -128,10 +128,14 @@ An Andesine source reads the latest publication of an Andesine collection:
 sources: [{ id: "platform", type: "andesine", collection: "coll_...", mount: "/platform/" }];
 ```
 
-Set `ANDESINE_API_KEY` in `.env` or in the build environment. The build reads the
-latest publication and copies its images into the site. To show a new
-publication, build the site again, e.g. from a publish webhook. Sites with Andesine
-sources need a server for search and AI answers; see [Deployment](../deployment/).
+The build reads the latest publication and copies its images into the site. To show
+a new publication, build the site again, e.g. from a publish webhook.
+
+Set `publicKey` to a publishable key (`adn_pk_...`). The build reads the content with
+it, and search and AI answers call the Andesine API from browsers, so the site stays
+static. The build stops for any other key in `publicKey`. Without `publicKey`, set a
+secret key in `ANDESINE_API_KEY`, in `.env` or in the build environment; the site then
+needs a server. See [Deployment](../deployment/). `answers: false` turns off AI answers.
 
 These entry properties control the pages. All of them are optional.
 

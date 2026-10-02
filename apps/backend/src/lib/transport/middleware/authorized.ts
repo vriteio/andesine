@@ -1,6 +1,10 @@
 import { getEffectivePlan } from "#backend/lib/billing";
 import { Auth } from "#backend/services/auth";
-import { assertAuthorizationRequirements, type SessionData } from "#backend/lib/policy";
+import {
+  assertAuthorizationRequirements,
+  assertPublishableKeyAccess,
+  type SessionData
+} from "#backend/lib/policy";
 import { ORPCError } from "@orpc/server";
 import { base } from "../orpc";
 import { isPublicAPI } from "@andesine/contracts/api/base";
@@ -89,6 +93,11 @@ const authorized = base.middleware(async ({ procedure, context, next }) => {
     });
   }
 
+  assertPublishableKeyAccess(
+    sessionData,
+    meta.publishable === true,
+    context.reqHeaders?.get("origin")
+  );
   assertAuthorizationRequirements(sessionData, meta.required);
   checkPlanAccess(sessionData, meta.requireProPlan);
 

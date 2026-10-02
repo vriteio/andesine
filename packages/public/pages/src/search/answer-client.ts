@@ -1,4 +1,7 @@
-import type { AnswersContext } from "../context";
+import { readAnswerStream } from "@andesine/sdk/streaming";
+import type { AndesineAPIContext, AnswersContext } from "../context";
+import { loadEntryPages } from "./entry-pages";
+import { toAnswerSources } from "./items";
 import type { Answer, AnswerEvent, AnswerMessage, AnswerSource } from "./types";
 
 interface AnswerHistoryTurn {
@@ -77,27 +80,88 @@ const readLines = async function* (body: ReadableStream<Uint8Array>): AsyncGener
     await reader.cancel().catch(() => {});
   }
 };
+/** Streams the events of the site's answers route. */
+const readServerEvents = async function* (
+  context: AnswersContext,
+  question: string,
+  history: AnswerHistoryTurn[],
+  signal: AbortSignal
+): AsyncGenerator<AnswerEvent> {
+  const response = await fetch(context.endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ source: context.source, question, history: toMessages(history) }),
+    signal
+  });
+
+  if (!response.ok || !response.body) {
+    const body = (await response.json().catch(() => ({}))) as { error?: string };
+
+    throw new Error(body.error ?? "AI answers are not available now.");
+  }
+
+  for await (const line of readLines(response.body)) yield JSON.parse(line) as AnswerEvent;
+};
+/** Streams the events of the Andesine API with a publishable key, and links the cited pages. */
+const readAPIEvents = async function* (
+  api: AndesineAPIContext,
+  question: string,
+  history: AnswerHistoryTurn[],
+  signal: AbortSignal
+): AsyncGenerator<AnswerEvent> {
+  const [resolve, response] = await Promise.all([
+    loadEntryPages(api.pages),
+    fetch(`${api.url}/search/published/ask/stream`, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${api.key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        question,
+        history: toMessages(history),
+        collectionID: api.collection,
+        channel: "published"
+      }),
+      signal
+    })
+  ]);
+
+  if (!response.ok) {
+    throw new Error(
+      response.status === 429
+        ? "Too many questions. Try again soon."
+        : "AI answers are not available now."
+    );
+  }
+
+  try {
+    for await (const event of await readAnswerStream(response, { signal })) {
+      if (event.type === "textDelta") {
+        yield { type: "textDelta", text: event.text };
+      } else if (event.type === "sources") {
+        yield { type: "sources", sources: toAnswerSources(event.sources, resolve) };
+      } else {
+        yield {
+          type: "completed",
+          answer: event.answer,
+          sources: toAnswerSources(event.sources, resolve)
+        };
+      }
+    }
+  } catch (error) {
+    signal.throwIfAborted();
+    console.error(error);
+    throw new Error("The answer could not be completed.");
+  }
+};
 const createAnswerClient = (context: AnswersContext): AnswerClient => {
   return {
     ask: async (question, history, signal, onUpdate) => {
-      const response = await fetch(context.endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source: context.source, question, history: toMessages(history) }),
-        signal
-      });
-
-      if (!response.ok || !response.body) {
-        const body = (await response.json().catch(() => ({}))) as { error?: string };
-
-        throw new Error(body.error ?? "AI answers are not available now.");
-      }
+      const events = context.api
+        ? readAPIEvents(context.api, question, history, signal)
+        : readServerEvents(context, question, history, signal);
 
       let answer: Answer = { text: "", sources: [], sourcesReceived: false };
 
-      for await (const line of readLines(response.body)) {
-        const event = JSON.parse(line) as AnswerEvent;
-
+      for await (const event of events) {
         if (event.type === "error") throw new Error(event.error);
 
         if (event.type === "sources") {

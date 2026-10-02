@@ -167,8 +167,19 @@ const andesine = (options: AndesineOptions = {}): AstroIntegration => {
           prerender: true
         });
 
-        // Andesine search keeps the API key on the server, so it needs a server route.
-        if (config.sources.some((source) => source.type === "andesine")) {
+        // Sources with a publishable key are searched from the browser; the others keep their
+        // secret key on the server, so they need server routes.
+        const andesineSources = config.sources.filter((source) => source.type === "andesine");
+
+        if (andesineSources.some((source) => source.publicKey)) {
+          injectRoute({
+            pattern: "/_andesine/pages/[source].json",
+            entrypoint: new URL("./astro/routes/entry-pages.js", import.meta.url),
+            prerender: true
+          });
+        }
+
+        if (andesineSources.some((source) => !source.publicKey)) {
           injectRoute({
             pattern: "/_andesine/search",
             entrypoint: new URL("./astro/routes/search.js", import.meta.url),
@@ -176,7 +187,7 @@ const andesine = (options: AndesineOptions = {}): AstroIntegration => {
           });
         }
 
-        if (config.sources.some((source) => source.type === "andesine" && source.answers)) {
+        if (andesineSources.some((source) => source.answers && !source.publicKey)) {
           injectRoute({
             pattern: "/_andesine/answers",
             entrypoint: new URL("./astro/routes/answers.js", import.meta.url),

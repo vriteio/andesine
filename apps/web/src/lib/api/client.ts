@@ -127,6 +127,7 @@ export type {
   Group,
   Invite,
   Key,
+  KeyKind,
   KeyPermission,
   Membership,
   Permission,

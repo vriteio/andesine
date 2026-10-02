@@ -15,7 +15,11 @@ const contentRouter = handlers.router({
     Publishing.Collections.listContent({ ...input, workspaceID: context.auth.workspaceID })
   ),
   listEntries: authorizedHandlers.listEntries.handler(({ context, input }) =>
-    Publishing.Entries.listContent({ ...input, workspaceID: context.auth.workspaceID })
+    Publishing.Entries.listContent({
+      ...input,
+      workspaceID: context.auth.workspaceID,
+      collectionScope: context.auth.key?.publishable?.collectionIDs
+    })
   ),
   getSchema: authorizedHandlers.getSchema.handler(({ context, input }) =>
     Publishing.Entries.getSchema({ ...input, workspaceID: context.auth.workspaceID })
@@ -36,7 +40,8 @@ const contentRouter = handlers.router({
       slugPath: input.slugPath,
       expectedSchemaHash: input.expectedSchemaHash,
       channel: input.channel,
-      snapshotID: input.snapshotID
+      snapshotID: input.snapshotID,
+      collectionScope: context.auth.key?.publishable?.collectionIDs
     });
     const entityTag = hashEntityTag(content);
     const headers = getCacheHeaders(entityTag);
@@ -54,7 +59,8 @@ const contentRouter = handlers.router({
       collectionSlugPath: input.collectionSlugPath,
       collectionPath: input.collectionPath,
       channel: input.channel,
-      snapshotID: input.snapshotID
+      snapshotID: input.snapshotID,
+      collectionScope: context.auth.key?.publishable?.collectionIDs
     });
     const entityTag = hashEntityTag(content);
     const headers = getCacheHeaders(entityTag);

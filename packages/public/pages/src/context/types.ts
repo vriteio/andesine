@@ -10,18 +10,34 @@ interface SiteLogo {
   title: boolean;
 }
 
+/** Direct access to the Andesine API with a publishable key, in place of the server routes. */
+interface AndesineAPIContext {
+  /** Base URL of the API. */
+  url: string;
+  /** The publishable key; it is safe in browsers. */
+  key: string;
+  /** ID of the published collection. */
+  collection: string;
+  /** Base-prefixed URL of the JSON map from entry IDs to page URLs. */
+  pages: string;
+}
+
 interface SearchSourceContext {
   id: string;
   /** Group label in results: the section label, or the site name. */
   label: string;
   /** Pagefind for local pages, or the Andesine search endpoint. */
   type: "pagefind" | "andesine";
+  /** Set when the source has a publishable key; the browser then calls the API. */
+  api?: AndesineAPIContext;
 }
 
 interface AnswersContext {
   endpoint: string;
   /** ID of the source that answers questions. */
   source: string;
+  /** Set when the source has a publishable key; the browser then calls the API. */
+  api?: AndesineAPIContext;
 }
 
 interface SearchContext {
@@ -161,6 +177,7 @@ interface PageContext {
 
 export type {
   SearchSourceContext,
+  AndesineAPIContext,
   AnswersContext,
   SearchContext,
   SiteLogo,

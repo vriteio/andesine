@@ -1,6 +1,7 @@
 import { Tabs } from "@andesine/ui/solid";
 import clsx from "clsx";
 import { type Component, For, Show } from "solid-js";
+import { ScrollArea } from "../primitives/scroll-area";
 import { CopyButton } from "./copy-button";
 
 interface TabsProps {
@@ -18,7 +19,7 @@ const triggerClasses = {
   code: clsx(
     "relative flex h-full cursor-pointer items-center px-1.5 font-mono transition duration-200 ease-out",
     "@hover:text-gray-700 focus-visible:text-gray-700",
-    "after:(absolute inset-x-1.5 -bottom-px h-px bg-gray-400 opacity-0 transition-opacity duration-200 content-[''])",
+    "after:(absolute inset-x-1.5 bottom-0 h-px bg-gray-400 opacity-0 transition-opacity duration-200 content-[''])",
     "@hover:after:opacity-100 focus-visible:after:opacity-100",
     "data-[selected]:(bg-gradient-to-tr bg-[length:125%_auto] bg-clip-text text-transparent! after:hidden)"
   )
@@ -37,31 +38,42 @@ const ContentTabs: Component<TabsProps> = (props) => {
     >
       <div
         class={clsx(
-          // The standard card header: 2.25rem high, with the bottom border.
-          "flex h-9 items-center gap-2 border-b border-gray-200",
+          // The standard card header: 2.25rem high, with a bottom line. The line is drawn over the
+          // header, so the tabs can scroll across the full height and their indicator sits on it.
+          "relative flex h-9 items-center gap-2",
+          "after:(pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gray-200 content-[''])",
           variant() === "code" && "pl-1.5 pr-1"
         )}
       >
-        <Tabs.List
-          class={clsx(
-            "relative flex min-w-0 overflow-x-auto text-gray-500",
-            variant() === "code"
-              ? "h-full flex-1 gap-1 text-xs"
-              : "h-full w-full items-center gap-1 bg-gray-100 px-1 text-sm"
-          )}
+        {/* Many tabs scroll sideways, with a hover-only scrollbar on the bottom line. */}
+        <ScrollArea
+          orientation="horizontal"
+          class="z-1 min-w-0 flex-1 self-stretch"
+          contentClass="h-full"
+          scrollbarClass="h-1.5 px-0"
+          thumbClass="border-0"
         >
-          <For each={props.values}>
-            {(value) => (
-              <Tabs.Trigger value={value} class={clsx("shrink-0", triggerClasses[variant()])}>
-                {value}
-              </Tabs.Trigger>
+          <Tabs.List
+            class={clsx(
+              "relative flex h-full text-gray-500",
+              variant() === "code"
+                ? "gap-1 text-xs"
+                : "min-w-full items-center gap-1 bg-gray-100 px-1 pb-px text-sm"
             )}
-          </For>
-          <Show when={variant() === "code"}>
-            {/* Centered on the header's bottom border, like the section tabs indicator. */}
-            <Tabs.Indicator class="pointer-events-none -bottom-[1.5px] h-0.5 w-[var(--width)] rounded-full bg-gradient-to-r [--transition-duration:200ms] [--transition-timing-function:ease-out]" />
-          </Show>
-        </Tabs.List>
+          >
+            <For each={props.values}>
+              {(value) => (
+                <Tabs.Trigger value={value} class={clsx("shrink-0", triggerClasses[variant()])}>
+                  {value}
+                </Tabs.Trigger>
+              )}
+            </For>
+            <Show when={variant() === "code"}>
+              {/* On the header's bottom line, like the section tabs indicator. */}
+              <Tabs.Indicator class="pointer-events-none bottom-0 h-0.5 w-[var(--width)] rounded-full bg-gradient-to-r [--transition-duration:200ms] [--transition-timing-function:ease-out]" />
+            </Show>
+          </Tabs.List>
+        </ScrollArea>
         <Show when={variant() === "code"}>
           <div class="ml-auto flex shrink-0 items-center">
             <CopyButton />

@@ -1,6 +1,7 @@
 export * from "./authorized-collection-tree";
 export * from "./authorized-entry-sources";
 export * from "./permissions";
+export * from "./publishable-key";
 export * from "./restricted-workspace-event";
 export * from "./session";
 export * from "./service";

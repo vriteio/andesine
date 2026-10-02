@@ -1,13 +1,16 @@
 import { createMutation } from "@tanstack/solid-query";
 import { query, revalidate } from "@solidjs/router";
-import { client, type KeyPermission } from "#web/lib/api";
+import { client, type KeyKind } from "#web/lib/api";
 import { useNotify } from "#web/context/notifications";
 
 interface KeyMutationsInput {
   keyID(): string | null;
   navigateToAPI(): void;
-  onCreated(rawKey: string): void;
+  onCreated(rawKey: string, kind: KeyKind): void;
 }
+
+type CreateKeyVariables = Parameters<typeof client.keys.create>[0];
+type UpdateKeyVariables = Parameters<typeof client.keys.update>[0];
 
 const apiKeysQuery = query(() => client.keys.list(), "api-keys");
 const apiKeyQuery = query(
@@ -18,10 +21,9 @@ const apiKeyQuery = query(
 const useKeyMutations = (input: KeyMutationsInput) => {
   const notify = useNotify();
   const createKeyMutation = createMutation(() => ({
-    mutationFn: (variables: { name: string; permissions: KeyPermission[] }) =>
-      client.keys.create(variables),
+    mutationFn: (variables: CreateKeyVariables) => client.keys.create(variables),
     onSuccess: (data) => {
-      input.onCreated(data.rawKey);
+      input.onCreated(data.rawKey, data.kind);
       void revalidate(apiKeysQuery.key);
     },
     onError: (error) => {
@@ -30,8 +32,7 @@ const useKeyMutations = (input: KeyMutationsInput) => {
     }
   }));
   const updateKeyMutation = createMutation(() => ({
-    mutationFn: (variables: { id: string; name: string; permissions?: KeyPermission[] }) =>
-      client.keys.update(variables),
+    mutationFn: (variables: UpdateKeyVariables) => client.keys.update(variables),
     onSuccess: () => {
       const keyID = input.keyID();
       void revalidate([apiKeysQuery.key, ...(keyID ? [apiKeyQuery.keyFor({ keyID })] : [])]);

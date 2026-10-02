@@ -1,4 +1,6 @@
-import type { SearchContext, SearchSourceContext } from "./context";
+import type { AndesineAPIContext, SearchContext, SearchSourceContext } from "./context";
+import { loadEntryPages } from "./search/entry-pages";
+import { toSearchItems } from "./search/items";
 import type { SearchGroup, SearchItem } from "./search/types";
 
 interface SearchClient {
@@ -67,11 +69,41 @@ const createSearchClient = (context: SearchContext): SearchClient => {
       })
     );
   };
+  // With a publishable key, the browser searches through the API, and links results itself.
+  const searchAPI = async (
+    api: AndesineAPIContext,
+    query: string,
+    signal: AbortSignal
+  ): Promise<SearchItem[]> => {
+    const [resolve, response] = await Promise.all([
+      loadEntryPages(api.pages),
+      fetch(`${api.url}/search/published`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${api.key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ query, collectionID: api.collection, channel: "published", limit }),
+        signal
+      })
+    ]);
+
+    if (!response.ok) {
+      throw new Error(
+        response.status === 429
+          ? "Too many searches. Try again soon."
+          : "Search is not available now."
+      );
+    }
+
+    const { results } = (await response.json()) as { results: Parameters<typeof toSearchItems>[0] };
+
+    return toSearchItems(results, resolve);
+  };
   const searchAndesine = async (
     source: SearchSourceContext,
     query: string,
     signal: AbortSignal
   ): Promise<SearchItem[]> => {
+    if (source.api) return searchAPI(source.api, query, signal);
+
     const response = await fetch(context.endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

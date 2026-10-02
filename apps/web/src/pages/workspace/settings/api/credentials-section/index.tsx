@@ -1,11 +1,13 @@
 import { Card, IconButton } from "@andesine/components";
 import { Tree, TREE_ROOT_ID, type TreeMap, TreeSkeleton } from "#web/components/tree";
 import { useNotify } from "#web/context/notifications";
-import { client, type Key, type KeyPermission } from "#web/lib/api";
+import { client, type Key, type KeyKind, type KeyPermission } from "#web/lib/api";
 import { createAsync, revalidate, useNavigate, useParams } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
+import clsx from "clsx";
 import {
   batch,
+  For,
   type Component,
   createMemo,
   createSignal,
@@ -22,12 +24,35 @@ import { SecretDialog } from "../../secret-dialog";
 import { useWorkspace } from "#web/context/workspace";
 import { apiKeysQuery } from "#web/lib/data";
 
+interface KeyGroup {
+  kind: KeyKind;
+  label: string;
+  description: string;
+  empty: string;
+}
+
 interface APIKeyListProps {
+  kind: KeyKind;
   canManage: boolean;
   keys: Key[];
   keysRefreshing?: boolean;
   refreshKeys(onRevalidate?: () => void): void;
 }
+
+const keyGroups: KeyGroup[] = [
+  {
+    kind: "secret",
+    label: "Secret keys",
+    description: "Authenticate requests from servers, apps, or scripts. Keep them private",
+    empty: "No secret keys"
+  },
+  {
+    kind: "publishable",
+    label: "Publishable keys",
+    description: "Read and search published content from browsers, e.g. on a docs site",
+    empty: "No publishable keys"
+  }
+];
 
 const APIKeyList: Component<APIKeyListProps> = (props) => {
   const notify = useNotify();
@@ -100,11 +125,13 @@ const APIKeyList: Component<APIKeyListProps> = (props) => {
   };
   const visibleKeys = createMemo(() => {
     // Sort keys by creation date first, moving expired ones to the end of the list
-    const orderedKeys = [...props.keys].sort((a, b) => {
-      if (a.expiresAt && !b.expiresAt) return 1;
-      if (!a.expiresAt && b.expiresAt) return -1;
-      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-    });
+    const orderedKeys = props.keys
+      .filter((key) => key.kind === props.kind)
+      .sort((a, b) => {
+        if (a.expiresAt && !b.expiresAt) return 1;
+        if (!a.expiresAt && b.expiresAt) return -1;
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      });
 
     if ((deleteKeyMutation.isPending || props.keysRefreshing) && deleteKeyMutation.variables) {
       return orderedKeys.filter((key) => !deleteKeyMutation.variables!.ids.includes(key.id));
@@ -121,7 +148,11 @@ const APIKeyList: Component<APIKeyListProps> = (props) => {
 
   return (
     <>
-      <SecretDialog kind="api-key" secret={revealedKey()} onClose={() => setRevealedKey("")} />
+      <SecretDialog
+        kind={props.kind === "publishable" ? "publishable-key" : "api-key"}
+        secret={revealedKey()}
+        onClose={() => setRevealedKey("")}
+      />
       <RotateKeyDialog
         key={rotationTarget()}
         loading={rotateKeyMutation.isPending}
@@ -153,8 +184,13 @@ const APIKeyList: Component<APIKeyListProps> = (props) => {
             class="flex h-16 items-center justify-center gap-1 rounded-lg bg-white px-2 text-sm text-gray-400"
             shade
           >
-            <div class="i-lucide:key-round h-5.5 w-5.5 text-gray-300" />
-            No registered API keys
+            <div
+              class={clsx(
+                "h-5.5 w-5.5 text-gray-300",
+                props.kind === "publishable" ? "i-tabler:circle-key" : "i-lucide:key-round"
+              )}
+            />
+            {keyGroups.find((group) => group.kind === props.kind)?.empty}
           </Card>
         }
       >
@@ -170,12 +206,18 @@ const APIKeyList: Component<APIKeyListProps> = (props) => {
                 id={key().id}
                 name={key().name}
                 prefix={key().prefix}
+                kind={key().kind}
+                value={key().value}
                 permissions={key().permissions as KeyPermission[]}
                 createdAt={key().createdAt}
                 expiresAt={key().expiresAt}
                 canManage={props.canManage}
                 loading={isKeyPending(key().id)}
-                onEdit={() => navigate(`${settingsPath()}/key/${encodeURIComponent(key().id)}`)}
+                onEdit={() => {
+                  navigate(
+                    `${settingsPath()}/key/${encodeURIComponent(key().id)}?kind=${key().kind}`
+                  );
+                }}
                 onRotate={() => setRotationTarget(key())}
                 onDelete={(ids) => {
                   setDeletionTargets(
@@ -212,38 +254,42 @@ const CredentialsSection: Component = () => {
 
   return (
     <SettingsSection label="Credentials">
-      <div class="flex flex-col">
-        <Setting
-          label="API keys"
-          description="Use API keys to authenticate requests from external apps or scripts"
-        >
-          <Show when={hasPermission("api_keys")}>
-            <IconButton
-              label={() => <span class="px-1">Create key</span>}
-              class="flex-row-reverse pr-1"
-              onClick={() => navigate(`/${params.workspaceID || ""}/settings/key`)}
-              iconProps={{ class: "h-4 w-4" }}
-              icon="i-lucide:plus"
-              size="small"
-              color="contrast"
-              variant="outlined"
-              text="soft"
-            />
-          </Show>
-        </Setting>
-        <div class="relative flex w-full flex-col">
-          <Suspense
-            fallback={<TreeSkeleton fullWidth itemHeight="2rem" rowCount={2} size="medium" />}
-          >
-            <APIKeyList
-              keys={keys()}
-              canManage={hasPermission("api_keys")}
-              keysRefreshing={keysRefreshing()}
-              refreshKeys={refreshKeys}
-            />
-          </Suspense>
-        </div>
-      </div>
+      <For each={keyGroups}>
+        {(group) => (
+          <div class="flex flex-col">
+            <Setting label={group.label} description={group.description}>
+              <Show when={hasPermission("api_keys")}>
+                <IconButton
+                  label={() => <span class="px-1">Create {group.kind} key</span>}
+                  class="flex-row-reverse pr-1"
+                  onClick={() => {
+                    navigate(`/${params.workspaceID || ""}/settings/key?kind=${group.kind}`);
+                  }}
+                  iconProps={{ class: "h-4 w-4" }}
+                  icon="i-lucide:plus"
+                  size="small"
+                  color="contrast"
+                  variant="outlined"
+                  text="soft"
+                />
+              </Show>
+            </Setting>
+            <div class="relative flex w-full flex-col">
+              <Suspense
+                fallback={<TreeSkeleton fullWidth itemHeight="2rem" rowCount={2} size="medium" />}
+              >
+                <APIKeyList
+                  kind={group.kind}
+                  keys={keys()}
+                  canManage={hasPermission("api_keys")}
+                  keysRefreshing={keysRefreshing()}
+                  refreshKeys={refreshKeys}
+                />
+              </Suspense>
+            </div>
+          </div>
+        )}
+      </For>
     </SettingsSection>
   );
 };

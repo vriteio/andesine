@@ -5,6 +5,7 @@ import { loadPublishedContentItems } from "#backend/lib/publishing/content-items
 import { getVersionPropertyFilter } from "#backend/lib/versioning/property-filters";
 import { ORPCError } from "@orpc/server";
 import { withPublicWorkspace } from "#backend/lib/policy";
+import { assertInCollectionScope, resolveCollectionScope } from "#backend/lib/publishing";
 import { DEFAULT_PAGE_SIZE } from "@andesine/contracts/limits";
 import { toPage } from "#backend/lib/api/pagination";
 import {
@@ -26,6 +27,8 @@ interface PublishedEntryListInput extends PublishedPageInput {
   descendants?: boolean;
   includeContent?: boolean;
   filters?: PropertyFilter[];
+  /** The collections that a publishable key can read. */
+  collectionScope?: string[];
 }
 
 const listPublishedEntries = withPublicWorkspace<
@@ -36,6 +39,10 @@ const listPublishedEntries = withPublicWorkspace<
   const snapshot = await resolvePublishedPage(database, workspaceID, input);
   const paths = await loadPublishedContentPaths(database, workspaceID, snapshot.id);
   const scopeID = paths.resolveCollection(input, false);
+  const keyScope = resolveCollectionScope(paths, input.collectionScope);
+
+  if (scopeID !== undefined) assertInCollectionScope(keyScope, scopeID);
+
   if (input.descendants && scopeID === undefined)
     throw new ORPCError("BAD_REQUEST", { message: "descendants requires a collection scope" });
 
@@ -43,9 +50,10 @@ const listPublishedEntries = withPublicWorkspace<
     scopeID !== undefined
       ? [...(scopeID ? [scopeID] : []), ...(input.descendants ? paths.descendantIDs(scopeID) : [])]
       : [];
+  // Without a selected collection, a publishable key lists the entries of its collections.
   const scopeFilter =
     scopeID === undefined
-      ? undefined
+      ? keyScope && inArray(publishingSnapshotEntries.collectionID, [...keyScope])
       : or(
           scopeID === null ? isNull(publishingSnapshotEntries.collectionID) : undefined,
           collectionIDs.length

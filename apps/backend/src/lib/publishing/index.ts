@@ -1,5 +1,6 @@
 export * from "./channel";
 export * from "./change-set";
+export * from "./collection-scope";
 
 export * from "./publication";
 export * from "./revert-plan";

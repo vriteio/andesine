@@ -85,13 +85,24 @@ const createWebRequest = (fastifyRequest: FastifyRequest): Request => {
   });
 };
 
-await app.register(corsPlugin, {
+const appCORS = {
   origin: allowedOrigins,
   methods: allowedMethods,
   allowedHeaders: allowedHeaders,
   exposedHeaders,
   credentials: true,
   maxAge: 86400
+};
+// Other origins get no credentials, so only API keys work there, e.g. publishable keys on docs
+// sites; publishable keys also check their own origins.
+const publicCORS = { ...appCORS, origin: true, credentials: false };
+
+await app.register(corsPlugin, {
+  delegator: async (request: FastifyRequest) => {
+    const origin = request.headers.origin;
+
+    return origin && !allowedOrigins.includes(origin) ? publicCORS : appCORS;
+  }
 });
 await app.register(websocketPlugin, {
   options: { maxPayload: 1048576 }

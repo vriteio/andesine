@@ -15,7 +15,7 @@ interface SecretKindText {
   title: string;
 }
 
-type SecretKind = "api-key" | "webhook-secret";
+type SecretKind = "api-key" | "publishable-key" | "webhook-secret";
 
 const secretKindText: Record<SecretKind, SecretKindText> = {
   "api-key": {
@@ -23,6 +23,13 @@ const secretKindText: Record<SecretKind, SecretKindText> = {
     description: "Copy this key now. You won't be able to see it again",
     copyLabel: "Copy key",
     name: "API key"
+  },
+  "publishable-key": {
+    title: "Your publishable key",
+    description:
+      "Add this key to your site. It is safe in browsers, and you can copy it again from the key settings",
+    copyLabel: "Copy key",
+    name: "Publishable key"
   },
   "webhook-secret": {
     title: "Your signing secret",

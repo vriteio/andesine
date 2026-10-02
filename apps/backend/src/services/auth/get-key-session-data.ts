@@ -1,6 +1,6 @@
 import { workspaces } from "@andesine/server/database";
 import { verifyAPIKey } from "#backend/lib/data";
-import { toKeyID, toWorkspaceID } from "@andesine/contracts/primitives";
+import { toCollectionID, toKeyID, toWorkspaceID } from "@andesine/contracts/primitives";
 import { db, redis } from "#backend/lib/adapters";
 import { parseSessionData, type SessionData } from "#backend/lib/policy";
 import { eq } from "drizzle-orm";
@@ -33,7 +33,18 @@ const getKeySessionData = async (token: string): Promise<SessionData> => {
     subscriptionPlan: workspace.subscriptionPlan,
     customerID: workspace.customerID || undefined,
     workspaceID: toWorkspaceID(workspace.id),
-    key: { keyID: toKeyID(key.id), permissions: key.permissions }
+    key: {
+      keyID: toKeyID(key.id),
+      permissions: key.permissions,
+      ...(key.kind === "publishable" && {
+        publishable: {
+          ...(key.collectionIDs.length && {
+            collectionIDs: key.collectionIDs.map(toCollectionID)
+          }),
+          allowedOrigins: key.allowedOrigins
+        }
+      })
+    }
   };
 
   await redis.set(cacheKey, JSON.stringify(data), { EX: SESSION_TTL });

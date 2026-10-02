@@ -16,6 +16,12 @@ interface UserAuthorization {
   admin?: boolean;
 }
 
+/** The scope of a publishable key: short collection IDs (all when unset), and the browser origins. */
+interface PublishableKeyScope {
+  collectionIDs?: string[];
+  allowedOrigins: string[];
+}
+
 interface SessionData {
   id: string;
   type: "key" | "session" | "oauth";
@@ -24,7 +30,7 @@ interface SessionData {
   customerID?: string;
   session?: UserAuthorization;
   oauth?: UserAuthorization & { clientID: string };
-  key?: { keyID: string; permissions: KeyPermission[] };
+  key?: { keyID: string; permissions: KeyPermission[]; publishable?: PublishableKeyScope };
 }
 
 const userAuthorizationType = z.object({
@@ -57,7 +63,13 @@ const sessionDataType: z.ZodType<SessionData> = z.discriminatedUnion("type", [
     type: z.literal("key"),
     key: z.object({
       keyID: z.string(),
-      permissions: z.array(keyPermissionType)
+      permissions: z.array(keyPermissionType),
+      publishable: z
+        .object({
+          collectionIDs: z.array(z.string()).optional(),
+          allowedOrigins: z.array(z.string())
+        })
+        .optional()
     })
   })
 ]);
@@ -105,4 +117,4 @@ export {
   parseSessionData,
   sessionDataType
 };
-export type { SessionData, UserAuthorization };
+export type { PublishableKeyScope, SessionData, UserAuthorization };

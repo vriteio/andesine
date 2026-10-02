@@ -1,6 +1,7 @@
 import { defineConfig } from "@andesine/pages";
 
-const collection = process.env.ANDESINE_API_KEY && process.env.ANDESINE_COLLECTION_ID;
+const hasKey = process.env.ANDESINE_PUBLIC_KEY || process.env.ANDESINE_API_KEY;
+const collection = hasKey && process.env.ANDESINE_COLLECTION_ID;
 
 export default defineConfig({
   name: "Pages",
@@ -31,7 +32,7 @@ export default defineConfig({
   ],
   sources: [
     collection
-      ? { id: "docs", type: "andesine", collection }
+      ? { id: "docs", type: "andesine", collection, publicKey: process.env.ANDESINE_PUBLIC_KEY }
       : { id: "docs", type: "files", directory: "src/content/docs" },
     { id: "api", type: "openapi", spec: "src/api/openapi.yaml", mount: "/api/" }
   ]

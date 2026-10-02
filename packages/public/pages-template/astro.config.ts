@@ -7,8 +7,8 @@ import { andesine } from "@andesine/pages/integration";
 import config from "./andesine.config";
 
 export default defineConfig({
-  // Andesine sources need a server for search and AI answers; other sites are static.
-  adapter: config.sources.some((source) => source.type === "andesine")
+  // Andesine sources without a publishable key need a server for search and AI answers.
+  adapter: config.sources.some((source) => source.type === "andesine" && !source.publicKey)
     ? node({ mode: "standalone" })
     : undefined,
   server: { host: true, allowedHosts: [".local"] },

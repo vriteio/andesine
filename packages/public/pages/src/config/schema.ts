@@ -87,10 +87,21 @@ const andesineSourceSchema = z
     collection: z.string().min(1),
     mount: pathSchema.default("/"),
     apiURL: z.url({ protocol: /^https?$/ }).optional(),
-    /** Name of the environment variable with the API key. The key itself is never in config. */
+    /**
+     * Name of the environment variable with the secret API key, which is never in config.
+     * Optional with `publicKey`; the build then reads with the publishable key.
+     */
     apiKeyEnv: z.string().min(1).default("ANDESINE_API_KEY"),
     /** AI answers in search. The API key needs the `ai-answers` permission. */
-    answers: z.boolean().default(true)
+    answers: z.boolean().default(true),
+    /**
+     * A publishable key (`adn_pk_...`), which is safe in browsers. With it, search and answers
+     * call the Andesine API directly, so they need no server, and the build needs no secret key.
+     */
+    publicKey: z
+      .string()
+      .regex(/^adn_pk_[A-Za-z\d]+$/, "Use a publishable key (adn_pk_...), never a secret key.")
+      .optional()
   })
   .strict();
 const openAPISourceSchema = z

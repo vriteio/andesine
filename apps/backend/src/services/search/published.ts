@@ -15,11 +15,18 @@ const searchPublished = withAuthorization<PublishedSearchInput, undefined, Publi
   async ({ auth, database, input, workspaceID }) => {
     const channel = normalizePublishingChannelCode(input.channel);
 
-    const scope = await resolvePublishedScope(channel, input, database, workspaceID);
+    const scope = await resolvePublishedScope(
+      channel,
+      input,
+      database,
+      workspaceID,
+      auth.key?.publishable?.collectionIDs
+    );
 
     return search({
       ...input,
       collectionID: scope.collectionID,
+      allowedCollectionIDs: scope.allowedCollectionIDs,
       snapshotID: toSnapshotID(scope.snapshotID),
       channel,
       authorizeDocuments: createDocumentAuthorizer(

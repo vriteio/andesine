@@ -9,7 +9,8 @@ import {
 } from "solid-js";
 import clsx from "clsx";
 import { TreeItem, useTree } from "#web/components/tree";
-import type { KeyPermission } from "#web/lib/api";
+import { useClipboard } from "#web/context/clipboard";
+import type { KeyKind, KeyPermission } from "#web/lib/api";
 import { useDelegationPermissions } from "#web/lib/policy/delegation";
 import { formatDate, formatRelativeTime } from "#web/lib/primitives";
 
@@ -18,6 +19,9 @@ interface APIKeyItemProps {
   id: string;
   name: string;
   prefix: string;
+  kind: KeyKind;
+  /** The raw value of a publishable key. */
+  value: string | null;
   permissions: KeyPermission[];
   createdAt: Date | string;
   expiresAt: string | null;
@@ -31,11 +35,29 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
   const [{ selection }, { setSelection }] = useTree();
   const [menuOpened, setMenuOpened] = createSignal(false);
   const { canGrantKeyPermission } = useDelegationPermissions();
+  const { copyText } = useClipboard();
   const dropdownOptions = createMemo(() => {
     const selectedIDs = selection();
     const isMulti = selectedIDs.length > 1;
 
     return [
+      ...(!isMulti && props.value
+        ? [
+            [
+              {
+                label: "Copy key",
+                shortcut: "$mod+alt+c",
+                icon: "i-lucide:copy",
+                onClick: () => {
+                  void copyText(props.value!, {
+                    success: "Publishable key copied to clipboard",
+                    fallback: { title: "Copy publishable key manually" }
+                  });
+                }
+              }
+            ]
+          ]
+        : []),
       ...(!isMulti && !props.expiresAt
         ? [
             [
@@ -86,7 +108,14 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
         icon={
           <Show
             when={props.expiresAt}
-            fallback={<div class="h-5 w-5 i-lucide:key-round text-gray-400" />}
+            fallback={
+              <div
+                class={clsx(
+                  "h-5 w-5 text-gray-400",
+                  props.kind === "publishable" ? "i-tabler:circle-key" : "i-lucide:key-round"
+                )}
+              />
+            }
           >
             <Tooltip content={`Expires ${formatRelativeTime(props.expiresAt!)}`} fixed>
               <div class="h-5 w-5 i-lucide:clock bg-gradient-to-tr from-primary to-secondary" />

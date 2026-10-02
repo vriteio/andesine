@@ -1,16 +1,10 @@
-import type { PublishedAnswerEvent, PublishedAnswerSource } from "@andesine/sdk";
+import type { PublishedAnswerEvent } from "@andesine/sdk";
 import { z } from "zod";
 import type { PagesConfig } from "../config";
 import { createRateLimit } from "./rate-limit";
-import {
-  createPageResolver,
-  json,
-  readRequest,
-  toAnchorHash,
-  toErrorResponse,
-  type PageResolver
-} from "./request";
-import type { AnswerEvent, AnswerSource } from "./types";
+import { toAnswerSources, type PageResolver } from "./items";
+import { createPageResolver, json, readRequest, toErrorResponse } from "./request";
+import type { AnswerEvent } from "./types";
 
 /** The API limits for questions and history. */
 const bodySchema = z
@@ -34,23 +28,6 @@ const encoder = new TextEncoder();
 // Each client can ask 10 questions a minute.
 const allowQuestion = createRateLimit({ limit: 10, window: 60_000 });
 
-const toSources = (sources: PublishedAnswerSource[], resolve: PageResolver): AnswerSource[] => {
-  return sources.flatMap((source) => {
-    const href = resolve(source);
-
-    return href
-      ? [
-          {
-            id: source.id,
-            href: `${href}${toAnchorHash(source.anchor)}`,
-            title: source.title,
-            headingPath: source.headingPath,
-            collectionPath: source.collectionPath
-          }
-        ]
-      : [];
-  });
-};
 const encode = (event: AnswerEvent): Uint8Array => encoder.encode(`${JSON.stringify(event)}\n`);
 /**
  * Streams an AI answer about the published collection of an Andesine source, as one JSON
@@ -119,14 +96,14 @@ const handleAnswer = async (
             controller.enqueue(encode(event));
           } else if (event.type === "sources") {
             controller.enqueue(
-              encode({ type: "sources", sources: toSources(event.sources, resolve) })
+              encode({ type: "sources", sources: toAnswerSources(event.sources, resolve) })
             );
           } else {
             controller.enqueue(
               encode({
                 type: "completed",
                 answer: event.answer,
-                sources: toSources(event.sources, resolve)
+                sources: toAnswerSources(event.sources, resolve)
               })
             );
           }

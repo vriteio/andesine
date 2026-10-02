@@ -218,6 +218,13 @@
       "when": 1790340557843,
       "tag": "0030_add_webhooks",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1790791189949,
+      "tag": "0031_publishable-api-keys",
+      "breakpoints": true
     }
   ]
 }

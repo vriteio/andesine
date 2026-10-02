@@ -15,11 +15,7 @@ const keysRouter = handlers.router({
       });
     }
 
-    const key = await Keys.create({
-      auth: context.auth,
-      name: input.name,
-      permissions: input.permissions
-    });
+    const key = await Keys.create({ auth: context.auth, ...input });
 
     const { rawKey: _rawKey, ...safeKey } = key;
 
@@ -60,16 +56,16 @@ const keysRouter = handlers.router({
     });
   }),
   update: authorizedHandlers.update.handler(async ({ context, input }) => {
-    await Keys.update({
-      id: input.id,
-      auth: context.auth,
-      name: input.name,
-      permissions: input.permissions
-    });
+    await Keys.update({ auth: context.auth, ...input });
 
-    if (input.permissions !== undefined) {
-      await Auth.invalidateSessionData({ keyID: input.id });
-    }
+    // Cached key sessions hold the permissions and the publishable scope.
+    const changesAccess = [input.permissions, input.collectionIDs, input.allowedOrigins].some(
+      (value) => {
+        return value !== undefined;
+      }
+    );
+
+    if (changesAccess) await Auth.invalidateSessionData({ keyID: input.id });
 
     emitKeyEvent(context.auth.workspaceID, {
       action: "key:update",

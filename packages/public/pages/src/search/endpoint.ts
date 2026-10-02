@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { PagesConfig } from "../config";
-import { createPageResolver, json, readRequest, toAnchorHash, toErrorResponse } from "./request";
-import type { SearchItem } from "./types";
+import { toSearchItems } from "./items";
+import { createPageResolver, json, readRequest, toErrorResponse } from "./request";
 
 const bodySchema = z
   .object({
@@ -35,22 +35,7 @@ const handleSearch = async (request: Request, config: PagesConfig): Promise<Resp
         { signal }
       )
     ]);
-    const items = results.flatMap((item): SearchItem[] => {
-      const href = resolve(item);
-      const hash = toAnchorHash(item.anchor);
-
-      return href
-        ? [
-            {
-              id: `${item.entryID}${hash}`,
-              href: `${href}${hash}`,
-              title: item.title,
-              excerpt: item.snippet,
-              headingPath: item.headingPath
-            }
-          ]
-        : [];
-    });
+    const items = toSearchItems(results, resolve);
 
     return json({ items });
   } catch (error) {

@@ -1,5 +1,6 @@
 import { createHash, randomBytes, createCipheriv, createDecipheriv } from "node:crypto";
 import { bytesToBase62 } from "@andesine/contracts/primitives";
+import type { KeyKind } from "@andesine/contracts/entities";
 
 const ENCRYPTION_ALGORITHM = "aes-256-gcm";
 
@@ -38,8 +39,8 @@ const hashKey = (raw: string, salt?: string): string => {
     .update(`${salt || ""}${raw}`)
     .digest("hex");
 };
-const generateKeyValue = (): { raw: string; prefix: string } => {
-  const raw = `adn_${bytesToBase62(randomBytes(32))}`;
+const generateKeyValue = (kind: KeyKind = "secret"): { raw: string; prefix: string } => {
+  const raw = `${kind === "publishable" ? "adn_pk_" : "adn_"}${bytesToBase62(randomBytes(32))}`;
   const prefix = raw.slice(0, 12);
 
   return { raw, prefix };

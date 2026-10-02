@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Document publishable keys (`adn_pk_...`) for browser use: published content
+  reads, search, and answers from the key's collections and origins, and server
+  reads without an `Origin`, e.g. site builds.
+
 ## 0.3.0
 
 - Add generated webhook methods for management (including bulk enable/disable and

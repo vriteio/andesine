@@ -41,6 +41,7 @@ export default defineConfig([
       "astro/routes/sitemap": "src/astro/routes/sitemap.ts",
       "astro/routes/llms": "src/astro/routes/llms.ts",
       "astro/routes/robots": "src/astro/routes/robots.ts",
+      "astro/routes/entry-pages": "src/astro/routes/entry-pages.ts",
       "runtime": "src/runtime.ts"
     },
     plugins: [dts({ cwd: import.meta.dirname }), astroFiles()],

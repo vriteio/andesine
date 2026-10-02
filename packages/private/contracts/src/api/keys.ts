@@ -1,17 +1,34 @@
-import { keyPermissionType, keyType } from "../entities/keys";
-import { id } from "../primitives/id";
+import { keyKindType, keyOriginType, keyPermissionType, keyType } from "../entities/keys";
+import { id, publicID } from "../primitives/id";
 import * as z from "zod";
 import { baseContract, sessionContract } from "./base";
 
 const keyWithRawKeyType = keyType.extend({
   rawKey: z.string().describe("The full raw API key value")
 });
+// Publishable keys need them; the service checks the rules for each kind.
+const publishableFields = {
+  collectionIDs: z
+    .array(publicID("coll"))
+    .max(50)
+    .optional()
+    .describe(
+      "Publishable keys: collections, with their descendants, that the key can read; none for all"
+    ),
+  allowedOrigins: z
+    .array(keyOriginType)
+    .max(20)
+    .optional()
+    .describe("Publishable keys: browser origins that can use the key, with localhost")
+};
 const keysContract = baseContract.prefix("/keys").router({
   create: sessionContract
     .input(
       z.object({
         name: z.string().min(1).max(100).describe("Name for the API key"),
-        permissions: z.array(keyPermissionType).describe("Permissions to grant to the API key")
+        kind: keyKindType.default("secret").describe("Kind of the API key; it cannot change"),
+        permissions: z.array(keyPermissionType).describe("Permissions to grant to the API key"),
+        ...publishableFields
       })
     )
     .output(keyWithRawKeyType),
@@ -38,7 +55,8 @@ const keysContract = baseContract.prefix("/keys").router({
         permissions: z
           .array(keyPermissionType)
           .optional()
-          .describe("New permissions for the API key")
+          .describe("New permissions for the API key"),
+        ...publishableFields
       })
     )
     .output(z.void()),

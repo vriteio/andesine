@@ -1,11 +1,12 @@
 import { apiKeys, workspaces } from "@andesine/server/database";
 import { assertKeyDelegation } from "#backend/lib/policy/delegation";
 import type { SessionData } from "#backend/lib/policy/session";
-import { toKeyID, toUUID } from "@andesine/contracts/primitives";
+import { toUUID } from "@andesine/contracts/primitives";
 import { db } from "#backend/lib/adapters";
 import { type Key } from "@andesine/contracts/entities";
 import { withAuthorization } from "#backend/lib/policy";
 import { generateKeyValue, generateSalt, hashKey } from "#backend/lib/security";
+import { encryptKeyValue, mapAPIKey } from "#backend/lib/data";
 import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
@@ -24,9 +25,11 @@ const rotateKeyOperation = async (
   input: RotateKeyInput & { workspaceID: string; auth: SessionData }
 ): Promise<Key & { rawKey: string }> => {
   const workspaceID = toUUID(input.workspaceID);
-  const { raw, prefix } = generateKeyValue();
   const salt = generateSalt();
   const now = new Date();
+
+  let raw = "";
+
   const newKey = await db.transaction(async (tx) => {
     const [workspace] = await tx
       .select({ deletingAt: workspaces.deletingAt })
@@ -48,6 +51,10 @@ const rotateKeyOperation = async (
 
     assertKeyDelegation(input.auth, oldKey.permissions);
 
+    const value = generateKeyValue(oldKey.kind);
+
+    raw = value.raw;
+
     await tx
       .update(apiKeys)
       .set({ expiresAt: getExpiresAt(input.expiresIn), updatedAt: now })
@@ -56,8 +63,12 @@ const rotateKeyOperation = async (
       .insert(apiKeys)
       .values({
         name: oldKey.name,
+        kind: oldKey.kind,
         permissions: oldKey.permissions,
-        prefix,
+        collectionIDs: oldKey.collectionIDs,
+        allowedOrigins: oldKey.allowedOrigins,
+        encryptedValue: encryptKeyValue(oldKey.kind, raw),
+        prefix: value.prefix,
         workspaceID,
         hash: hashKey(raw, salt),
         salt,
@@ -68,16 +79,7 @@ const rotateKeyOperation = async (
 
     return created;
   });
-  return {
-    id: toKeyID(newKey.id),
-    name: newKey.name,
-    permissions: newKey.permissions,
-    prefix,
-    createdAt: now.toISOString(),
-    updatedAt: now.toISOString(),
-    expiresAt: null,
-    rawKey: raw
-  };
+  return { ...mapAPIKey(newKey), rawKey: raw };
 };
 const rotateKey = withAuthorization<RotateKeyInput, undefined, Key & { rawKey: string }>(
   { permissions: { session: ["api_keys"] } },

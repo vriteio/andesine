@@ -13,13 +13,16 @@ interface Publication {
   entries: PublishedEntryContent[];
 }
 
-/** Returns the API key from the environment of the build or the server, through the adapter. */
+/**
+ * Returns the secret key from the environment of the build or the server, through the adapter.
+ * Without one, builds use the publishable key; server routes only exist for sources without it.
+ */
 const getAPIKey = (source: AndesineSourceConfig): string => {
-  const key = getSecret(source.apiKeyEnv);
+  const key = getSecret(source.apiKeyEnv) ?? source.publicKey;
 
   if (!key) {
     throw new Error(
-      `Source "${source.id}": set ${source.apiKeyEnv}. Never use a PUBLIC_ variable for the key.`
+      `Source "${source.id}": set publicKey or ${source.apiKeyEnv}. Never use a PUBLIC_ variable for a secret key.`
     );
   }
 

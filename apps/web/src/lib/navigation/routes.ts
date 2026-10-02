@@ -1,5 +1,6 @@
 import {
   type Params,
+  type SearchParams,
   redirect,
   type RouteDefinition,
   useCurrentMatches,
@@ -42,7 +43,7 @@ interface RouteData {
   }>;
 }
 
-const routesData: Record<string, (params: Params) => RouteData> = {
+const routesData: Record<string, (params: Params, query: SearchParams) => RouteData> = {
   "/:workspaceID/settings/personal": () => ({
     title: "Personal",
     breadcrumbs: [{ label: "Settings" }, { label: "Personal", path: "/settings/personal" }]
@@ -97,17 +98,19 @@ const routesData: Record<string, (params: Params) => RouteData> = {
     title: "API",
     breadcrumbs: [{ label: "Settings" }, { label: "API", path: "/settings/api" }]
   }),
-  "/:workspaceID/settings/key/:keyID?": (params) => ({
-    title: params.keyID ? "Edit API key" : "Create API key",
-    breadcrumbs: [
-      { label: "Settings" },
-      { label: "API", path: "/settings/api" },
-      {
-        label: params.keyID ? "Edit API key" : "Create API key",
-        path: `/settings/key/${params.keyID || ""}`
-      }
-    ]
-  }),
+  "/:workspaceID/settings/key/:keyID?": (params, query) => {
+    const kind = query.kind === "publishable" ? "publishable" : "secret";
+    const label = `${params.keyID ? "Edit" : "Create"} ${kind} key`;
+
+    return {
+      title: label,
+      breadcrumbs: [
+        { label: "Settings" },
+        { label: "API", path: "/settings/api" },
+        { label, path: `/settings/key/${params.keyID || ""}?kind=${kind}` }
+      ]
+    };
+  },
   "/:workspaceID/settings/webhook/:webhookID?": (params) => ({
     title: params.webhookID ? "Edit webhook" : "Create webhook",
     breadcrumbs: [
@@ -236,7 +239,7 @@ const useRouteData = (): Accessor<RouteData | null> => {
       const routeData = routesData[match.route.pattern];
 
       if (routeData) {
-        return routeData(params);
+        return routeData(params, location.query);
       }
     }
 
@@ -253,7 +256,7 @@ const useRouteData = (): Accessor<RouteData | null> => {
       ? routesData[optionalRoutePatterns[settingsRoute]]
       : null;
 
-    if (optionalRouteData) return optionalRouteData(params);
+    if (optionalRouteData) return optionalRouteData(params, location.query);
 
     return null;
   });

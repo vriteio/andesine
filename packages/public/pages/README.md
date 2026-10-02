@@ -69,8 +69,11 @@ on reference pages and in embeds (`<Operation source="api" id="..." />`).
 
 Local pages are in a Pagefind index. The build writes it to `pagefind/`, and the dev
 server builds it in memory from the source text. Andesine sources use the published
-search API through `/_andesine/search/`, a server route that keeps the API key on
-the server. Sites with Andesine sources therefore need a server adapter. Results
+search API. With a `publicKey` (a publishable `adn_pk_` key), the build can read
+the content without a secret key, browsers call the API
+directly, and map results to pages with `/_andesine/pages/<source>.json`, which the
+build writes. Without one, they use `/_andesine/search/`, a server route that keeps
+the API key on the server, so the site needs a server adapter. Results
 of build-time sources link only to pages in the build; results of pages that were
 published after the build are left out. Pages with `searchHidden` are left out of
 results. This is not access control.

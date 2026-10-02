@@ -7,6 +7,10 @@ import { loadPublishedContentPaths } from "@andesine/server/content";
 import { type SearchDocument } from "@andesine/server/search";
 import { type CollectionSelector } from "@andesine/contracts/content";
 import { resolvePublishingSnapshot } from "#backend/lib/publishing/snapshot-state";
+import {
+  assertInCollectionScope,
+  resolveCollectionScope
+} from "#backend/lib/publishing/collection-scope";
 import { toCollectionID, toUUID, toVersionID } from "@andesine/contracts/primitives";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import type { SearchDocumentAuthorizer } from "./retrieval";
@@ -66,17 +70,29 @@ const createDocumentAuthorizer = (
     );
   };
 };
+/**
+ * Resolves the searched collection and snapshot. A publishable key's `collectionScope` limits
+ * the search to its collections and their descendants, and refuses other collections.
+ */
 const resolvePublishedScope = async (
   channel: string,
   input: CollectionSelector,
   database: Database,
-  workspaceID: string
+  workspaceID: string,
+  collectionScope?: string[]
 ) => {
   const snapshot = await resolvePublishingSnapshot(database, workspaceID, { channelCode: channel });
   const paths = await loadPublishedContentPaths(database, workspaceID, snapshot.id);
   const scopeID = paths.resolveCollection(input, false);
+  const keyScope = resolveCollectionScope(paths, collectionScope);
 
-  return { collectionID: scopeID ? toCollectionID(scopeID) : undefined, snapshotID: snapshot.id };
+  if (scopeID !== undefined) assertInCollectionScope(keyScope, scopeID);
+
+  return {
+    collectionID: scopeID ? toCollectionID(scopeID) : undefined,
+    allowedCollectionIDs: keyScope && [...keyScope].map(toCollectionID),
+    snapshotID: snapshot.id
+  };
 };
 
 export { createDocumentAuthorizer, resolvePublishedScope };

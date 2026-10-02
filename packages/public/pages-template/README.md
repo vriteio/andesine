@@ -41,11 +41,12 @@ The template uses the design language of the Andesine app:
 
 ## Andesine content
 
-Set `ANDESINE_API_KEY` and `ANDESINE_COLLECTION_ID` to show a published Andesine
-collection in place of the included guide. `andesine.config.ts` reads them from `process.env`,
-so export them in the shell or load them with a tool such as `dotenv-cli`. Andesine
-sources need a Node.js server or a serverless platform such as Vercel or Netlify;
-see the Deployment page of the guide.
+Set `ANDESINE_COLLECTION_ID` and `ANDESINE_PUBLIC_KEY`, a publishable key, to show a
+published Andesine collection in place of the included guide, as a fully static site.
+`andesine.config.ts` reads them from `process.env`, so export them in the shell or load them
+with a tool such as `dotenv-cli`. With a secret `ANDESINE_API_KEY` in place of the publishable
+key, Andesine sources need a Node.js server or a serverless platform such as Vercel or
+Netlify. See the Deployment page of the guide.
 
 ## Commands
 

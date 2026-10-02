@@ -2,7 +2,7 @@
 
 MIT-licensed TypeScript client for the public Andesine HTTP API. ESM only. Requires
 Node.js 22 or later, or a browser/worker runtime with Fetch, Blob, FormData, and
-AbortSignal.any. Keep private API keys in server code.
+AbortSignal.any. Keep secret API keys in server code; browsers use publishable keys.
 
 ## Use
 
@@ -41,6 +41,27 @@ const workspaceClient = createClient({
   headers: { "x-workspace-id": selectedWorkspaceID }
 });
 ```
+
+### Publishable keys
+
+Publishable keys (`adn_pk_...`) are safe in browsers. Create one in the Andesine
+app, with its collections and the origins of the sites that use it. A publishable
+key can read the published content of its collections (`content.getTree`,
+`content.get`, `content.listEntries`), search it (`search.published`), and, when
+the key allows it, answer questions about it (`search.askPublished` and
+`search.askPublishedStream`). Browser requests need an allowed `Origin`, so the key
+works only on its sites; requests without `Origin`, e.g. from a site build on a
+server, are allowed. Other operations are refused.
+
+```ts
+const client = createClient({ apiKey: "adn_pk_..." });
+const results = await client.search.published({ query: "install", channel: "published" });
+```
+
+Pass the key as `apiKey`. This also disables the `ANDESINE_API_KEY` fallback, so a
+bundler that defines `process.env` cannot add a secret key to browser code. The key
+has the same rate limits and usage quota as other API access, and all visitors of a
+site share them.
 
 Select a workspace explicitly for OAuth workspace operations. The server checks
 current user permissions on each request. Browser-only operations remain excluded.

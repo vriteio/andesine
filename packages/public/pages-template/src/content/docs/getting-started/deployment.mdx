@@ -6,19 +6,41 @@ order: 5
 
 The host that a site needs depends on its sources.
 
-| Sources    | Build output                    | Hosts                                         |
-| ---------- | ------------------------------- | --------------------------------------------- |
-| Files only | Static files in `dist/`         | Any static host                               |
-| Andesine   | Static pages, and server routes | A Node.js server, Vercel, Netlify, Cloudflare |
+| Sources                          | Build output                    | Hosts                                         |
+| -------------------------------- | ------------------------------- | --------------------------------------------- |
+| Files only                       | Static files in `dist/`         | Any static host                               |
+| Andesine, with a publishable key | Static files in `dist/`         | Any static host                               |
+| Andesine, without one            | Static pages, and server routes | A Node.js server, Vercel, Netlify, Cloudflare |
 
-Andesine search and AI answers use server routes at `/_andesine/`, which keep the
-API key on the server. All pages are static files, and only these routes run on
-the server.
+Search and AI answers need the Andesine API at each request. A publishable key lets
+browsers call it; a secret key must stay on a server.
+
+## Static hosting
+
+Create a publishable key (`adn_pk_...`) in the API settings of the workspace. Select
+the collection of the source, add the origin of the site, e.g.
+`https://docs.example.com`, and allow AI answers if the site uses them. Then set the
+key on the source:
+
+```ts title="andesine.config.ts"
+sources: [{ id: "docs", type: "andesine", collection: "coll_...", publicKey: "adn_pk_..." }];
+```
+
+The template reads it from `ANDESINE_PUBLIC_KEY`. A publishable key is safe in
+browsers: it reads only the published content of its collections, and browsers can use
+it only on its origins. The build reads the content with it, so no secret key is
+needed. Browsers then call the Andesine API directly, and the build adds no server
+routes and no adapter. Upload `dist/` to any static host.
+
+Publishable keys always allow `http://localhost` and `http://127.0.0.1` on any port,
+so search works with `npm run dev` and `npm run preview`.
 
 ## Node.js
 
-This is the default. `astro.config.ts` adds the `@astrojs/node` adapter when the
-site has an Andesine source.
+Without a publishable key, Andesine search and AI answers use server routes at
+`/_andesine/`, which keep the API key on the server. All pages are static files, and
+only these routes run on the server. `astro.config.ts` adds the `@astrojs/node`
+adapter when an Andesine source has no publishable key.
 
 ```sh
 npm run build
@@ -41,7 +63,9 @@ npm install @astrojs/vercel
 import vercel from "@astrojs/vercel";
 
 export default defineConfig({
-  adapter: config.sources.some((source) => source.type === "andesine") ? vercel() : undefined
+  adapter: config.sources.some((source) => source.type === "andesine" && !source.publicKey)
+    ? vercel()
+    : undefined
   // ...
 });
 ```
@@ -73,7 +97,7 @@ Build the pages with Node.js, so that social images can use the native renderer:
 import cloudflare from "@astrojs/cloudflare";
 
 export default defineConfig({
-  adapter: config.sources.some((source) => source.type === "andesine")
+  adapter: config.sources.some((source) => source.type === "andesine" && !source.publicKey)
     ? cloudflare({ prerenderEnvironment: "node" })
     : undefined
   // ...

@@ -9,6 +9,8 @@ interface ORPCMeta {
   trackUsage?: boolean;
   usageTiming?: "generation";
   required?: AuthorizationRequirements;
+  /** Publishable keys can call the operation, from their allowed origins. */
+  publishable?: boolean;
 }
 
 const isPublicAPI = (meta: ORPCMeta): boolean => {

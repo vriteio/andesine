@@ -4,8 +4,14 @@ export { collectionType } from "./collections";
 export type { Collection } from "./collections";
 export { groupType } from "./groups";
 export type { Group } from "./groups";
-export { keyPermissionType, keyType } from "./keys";
-export type { Key, KeyPermission } from "./keys";
+export {
+  keyPermissionType,
+  keyKindType,
+  publishableKeyPermissionType,
+  keyOriginType,
+  keyType
+} from "./keys";
+export type { Key, KeyKind, KeyPermission } from "./keys";
 export { baseRoleType, permissionType, roleType } from "./roles";
 export type { BaseRole, Permission, Role } from "./roles";
 export { userProfileType, userType } from "./users";

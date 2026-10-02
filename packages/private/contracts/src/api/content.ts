@@ -66,7 +66,11 @@ const contentContract = baseContract.prefix("/content").router({
         "Returns a flat page of entries from a publication snapshot. The default channel is published. On later pages, pass the returned snapshotID and pagination.nextCursor, and omit channel. Select direct children using collectionID, collectionPath, or collectionSlugPath, or include nested entries with descendants: true. descendants requires a collection scope. All property filters must match the assigned version. includeContent: true returns validated full content, properties, fragments, assets, and recorded schema metadata. An invalid full item fails the page. Keep the same scope and filters across pages. Results are ordered by ID, not display order.",
       tags: ["content"]
     })
-    .meta({ required: { key: ["read:publishing"] }, example: { channel: "published", limit: 20 } })
+    .meta({
+      publishable: true,
+      required: { key: ["read:publishing"] },
+      example: { channel: "published", limit: 20 }
+    })
     .input(
       publishedListInputType
         .safeExtend({
@@ -167,6 +171,7 @@ const contentContract = baseContract.prefix("/content").router({
     })
     .meta({ example: { entryID: "ent_example", channel: "published" } })
     .meta({
+      publishable: true,
       required: {
         key: ["read:publishing"]
       }
@@ -202,6 +207,7 @@ const contentContract = baseContract.prefix("/content").router({
     })
     .meta({ example: { collectionID: "coll_example", channel: "published" } })
     .meta({
+      publishable: true,
       required: {
         key: ["read:publishing"]
       }

@@ -27,6 +27,8 @@ import { getScopeItems, MAX_SELECTED_SCOPE_ITEMS } from "./configuration";
 interface CollectionTreeFieldProps {
   disabled: boolean;
   restrictedContent: boolean;
+  /** Lists only collections with publishing enabled; their topmost ones become top-level. */
+  publishingOnly?: boolean;
   scope: Webhook["collections"];
   setScope(scope: Webhook["collections"]): void;
 }
@@ -170,7 +172,7 @@ const CollectionTree: Component<CollectionTreeProps> = (props) => {
 // Checking a collection selects its whole subtree. Unchecking a collection covered by a
 // checked ancestor (or by "All") replaces that ancestor with its remaining children.
 const CollectionTreeField: Component<CollectionTreeFieldProps> = (props) => {
-  const { content, hasPermission, currentWorkspace } = useWorkspace();
+  const { content, hasPermission } = useWorkspace();
   const [opened, setOpened] = createSignal(false);
   const allNodes = createMemo(() => {
     const collections = content.collectionsCollection().find().fetch();
@@ -195,15 +197,37 @@ const CollectionTreeField: Component<CollectionTreeFieldProps> = (props) => {
   const showRestricted = () => {
     return props.restrictedContent && hasPermission("read:restricted_collections");
   };
+  const isVisible = (node: CollectionNode) => {
+    const allowedByRestriction = showRestricted() || !node.restricted;
+    const allowedByPublishing =
+      !props.publishingOnly ||
+      node.id === TREE_ROOT_ID ||
+      content.isCollectionPublishingEnabled(node.id);
+
+    return allowedByRestriction && allowedByPublishing;
+  };
   const nodes = createMemo(() => {
-    const visible = [...allNodes().values()].filter((node) => showRestricted() || !node.restricted);
+    const visible = [...allNodes().values()].filter(isVisible);
     const visibleIDs = new Set(visible.map((node) => node.id));
+    // Collections under hidden parents move up to the top level.
+    const orphanIDs = visible
+      .filter((node) => node.id !== TREE_ROOT_ID)
+      .filter((node) => !visibleIDs.has(node.ancestors.at(-1) ?? TREE_ROOT_ID))
+      .map((node) => node.id);
 
     return new Map(
-      visible.map((node) => [
-        node.id,
-        { ...node, children: node.children.filter((id) => visibleIDs.has(id)) }
-      ])
+      visible.map((node) => {
+        const children = node.children.filter((id) => visibleIDs.has(id));
+
+        return [
+          node.id,
+          {
+            ...node,
+            ancestors: node.ancestors.filter((id) => visibleIDs.has(id)),
+            children: node.id === TREE_ROOT_ID ? [...children, ...orphanIDs] : children
+          }
+        ];
+      })
     );
   });
   const topLevelIDs = () => nodes().get(TREE_ROOT_ID)?.children || [];
