@@ -20,7 +20,12 @@ const createCheckout = async (input: {
     throw new ORPCError("FORBIDDEN", { message: "Billing is disabled for this installation" });
   }
 
-  if (!config.STRIPE_PRO_SEAT_PRICE_ID || !config.STRIPE_PRO_API_CALL_PRICE_ID) {
+  const hasPrices =
+    config.STRIPE_PRO_SEAT_PRICE_ID &&
+    config.STRIPE_PRO_API_CALL_PRICE_ID &&
+    config.STRIPE_PRO_AI_CREDIT_PRICE_ID;
+
+  if (!hasPrices) {
     throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Stripe price IDs not configured" });
   }
 
@@ -115,6 +120,9 @@ const createCheckout = async (input: {
         },
         {
           price: config.STRIPE_PRO_API_CALL_PRICE_ID
+        },
+        {
+          price: config.STRIPE_PRO_AI_CREDIT_PRICE_ID
         }
       ],
       success_url: input.successURL,

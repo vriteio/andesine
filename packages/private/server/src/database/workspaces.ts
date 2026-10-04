@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
+  integer,
   jsonb,
   pgTable,
   text,
@@ -16,6 +17,7 @@ interface SubscriptionData {
   subscriptionID: string;
   seatItemID?: string;
   apiUsageItemID?: string;
+  aiCreditItemID?: string;
   billingCycleAnchor: number;
   cancelAt: number | null;
   cancelAtPeriodEnd?: boolean;
@@ -48,6 +50,8 @@ const workspaces = pgTable(
     subscriptionPlan: text("subscription_plan").notNull().default("free"),
     subscriptionData: jsonb("subscription_data").$type<SubscriptionData>(),
     subscriptionExpiresAt: timestamp("subscription_expires_at", { withTimezone: true }),
+    /** In cents. */
+    spendingLimit: integer("spending_limit"),
     deletingAt: timestamp("deleting_at", { withTimezone: true }),
     ...timestamps
   },

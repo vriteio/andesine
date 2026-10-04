@@ -1,6 +1,7 @@
 import { invitations, stripeWebhookEvents, workspaces } from "@andesine/server/database";
 // SPDX-License-Identifier: Elastic-2.0
 import { db } from "#backend/lib/adapters";
+import { carryOverUsage } from "#backend/lib/billing";
 import { and, eq, ne, sql } from "drizzle-orm";
 import type Stripe from "stripe";
 
@@ -57,6 +58,8 @@ const persistStripeWebhookResult = async (input: {
     const persistedWorkspaceID = workspace?.id ?? null;
     const isDowngrade =
       workspace?.subscriptionPlan === "pro" && input.update?.subscriptionPlan === "free";
+    const isUpgrade =
+      workspace?.subscriptionPlan === "free" && input.update?.subscriptionPlan === "pro";
 
     let revokedInviteIDs: string[] = [];
 
@@ -72,6 +75,16 @@ const persistStripeWebhookResult = async (input: {
 
     if (persistedWorkspaceID && !workspace?.deletingAt && input.update) {
       await tx.update(workspaces).set(input.update).where(eq(workspaces.id, persistedWorkspaceID));
+
+      if (isUpgrade) {
+        const startedAt = input.update.subscriptionData?.startedAt;
+
+        await carryOverUsage(
+          tx,
+          persistedWorkspaceID,
+          startedAt ? new Date(startedAt * 1000) : new Date()
+        );
+      }
 
       if (isDowngrade) {
         const revokedInvites = await tx

@@ -23,6 +23,14 @@ const billingRouter = handlers.router({
       plan: subscription.plan
     });
   }),
+  updateSpendingLimit: authorizedHandlers.updateSpendingLimit.handler(
+    async ({ context, input }) => {
+      return Billing.Spending.updateLimit({
+        workspaceID: context.auth.workspaceID,
+        ...input
+      });
+    }
+  ),
   checkout: authorizedHandlers.checkout.handler(async ({ context }) => {
     return Billing.createCheckout({
       workspaceID: context.auth.workspaceID,

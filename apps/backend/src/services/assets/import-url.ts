@@ -54,6 +54,7 @@ const importAssetURL = withAuthorization<
       throw new ORPCError("TOO_MANY_REQUESTS", {
         message: "Too many image imports; try again shortly",
         data: {
+          limit: "rate",
           retryAfterSeconds: limit.retryAfter,
           hints: ["Wait at least retryAfterSeconds before importing another image."]
         }
@@ -63,7 +64,10 @@ const importAssetURL = withAuthorization<
     if (activeDownloads >= PROCESS_DOWNLOAD_LIMIT) {
       throw new ORPCError("TOO_MANY_REQUESTS", {
         message: "Too many image imports are in progress",
-        data: { hints: ["Reduce concurrent image imports and wait for active imports to finish."] }
+        data: {
+          limit: "rate",
+          hints: ["Reduce concurrent image imports and wait for active imports to finish."]
+        }
       });
     }
     if (availableBytes <= 0 && !input.checkDuplicates) {

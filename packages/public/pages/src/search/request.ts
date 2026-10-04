@@ -4,6 +4,7 @@ import type { AndesineSourceConfig, PagesConfig } from "../config";
 import { loadAndesineSource } from "../sources/andesine/stored";
 import { getAPIKey } from "../sources/andesine/read";
 import type { PageResolver } from "./items";
+import { isRateLimited } from "./limits";
 
 interface RequestOptions<T> {
   schema: z.ZodType<T>;
@@ -124,7 +125,7 @@ const toErrorResponse = (
   error: unknown,
   messages: { limited: string; failed: string }
 ): Response => {
-  const limited = error instanceof AndesineAPIError && error.status === 429;
+  const limited = error instanceof AndesineAPIError && isRateLimited(error.status, error.data);
 
   if (!limited) console.error(error);
 

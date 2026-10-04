@@ -122,6 +122,20 @@ npx wrangler secret put ANDESINE_API_KEY
 The build also needs `ANDESINE_API_KEY` in its environment, for example in the
 settings of Workers Builds.
 
+## API limits
+
+All visitors of a site share its key, so they share its limits too.
+
+- Each search uses one API call. Each AI answer uses one API call and 3 AI credits.
+  A build uses a few API calls.
+- Rate limits allow 600 requests and 60 AI answers a minute on Free, and ten times
+  more on Pro.
+- The monthly API calls and AI credits are hard limits on Free. When they run out,
+  search or AI answers show that they are not available until the next month. Pro
+  bills the usage over the included amounts, up to the workspace's spending limit.
+
+See the usage in the billing settings of the workspace.
+
 ## Content updates
 
 Andesine sources show new publications after the next build. Start a build from a

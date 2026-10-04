@@ -1,6 +1,14 @@
 import { dailyUsage } from "@andesine/server/database";
 // SPDX-License-Identifier: Elastic-2.0
-import { getEffectivePlan } from "#backend/lib/billing";
+import {
+  estimateCharges,
+  getEffectivePlan,
+  getMeterPrices,
+  getSpendingLimit,
+  getUTCMonthPeriod,
+  toUsageDate,
+  type MeterCharges
+} from "#backend/lib/billing";
 import { config } from "#backend/lib/config";
 import { toUUID } from "@andesine/contracts/primitives";
 import { db } from "#backend/lib/adapters";
@@ -11,29 +19,41 @@ interface DailyUsageRecord {
   count: number;
 }
 
-interface UsageData {
-  dailyUsage: DailyUsageRecord[];
-  totalUsage: number;
-  startDate: Date;
-  endDate: Date;
-  resetDate: Date;
+interface MeterUsage {
+  daily: DailyUsageRecord[];
+  total: number;
+  /** The hard limit on Free, or the included amount on Pro. */
   limit: number;
 }
 
-const getUTCMonthPeriod = (date: Date) => {
-  const year = date.getUTCFullYear();
-  const month = date.getUTCMonth();
-  const startDate = new Date(Date.UTC(year, month, 1));
-  const resetDate = new Date(Date.UTC(year, month + 1, 1));
+interface SpendingData {
+  /** In cents. */
+  limit: number | null;
+  /** `null` when prices are unavailable. */
+  estimated: MeterCharges | null;
+  currency: string | null;
+}
 
-  return {
-    daysInMonth: new Date(Date.UTC(year, month + 1, 0)).getUTCDate(),
-    endDate: new Date(resetDate.getTime() - 1),
-    resetDate,
-    startDate
-  };
+interface UsageData {
+  apiCalls: MeterUsage;
+  aiCredits: MeterUsage;
+  spending: SpendingData | null;
+  startDate: Date;
+  endDate: Date;
+  resetDate: Date;
+}
+
+const toMeterUsage = (
+  counts: Map<number, number>,
+  daysInMonth: number,
+  limit: number
+): MeterUsage => {
+  const daily = Array.from({ length: daysInMonth }, (_, index) => {
+    return { day: index + 1, count: counts.get(index + 1) ?? 0 };
+  });
+
+  return { daily, total: daily.reduce((sum, { count }) => sum + count, 0), limit };
 };
-const usageDate = (date: Date): string => date.toISOString().slice(0, 10);
 
 const getUsage = async (input: {
   workspaceID: string;
@@ -46,39 +66,54 @@ const getUsage = async (input: {
   const isCurrentMonth =
     targetDate.getUTCFullYear() === now.getUTCFullYear() &&
     targetDate.getUTCMonth() === now.getUTCMonth();
-  const limit =
-    getEffectivePlan(input.plan) === "pro"
-      ? config.PRO_INCLUDED_API_CALLS
-      : config.INCLUDED_API_CALLS;
+  const isPro = getEffectivePlan(input.plan) === "pro";
   const rows = await db
     .select()
     .from(dailyUsage)
     .where(
       and(
         eq(dailyUsage.workspaceID, toUUID(input.workspaceID)),
-        gte(dailyUsage.usageDate, usageDate(period.startDate)),
-        lte(dailyUsage.usageDate, usageDate(period.endDate))
+        gte(dailyUsage.usageDate, toUsageDate(period.startDate)),
+        lte(dailyUsage.usageDate, toUsageDate(period.endDate))
       )
     )
     .orderBy(asc(dailyUsage.usageDate));
-  const byDay = new Map(rows.map((row) => [Number(row.usageDate.slice(-2)), row.requestCount]));
-  const daily: DailyUsageRecord[] = [];
-  let totalUsage = 0;
+  const toCounts = (count: (row: (typeof rows)[number]) => number) => {
+    return new Map(rows.map((row) => [Number(row.usageDate.slice(-2)), count(row)]));
+  };
 
-  for (let day = 1; day <= period.daysInMonth; day++) {
-    const count = byDay.get(day) ?? 0;
+  const apiCalls = toMeterUsage(
+    toCounts((row) => row.requestCount),
+    period.daysInMonth,
+    isPro ? config.PRO_INCLUDED_API_CALLS : config.INCLUDED_API_CALLS
+  );
+  const aiCredits = toMeterUsage(
+    toCounts((row) => row.aiCreditCount),
+    period.daysInMonth,
+    isPro ? config.PRO_INCLUDED_AI_CREDITS : config.INCLUDED_AI_CREDITS
+  );
+  const getSpending = async (): Promise<SpendingData | null> => {
+    if (!isPro || !config.BILLING_ENABLED) return null;
 
-    daily.push({ day, count });
-    totalUsage += count;
-  }
+    const [limit, prices] = await Promise.all([
+      getSpendingLimit(toUUID(input.workspaceID)),
+      getMeterPrices().catch(() => null)
+    ]);
+
+    return {
+      limit,
+      estimated: prices && estimateCharges({ apiCalls, aiCredits }, prices),
+      currency: prices?.currency ?? null
+    };
+  };
 
   return {
-    dailyUsage: daily,
-    totalUsage,
+    apiCalls,
+    aiCredits,
+    spending: await getSpending(),
     startDate: period.startDate,
     endDate: isCurrentMonth ? now : period.endDate,
-    resetDate: period.resetDate,
-    limit
+    resetDate: period.resetDate
   };
 };
 

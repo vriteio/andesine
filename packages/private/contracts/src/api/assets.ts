@@ -17,7 +17,7 @@ const createAssetsContract = (maxUploadBytes: number) => {
       .route({
         summary: "Search assets",
         description:
-          "Finds workspace images by text or SHA-256 checksum. Semantic search defaults to true. Returns up to 50 results.",
+          "Finds workspace images by text or SHA-256 checksum. Semantic search defaults to true and uses 1 AI credit for a text query. Returns up to 50 results.",
         tags: ["assets"],
         method: "GET",
         path: "/search",
@@ -25,6 +25,15 @@ const createAssetsContract = (maxUploadBytes: number) => {
       })
       .meta({ example: { query: "mountains", limit: 10 } })
       .meta({ required: { session: true, key: ["read:entries", "read:collections"] } })
+      .meta({
+        aiUsage: {
+          kind: "semanticSearch",
+          // Only text queries make an embedding.
+          when: (input: { query: string; checksum?: string; semantic: boolean }) => {
+            return input.semantic && Boolean(input.query) && !input.checksum;
+          }
+        }
+      })
       .input(
         z.object({
           query: z.string().trim().max(500).default(""),

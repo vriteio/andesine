@@ -1,0 +1,1 @@
+ALTER TABLE "workspaces" ADD COLUMN "spending_limit" integer;

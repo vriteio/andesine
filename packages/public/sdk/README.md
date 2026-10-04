@@ -106,7 +106,7 @@ try {
     }
 
     if (error.is("TOO_MANY_REQUESTS")) {
-      console.log(error.data?.retryAfterSeconds);
+      console.log(error.data?.limit, error.data?.retryAfterSeconds);
     }
   }
 }
@@ -126,6 +126,48 @@ if (result.notModified) {
 Use full-response mode for conditional requests. A 304 response has
 `notModified: true` and no data. A 304 in data mode causes a clear error because
 the client does not store a response cache.
+
+## Limits and usage
+
+Rate limits stop abuse; they count requests for each credential (API key, OAuth
+grant, or app session) in one-minute windows.
+
+| Requests a minute                 | Free | Pro   |
+| --------------------------------- | ---- | ----- |
+| All requests                      | 600  | 6,000 |
+| AI answers                        | 60   | 600   |
+| Semantic search (with `semantic`) | 300  | 3,000 |
+
+Each workspace also has two monthly meters, which reset at 00:00 UTC on the first
+day of each month:
+
+- **API calls:** each request with an API key or OAuth. Free includes 50,000; Pro
+  includes 500,000 and bills the rest.
+- **AI credits:** an AI answer uses 3 credits, and a semantic search uses 1. Requests
+  from the app use credits too. Free includes 5,000; Pro includes 50,000 and bills
+  the rest.
+
+On Free, the meters are hard limits. On Pro, a workspace admin can set a monthly
+spending limit for the billed usage; when it is reached, metered requests stop until
+the next month.
+
+Every limit returns `TOO_MANY_REQUESTS` with `data.limit` (`rate`, `api-calls`,
+`ai-credits`, or `spending`) and `data.retryAfterSeconds`, also sent as
+`Retry-After`. A `rate` limit passes within a minute; the others last until the
+monthly reset, so do not retry them automatically.
+
+Responses describe the limits in headers:
+
+- `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset`: the rate
+  limit that applies to the request; AI requests show their AI limit.
+- `X-API-Usage`, `X-API-Usage-Limit`, and `X-API-Usage-Reset`: the month's API calls,
+  on metered requests.
+- `X-AI-Credits`, `X-AI-Credits-Limit`, and `X-AI-Credits-Reset`: the month's AI
+  credits, on AI requests.
+
+Limits are the hard limit on Free, or the included amount on Pro. Reset values are
+Unix times in seconds. Self-hosted instances without billing have the Pro rate limits
+and no meters.
 
 ## Cancellation, timeouts, and retries
 
@@ -617,9 +659,9 @@ Both complete and streamed answers use the same inputs and source-selection rule
 
 The limits are 1,000 characters per question, 10 history messages of up to 4,000
 characters each, and 20 property filters. History is supplied per request; the SDK
-does not store it. Trim history before sending a later question. The existing Ask
-AI rate limit is 10 requests per 60 seconds per credential. API usage metering
-is unchanged: a successful complete response counts once when billing is enabled.
+does not store it. Trim history before sending a later question. Each answer uses 3
+AI credits and has its own rate limit; see [Limits and usage](#limits-and-usage). A
+complete response is counted when it succeeds.
 A rate-limit error includes `Retry-After` and `data.retryAfterSeconds`. Provider
 failures return `SERVICE_UNAVAILABLE` with hints. Answer POST requests are never
 automatically retried, even when read retries are enabled.
@@ -855,11 +897,10 @@ Missing completion or an interrupted body uses `INCOMPLETE_STREAM`. These are
 local protocol errors, not API errors with an invented HTTP status. Abort and
 timeout reasons are preserved.
 
-A stream counts as one API call when generation starts, including generation that
-later fails or is cancelled. Source preparation alone is not charged. The existing
-Ask AI rate limit and quota checks run before opening the stream. Usage headers
-show the allowance when the stream opens; chunks do not update headers or create
-additional usage records.
+A stream is counted when generation starts, including generation that later fails
+or is cancelled. Source preparation alone is not charged. The rate limit, quota, and
+spending limit checks run before the stream opens. Usage headers show the allowance
+when the stream opens; chunks do not update headers or create more usage records.
 
 ### Forward a stream from your server
 

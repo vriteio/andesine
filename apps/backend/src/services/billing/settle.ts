@@ -1,6 +1,7 @@
 import { usageLedger, workspaces } from "@andesine/server/database";
 // SPDX-License-Identifier: Elastic-2.0
 import { db, endStripeSubscription, stripe } from "#backend/lib/adapters";
+import { toMeterEventTimestamp } from "#backend/lib/billing";
 import { config } from "#backend/lib/config";
 import { isTerminalSubscription } from "#backend/lib/policy";
 import { toUUID } from "@andesine/contracts/primitives";
@@ -50,7 +51,9 @@ const reportOutstandingUsage = async (input: {
       .select({
         attempts: usageLedger.attempts,
         id: usageLedger.id,
+        meter: usageLedger.meter,
         quantity: usageLedger.quantity,
+        usageDate: usageLedger.usageDate,
         stripeEventIdentifier: usageLedger.stripeEventIdentifier
       })
       .from(usageLedger)
@@ -76,8 +79,14 @@ const reportOutstandingUsage = async (input: {
     return rows.map((row) => ({ ...row, attempts: row.attempts + 1 }));
   });
 
+  const eventNames = {
+    "api-calls": config.STRIPE_PRO_API_CALL_METER_EVENT_NAME,
+    "ai-credits": config.STRIPE_PRO_AI_CREDIT_METER_EVENT_NAME
+  };
+  const isConfigured = claimed.every((ledger) => eventNames[ledger.meter]);
+
   if (claimed.length === 0) return;
-  if (!stripe || !config.STRIPE_PRO_API_CALL_METER_EVENT_NAME || !input.customerID) {
+  if (!stripe || !isConfigured || !input.customerID) {
     throw new ORPCError("INTERNAL_SERVER_ERROR", {
       message: "Stripe metering must be configured before deleting a workspace with pending usage"
     });
@@ -85,12 +94,13 @@ const reportOutstandingUsage = async (input: {
 
   for (const ledger of claimed) {
     await stripe.v2.billing.meterEvents.create({
-      event_name: config.STRIPE_PRO_API_CALL_METER_EVENT_NAME,
+      event_name: eventNames[ledger.meter]!,
       payload: {
         stripe_customer_id: input.customerID,
         value: `${ledger.quantity}`
       },
-      identifier: ledger.stripeEventIdentifier
+      identifier: ledger.stripeEventIdentifier,
+      timestamp: toMeterEventTimestamp(ledger.usageDate)
     });
     await db
       .update(usageLedger)

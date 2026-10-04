@@ -1,6 +1,7 @@
 import type { AndesineAPIContext, SearchContext, SearchSourceContext } from "./context";
 import { loadEntryPages } from "./search/entry-pages";
 import { toSearchItems } from "./search/items";
+import { isRateLimited, readErrorData } from "./search/limits";
 import type { SearchGroup, SearchItem } from "./search/types";
 
 interface SearchClient {
@@ -87,7 +88,7 @@ const createSearchClient = (context: SearchContext): SearchClient => {
 
     if (!response.ok) {
       throw new Error(
-        response.status === 429
+        isRateLimited(response.status, await readErrorData(response))
           ? "Too many searches. Try again soon."
           : "Search is not available now."
       );

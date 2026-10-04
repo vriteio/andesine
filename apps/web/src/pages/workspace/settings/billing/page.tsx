@@ -5,6 +5,7 @@ import { useWorkspace } from "#web/context/workspace";
 import { useSearchParams, revalidate } from "@solidjs/router";
 import { SubscriptionSection } from "./subscription-section";
 import { UsageSection } from "./usage-section";
+import { SpendingSection } from "./spending-section";
 import { BillingProcessingDialog } from "./processing-dialog";
 
 const BillingSettingsPage: Component = () => {
@@ -43,6 +44,7 @@ const BillingSettingsPage: Component = () => {
       }
     >
       <SubscriptionSection />
+      <SpendingSection />
       <UsageSection />
       <BillingProcessingDialog
         opened={processingCheckout()}

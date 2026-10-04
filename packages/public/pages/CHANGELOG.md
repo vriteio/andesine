@@ -93,3 +93,5 @@
   AI answers call the Andesine API from browsers, and the build writes a JSON map of
   entry URLs in place of the `/_andesine/` server routes, so the site stays static.
   Without a secret key, the build also reads the content with the publishable key.
+- Search and AI answers show "Too many…" only for short rate limits. Used-up monthly
+  quotas and spending limits show that the feature is not available now.

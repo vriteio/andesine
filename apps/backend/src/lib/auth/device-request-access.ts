@@ -15,6 +15,7 @@ const assertDeviceRequestAccess = async (auth: SessionData): Promise<void> => {
     throw new ORPCError("TOO_MANY_REQUESTS", {
       message: "Too many device authorization attempts",
       data: {
+        limit: "rate",
         retryAfterSeconds: limit.retryAfter,
         hints: ["Wait at least retryAfterSeconds before trying again."]
       }

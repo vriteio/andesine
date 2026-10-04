@@ -6,7 +6,9 @@ import { stripe } from "./stripe";
 interface UsageLedgerRow {
   id: string;
   workspace_id: string;
+  meter: "api-calls" | "ai-credits";
   quantity: string;
+  usage_date: string;
   stripe_event_identifier: string;
   attempts: number;
 }
@@ -15,6 +17,12 @@ interface WorkspaceRow {
   customer_id: string | null;
 }
 
+/** Keeps late reports in the billing period of the usage day. */
+const toEventTimestamp = (usageDate: string): string => {
+  const endOfDay = new Date(`${usageDate}T23:59:59.999Z`).getTime();
+
+  return new Date(Math.min(endOfDay, Date.now())).toISOString();
+};
 const claimUsage = async (): Promise<UsageLedgerRow | null> => {
   const client = await pool.connect();
 
@@ -49,7 +57,14 @@ const claimUsage = async (): Promise<UsageLedgerRow | null> => {
           attempts = attempts + 1,
           updated_at = now()
         where id = $1
-        returning id, workspace_id, quantity, stripe_event_identifier, attempts
+        returning
+          id,
+          workspace_id,
+          meter,
+          quantity,
+          usage_date::text as usage_date,
+          stripe_event_identifier,
+          attempts
       `,
       [row.id]
     );
@@ -101,17 +116,21 @@ const reportUsage = async (): Promise<number> => {
         throw new Error(`Stripe customer not found for metered workspace ${ledger.workspace_id}`);
       }
 
-      if (!stripe || !config.STRIPE_PRO_API_CALL_METER_EVENT_NAME) {
-        throw new Error("Stripe metering is not configured");
-      }
+      const eventName = {
+        "api-calls": config.STRIPE_PRO_API_CALL_METER_EVENT_NAME,
+        "ai-credits": config.STRIPE_PRO_AI_CREDIT_METER_EVENT_NAME
+      }[ledger.meter];
+
+      if (!stripe || !eventName) throw new Error("Stripe metering is not configured");
 
       await stripe.v2.billing.meterEvents.create({
-        event_name: config.STRIPE_PRO_API_CALL_METER_EVENT_NAME,
+        event_name: eventName,
         payload: {
           stripe_customer_id: workspace.customer_id,
           value: ledger.quantity
         },
-        identifier: ledger.stripe_event_identifier
+        identifier: ledger.stripe_event_identifier,
+        timestamp: toEventTimestamp(ledger.usage_date)
       });
 
       const delivered = await pool.query(

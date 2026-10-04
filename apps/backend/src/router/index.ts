@@ -9,10 +9,34 @@ import { OpenAPIHandler } from "@orpc/openapi/fastify";
 import { onError, ORPCError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fastify";
 import { RequestHeadersPlugin, ResponseHeadersPlugin } from "@orpc/server/plugins";
+import type { StandardHandleResult } from "@orpc/server/standard";
 import { experimental_ZodSmartCoercionPlugin } from "@orpc/zod/zod4";
 import { type FastifyPluginAsync, type FastifyReply, type FastifyRequest } from "fastify";
 import { router } from "./routes";
 import { apiContract } from "./implement";
+
+/** Stops proxies from buffering streams. */
+const withStreamHeaders = async (options: {
+  next(): Promise<StandardHandleResult>;
+}): Promise<StandardHandleResult> => {
+  const result = await options.next();
+  const body = result.matched ? result.response.body : undefined;
+  const isStream = typeof body === "object" && body !== null && Symbol.asyncIterator in body;
+
+  if (!result.matched || !isStream) return result;
+
+  return {
+    ...result,
+    response: {
+      ...result.response,
+      headers: {
+        ...result.response.headers,
+        "cache-control": "private, no-store, no-transform",
+        "x-accel-buffering": "no"
+      }
+    }
+  };
+};
 
 const routerPlugin: FastifyPluginAsync = async (app) => {
   const method = ["GET", "HEAD", "PUT", "POST", "DELETE", "PATCH"];
@@ -66,6 +90,7 @@ const routerPlugin: FastifyPluginAsync = async (app) => {
       new experimental_ZodSmartCoercionPlugin()
     ],
     interceptors: [
+      withStreamHeaders,
       onError((error, options) => {
         logORPCError(error, options, options.request.url.pathname);
         throw withErrorHints(error);
@@ -75,6 +100,7 @@ const routerPlugin: FastifyPluginAsync = async (app) => {
   const rpcHandler = new RPCHandler(router, {
     plugins: [new RequestHeadersPlugin(), new ResponseHeadersPlugin()],
     interceptors: [
+      withStreamHeaders,
       onError((error, options) => {
         logORPCError(error, options, options.request.url.pathname);
       })
@@ -110,6 +136,7 @@ const routerPlugin: FastifyPluginAsync = async (app) => {
 
         throw new ORPCError("TOO_MANY_REQUESTS", {
           data: {
+            limit: "rate",
             retryAfterSeconds: limit.retryAfter,
             hints: ["Wait at least retryAfterSeconds before trying again."]
           },

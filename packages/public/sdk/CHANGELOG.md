@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Document the limits: per-minute rate limits, the monthly API call and AI credit
+  meters, the Pro spending limit, the `X-RateLimit-*`, `X-API-Usage*`, and
+  `X-AI-Credits*` headers, and the new `limit` field of `TOO_MANY_REQUESTS` error
+  data (`rate`, `api-calls`, `ai-credits`, or `spending`). `X-RateLimit-*` now
+  describes the rate limit, not the monthly usage.
+
 - Document publishable keys (`adn_pk_...`) for browser use: published content
   reads, search, and answers from the key's collections and origins, and server
   reads without an `Origin`, e.g. site builds.

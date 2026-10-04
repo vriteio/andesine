@@ -1,3 +1,4 @@
+import { ORPCError } from "@orpc/client";
 import { Skeleton } from "@andesine/components";
 import { type Component, createMemo, For, Show } from "solid-js";
 import { Markdown } from "#web/components/markdown";
@@ -50,6 +51,15 @@ const groupAnswerSources = (sources: SearchAnswerSource[]): SearchAnswerSourceGr
   return [...groups.values()];
 };
 
+const getErrorTitle = (error: unknown): string => {
+  const limit = error instanceof ORPCError ? error.data?.limit : undefined;
+
+  if (limit === "ai-credits") return "No AI credits left";
+  if (limit === "spending") return "Spending limit reached";
+  if (limit === "rate") return "Too many questions";
+
+  return "Ask AI failed";
+};
 const getErrorMessage = (error: unknown): string | undefined => {
   if (!error) return;
 
@@ -195,7 +205,7 @@ const SearchAnswerPanel: Component<SearchAnswerPanelProps> = (props) => (
       <SearchAnswerSkeleton question={props.question || ""} />
     </Show>
     <Show when={getErrorMessage(props.error)} keyed>
-      {(error) => <SearchError title="Ask AI failed" message={error} />}
+      {(error) => <SearchError title={getErrorTitle(props.error)} message={error} />}
     </Show>
   </div>
 );

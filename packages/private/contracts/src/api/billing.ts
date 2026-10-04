@@ -18,18 +18,40 @@ const subscriptionInfoType = z.object({
   canceledAt: z.iso.datetime().nullable().describe("Time at which cancellation was requested"),
   endedAt: z.iso.datetime().nullable().describe("Time at which the subscription ended")
 });
-const billingUsageType = z.object({
-  dailyUsage: z.array(
+const meterUsageType = z.object({
+  daily: z.array(
     z.object({
       day: z.number().int().min(1).max(31).describe("Day of the month"),
-      count: z.number().int().min(0).describe("Number of API requests on that day")
+      count: z.number().int().min(0).describe("Usage on that day")
     })
   ),
-  totalUsage: z.number().int().min(0).describe("Total API requests in the current billing period"),
+  total: z.number().int().min(0).describe("Total usage in the current billing period"),
+  limit: z.number().int().min(0).describe("Hard limit or included usage for the current plan")
+});
+const billingUsageType = z.object({
+  apiCalls: meterUsageType.describe("API calls made with API keys or OAuth"),
+  aiCredits: meterUsageType.describe("AI credits used by AI operations in the app and the API"),
+  spending: z
+    .object({
+      limit: z
+        .number()
+        .int()
+        .nullable()
+        .describe("Monthly limit for usage charges, in cents; null for none"),
+      estimated: z
+        .object({
+          apiCalls: z.number().int().min(0).describe("Charges for API calls, in cents"),
+          aiCredits: z.number().int().min(0).describe("Charges for AI credits, in cents")
+        })
+        .nullable()
+        .describe("Estimated usage charges of the month for each meter; null when unknown"),
+      currency: z.string().nullable().describe("Currency of the charges, e.g. usd")
+    })
+    .nullable()
+    .describe("Usage charges over the included amounts on Pro; null on Free"),
   startDate: z.date().describe("Start of the billing usage window"),
   endDate: z.date().describe("End of the billing usage window"),
-  resetDate: z.date().describe("Next monthly allowance reset at 00:00 UTC"),
-  limit: z.number().int().min(0).describe("Hard limit or included usage for the current plan")
+  resetDate: z.date().describe("Next monthly allowance reset at 00:00 UTC")
 });
 const billingContract = baseContract.router({
   subscription: baseContract
@@ -46,6 +68,23 @@ const billingContract = baseContract.router({
       }
     })
     .output(billingUsageType),
+  updateSpendingLimit: baseContract
+    .meta({
+      required: {
+        session: ["billing"]
+      }
+    })
+    .input(
+      z.object({
+        spendingLimit: z
+          .number()
+          .int()
+          .min(100)
+          .max(100_000_000)
+          .nullable()
+          .describe("Monthly limit for usage charges, in cents; null removes it")
+      })
+    ),
   checkout: baseContract
     .meta({
       required: {

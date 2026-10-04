@@ -19,8 +19,11 @@ const subscriptionValues = (
   const apiUsageItem = subscription.items.data.find((item) => {
     return item.price.id === config.STRIPE_PRO_API_CALL_PRICE_ID;
   });
+  const aiCreditItem = subscription.items.data.find((item) => {
+    return item.price.id === config.STRIPE_PRO_AI_CREDIT_PRICE_ID;
+  });
   const isTerminal = isTerminalSubscription(subscription.status);
-  const isPro = Boolean(seatItem && apiUsageItem) && !isTerminal;
+  const isPro = Boolean(seatItem && apiUsageItem && aiCreditItem) && !isTerminal;
   const currentPeriodStart = seatItem?.current_period_start ?? apiUsageItem?.current_period_start;
   const currentPeriodEnd = seatItem?.current_period_end ?? apiUsageItem?.current_period_end;
   const terminalEnd = subscription.ended_at ?? subscription.canceled_at;
@@ -32,6 +35,7 @@ const subscriptionValues = (
       subscriptionID: subscription.id,
       seatItemID: isTerminal ? undefined : seatItem?.id,
       apiUsageItemID: isTerminal ? undefined : apiUsageItem?.id,
+      aiCreditItemID: isTerminal ? undefined : aiCreditItem?.id,
       billingCycleAnchor: subscription.billing_cycle_anchor,
       cancelAt: subscription.cancel_at,
       cancelAtPeriodEnd: subscription.cancel_at_period_end,

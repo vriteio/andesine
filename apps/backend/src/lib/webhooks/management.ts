@@ -132,7 +132,7 @@ const limitWebhookManagement = async (
   if (!result.allowed) {
     throw new ORPCError("TOO_MANY_REQUESTS", {
       message: "Too many webhook management requests; try again shortly",
-      data: { retryAfterSeconds: result.retryAfter }
+      data: { limit: "rate", retryAfterSeconds: result.retryAfter }
     });
   }
 };

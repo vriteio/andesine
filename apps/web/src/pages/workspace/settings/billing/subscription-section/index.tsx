@@ -42,7 +42,13 @@ const SubscriptionSection: Component = () => {
         </>,
         <>
           <span class="font-medium text-gray-700">
-            {currentUsage ? formatNumber(currentUsage.totalUsage) : "—"} API calls
+            {currentUsage ? formatNumber(currentUsage.apiCalls.total) : "—"} API calls
+          </span>{" "}
+          this month
+        </>,
+        <>
+          <span class="font-medium text-gray-700">
+            {currentUsage ? formatNumber(currentUsage.aiCredits.total) : "—"} AI credits
           </span>{" "}
           this month
         </>
@@ -57,6 +63,12 @@ const SubscriptionSection: Component = () => {
       </>,
       <>
         <span class="font-medium text-gray-700">$1 per 50K</span> additional API calls
+      </>,
+      <>
+        <span class="font-medium text-gray-700">50K AI credits</span> included
+      </>,
+      <>
+        <span class="font-medium text-gray-700">$1 per 5K</span> additional AI credits
       </>
     ];
   };

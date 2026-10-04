@@ -29,7 +29,7 @@ const items: FAQItem[] = [
   {
     question: "Is the API allowance per workspace?",
     answer:
-      "Yes, shared across all seats. It resets each calendar month in UTC: 1,000 calls on Free and 500,000 on Pro. Extra Pro calls cost $1 USD per 50,000. Free metered requests stop at the limit until reset or upgrade."
+      "Yes, shared across all seats. It resets each calendar month: 50,000 calls on Free and 500,000 on Pro. Extra Pro calls cost $1 USD per 50,000. Free metered requests stop at the limit until reset or upgrade."
   },
   {
     question: "Does Free include AI answers?",

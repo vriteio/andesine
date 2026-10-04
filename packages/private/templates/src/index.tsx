@@ -4,12 +4,14 @@ import { render } from "@react-email/render";
 import { VerificationOTP, type VerificationOTPProps } from "../emails/verification-otp";
 import { WorkspaceInvite, type WorkspaceInviteProps } from "../emails/workspace-invite";
 import { SessionVerification, type SessionVerificationProps } from "../emails/session-verification";
+import { SpendingAlert, type SpendingAlertProps } from "../emails/spending-alert";
 import React from "react";
 
 type EmailTemplateProps = {
   "verification-otp": VerificationOTPProps;
   "session-verification": SessionVerificationProps;
   "workspace-invite": WorkspaceInviteProps;
+  "spending-alert": SpendingAlertProps;
 };
 type EmailTemplates = {
   [E in keyof EmailTemplateProps]: {
@@ -36,6 +38,14 @@ const emails: EmailTemplates = {
   "workspace-invite": {
     component: WorkspaceInvite,
     subject: () => "You've been invited to a workspace | Andesine"
+  },
+  "spending-alert": {
+    component: SpendingAlert,
+    subject: (props) => {
+      return props.threshold && props.threshold >= 100
+        ? "Spending limit reached | Andesine"
+        : "Spending limit almost reached | Andesine";
+    }
   }
 };
 const getEmailContent = <E extends keyof EmailTemplates>(

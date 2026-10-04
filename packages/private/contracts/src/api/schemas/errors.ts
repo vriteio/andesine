@@ -54,6 +54,12 @@ const forbiddenErrorDataType = errorDataType.extend({
   action: z.string().optional().describe("The requested action that was denied")
 });
 const rateLimitErrorDataType = errorDataType.extend({
+  limit: z
+    .enum(["rate", "api-calls", "ai-credits", "spending"])
+    .optional()
+    .describe(
+      "The limit that was reached: a short-term rate limit, or a monthly API call, AI credit, or spending limit"
+    ),
   retryAfterSeconds: z
     .number()
     .int()

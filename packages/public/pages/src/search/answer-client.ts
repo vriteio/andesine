@@ -2,6 +2,7 @@ import { readAnswerStream } from "@andesine/sdk/streaming";
 import type { AndesineAPIContext, AnswersContext } from "../context";
 import { loadEntryPages } from "./entry-pages";
 import { toAnswerSources } from "./items";
+import { isRateLimited, readErrorData } from "./limits";
 import type { Answer, AnswerEvent, AnswerMessage, AnswerSource } from "./types";
 
 interface AnswerHistoryTurn {
@@ -126,7 +127,7 @@ const readAPIEvents = async function* (
 
   if (!response.ok) {
     throw new Error(
-      response.status === 429
+      isRateLimited(response.status, await readErrorData(response))
         ? "Too many questions. Try again soon."
         : "AI answers are not available now."
     );

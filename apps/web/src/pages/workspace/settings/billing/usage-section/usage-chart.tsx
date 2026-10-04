@@ -9,6 +9,7 @@ interface UsageChartProps {
   limit: number;
   month: number;
   year: number;
+  unit: string;
 }
 
 const UsageChart: Component<UsageChartProps> = (props) => {
@@ -43,7 +44,9 @@ const UsageChart: Component<UsageChartProps> = (props) => {
       tooltipContent={(point) => (
         <div class="flex flex-col gap-0.5">
           <span class="opacity-50 leading-none">{point.x}</span>
-          <span class="text-sm font-medium leading-none">{point.y.toLocaleString()} calls</span>
+          <span class="text-sm font-medium leading-none">
+            {point.y.toLocaleString()} {props.unit}
+          </span>
         </div>
       )}
     />

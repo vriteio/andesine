@@ -5,6 +5,7 @@ import { endSubscription } from "./end-subscription";
 import { getSubscription } from "./get-subscription";
 import { Metering } from "./metering";
 import { settle } from "./settle";
+import { Spending } from "./spending";
 import { updateSeats } from "./update-seats";
 
 const Billing = {
@@ -14,7 +15,8 @@ const Billing = {
   getSubscription,
   settle,
   updateSeats,
-  Metering
+  Metering,
+  Spending
 };
 
 export { Billing };

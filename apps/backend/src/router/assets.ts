@@ -29,6 +29,7 @@ const assetsRouter = handlers.router({
       throw new ORPCError("TOO_MANY_REQUESTS", {
         message: "Too many image uploads; try again shortly",
         data: {
+          limit: "rate",
           retryAfterSeconds: limit.retryAfter,
           hints: ["Wait at least retryAfterSeconds before starting another upload."]
         }
@@ -75,6 +76,7 @@ const assetsRouter = handlers.router({
       throw new ORPCError("TOO_MANY_REQUESTS", {
         message: "Too many image uploads; try again shortly",
         data: {
+          limit: "rate",
           retryAfterSeconds: limit.retryAfter,
           hints: ["Wait at least retryAfterSeconds before starting another upload."]
         }
