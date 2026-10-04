@@ -1,6 +1,6 @@
 {
   "name": "@andesine/pages-template",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "license": "MIT",
@@ -37,5 +37,10 @@
     "@unocss/reset": "66.7.5",
     "typescript": "6.0.3",
     "unocss": "66.7.5"
+  },
+  "overrides": {
+    "solid-devtools": {
+      "vite": "^8.0.13"
+    }
   }
 }

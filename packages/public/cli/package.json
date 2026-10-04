@@ -1,6 +1,6 @@
 {
   "name": "andesine",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Command-line tools for Andesine",
   "type": "module",
   "license": "MIT",

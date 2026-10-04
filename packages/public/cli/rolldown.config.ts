@@ -4,8 +4,11 @@ import { chmod } from "node:fs/promises";
 import { defineConfig } from "rolldown";
 import { toJSONSchema } from "zod";
 import { generateAPI } from "./scripts/generate-api";
+import { readPagesTemplate } from "./scripts/pages-template";
 
 await generateAPI();
+
+const pagesTemplate = await readPagesTemplate();
 
 export default defineConfig({
   cwd: import.meta.dirname,
@@ -17,6 +20,14 @@ export default defineConfig({
     {
       name: "cli-package",
       generateBundle() {
+        for (const file of pagesTemplate) {
+          this.emitFile({
+            type: "asset",
+            fileName: `templates/pages/${file.path}`,
+            source: file.source
+          });
+        }
+
         this.emitFile({
           type: "asset",
           fileName: "config.schema.json",

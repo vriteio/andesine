@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0
+
+- Align the version with the other Andesine packages. No functional changes.
+
 ## 0.1.0
 
 - Async Markdown, MDX, Markdoc, and HTML conversion, plus plain-text output.

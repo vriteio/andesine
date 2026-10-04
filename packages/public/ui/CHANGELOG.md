@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.4.0
+
+First release. The version follows the other Andesine packages.
 
 - Add the package structure and the `@andesine/ui/solid` export.
 - Add `NavigationTree`, `TableOfContents`, `MobileNavigation`, `Breadcrumbs`, and

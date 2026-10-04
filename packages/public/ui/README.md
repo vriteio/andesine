@@ -4,6 +4,9 @@ Headless documentation components for Andesine Pages. The components supply
 structure, state, keyboard and focus behavior, and ARIA attributes. They supply
 no styles.
 
+> **Unstable.** The components follow the needs of the Andesine Pages template, and
+> their API can change in any 0.x release. Pin the exact version.
+
 ## Exports
 
 | Export               | Contents             |

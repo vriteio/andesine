@@ -3,6 +3,9 @@
 The Astro integration and data layer of Andesine Pages. Use it with the Andesine
 Pages template, which supplies the layouts, styles, and components.
 
+> **0.x.** The config and the page context can change in minor releases; the
+> changelog lists the changes. Use the version that the template pins.
+
 ## Exports
 
 | Export                        | Contents                                 |

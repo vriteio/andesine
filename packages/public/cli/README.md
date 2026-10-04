@@ -21,6 +21,17 @@ andesine --help
 andesine --version
 ```
 
+## Documentation sites
+
+```sh
+npx andesine pages init docs
+```
+
+Creates an Andesine Pages site in a new or empty directory (default `docs`) from the
+template of this CLI release, with `@andesine/pages` and `@andesine/ui` pinned to the
+same version. Then run `npm install` and `npm run dev` in the directory. The command
+needs no credentials.
+
 ## Project configuration
 
 Run `andesine init` for guided setup. It uses Clack prompts and progress indicators

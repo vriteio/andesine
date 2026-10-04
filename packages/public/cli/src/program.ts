@@ -5,6 +5,8 @@ import { login } from "./auth/login";
 import { logout } from "./auth/logout";
 import { status } from "./auth/status";
 import { init } from "./init";
+import { createOutput } from "./output";
+import { initPages } from "./pages/init";
 import { registerAPI } from "./api/register";
 import { registerTypes } from "./types/register";
 
@@ -63,6 +65,16 @@ const createProgram = (signal: AbortSignal) => {
     )
     .action(async (_options, command) => {
       await init(command.optsWithGlobals(), signal);
+    });
+
+  program
+    .command("pages")
+    .description("Create Andesine Pages documentation sites")
+    .command("init")
+    .description("Create an Andesine Pages site from the template in a new or empty directory")
+    .argument("[directory]", "Directory of the new site", "docs")
+    .action(async (directory, _options, command) => {
+      await initPages(directory, createOutput(command.optsWithGlobals().interactive, signal));
     });
 
   auth

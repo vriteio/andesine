@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.0
 
 - Document the limits: per-minute rate limits, the monthly API call and AI credit
   meters, the Pro spending limit, the `X-RateLimit-*`, `X-API-Usage*`, and

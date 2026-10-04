@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.4.0
+
+First release. The version follows the other Andesine packages.
 
 - Add `defineConfig()` with config validation.
 - Add the `andesine()` Astro integration. It reads `andesine.config.ts`, sets the

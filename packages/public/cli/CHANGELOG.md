@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0
+
+- Add `andesine pages init [directory]`, which creates an Andesine Pages site from
+  the template of the same release in a new or empty directory (default `docs`).
+- Depend on `@andesine/sdk` 0.4.0. Align the version with the other Andesine
+  packages.
+
 ## 0.3.0
 
 - Add generated webhook commands for management (including bulk enable/disable and

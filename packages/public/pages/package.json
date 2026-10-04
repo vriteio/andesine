@@ -1,6 +1,6 @@
 {
   "name": "@andesine/pages",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "description": "Astro documentation framework for Andesine and local content",
   "type": "module",
   "license": "MIT",

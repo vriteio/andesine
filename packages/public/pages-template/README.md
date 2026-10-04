@@ -48,6 +48,20 @@ with a tool such as `dotenv-cli`. With a secret `ANDESINE_API_KEY` in place of t
 key, Andesine sources need a Node.js server or a serverless platform such as Vercel or
 Netlify. See the Deployment page of the guide.
 
+## New sites
+
+Create a new site from this template with the Andesine CLI:
+
+```sh
+npx andesine pages init docs
+cd docs
+npm install
+```
+
+The CLI copies the template of its release, with `@andesine/pages` and
+`@andesine/ui` pinned to the same version. The `overrides` field fixes an npm peer
+conflict of `solid-devtools`, an optional dependency of `@astrojs/solid-js`.
+
 ## Commands
 
 Use Node.js 24 or later.

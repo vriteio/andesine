@@ -1,6 +1,6 @@
 {
   "name": "@andesine/sdk",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "TypeScript API client for Andesine",
   "type": "module",
   "license": "MIT",

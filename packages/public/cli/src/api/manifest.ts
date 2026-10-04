@@ -332,7 +332,7 @@ const commands: APICommand[] = [
     path: "/assets/search",
     summary: "Search assets",
     description:
-      "Finds workspace images by text or SHA-256 checksum. Semantic search defaults to true. Returns up to 50 results.\n\nRequired API key permissions: read:entries, read:collections. Write permissions also grant read access for the same resource.",
+      "Finds workspace images by text or SHA-256 checksum. Semantic search defaults to true and uses 1 AI credit for a text query. Returns up to 50 results.\n\nRequired API key permissions: read:entries, read:collections. Write permissions also grant read access for the same resource.",
     example: {
       query: "mountains",
       limit: 10
@@ -4898,7 +4898,7 @@ const commands: APICommand[] = [
     path: "/search/current/ask",
     summary: "Ask AI about current content",
     description:
-      "Returns a complete answer with numbered sources. Requires explicit ai-answers permission in addition to content read permissions. Accepts up to 1,000 question characters, 10 history messages of up to 4,000 characters each, and 20 property filters. Uses the existing Ask AI rate limit. Keep API keys on your server.\n\nRequired API key permissions: ai-answers, read:entries, read:collections. Write permissions also grant read access for the same resource.",
+      "Returns a complete answer with numbered sources. Requires explicit ai-answers permission in addition to content read permissions. Accepts up to 1,000 question characters, 10 history messages of up to 4,000 characters each, and 20 property filters. Uses 3 AI credits and the Ask AI rate limit. Use a secret key on your server, or a publishable key for published content.\n\nRequired API key permissions: ai-answers, read:entries, read:collections. Write permissions also grant read access for the same resource.",
     example: {
       question: "How do I install Andesine?"
     },
@@ -5019,7 +5019,7 @@ const commands: APICommand[] = [
     path: "/search/current/ask/stream",
     summary: "Stream an AI answer about current content",
     description:
-      "Emits sources, textDelta, and completed events over SSE. Uses the same inputs, permissions, and rate limit as complete answers. Stream errors use SSE error frames. Never reconnect automatically.\n\nRequired API key permissions: ai-answers, read:entries, read:collections. Write permissions also grant read access for the same resource.",
+      "Emits sources, textDelta, and completed events over SSE. Uses the same inputs, permissions, AI credits, and rate limit as complete answers. Stream errors use SSE error frames. Never reconnect automatically.\n\nRequired API key permissions: ai-answers, read:entries, read:collections. Write permissions also grant read access for the same resource.",
     security: [
       {
         apiKey: []
@@ -5137,7 +5137,7 @@ const commands: APICommand[] = [
     path: "/search/published/ask",
     summary: "Ask AI about published content",
     description:
-      "Returns a complete answer with numbered sources. Requires explicit ai-answers permission in addition to content read permissions. Accepts up to 1,000 question characters, 10 history messages of up to 4,000 characters each, and 20 property filters. Uses the existing Ask AI rate limit. Keep API keys on your server.\n\nRequired API key permissions: ai-answers, read:publishing. Write permissions also grant read access for the same resource.",
+      "Returns a complete answer with numbered sources. Requires explicit ai-answers permission in addition to content read permissions. Accepts up to 1,000 question characters, 10 history messages of up to 4,000 characters each, and 20 property filters. Uses 3 AI credits and the Ask AI rate limit. Use a secret key on your server, or a publishable key for published content.\n\nRequired API key permissions: ai-answers, read:publishing. Write permissions also grant read access for the same resource.",
     example: {
       question: "How do I install Andesine?",
       channel: "published"
@@ -5273,7 +5273,7 @@ const commands: APICommand[] = [
     path: "/search/published/ask/stream",
     summary: "Stream an AI answer about published content",
     description:
-      "Emits sources, textDelta, and completed events over SSE. Uses the same inputs, permissions, and rate limit as complete answers. Stream errors use SSE error frames. Never reconnect automatically.\n\nRequired API key permissions: ai-answers, read:publishing. Write permissions also grant read access for the same resource.",
+      "Emits sources, textDelta, and completed events over SSE. Uses the same inputs, permissions, AI credits, and rate limit as complete answers. Stream errors use SSE error frames. Never reconnect automatically.\n\nRequired API key permissions: ai-answers, read:publishing. Write permissions also grant read access for the same resource.",
     security: [
       {
         apiKey: []
@@ -5405,7 +5405,7 @@ const commands: APICommand[] = [
     path: "/search/current",
     summary: "Search current content",
     description:
-      "Searches current entry content by text and optional property filters. Up to 20 filters and 50 results are allowed. Semantic search is optional and has a separate rate limit.\n\nRequired API key permissions: read:entries, read:collections. Write permissions also grant read access for the same resource.",
+      "Searches current entry content by text and optional property filters. Up to 20 filters and 50 results are allowed. Semantic search is optional, uses 1 AI credit, and has a separate rate limit.\n\nRequired API key permissions: read:entries, read:collections. Write permissions also grant read access for the same resource.",
     example: {
       query: "installation",
       limit: 10
@@ -5537,7 +5537,7 @@ const commands: APICommand[] = [
     path: "/search/published",
     summary: "Search published content",
     description:
-      "Searches content published to the required channel. Up to 20 filters and 50 results are allowed. Semantic search is optional and has a separate rate limit.\n\nRequired API key permissions: read:publishing. Write permissions also grant read access for the same resource.",
+      "Searches content published to the required channel. Up to 20 filters and 50 results are allowed. Semantic search is optional, uses 1 AI credit, and has a separate rate limit.\n\nRequired API key permissions: read:publishing. Write permissions also grant read access for the same resource.",
     example: {
       query: "installation",
       channel: "published",

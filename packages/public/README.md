@@ -103,8 +103,8 @@ For a local publication, authenticate with `npm login`, then publish
 the checked archive from the repository root. For example:
 
 ```sh
-npm publish dist/packages/andesine-sdk-0.3.0.tgz --access public
-npm publish dist/packages/andesine-0.3.0.tgz --access public
+npm publish dist/packages/andesine-sdk-0.4.0.tgz --access public
+npm publish dist/packages/andesine-0.4.0.tgz --access public
 ```
 
 These commands publish publicly and are examples for an unpublished version only.
@@ -157,3 +157,17 @@ the failed package. npm does not allow replacing an already published version.
 Deployment and publication are separate actions; they were not performed during
 implementation. See the [CLI release review](./CLI-RELEASE-REVIEW.md) for package
 verification and remaining platform/browser checks.
+
+## Andesine Pages release
+
+`@andesine/ui` and `@andesine/pages` are 0.x packages; `@andesine/ui` is unstable.
+`@andesine/pages` depends on `@andesine/sdk` and `@andesine/converters`, so publish
+new versions of those first, then `@andesine/ui` and `@andesine/pages`, then the CLI.
+
+`andesine pages init` creates sites from the template. The CLI build copies the
+template files (without ignored files) into `dist/templates/pages`, with the
+workspace versions of `@andesine/pages` and `@andesine/ui`, so each CLI release has
+the template of the same release. Before a release, run the command from the built
+CLI, install the site from packed archives (`pnpm pack` of the four packages, with
+npm `overrides` to the files), then build it and run `astro check`.
+`PAGES_REVIEW.md` lists the browser checks.
