@@ -83,22 +83,8 @@ const SecretDialog: Component<SecretDialogProps> = (props) => {
         {visibleSecret()}
       </Card>
       <div class="flex gap-2">
-        <IconButton
-          variant="outlined"
-          color="contrast"
-          text="soft"
-          size="small"
-          icon="i-lucide:x"
-          onClick={handleClose}
-        />
-        <Button
-          color="primary"
-          variant="outlined"
-          size="small"
-          onClick={copySecret}
-          disabled={copied()}
-          class="flex-1"
-        >
+        <IconButton icon="i-lucide:x" onClick={handleClose} />
+        <Button onClick={copySecret} disabled={copied()} class="flex-1">
           {copied() ? "Copied!" : text().copyLabel}
         </Button>
       </div>

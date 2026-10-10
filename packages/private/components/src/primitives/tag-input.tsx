@@ -49,9 +49,6 @@ const TagInput: Component<TagInputProps> = (props) => {
       <Input
         class={clsx(":base-2: w-full min-w-0 bg-gray-50", props.inputClass)}
         label={props.label}
-        size="small"
-        color="contrast"
-        variant="outlined"
         placeholder={props.placeholder}
         value={inputValue()}
         disabled={props.disabled || maxValuesReached()}

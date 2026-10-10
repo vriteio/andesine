@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - "packages/public/**"
+      - "packages/templates/**"
       - "apps/backend/**"
       - "packages/private/**"
       - "package.json"
@@ -17,6 +18,7 @@ on:
     branches: [andesine]
     paths:
       - "packages/public/**"
+      - "packages/templates/**"
       - "apps/backend/**"
       - "packages/private/**"
       - "package.json"
@@ -44,8 +46,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Check source
         run: |
-          pnpm exec eslint packages/public apps/backend/scripts
-          pnpm exec prettier --check packages/public .github/workflows/public-packages.yml .github/workflows/publish-public-package.yml
+          pnpm exec eslint packages/public packages/templates apps/backend/scripts
+          pnpm exec prettier --check packages/public packages/templates .github/workflows/public-packages.yml .github/workflows/publish-public-package.yml
       - name: Check generated API files
         run: |
           pnpm api:generate
@@ -55,6 +57,9 @@ jobs:
           mkdir -p "$RUNNER_TEMP/packages"
           pnpm --filter @andesine/sdk pack --pack-destination "$RUNNER_TEMP/packages"
           pnpm --filter @andesine/converters pack --pack-destination "$RUNNER_TEMP/packages"
+          pnpm --filter @andesine/extensions pack --pack-destination "$RUNNER_TEMP/packages"
+          pnpm --filter @andesine/ui pack --pack-destination "$RUNNER_TEMP/packages"
+          pnpm --filter @andesine/pages pack --pack-destination "$RUNNER_TEMP/packages"
           pnpm --filter ./packages/public/cli pack --pack-destination "$RUNNER_TEMP/packages"
       - name: Check generated CLI bindings
         run: git diff --exit-code -- packages/public/cli/src/api/manifest.ts packages/public/cli/src/api/bindings.ts

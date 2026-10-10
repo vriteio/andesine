@@ -28,11 +28,9 @@ const TagList: ParentComponent<TagListProps> = (props) => {
 
           return (
             <Button
-              size="small"
-              color="contrast"
-              variant="outlined"
-              hover="none"
+              variant="secondary"
               text="softer"
+              hover={false}
               disabled={valueDisabled()}
               class={clsx(
                 ":base-2: flex max-w-full items-center gap-1 p-0.5 pl-1.5 pr-0.5 group/tag",

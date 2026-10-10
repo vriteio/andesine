@@ -54,7 +54,13 @@ const startWebhookConsumer = (publish: PublishEvent): WebhookConsumer => {
           retryAfterAt: null,
           stopReason: null
         }
-      : await dispatchWebhookHTTP({ database: db, claim, encryption, config });
+      : await dispatchWebhookHTTP({
+          database: db,
+          claim,
+          encryption,
+          config,
+          instance: config.PUBLIC_API_URL
+        });
 
     // If completion fails, preserve the lease for unknown-outcome recovery.
     // Never send again from this processor or fabricate a receiver failure.

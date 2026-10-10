@@ -31,13 +31,7 @@ const CreateVersionDialog: Component<CreateVersionDialogProps> = (props) => {
   const confirm = () => props.onConfirm(name().trim());
 
   return (
-    <Dialog
-      opened={props.opened}
-      onOverlayClick={close}
-      size="small"
-      portal
-      aria-label="Create version"
-    >
+    <Dialog opened={props.opened} onOverlayClick={close} size="small" aria-label="Create version">
       <div class="flex flex-col gap-0.5">
         <h3 class="text-lg font-semibold leading-tight">Create version</h3>
         <p class="text-sm leading-tight text-gray-400">Save the current document as a version.</p>
@@ -49,9 +43,6 @@ const CreateVersionDialog: Component<CreateVersionDialogProps> = (props) => {
           setValue={setName}
           maxLength={MAX_VERSION_NAME_LENGTH}
           placeholder="Optional name"
-          size="small"
-          color="contrast"
-          variant="outlined"
           disabled={props.loading}
           onKeyDown={(event) => {
             if (event.key !== "Enter" || props.loading) return;
@@ -62,23 +53,8 @@ const CreateVersionDialog: Component<CreateVersionDialogProps> = (props) => {
         />
       </label>
       <div class="flex gap-2">
-        <IconButton
-          variant="outlined"
-          color="contrast"
-          text="soft"
-          size="small"
-          icon="i-lucide:x"
-          disabled={props.loading}
-          onClick={close}
-        />
-        <Button
-          class="flex-1"
-          color="primary"
-          variant="outlined"
-          size="small"
-          loading={props.loading}
-          onClick={confirm}
-        >
+        <IconButton icon="i-lucide:x" disabled={props.loading} onClick={close} />
+        <Button class="flex-1" loading={props.loading} onClick={confirm}>
           Create version
         </Button>
       </div>

@@ -879,11 +879,12 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, userID: Accessor<str
   );
 
   return {
+    // Validation runs on every title keystroke, often inside other effects; it reads, never tracks.
     validateName: (input: ContentNameInput) => {
       return getContentNameError(
         {
-          entries: entriesCollection().find().fetch(),
-          collections: collectionsCollection().find().fetch()
+          entries: entriesCollection().find({}, { reactive: false }).fetch(),
+          collections: collectionsCollection().find({}, { reactive: false }).fetch()
         },
         input
       );

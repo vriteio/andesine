@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.0
+
+- No changes; versioned with the other public Andesine packages.
+
 ## 0.4.0
 
 First release. The version follows the other Andesine packages.

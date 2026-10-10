@@ -169,7 +169,7 @@ const getChangeNotices = (
   if (changes.enabled === false) {
     notices.push({
       id: "disable",
-      icon: "i-lucide:circle-pause",
+      icon: "i-lucide:pause",
       label: "Disable webhook",
       detail: "Pending events are cancelled and new events are not recorded for it."
     });

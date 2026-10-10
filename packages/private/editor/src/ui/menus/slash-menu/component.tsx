@@ -1,5 +1,14 @@
 import { type SuggestionKeyDownProps, type SuggestionProps } from "@tiptap/suggestion";
-import { type Component, createEffect, createSignal, For, on, onMount, Show } from "solid-js";
+import {
+  type Component,
+  createEffect,
+  createSignal,
+  For,
+  type JSX,
+  on,
+  onMount,
+  Show
+} from "solid-js";
 import { type Editor, type Range } from "@tiptap/core";
 import clsx from "clsx";
 import {
@@ -15,8 +24,10 @@ import {
 import { Dynamic } from "solid-js/web";
 
 interface SlashMenuItem {
-  icon: string;
+  icon: string | (() => JSX.Element);
   label: string;
+  /** Shown in a tooltip on hover, in place of the shortcut. */
+  description?: string;
   group: string;
   markdown?: string;
   shortcut?: string;
@@ -166,11 +177,9 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
           each={props.state.items}
           fallback={
             <Button
-              variant="text"
+              variant="ghost"
               text="soft"
-              size="small"
               badge
-              hover="none"
               class="justify-start text-start w-full"
               disabled
             >
@@ -186,19 +195,20 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
                 </div>
               </Show>
               <Dynamic
-                component={menuItem.shortcut ? Tooltip : Fragment}
-                {...(menuItem.shortcut && {
+                component={menuItem.description || menuItem.shortcut ? Tooltip : Fragment}
+                {...((menuItem.description || menuItem.shortcut) && {
                   wrapperClass: "w-full",
                   enabled: !blockHoverSelect() && props.state.visible,
-                  content: <Shortcut shortcut={menuItem.shortcut || ""} />,
+                  content: menuItem.description || <Shortcut shortcut={menuItem.shortcut || ""} />,
+                  class: menuItem.description && "max-w-56 whitespace-normal leading-tight",
                   fixed: true,
                   placement: "right"
                 })}
               >
                 <Button
                   ref={menuItem.ref[1]}
-                  hover="none"
-                  size="small"
+                  variant="ghost"
+                  hover={false}
                   onPointerDown={(event) => {
                     if (event.button !== 0) return;
 
@@ -222,7 +232,6 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
                       setSelectedIndex(index());
                     }
                   }}
-                  variant="text"
                   class={clsx(
                     "justify-start flex items-center pl-1 pr-0.5 py-0.5",
                     menuItem.shortcut || props.state.items.length <= 10
@@ -234,13 +243,30 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
                   )}
                 >
                   <div class="flex justify-center items-center h-6 w-6">
-                    <div
-                      class={clsx(
-                        "h-5 w-5",
-                        selectedIndex() === index() ? "bg-gray-500" : "bg-gray-400",
-                        menuItem.icon
+                    <Show
+                      when={typeof menuItem.icon === "function" && menuItem.icon}
+                      fallback={
+                        <div
+                          class={clsx(
+                            "h-5 w-5",
+                            selectedIndex() === index() ? "bg-gray-500" : "bg-gray-400",
+                            menuItem.icon as string
+                          )}
+                        />
+                      }
+                    >
+                      {(icon) => (
+                        // Icon elements, e.g. extension icons, are masks painted with the text color.
+                        <div
+                          class={clsx(
+                            "flex h-5 w-5",
+                            selectedIndex() === index() ? "text-gray-500" : "text-gray-400"
+                          )}
+                        >
+                          <Dynamic component={icon()} />
+                        </div>
                       )}
-                    />
+                    </Show>
                   </div>
                   <div class="flex flex-col pl-1 flex-1 text-left">
                     <span>{menuItem.label}</span>

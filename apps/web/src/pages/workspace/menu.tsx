@@ -1,15 +1,19 @@
 import { IconButton, Shortcut, Tooltip } from "@andesine/components";
-import { type Component, For, Show } from "solid-js";
+import { type Component, For, type JSX, Show } from "solid-js";
 import clsx from "clsx";
 import { useWorkspace } from "#web/context/workspace";
 import { useLayout } from "#web/context/layout";
 import { createMediaQuery } from "@solid-primitives/media";
 import { type PrimaryPanel } from "./side-panel";
+import { ExtensionIconScope } from "#web/components/extensions/panel-view";
+import { getExtensionPanels } from "#web/lib/extensions";
 
 type MenuItem =
   | {
       label: string;
       icon: string;
+      /** The extension whose icon CSS styles `icon`. */
+      extension?: string;
       active?: boolean;
       onlineOnly?: boolean;
       link?: string;
@@ -26,12 +30,38 @@ interface MenuProps {
   openSearch(): void;
   openPanel(panel: PrimaryPanel, currentEntryID?: string): void;
 }
+interface IconScopeProps {
+  extension?: string;
+  children: JSX.Element;
+}
 
+// Extension icons come from their manifest icon CSS, which applies only inside the scope.
+const IconScope: Component<IconScopeProps> = (props) => (
+  <Show when={props.extension} fallback={props.children}>
+    {(extension) => (
+      <ExtensionIconScope extension={extension()}>{props.children}</ExtensionIconScope>
+    )}
+  </Show>
+);
 const Menu: Component<MenuProps> = (props) => {
   const { layout } = useLayout();
   const { currentWorkspace, content } = useWorkspace();
   const md = createMediaQuery("(min-width: 768px)");
-  const menu: MenuItem[] = [
+  const extensionItems = (): MenuItem[] => {
+    return getExtensionPanels("left").map((item) => ({
+      label: item.panel.name,
+      icon: item.panel.icon,
+      extension: item.extension.name,
+      onlineOnly: true,
+      get active() {
+        return props.activePanel === item.id;
+      },
+      onClick() {
+        props.openPanel(item.id as PrimaryPanel);
+      }
+    }));
+  };
+  const baseMenu: MenuItem[] = [
     {
       label: "Explorer",
       icon: "i-lucide:files",
@@ -73,6 +103,11 @@ const Menu: Component<MenuProps> = (props) => {
       }
     }
   ];
+  const menu = (): MenuItem[] => [
+    ...baseMenu.slice(0, 2),
+    ...extensionItems(),
+    ...baseMenu.slice(2)
+  ];
 
   return (
     <div
@@ -84,7 +119,7 @@ const Menu: Component<MenuProps> = (props) => {
       )}
     >
       <For
-        each={menu.filter(
+        each={menu().filter(
           (item) => !("onlineOnly" in item && item.onlineOnly && content.offline())
         )}
       >
@@ -126,14 +161,16 @@ const Menu: Component<MenuProps> = (props) => {
                   <Show
                     when={props.bottomNavigation}
                     fallback={
-                      <IconButton
-                        variant={item().active ? "solid" : "text"}
-                        text={item().active ? "primary" : "soft"}
-                        color={item().active ? "primary" : undefined}
-                        iconProps={{ class: "h-5 w-5" }}
-                        onClick={item().onClick}
-                        icon={item().icon}
-                      />
+                      <IconScope extension={item().extension}>
+                        <IconButton
+                          // The active item shows a gradient icon on its highlight.
+                          variant={item().active ? "link" : "ghost"}
+                          hover={!item().active}
+                          iconProps={{ class: "h-5 w-5" }}
+                          onClick={item().onClick}
+                          icon={item().icon}
+                        />
+                      </IconScope>
                     }
                   >
                     <button
@@ -144,13 +181,15 @@ const Menu: Component<MenuProps> = (props) => {
                       )}
                       onClick={item().onClick}
                     >
-                      <div
-                        class={clsx(
-                          "h-5 w-5 z-1",
-                          item().active ? "bg-gradient-to-tr" : "text-gray-500",
-                          item().icon
-                        )}
-                      />
+                      <IconScope extension={item().extension}>
+                        <div
+                          class={clsx(
+                            "h-5 w-5 z-1",
+                            item().active ? "bg-gradient-to-tr" : "text-gray-500",
+                            item().icon
+                          )}
+                        />
+                      </IconScope>
                     </button>
                   </Show>
                 </div>

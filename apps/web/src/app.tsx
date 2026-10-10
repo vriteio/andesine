@@ -8,11 +8,12 @@ import {
   DotsBackground
 } from "@andesine/components";
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
-import { ErrorBoundary, type ParentComponent, Suspense, createSignal } from "solid-js";
+import { ErrorBoundary, type ParentComponent, Show, Suspense, createSignal } from "solid-js";
 import { NotificationsProvider } from "./context/notifications";
 import { ClipboardProvider } from "./context/clipboard";
+import { ExtensionHostActions } from "./components/extensions/host-actions";
 import { LayoutProvider } from "./context/layout";
-import { authClient, client } from "./lib/api";
+import { authClient, client, config } from "./lib/api";
 import { getRequestEvent } from "solid-js/web";
 import { appendRedirectTo, normalizeRedirectTo, routes } from "./lib/navigation";
 import { validateWorkspaceID } from "./lib/validation";
@@ -137,10 +138,10 @@ const AppError = (props: AppErrorProps) => {
           </div>
           <IconButton
             icon="i-lucide:rotate-cw"
-            class="w-full @hover:bg-gray-50 gap-1"
+            class="w-full gap-1"
             iconProps={{ class: "h-5 w-5 text-gray-400" }}
-            variant="outlined"
-            color="contrast"
+            text="base"
+            size="medium"
             label="Retry"
             onClick={retry}
             disabled={retrying()}
@@ -163,6 +164,9 @@ const RootLayout: ParentComponent = (props) => {
             <ShortcutsProvider>
               <NotificationsProvider>
                 <ClipboardProvider>
+                  <Show when={config.PUBLIC_EXTENSIONS_ENABLED}>
+                    <ExtensionHostActions />
+                  </Show>
                   <LayoutProvider>
                     <ErrorBoundary
                       fallback={(error, reset) => {

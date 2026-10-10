@@ -16,7 +16,7 @@ import { hashContentDocument } from "@andesine/server/content";
 import {
   createWebhookRecorder,
   recordSavedEntryWebhooks,
-  createMigrationWebhookOperation,
+  loadMigrationWebhookOperation,
   getSavedMigrationContentHash
 } from "@andesine/server/webhooks/recording";
 import {
@@ -107,7 +107,11 @@ const processMigrationEntry = async (
 
     if (!row.targetRevisionID) throw new Error("Schema migration target revision is missing");
 
-    const operation = createMigrationWebhookOperation(input.workspaceID, input.migrationID);
+    const operation = await loadMigrationWebhookOperation(
+      transaction,
+      input.workspaceID,
+      input.migrationID
+    );
     const recorder = await createWebhookRecorder({
       retentionPolicy: webhookRetentionPolicy,
       database: transaction,
@@ -286,7 +290,11 @@ const rollbackMigrationEntry = async (input: MigrationEntryInput): Promise<void>
     if (!row) throw new Error("Schema migration recovery content is missing");
     if (row.entryStatus !== "completed" || row.migrationStatus !== "rolling_back") return;
 
-    const operation = createMigrationWebhookOperation(input.workspaceID, input.migrationID);
+    const operation = await loadMigrationWebhookOperation(
+      transaction,
+      input.workspaceID,
+      input.migrationID
+    );
     const recorder = await createWebhookRecorder({
       retentionPolicy: webhookRetentionPolicy,
       database: transaction,

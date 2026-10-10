@@ -219,9 +219,6 @@ const KeySettingsPage: Component = () => {
           <Setting label="Name" description="Descriptive name for this key" fade={false}>
             <Input
               placeholder={publishable() ? "Docs site" : "My API key"}
-              variant="outlined"
-              color="contrast"
-              size="small"
               value={keyName()}
               setValue={setKeyName}
               disabled={!hasPermission("api_keys") || (Boolean(keyID()) && !keyResult())}
@@ -241,9 +238,7 @@ const KeySettingsPage: Component = () => {
                   </span>
                   <Tooltip content="Copy key">
                     <IconButton
-                      variant="text"
-                      text="soft"
-                      size="small"
+                      variant="ghost"
                       icon="i-lucide:copy"
                       onClick={() => {
                         void copyText(value(), {
@@ -315,14 +310,7 @@ const KeySettingsPage: Component = () => {
         <Suspense fallback={<Skeleton class="h-9 w-full rounded-lg" />}>
           <div class="flex items-center justify-end gap-2">
             <Tooltip content="Go back">
-              <IconButton
-                variant="outlined"
-                color="contrast"
-                text="soft"
-                size="small"
-                icon="i-lucide:chevron-left"
-                onClick={navigateToAPI}
-              />
+              <IconButton icon="i-lucide:chevron-left" onClick={navigateToAPI} />
             </Tooltip>
             <Dynamic
               component={fillError() ? Tooltip : Fragment}
@@ -330,9 +318,6 @@ const KeySettingsPage: Component = () => {
               wrapperClass="flex-1"
             >
               <Button
-                color="primary"
-                variant="outlined"
-                size="small"
                 onClick={() => {
                   const scope = publishable()
                     ? {

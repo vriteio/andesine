@@ -61,7 +61,8 @@ const LinkMenu: Component<{
       >
         <IconButton
           icon="i-lucide:arrow-left"
-          variant="text"
+          variant="ghost"
+          text="base"
           size="xs"
           onClick={(event) => {
             props.setMode("format");
@@ -90,8 +91,6 @@ const LinkMenu: Component<{
         onEnter={saveLink}
         class="py-0 my-0 flex-1 w-40"
         aria-invalid={invalid()}
-        variant="outlined"
-        color="contrast"
         size="xs"
       />
       <Tooltip
@@ -106,7 +105,8 @@ const LinkMenu: Component<{
       >
         <IconButton
           icon="i-lucide:check"
-          variant="text"
+          variant="ghost"
+          text="base"
           size="xs"
           onClick={(event) => {
             saveLink();
@@ -128,7 +128,8 @@ const LinkMenu: Component<{
         >
           <IconButton
             icon="i-lucide:trash-2"
-            variant="text"
+            variant="ghost"
+            text="base"
             size="xs"
             onClick={(event) => {
               removeLink();

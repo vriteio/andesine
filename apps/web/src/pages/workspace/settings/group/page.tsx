@@ -152,9 +152,6 @@ const GroupSettingsPage: Component = () => {
           <Input
             maxlength={50}
             placeholder="Editors"
-            variant="outlined"
-            color="contrast"
-            size="small"
             value={groupName()}
             setValue={(name) => {
               setGroupName(name);
@@ -226,6 +223,7 @@ const GroupSettingsPage: Component = () => {
                     hover
                   >
                     <Checkbox
+                      size="medium"
                       checked={selectedMemberIDs().includes(member.id)}
                       disabled={saveMutation.isPending}
                       setChecked={(selected) => {
@@ -258,6 +256,7 @@ const GroupSettingsPage: Component = () => {
                   hover
                 >
                   <Checkbox
+                    size="medium"
                     checked={selectedInvitationIDs().includes(invitation.id)}
                     disabled={saveMutation.isPending}
                     setChecked={(selected) => {
@@ -277,10 +276,6 @@ const GroupSettingsPage: Component = () => {
         <div class="flex items-center justify-end gap-2">
           <Tooltip content="Go back">
             <IconButton
-              variant="outlined"
-              color="contrast"
-              text="soft"
-              size="small"
               icon="i-lucide:chevron-left"
               onClick={navigateToPeople}
               disabled={saveMutation.isPending}
@@ -292,9 +287,6 @@ const GroupSettingsPage: Component = () => {
             wrapperClass="flex-1"
           >
             <Button
-              color="primary"
-              variant="outlined"
-              size="small"
               class="flex w-full items-center justify-center gap-1"
               disabled={Boolean(fillError())}
               loading={saveMutation.isPending}

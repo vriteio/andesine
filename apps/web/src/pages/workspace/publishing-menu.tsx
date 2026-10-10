@@ -364,9 +364,7 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
                 fallback={
                   <Button
                     class="flex w-full min-w-0 items-center justify-start"
-                    size="small"
-                    variant="outlined"
-                    color="contrast"
+                    variant="secondary"
                     aria-label="Publishing status"
                   >
                     <PublishingStatusIcon status={currentStatus()} />

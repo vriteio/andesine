@@ -140,7 +140,8 @@ const Publishing: Component = () => {
               icon="i-lucide:arrow-left"
               aria-label="Previous publishing feature"
               aria-controls="publishing-strip"
-              color="contrast"
+              text="base"
+              size="medium"
               disabled={atStart()}
               onClick={() => move(-1)}
             />
@@ -148,7 +149,8 @@ const Publishing: Component = () => {
               icon="i-lucide:arrow-right"
               aria-label="Next publishing feature"
               aria-controls="publishing-strip"
-              color="contrast"
+              text="base"
+              size="medium"
               disabled={atEnd()}
               onClick={() => move(1)}
             />

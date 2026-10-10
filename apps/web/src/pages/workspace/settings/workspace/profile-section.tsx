@@ -52,9 +52,6 @@ const WorkspaceProfileSection: Component = () => {
                 placeholder="My Workspace"
                 class={clsx("w-full", updateWorkspaceNameMutation.isPending && "animate-pulse")}
                 disabled={!hasPermission("workspace") || updateWorkspaceNameMutation.isPending}
-                size="small"
-                color="contrast"
-                variant="outlined"
                 value={name()}
                 setValue={setName}
                 slot={() => (

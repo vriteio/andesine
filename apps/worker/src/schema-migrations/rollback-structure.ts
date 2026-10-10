@@ -1,7 +1,7 @@
 import { schemaMigrations, workspaces } from "@andesine/server/database";
 import { restoreSchemaEntryMove, restoreSchemaCollectionMove } from "@andesine/server/schema";
 import {
-  createMigrationWebhookOperation,
+  loadMigrationWebhookOperation,
   createStructureWebhookRecorder
 } from "@andesine/server/webhooks/recording";
 import { webhookRetentionPolicy } from "../config";
@@ -64,7 +64,11 @@ const finishMigrationRollback = async (input: FinishMigrationRollbackInput) => {
       retentionPolicy: webhookRetentionPolicy,
       database: transaction,
       workspaceID: input.workspaceID,
-      operation: createMigrationWebhookOperation(input.workspaceID, input.migrationID),
+      operation: await loadMigrationWebhookOperation(
+        transaction,
+        input.workspaceID,
+        input.migrationID
+      ),
       collectionIDs: migration.collectionMove ? [migration.collectionMove.collectionID] : [],
       entryIDs: migration.entryMove ? [migration.entryMove.entryID] : [],
       includeDescendants: true

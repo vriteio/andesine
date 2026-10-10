@@ -12,10 +12,7 @@ const InheritedSchemaFieldBadge = (): JSX.Element => {
         <IconButton
           class="cursor-help"
           icon="i-lucide:eye"
-          variant="text"
-          color="contrast"
-          size="small"
-          text="soft"
+          variant="ghost"
           badge
           aria-label="Inherited from parent schema"
         />

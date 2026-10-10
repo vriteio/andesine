@@ -52,7 +52,6 @@ const SpendingLimitDialog: Component<SpendingLimitDialogProps> = (props) => {
       opened={props.opened}
       onOverlayClick={props.onClose}
       cardClass={props.limit === null ? undefined : "relative"}
-      portal
       aria-label="Spending limit"
     >
       <div class="flex flex-col gap-0.5">
@@ -71,9 +70,6 @@ const SpendingLimitDialog: Component<SpendingLimitDialogProps> = (props) => {
         min="1"
         placeholder="100"
         class="w-full pl-6 pr-18"
-        size="small"
-        color="contrast"
-        variant="outlined"
         disabled={props.loading}
         slotWrapperClass="w-full"
         slot={() => (
@@ -107,20 +103,9 @@ const SpendingLimitDialog: Component<SpendingLimitDialogProps> = (props) => {
         when={props.limit !== null}
         fallback={
           <div class="flex justify-end gap-2">
-            <IconButton
-              variant="outlined"
-              color="contrast"
-              size="small"
-              text="soft"
-              icon="i-lucide:x"
-              disabled={props.loading}
-              onClick={props.onClose}
-            />
+            <IconButton icon="i-lucide:x" disabled={props.loading} onClick={props.onClose} />
             <Button
               class="flex-1"
-              color="primary"
-              variant="outlined"
-              size="small"
               loading={props.loading}
               disabled={Boolean(error())}
               onClick={save}
@@ -132,9 +117,7 @@ const SpendingLimitDialog: Component<SpendingLimitDialogProps> = (props) => {
       >
         <Tooltip content="Close" wrapperClass="absolute right-2 top-2" placement="left">
           <IconButton
-            variant="text"
-            text="soft"
-            size="small"
+            variant="ghost"
             icon="i-lucide:x"
             disabled={props.loading}
             onClick={props.onClose}
@@ -143,9 +126,6 @@ const SpendingLimitDialog: Component<SpendingLimitDialogProps> = (props) => {
         <div class="flex flex-col gap-1">
           <Button
             class="w-full"
-            color="primary"
-            variant="outlined"
-            size="small"
             loading={props.loading && pendingAction() === "save"}
             disabled={Boolean(error()) || (props.loading && pendingAction() === "remove")}
             onClick={save}
@@ -161,9 +141,7 @@ const SpendingLimitDialog: Component<SpendingLimitDialogProps> = (props) => {
             icon="i-lucide:x"
             iconProps={{ class: "h-4 w-4 text-gray-400" }}
             label="Remove limit"
-            color="contrast"
-            variant="outlined"
-            size="small"
+            text="base"
             class="w-full"
             loading={props.loading && pendingAction() === "remove"}
             disabled={props.loading && pendingAction() === "save"}

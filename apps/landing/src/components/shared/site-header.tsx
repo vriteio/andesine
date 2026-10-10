@@ -37,7 +37,7 @@ const SiteHeader: Component = () => {
             <nav aria-label="Main navigation" class="hidden items-center gap-1 md:flex">
               <For each={navigation}>
                 {(link) => (
-                  <Button link={link.href} variant="text" hover="underline">
+                  <Button link={link.href} variant="ghost" size="medium">
                     {link.label}
                   </Button>
                 )}
@@ -45,15 +45,21 @@ const SiteHeader: Component = () => {
             </nav>
             <div class="hidden items-center gap-2 md:flex">
               <Tooltip content="Star on GitHub" fixed>
-                <IconButton link={links.repository} variant="text" icon="i-mdi:github" />
+                <IconButton
+                  link={links.repository}
+                  variant="ghost"
+                  text="base"
+                  size="medium"
+                  icon="i-mdi:github"
+                />
               </Tooltip>
               <IconButton
-                color="primary"
+                variant="primary"
+                size="medium"
                 class="flex-row-reverse gap-1 pr-1.5"
                 icon="i-lucide:log-in"
                 iconProps={{ class: "h-5 w-5 opacity-50" }}
                 label="Sign in"
-                variant="outlined"
                 link={links.cloudApp}
               >
                 Sign in
@@ -64,7 +70,9 @@ const SiteHeader: Component = () => {
               aria-label={menuOpened() ? "Close navigation" : "Open navigation"}
               aria-expanded={menuOpened()}
               aria-controls="mobile-navigation"
-              variant="text"
+              variant="ghost"
+              text="base"
+              size="medium"
               class="md:hidden"
               onClick={() => setMenuOpened(!menuOpened())}
             />
@@ -80,15 +88,15 @@ const SiteHeader: Component = () => {
               <nav aria-label="Mobile navigation" class="flex flex-col gap-1 p-3">
                 <For each={navigation}>
                   {(link) => (
-                    <Button link={link.href} variant="text" onClick={closeMenu}>
+                    <Button link={link.href} variant="ghost" size="medium" onClick={closeMenu}>
                       {link.label}
                     </Button>
                   )}
                 </For>
-                <Button link={links.repository} variant="text" onClick={closeMenu}>
+                <Button link={links.repository} variant="ghost" size="medium" onClick={closeMenu}>
                   GitHub
                 </Button>
-                <Button link={links.cloudSignUp} color="primary" onClick={closeMenu}>
+                <Button link={links.cloudSignUp} size="medium" onClick={closeMenu}>
                   Start writing
                 </Button>
               </nav>

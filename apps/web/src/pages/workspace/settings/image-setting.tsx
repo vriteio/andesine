@@ -108,10 +108,6 @@ const ImageSetting: Component<ImageSettingProps> = (props) => {
         />
         <Show when={image()}>
           <IconButton
-            size="small"
-            variant="outlined"
-            color="contrast"
-            text="soft"
             icon="i-lucide:trash-2"
             disabled={disabled()}
             onClick={() => mutation.mutate(null)}

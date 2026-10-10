@@ -63,8 +63,8 @@ const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
       id,
       name: getAvailableContentName(
         {
-          entries: input.entriesCollection().find().fetch(),
-          collections: input.collectionsCollection().find().fetch()
+          entries: input.entriesCollection().find({}, { reactive: false }).fetch(),
+          collections: input.collectionsCollection().find({}, { reactive: false }).fetch()
         },
         { id, kind: "collection", parentID: collectionID, name: "Untitled" }
       ),

@@ -275,12 +275,7 @@ const Explorer = () => {
                               "opacity-20 media-mouse:opacity-0 media-mouse:group-hover/explorer-header:opacity-100 md:relative"
                           )}
                         >
-                          <IconButton
-                            icon="i-lucide:ellipsis-vertical"
-                            size="small"
-                            text="soft"
-                            variant="text"
-                          />
+                          <IconButton icon="i-lucide:ellipsis-vertical" variant="ghost" />
                         </div>
                       )}
                     />
@@ -364,7 +359,8 @@ const Explorer = () => {
                           <Button
                             onClick={option.onClick}
                             class="flex justify-start items-center w-full group/button gap-1 pl-0.5 py-0.5"
-                            variant="text"
+                            variant="ghost"
+                            size="medium"
                           >
                             <div class="flex h-6 w-6 items-center justify-center">
                               <div class={clsx(option.icon, "h-5 w-5 text-gray-400")} />

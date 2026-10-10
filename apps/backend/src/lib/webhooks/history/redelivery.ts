@@ -4,7 +4,11 @@ import {
   type DatabaseTransaction
 } from "@andesine/server/database";
 import { getDeliveryAccessStopReason, getDeliveryTime } from "@andesine/server/webhooks/delivery";
-import { getWebhookConfiguration, loadWebhookEndpoint } from "@andesine/server/webhooks/recording";
+import {
+  getWebhookConfiguration,
+  loadStoredWebhookEvent,
+  loadWebhookEndpoint
+} from "@andesine/server/webhooks/recording";
 import {
   type WebhookBulkRedeliveryInput,
   type WebhookDeliveryInput,
@@ -51,9 +55,14 @@ const redeliverWebhookDelivery = async (
     ...input,
     workspaceID,
     now: checkedAt,
-    lock: true
+    lock: true,
+    extensionID: endpoint.extensionID ?? undefined
   });
-  const { event, allowed } = await readRetainedWebhookPayload(database, auth, delivery);
+  // Extension webhooks send a notification, not the payload; the access check below applies.
+  const { event, allowed } =
+    endpoint.kind === "extension"
+      ? { event: await loadStoredWebhookEvent(database, delivery), allowed: true }
+      : await readRetainedWebhookPayload(database, auth, delivery);
 
   if (!allowed) {
     throw new ORPCError("FORBIDDEN", {
@@ -163,4 +172,4 @@ const redeliverWebhookDeliveries = async (
   return runs;
 };
 
-export { redeliverWebhookDeliveries };
+export { redeliverWebhookDelivery, redeliverWebhookDeliveries };

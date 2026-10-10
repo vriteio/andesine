@@ -5,35 +5,9 @@ import { credentialStore } from "../storage/credentials";
 import { withStateLock } from "../storage/lock";
 import { refreshAccess } from "./oauth";
 
-/** Select one credential source explicitly; never fall back after an authentication error. */
-const authenticatedClient = async (context: CommandContext) => {
+/** The saved OAuth access token of the selected profile, refreshed when it expires soon. */
+const getAccessToken = async (context: CommandContext): Promise<string> => {
   const { config, signal } = context;
-  const apiKey = process.env.ANDESINE_API_KEY;
-  const headers = config.workspaceID ? { "x-workspace-id": config.workspaceID } : undefined;
-  const fetcher: typeof fetch = (input, init) =>
-    fetch(input, {
-      ...init,
-      redirect: "error",
-      signal: AbortSignal.any([
-        signal,
-        ...(init?.signal ? [init.signal] : []),
-        ...(input instanceof Request ? [input.signal] : [])
-      ])
-    });
-
-  if (apiKey !== undefined) {
-    if (!apiKey.trim()) {
-      throw new CLIError(
-        "ANDESINE_API_KEY is empty. Set it or remove it before using saved credentials."
-      );
-    }
-
-    return {
-      client: createClient({ baseURL: config.baseURL, apiKey, headers, fetch: fetcher }),
-      source: "environment" as const
-    };
-  }
-
   const reference = config.profile?.credentialRef;
 
   if (!reference) {
@@ -42,7 +16,7 @@ const authenticatedClient = async (context: CommandContext) => {
     );
   }
 
-  const accessToken = await withStateLock(reference, signal, async (assertOwned) => {
+  return withStateLock(reference, signal, async (assertOwned) => {
     const store = await credentialStore(reference, signal);
     const credentials = await store.get();
 
@@ -92,6 +66,38 @@ const authenticatedClient = async (context: CommandContext) => {
       );
     }
   });
+};
+/** Select one credential source explicitly; never fall back after an authentication error. */
+const authenticatedClient = async (context: CommandContext) => {
+  const { config, signal } = context;
+  const apiKey = process.env.ANDESINE_API_KEY;
+  const headers = config.workspaceID ? { "x-workspace-id": config.workspaceID } : undefined;
+  const fetcher: typeof fetch = (input, init) =>
+    fetch(input, {
+      ...init,
+      redirect: "error",
+      signal: AbortSignal.any([
+        signal,
+        ...(init?.signal ? [init.signal] : []),
+        ...(input instanceof Request ? [input.signal] : [])
+      ])
+    });
+
+  if (apiKey !== undefined) {
+    if (!apiKey.trim()) {
+      throw new CLIError(
+        "ANDESINE_API_KEY is empty. Set it or remove it before using saved credentials."
+      );
+    }
+
+    return {
+      client: createClient({ baseURL: config.baseURL, apiKey, headers, fetch: fetcher }),
+      source: "environment" as const
+    };
+  }
+
+  const accessToken = await getAccessToken(context);
+  const reference = config.profile!.credentialRef!;
 
   return {
     client: createClient({ baseURL: config.baseURL, accessToken, headers, fetch: fetcher }),
@@ -116,4 +122,4 @@ const identity = async (client: ReturnType<typeof createClient>, signal: AbortSi
   }
 };
 
-export { authenticatedClient, identity };
+export { authenticatedClient, getAccessToken, identity };

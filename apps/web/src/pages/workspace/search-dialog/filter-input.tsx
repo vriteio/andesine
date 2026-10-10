@@ -36,9 +36,6 @@ const FilterInput: Component<FilterInputProps> = (props) => {
       value={value()}
       setValue={setValue}
       placeholder={props.placeholder}
-      variant="outlined"
-      color="contrast"
-      size="small"
       maxLength={props.maxLength}
       data-no-autofocus={props.disableAutoFocus ? "" : undefined}
       aria-invalid={Boolean(error())}

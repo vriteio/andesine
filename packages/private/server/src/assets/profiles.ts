@@ -11,7 +11,7 @@ import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
 interface ProfileImageAuth {
-  type: "session" | "key" | "oauth";
+  type: "session" | "key" | "oauth" | "extension";
   workspaceID: string;
   session?: { userID: string };
 }

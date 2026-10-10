@@ -6,6 +6,7 @@ import {
   type Permission
 } from "@andesine/contracts/entities";
 import { type WorkspaceEvent } from "@andesine/contracts/events";
+import { type ExtensionPermission } from "@andesine/contracts/extensions";
 import * as z from "zod";
 
 interface UserAuthorization {
@@ -22,15 +23,28 @@ interface PublishableKeyScope {
   allowedOrigins: string[];
 }
 
+/** An extension backend, authenticated with its JWT; it has the extension grant only. */
+interface ExtensionAuthorization {
+  extensionID: string;
+  name: string;
+  version: string;
+  generation: number;
+  permissions: ExtensionPermission[];
+  /** Enabled, without a disabled reason, and installed. */
+  active: boolean;
+  uninstalled: boolean;
+}
+
 interface SessionData {
   id: string;
-  type: "key" | "session" | "oauth";
+  type: "key" | "session" | "oauth" | "extension";
   workspaceID: string;
   subscriptionPlan: string;
   customerID?: string;
   session?: UserAuthorization;
   oauth?: UserAuthorization & { clientID: string };
   key?: { keyID: string; permissions: KeyPermission[]; publishable?: PublishableKeyScope };
+  extension?: ExtensionAuthorization;
 }
 
 const userAuthorizationType = z.object({
@@ -117,4 +131,4 @@ export {
   parseSessionData,
   sessionDataType
 };
-export type { PublishableKeyScope, SessionData, UserAuthorization };
+export type { ExtensionAuthorization, PublishableKeyScope, SessionData, UserAuthorization };

@@ -118,7 +118,6 @@ const CollectionNodeItem: Component<CollectionNodeItemProps> = (props) => {
               onClick={(event) => event.stopPropagation()}
             >
               <Checkbox
-                size="small"
                 checked={state()}
                 setChecked={(selected) => tree.setSelected(props.id, selected)}
               />
@@ -370,9 +369,7 @@ const CollectionTreeField: Component<CollectionTreeFieldProps> = (props) => {
             trigger={() => (
               <Button
                 class="flex w-full items-center px-2"
-                variant="outlined"
-                color="contrast"
-                size="small"
+                variant="secondary"
                 disabled={props.disabled}
               >
                 <span

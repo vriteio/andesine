@@ -203,7 +203,7 @@ const SubscriptionAction: Component = () => {
         return (
           <div class="flex flex-col gap-2 w-full md:max-w-64">
             <Button
-              color="primary"
+              size="medium"
               class="flex flex-col items-start rounded-xl px-3 py-2 h-full w-full relative overflow-hidden"
               disabled={
                 checkoutMutation.isPending ||

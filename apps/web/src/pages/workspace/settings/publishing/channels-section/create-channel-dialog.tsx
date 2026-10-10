@@ -17,7 +17,6 @@ const CreateChannelDialog: Component<CreateChannelDialogProps> = (props) => (
     opened={props.opened}
     onOverlayClick={props.onClose}
     size="small"
-    portal
     aria-label="Create channel"
   >
     <div class="flex flex-col gap-0.5">
@@ -33,9 +32,6 @@ const CreateChannelDialog: Component<CreateChannelDialogProps> = (props) => (
         setValue={props.setName}
         maxlength={50}
         placeholder="Staging"
-        size="small"
-        color="contrast"
-        variant="outlined"
         disabled={props.loading}
         slotWrapperClass="w-full"
         slot={() => (
@@ -71,20 +67,9 @@ const CreateChannelDialog: Component<CreateChannelDialogProps> = (props) => (
       </Show>
     </label>
     <div class="flex gap-2">
-      <IconButton
-        variant="outlined"
-        color="contrast"
-        text="soft"
-        size="small"
-        icon="i-lucide:x"
-        disabled={props.loading}
-        onClick={props.onClose}
-      />
+      <IconButton icon="i-lucide:x" disabled={props.loading} onClick={props.onClose} />
       <Button
         class="flex-1"
-        color="primary"
-        variant="outlined"
-        size="small"
         loading={props.loading}
         disabled={Boolean(props.error)}
         onClick={props.onConfirm}

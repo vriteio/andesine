@@ -14,6 +14,8 @@ interface WebhookDeliveryLookup extends WebhookDeliveryInput {
   workspaceID: string;
   now: Date;
   lock?: boolean;
+  /** The extension's UUID, for its managed webhooks. */
+  extensionID?: string;
 }
 interface WebhookRunLookup extends WebhookDeliveryLookup {
   runID: string;
@@ -30,7 +32,8 @@ const loadWebhookDelivery = async (database: DatabaseClient, input: WebhookDeliv
   await loadWebhookEndpoint(database, {
     workspaceID: input.workspaceID,
     id: input.id,
-    includeDeleted: true
+    includeDeleted: true,
+    extensionID: input.extensionID
   });
 
   const query = database

@@ -112,9 +112,6 @@ const FragmentMenu = (props: FragmentMenuProps): JSX.Element => {
             <Input
               class="w-full min-w-0 bg-gray-50"
               label="Fragment name"
-              size="small"
-              color="contrast"
-              variant="outlined"
               placeholder="Content"
               maxLength={MAX_FRAGMENT_NAME_LENGTH}
               tabIndex={nameInputTabIndex()}

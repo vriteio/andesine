@@ -84,12 +84,7 @@ const VersionHistoryList: Component<VersionHistoryListProps> = (props) => {
               portal={false}
               trigger={() => (
                 <div class="opacity-20 media-mouse:opacity-0 media-mouse:group-hover/version-header:opacity-100">
-                  <IconButton
-                    icon="i-lucide:ellipsis-vertical"
-                    size="small"
-                    text="soft"
-                    variant="text"
-                  />
+                  <IconButton icon="i-lucide:ellipsis-vertical" variant="ghost" />
                 </div>
               )}
             />
@@ -103,7 +98,8 @@ const VersionHistoryList: Component<VersionHistoryListProps> = (props) => {
                 <div>
                   <Button
                     class="flex w-full items-center justify-start gap-1 py-0.5 pl-0.5"
-                    variant="text"
+                    variant="ghost"
+                    size="medium"
                     onClick={props.onRefresh}
                   >
                     <div class="flex h-6 w-6 items-center justify-center">
@@ -127,7 +123,8 @@ const VersionHistoryList: Component<VersionHistoryListProps> = (props) => {
                       {(option) => (
                         <Button
                           class="flex w-full items-center justify-start gap-1 py-0.5 pl-0.5"
-                          variant="text"
+                          variant="ghost"
+                          size="medium"
                           onClick={() => option.onClick?.()}
                         >
                           <div class="flex h-6 w-6 items-center justify-center">
@@ -184,9 +181,8 @@ const VersionHistoryList: Component<VersionHistoryListProps> = (props) => {
               <Show when={props.nextCursor}>
                 <Button
                   class="mt-1 w-full"
-                  size="small"
+                  variant="ghost"
                   text="softer"
-                  variant="text"
                   loading={props.loadingMore}
                   onClick={props.onLoadMore}
                 >

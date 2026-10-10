@@ -219,10 +219,6 @@ const RolesSection: Component = () => {
             onClick={() => navigate(`/${params.workspaceID || ""}/settings/role`)}
             iconProps={{ class: "h-4 w-4" }}
             icon="i-lucide:plus"
-            size="small"
-            color="contrast"
-            variant="outlined"
-            text="soft"
           />
         </Show>
       </Setting>

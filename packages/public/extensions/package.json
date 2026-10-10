@@ -1,0 +1,64 @@
+{
+  "name": "@andesine/extensions",
+  "version": "0.6.0",
+  "description": "Authoring tools for Andesine extensions",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./solid": {
+      "types": "./dist/solid.d.ts",
+      "import": "./dist/solid.js"
+    }
+  },
+  "scripts": {
+    "build": "rolldown -c rolldown.config.ts",
+    "typecheck": "tsc --noEmit",
+    "prepack": "turbo run lint:package --filter=@andesine/extensions",
+    "lint:package": "publint --strict"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "peerDependencies": {
+    "solid-js": "^1.9.14",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@andesine/contracts": "workspace:*",
+    "publint": "0.3.24",
+    "rolldown": "^1.2.2",
+    "rolldown-plugin-dts": "^0.28.6",
+    "solid-js": "1.9.14",
+    "typescript": "6.0.3",
+    "zod": "catalog:"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vriteio/andesine.git",
+    "directory": "packages/public/extensions"
+  },
+  "homepage": "https://github.com/vriteio/andesine/tree/andesine/packages/public/extensions#readme",
+  "bugs": {
+    "url": "https://github.com/vriteio/andesine/issues"
+  },
+  "keywords": [
+    "andesine",
+    "extensions",
+    "solid"
+  ]
+}

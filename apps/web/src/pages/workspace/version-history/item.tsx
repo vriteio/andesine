@@ -240,12 +240,7 @@ const VersionHistoryItem: Component<VersionHistoryItemProps> = (props) => {
                       : "shrink-0"
                   }
                 >
-                  <IconButton
-                    icon="i-lucide:ellipsis-vertical"
-                    size="small"
-                    variant="text"
-                    text="soft"
-                  />
+                  <IconButton icon="i-lucide:ellipsis-vertical" variant="ghost" />
                 </div>
               )}
             />

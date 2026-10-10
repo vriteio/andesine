@@ -1,5 +1,6 @@
-import { type Database } from "@andesine/server/database";
-import { toUUID } from "@andesine/contracts/primitives";
+import { extensions, type Database } from "@andesine/server/database";
+import { toExtensionID, toUUID } from "@andesine/contracts/primitives";
+import { eq } from "drizzle-orm";
 import { type ClaimedDeliveryRun, lockDeliveryLease } from "./delivery/claim";
 import { getDeliveryTime } from "./delivery/locking";
 import { getDeliveryAccessStopReason } from "./delivery/access";
@@ -10,6 +11,12 @@ interface WebhookHTTPTarget {
   url: string;
   secrets: WebhookSecretState;
   remainingMs: number;
+  /** Set for extension webhooks, which send an unsigned notification instead of the payload. */
+  extension: WebhookExtensionTarget | null;
+}
+interface WebhookExtensionTarget {
+  id: string;
+  version: string;
 }
 
 class WebhookDispatchUnavailableError extends Error {
@@ -50,7 +57,19 @@ const loadWebhookHTTPTarget = async (
     signal.throwIfAborted();
     if (reason || remainingMs <= 0) throw new WebhookDispatchUnavailableError(reason);
 
+    const [extension] = context.endpoint.extensionID
+      ? await transaction
+          .select({ id: extensions.id, version: extensions.version })
+          .from(extensions)
+          .where(eq(extensions.id, context.endpoint.extensionID))
+      : [];
+
+    if (context.endpoint.kind === "extension" && !extension) {
+      throw new WebhookDispatchUnavailableError("endpoint_deleted");
+    }
+
     return {
+      extension: extension && { id: toExtensionID(extension.id), version: extension.version },
       url: context.endpoint.url,
       secrets: {
         currentSecretCiphertext: context.endpoint.currentSecretCiphertext,
@@ -64,3 +83,4 @@ const loadWebhookHTTPTarget = async (
 };
 
 export { loadWebhookHTTPTarget, WebhookDispatchUnavailableError };
+export type { WebhookHTTPTarget, WebhookExtensionTarget };

@@ -25,7 +25,8 @@ export default defineConfig({
     "../../packages/private/server/src/database/versions.ts",
     "../../packages/private/server/src/database/version-properties.ts",
     "../../packages/private/server/src/database/workspaces.ts",
-    "../../packages/private/server/src/database/webhooks.ts"
+    "../../packages/private/server/src/database/webhooks.ts",
+    "../../packages/private/server/src/database/extensions.ts"
   ],
   out: "./drizzle",
   dbCredentials: {

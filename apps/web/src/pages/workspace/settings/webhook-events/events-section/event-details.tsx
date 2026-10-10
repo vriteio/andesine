@@ -7,6 +7,7 @@ import {
   getWebhookNextAttemptLabel,
   type WebhookAttempt,
   type WebhookEvent,
+  type WebhookQueryInput,
   type WebhookRun,
   type WebhookRunTimeline,
   webhookEventQuery,
@@ -17,8 +18,7 @@ import { PayloadView } from "./payload-view";
 
 interface EventDetailsProps {
   event: WebhookEvent;
-  webhookID: string;
-  workspaceID: string;
+  target: WebhookQueryInput;
 }
 interface TimelineProps {
   timeline: WebhookRunTimeline[];
@@ -179,11 +179,7 @@ const Timeline: Component<TimelineProps> = (props) => {
   );
 };
 const EventDetails: Component<EventDetailsProps> = (props) => {
-  const input = () => ({
-    workspaceID: props.workspaceID,
-    webhookID: props.webhookID,
-    deliveryID: props.event.id
-  });
+  const input = () => ({ ...props.target, deliveryID: props.event.id });
   const details = createAsync(() => webhookEventQuery(input()));
   const timeline = createAsync(() => webhookEventTimelineQuery(input()));
 

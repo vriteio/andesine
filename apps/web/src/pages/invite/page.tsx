@@ -127,8 +127,8 @@ const InvitePage: Component = () => {
                 icon="i-lucide:loader-circle"
                 class="w-full gap-1"
                 iconProps={{ class: "h-5 w-5 text-gray-400" }}
-                variant="outlined"
-                color="contrast"
+                text="base"
+                size="medium"
                 label="Checking invitation..."
                 loading={true}
                 disabled
@@ -147,8 +147,8 @@ const InvitePage: Component = () => {
                 icon="i-lucide:loader-circle"
                 class="w-full gap-1"
                 iconProps={{ class: "h-5 w-5 text-gray-400" }}
-                variant="outlined"
-                color="success"
+                text="base"
+                size="medium"
                 label="Redirecting..."
                 loading={true}
                 disabled
@@ -163,10 +163,10 @@ const InvitePage: Component = () => {
                 <Show when={errorCode() === "UNAUTHORIZED"}>
                   <IconButton
                     icon="i-lucide:log-in"
-                    class="w-full @hover:bg-gray-50 gap-1"
+                    class="w-full gap-1"
                     iconProps={{ class: "h-5 w-5 text-gray-400" }}
-                    variant="outlined"
-                    color="contrast"
+                    text="base"
+                    size="medium"
                     label="Go to sign in"
                     link={signInLink()}
                   />
@@ -174,10 +174,10 @@ const InvitePage: Component = () => {
                 <Show when={errorCode() === "INVITE_ALREADY_ACCEPTED" && acceptedWorkspaceID()}>
                   <IconButton
                     icon="i-lucide:arrow-right"
-                    class="w-full @hover:bg-gray-50 gap-1"
+                    class="w-full gap-1"
                     iconProps={{ class: "h-5 w-5 text-gray-400" }}
-                    variant="outlined"
-                    color="contrast"
+                    text="base"
+                    size="medium"
                     label="Open workspace"
                     link={`/${acceptedWorkspaceID()}/`}
                   />
@@ -185,10 +185,10 @@ const InvitePage: Component = () => {
                 <Show when={errorCode() === "UNKNOWN"}>
                   <IconButton
                     icon="i-lucide:rotate-cw"
-                    class="w-full @hover:bg-gray-50 gap-1"
+                    class="w-full gap-1"
                     iconProps={{ class: "h-5 w-5 text-gray-400" }}
-                    variant="outlined"
-                    color="contrast"
+                    text="base"
+                    size="medium"
                     label="Try again"
                     onClick={() => window.location.reload()}
                   />
@@ -202,10 +202,10 @@ const InvitePage: Component = () => {
                 >
                   <IconButton
                     icon="i-lucide:arrow-left"
-                    class="w-full @hover:bg-gray-50 gap-1"
+                    class="w-full gap-1"
                     iconProps={{ class: "h-5 w-5 text-gray-400" }}
-                    variant="outlined"
-                    color="contrast"
+                    text="base"
+                    size="medium"
                     label="Go back"
                     onClick={() => window.history.back()}
                   />

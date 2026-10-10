@@ -10,6 +10,7 @@ import { schemaEventType } from "./schemas";
 import { publishingEventType } from "./publishing";
 import { versionEventType } from "./versions";
 import { webhookEventType } from "./webhooks";
+import { extensionEventType } from "./extensions";
 import { workspaceStateEventType } from "./workspaces";
 import * as z from "zod";
 
@@ -26,6 +27,7 @@ const workspaceEventType = z.union([
   versionEventType,
   keyEventType,
   webhookEventType,
+  extensionEventType,
   workspaceStateEventType
 ]);
 const workspaceSettingsEventType = z.union([
@@ -34,6 +36,7 @@ const workspaceSettingsEventType = z.union([
   roleEventType,
   keyEventType,
   webhookEventType,
+  extensionEventType,
   workspaceStateEventType
 ]);
 type WorkspaceEvent = z.infer<typeof workspaceEventType>;

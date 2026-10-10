@@ -147,7 +147,8 @@ const FormatMenu: Component<{
                     )
                   }}
                   icon={menu.icon}
-                  variant="text"
+                  variant="ghost"
+                  text="base"
                   size="xs"
                   onClick={(event) => {
                     if (menu.onClick) {
@@ -182,9 +183,10 @@ const FormatMenu: Component<{
         enabled={props.opened}
       >
         <IconButton
-          variant="text"
-          icon="i-lucide:keyboard-off"
+          variant="ghost"
+          text="base"
           size="xs"
+          icon="i-lucide:keyboard-off"
           aria-label="Close keyboard"
           onClick={(event) => {
             props.editor.chain().blur().setMeta("bubbleMenu", "hide").run();
@@ -205,9 +207,10 @@ const FormatMenu: Component<{
         wrapperClass="snap-start shrink-0"
       >
         <IconButton
-          variant="text"
-          icon="i-lucide:ellipsis"
+          variant="ghost"
+          text="base"
           size="xs"
+          icon="i-lucide:ellipsis"
           onClick={(event) => {
             const reference = event.currentTarget;
             const { selection, doc } = props.editor.state;

@@ -200,6 +200,40 @@ export type EntriesListOutput = OperationOutput<"entries.list">;
 export type EntriesUpdateError = OperationError<"entries.update">;
 export type EntriesUpdateInput = OperationInput<"entries.update">;
 export type EntriesUpdateOutput = OperationOutput<"entries.update">;
+export type ExtensionsDeleteSelfStorageEntryError =
+  OperationError<"extensions.deleteSelfStorageEntry">;
+export type ExtensionsDeleteSelfStorageEntryInput =
+  OperationInput<"extensions.deleteSelfStorageEntry">;
+export type ExtensionsDeleteSelfStorageEntryOutput =
+  OperationOutput<"extensions.deleteSelfStorageEntry">;
+export type ExtensionsGetSelfConfigurationError = OperationError<"extensions.getSelfConfiguration">;
+export type ExtensionsGetSelfConfigurationInput = OperationInput<"extensions.getSelfConfiguration">;
+export type ExtensionsGetSelfConfigurationOutput =
+  OperationOutput<"extensions.getSelfConfiguration">;
+export type ExtensionsGetSelfDeliveryError = OperationError<"extensions.getSelfDelivery">;
+export type ExtensionsGetSelfDeliveryInput = OperationInput<"extensions.getSelfDelivery">;
+export type ExtensionsGetSelfDeliveryOutput = OperationOutput<"extensions.getSelfDelivery">;
+export type ExtensionsGetSelfError = OperationError<"extensions.getSelf">;
+export type ExtensionsGetSelfInput = OperationInput<"extensions.getSelf">;
+export type ExtensionsGetSelfOutput = OperationOutput<"extensions.getSelf">;
+export type ExtensionsGetSelfStorageEntryError = OperationError<"extensions.getSelfStorageEntry">;
+export type ExtensionsGetSelfStorageEntryInput = OperationInput<"extensions.getSelfStorageEntry">;
+export type ExtensionsGetSelfStorageEntryOutput = OperationOutput<"extensions.getSelfStorageEntry">;
+export type ExtensionsListInstallationsError = OperationError<"extensions.listInstallations">;
+export type ExtensionsListInstallationsInput = OperationInput<"extensions.listInstallations">;
+export type ExtensionsListInstallationsOutput = OperationOutput<"extensions.listInstallations">;
+export type ExtensionsListSelfStorageEntriesError =
+  OperationError<"extensions.listSelfStorageEntries">;
+export type ExtensionsListSelfStorageEntriesInput =
+  OperationInput<"extensions.listSelfStorageEntries">;
+export type ExtensionsListSelfStorageEntriesOutput =
+  OperationOutput<"extensions.listSelfStorageEntries">;
+export type ExtensionsSetSelfStorageEntryError = OperationError<"extensions.setSelfStorageEntry">;
+export type ExtensionsSetSelfStorageEntryInput = OperationInput<"extensions.setSelfStorageEntry">;
+export type ExtensionsSetSelfStorageEntryOutput = OperationOutput<"extensions.setSelfStorageEntry">;
+export type ExtensionsVerifySessionError = OperationError<"extensions.verifySession">;
+export type ExtensionsVerifySessionInput = OperationInput<"extensions.verifySession">;
+export type ExtensionsVerifySessionOutput = OperationOutput<"extensions.verifySession">;
 export type InstanceGetError = OperationError<"instance.get">;
 export type InstanceGetInput = OperationInput<"instance.get">;
 export type InstanceGetOutput = OperationOutput<"instance.get">;

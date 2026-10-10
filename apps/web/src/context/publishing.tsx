@@ -343,14 +343,18 @@ const PublishingProvider: ParentComponent = (props) => {
 
     const collections = content.collectionsCollection().find().fetch();
     const collectionsByID = new Map(collections.map((collection) => [collection.id, collection]));
+    // One query for all entries: a reactive query per entry adds a listener per entry.
+    const unpublishedEntries = content
+      .entriesCollection()
+      .find({ id: { $in: [...unpublishedEntryIDs()] } })
+      .fetch();
     const changedEntryIDs = new Set<string>();
 
-    for (const entryID of unpublishedEntryIDs()) {
-      const entry = content.entriesCollection().findOne({ id: entryID });
-      const collection = entry?.collectionID ? collectionsByID.get(entry.collectionID) : undefined;
+    for (const entry of unpublishedEntries) {
+      const collection = entry.collectionID ? collectionsByID.get(entry.collectionID) : undefined;
 
       if (collection && [collection.id, ...collection.ancestors].includes(collectionID)) {
-        changedEntryIDs.add(entryID);
+        changedEntryIDs.add(entry.id);
       }
     }
 

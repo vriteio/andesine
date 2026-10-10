@@ -34,7 +34,7 @@ const Checkbox: Component<CheckboxProps> = (props) => (
         `:base: data-[state=checked]:outline-transparent data-[state=checked]:bg-gradient-to-tr`,
         `:base: data-[state=indeterminate]:outline-transparent data-[state=indeterminate]:bg-gradient-to-tr`,
         `:base: data-[disabled]:opacity-70 data-[disabled]:pointer-events-none`,
-        sizeClasses[props.size || "medium"].control,
+        sizeClasses[props.size || "small"].control,
         props.controlClass
       )}
     >
@@ -43,7 +43,7 @@ const Checkbox: Component<CheckboxProps> = (props) => (
           class={clsx(
             ":base: text-white",
             props.checked === "indeterminate" ? "i-lucide:minus" : "i-lucide:check",
-            sizeClasses[props.size || "medium"].icon,
+            sizeClasses[props.size || "small"].icon,
             props.iconClass
           )}
         />

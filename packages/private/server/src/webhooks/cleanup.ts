@@ -1,4 +1,5 @@
 import {
+  extensions,
   outboundDeliveries,
   outboundDeliveryRuns,
   outboundEvents,
@@ -18,6 +19,7 @@ interface WebhookCleanupResult {
   revisions: number;
   endpoints: number;
   retiredKeys: number;
+  extensions: number;
   more: boolean;
 }
 
@@ -43,6 +45,7 @@ const cleanupWebhookWorkspace = async (
       revisions: 0,
       endpoints: 0,
       retiredKeys: 0,
+      extensions: 0,
       more: false
     };
 
@@ -201,12 +204,40 @@ const cleanupWebhookWorkspace = async (
       result.retiredKeys = retiredKeys.length;
     }
 
+    // Uninstalled extensions stay until no delivery remains, so their backend can read final
+    // lifecycle deliveries; the cascade removes their webhooks.
+    const finishedTombstones = await transaction
+      .select({ id: extensions.id })
+      .from(extensions)
+      .where(
+        and(
+          eq(extensions.workspaceID, workspaceID),
+          isNotNull(extensions.uninstalledAt),
+          sql`not exists (select 1 from ${outboundDeliveries}
+          inner join ${webhookEndpoints} on ${webhookEndpoints.id} = ${outboundDeliveries.endpointID}
+          where ${webhookEndpoints.extensionID} = ${extensions.id})`
+        )
+      )
+      .orderBy(asc(extensions.uninstalledAt), asc(extensions.id))
+      .limit(WEBHOOK_CLEANUP_BATCH_SIZE);
+
+    if (finishedTombstones.length) {
+      await transaction.delete(extensions).where(
+        inArray(
+          extensions.id,
+          finishedTombstones.map(({ id }) => id)
+        )
+      );
+      result.extensions = finishedTombstones.length;
+    }
+
     result.more = [
       result.deliveries,
       result.events,
       result.revisions,
       result.endpoints,
-      result.retiredKeys
+      result.retiredKeys,
+      result.extensions
     ].some((count) => count === WEBHOOK_CLEANUP_BATCH_SIZE);
 
     return result;

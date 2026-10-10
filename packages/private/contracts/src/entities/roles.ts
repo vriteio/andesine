@@ -14,6 +14,7 @@ const permissionType = z.enum([
   "roles",
   "webhooks",
   "read:webhooks",
+  "extensions",
   "workspace"
 ]);
 const baseRoleType = z.enum(["admin", "viewer"]);

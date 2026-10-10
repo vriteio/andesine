@@ -137,6 +137,26 @@ const reconcileWebhookEndpoint = async (
         : null
   };
 };
+/** Reconciles every page of an endpoint's runs; configuration writers hold the workspace lock. */
+const reconcileWebhookConfiguration = async (
+  database: DatabaseTransaction,
+  workspaceID: string,
+  id: string
+): Promise<void> => {
+  let cursor: string | null = null;
+
+  do {
+    const result = await reconcileWebhookEndpoint(database, {
+      workspaceID,
+      endpointID: id,
+      afterRunID: cursor
+    });
+
+    if (!result.acquired) throw new Error("Webhook configuration requires the workspace lock");
+
+    cursor = result.cursor;
+  } while (cursor);
+};
 // Background maintenance uses one bounded page per transaction. Disabled/deleted
 // endpoints and destination/generation fences already prevent further dispatch.
 const maintainWebhookEndpoint = (
@@ -145,5 +165,10 @@ const maintainWebhookEndpoint = (
 ): Promise<WebhookEndpointMaintenanceResult> =>
   database.transaction((transaction) => reconcileWebhookEndpoint(transaction, input));
 
-export { maintainWebhookEndpoint, reconcileWebhookEndpoint, WEBHOOK_CANCELLATION_BATCH_SIZE };
+export {
+  maintainWebhookEndpoint,
+  reconcileWebhookEndpoint,
+  reconcileWebhookConfiguration,
+  WEBHOOK_CANCELLATION_BATCH_SIZE
+};
 export type { MaintainWebhookEndpointInput, WebhookEndpointMaintenanceResult };

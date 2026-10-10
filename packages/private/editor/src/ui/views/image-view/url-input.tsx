@@ -57,9 +57,6 @@ const ImageURLInput = (props: ImageURLInputProps) => {
         value={url()}
         setValue={setURL}
         disabled={props.disabled}
-        size="small"
-        color="contrast"
-        variant="outlined"
         onEnter={(event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -73,9 +70,7 @@ const ImageURLInput = (props: ImageURLInputProps) => {
               aria-label="Upload image from URL"
               icon="i-lucide:arrow-right"
               class="ml-1.5"
-              size="small"
-              variant="outlined"
-              color="primary"
+              variant="primary"
               disabled={props.disabled || !url().trim()}
               onClick={(event) => {
                 event.preventDefault();

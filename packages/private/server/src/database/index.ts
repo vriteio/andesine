@@ -20,6 +20,7 @@ export * from "./workspaces";
 export * from "./asset-uploads";
 export * from "./version-properties";
 export * from "./webhooks";
+export * from "./extensions";
 export * from "./outbound-events";
 export * from "./outbound-deliveries";
 export * from "./client";

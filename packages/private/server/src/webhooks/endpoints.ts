@@ -3,7 +3,11 @@ import {
   webhookEndpoints,
   type DatabaseClient
 } from "@andesine/server/database";
-import { type WebhookConfiguration, type WebhookEndpoint } from "@andesine/contracts/webhooks";
+import {
+  type WebhookConfiguration,
+  type WebhookEndpoint,
+  type WebhookEventName
+} from "@andesine/contracts/webhooks";
 import { toUUID, toWebhookID, toWorkspaceID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, asc, count, eq, gt, inArray, isNull, sql } from "drizzle-orm";
@@ -11,6 +15,8 @@ import { and, asc, count, eq, gt, inArray, isNull, sql } from "drizzle-orm";
 interface WebhookEndpointQuery {
   workspaceID: string;
   includeDeleted?: boolean;
+  /** An extension's UUID selects its managed webhooks; otherwise only HTTP webhooks match. */
+  extensionID?: string;
 }
 interface WebhookEndpointLookup extends WebhookEndpointQuery {
   id: string;
@@ -24,10 +30,14 @@ interface WebhookEndpointListQuery extends WebhookEndpointQuery {
 type WebhookEndpointRow = typeof webhookEndpoints.$inferSelect;
 
 const MAX_WORKSPACE_WEBHOOKS = 10;
-// Keep public endpoint discovery separate from internal delivery queries.
+// Keep public endpoint discovery separate from internal delivery queries. Public paths never
+// pass `extensionID`, so managed extension webhooks stay invisible to them.
 const endpointScope = (input: WebhookEndpointQuery) =>
   and(
     eq(webhookEndpoints.workspaceID, toUUID(input.workspaceID)),
+    input.extensionID
+      ? eq(webhookEndpoints.extensionID, input.extensionID)
+      : eq(webhookEndpoints.kind, "http"),
     input.includeDeleted ? undefined : isNull(webhookEndpoints.deletedAt)
   );
 const loadWebhookEndpoint = async (
@@ -67,11 +77,12 @@ const countWebhookEndpoints = async (
 
   return result!.count;
 };
+// Public paths load only HTTP webhooks, which select only HTTP webhook events.
 const getWebhookConfiguration = (endpoint: WebhookEndpointRow): WebhookConfiguration => ({
   name: endpoint.name,
   url: endpoint.url,
   enabled: endpoint.enabled,
-  eventTypes: endpoint.eventTypes,
+  eventTypes: endpoint.eventTypes as WebhookEventName[],
   schemaVersion: 1,
   collections: endpoint.collections,
   channels: endpoint.channels,
@@ -117,7 +128,8 @@ const describeWebhookEndpoints = async (
     destinationRevision: endpoint.destinationRevision,
     createdAt: endpoint.createdAt.toISOString(),
     updatedAt: endpoint.updatedAt.toISOString(),
-    disabledReason: endpoint.disabledReason,
+    // `extension` applies only to extension webhooks, which public paths never describe.
+    disabledReason: endpoint.disabledReason as WebhookEndpoint["disabledReason"],
     health: {
       consecutiveFailures: endpoint.consecutiveFailures,
       firstFailureAt: endpoint.firstFailureAt?.toISOString() ?? null,

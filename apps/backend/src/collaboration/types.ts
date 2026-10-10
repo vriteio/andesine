@@ -14,6 +14,8 @@ interface CollaborationContext {
   schemaMigrationReadOnly?: boolean;
   // Server-side direct operations can link a later persisted save to their event.
   webhookOperationID?: string;
+  // The operation's extension origin (`ext_` ID), whose webhooks skip the save's events.
+  webhookOriginExtensionID?: string | null;
   workspaceID?: string;
 }
 interface ContentSnapshot {

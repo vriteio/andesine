@@ -65,6 +65,7 @@
     "vite-plugin-solid": "^2.11.14",
     "workbox-core": "^7.4.1",
     "workbox-precaching": "^7.4.1",
-    "@andesine/sdk": "workspace:*"
+    "@andesine/sdk": "workspace:*",
+    "@andesine/uno-preset": "workspace:*"
   }
 }

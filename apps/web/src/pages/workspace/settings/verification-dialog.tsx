@@ -82,20 +82,10 @@ const VerificationDialogOTPView: Component<VerificationDialogOTPViewProps> = (pr
         />
         <div class="flex gap-2">
           <Tooltip content="Go back">
-            <IconButton
-              variant="outlined"
-              color="contrast"
-              text="soft"
-              size="small"
-              icon="i-lucide:chevron-left"
-              onClick={props.onBack}
-            />
+            <IconButton icon="i-lucide:chevron-left" onClick={props.onBack} />
           </Tooltip>
           <Button
-            color="primary"
-            variant="outlined"
             class="w-full"
-            size="small"
             loading={verifyOTPMutation.isPending}
             disabled={otp().length !== 6 || otp() === lastSubmittedOTP()}
             onClick={verifyOTP}
@@ -110,11 +100,7 @@ const VerificationDialogOTPView: Component<VerificationDialogOTPViewProps> = (pr
           <IconButton
             icon="i-lucide:rotate-cw"
             iconProps={{ class: "h-3.5 w-3.5" }}
-            variant="text"
-            text="primary"
-            color="primary"
-            size="small"
-            hover="underline"
+            variant="link"
             class="flex-row-reverse gap-1 inline-flex font-medium px-0"
             label={() => (
               <span>{props.throttlingOTP ? `Resend in ${props.otpResendSeconds}s` : "Resend"}</span>
@@ -228,16 +214,9 @@ const VerificationDialog: Component = () => {
       onOverlayClick={closeVerificationDialog}
       cardClass="relative"
       size="small"
-      portal
     >
       <Tooltip content="Close" wrapperClass="absolute right-2 top-2" placement="left">
-        <IconButton
-          variant="text"
-          text="soft"
-          size="small"
-          icon="i-lucide:x"
-          onClick={closeVerificationDialog}
-        />
+        <IconButton variant="ghost" icon="i-lucide:x" onClick={closeVerificationDialog} />
       </Tooltip>
       <Switch>
         <Match when={view() === "methods"}>
@@ -253,10 +232,8 @@ const VerificationDialog: Component = () => {
               <IconButton
                 icon="i-lucide:fingerprint"
                 iconProps={{ class: "h-4 w-4" }}
-                size="small"
+                variant="primary"
                 class="w-full"
-                variant="outlined"
-                color="primary"
                 label={passkeyMutation.isPending ? "Verifying..." : "Verify with passkey"}
                 loading={passkeyMutation.isPending}
                 disabled={sendOTPMutation.isPending}
@@ -273,10 +250,9 @@ const VerificationDialog: Component = () => {
               iconProps={{
                 class: clsx("h-4 w-4", hasPasskey() && "text-gray-400")
               }}
-              size="small"
               class="w-full"
-              variant="outlined"
-              color={hasPasskey() ? "contrast" : "primary"}
+              variant={hasPasskey() ? "secondary" : "primary"}
+              text="base"
               label={sendOTPMutation.isPending ? "Sending code..." : "Send verification code"}
               loading={sendOTPMutation.isPending}
               disabled={!email() || passkeyMutation.isPending}

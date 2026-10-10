@@ -6,12 +6,7 @@ import {
   webhookReadRequirements
 } from "@andesine/contracts/webhooks";
 import { withAuthorization } from "#backend/lib/policy";
-import {
-  describeWebhookDeliveries,
-  describeWebhookRuns
-} from "#backend/lib/webhooks/history/describe";
-import { readRetainedWebhookPayload } from "#backend/lib/webhooks/history/payload";
-import { loadWebhookDelivery, loadWebhookRun } from "#backend/lib/webhooks/history/records";
+import { getWebhookDeliveryDetails } from "#backend/lib/webhooks/history/pages";
 import { parseWebhookInput } from "#backend/lib/webhooks/management";
 
 const getWebhookDelivery = withAuthorization<
@@ -24,25 +19,9 @@ const getWebhookDelivery = withAuthorization<
     const parsed = parseWebhookInput(webhookDeliveryInputType, input);
     const now = await getDeliveryTime(database);
     const identity = { ...parsed, workspaceID: auth.workspaceID, now };
-    const row = await loadWebhookDelivery(database, identity);
-    const { event, allowed } = await readRetainedWebhookPayload(database, auth, row);
-    const [delivery] = await describeWebhookDeliveries(database, [
-      {
-        delivery: row,
-        event: { type: event.type, test: event.test, occurredAt: new Date(event.occurredAt) }
-      }
-    ]);
-    const runs = delivery!.currentRunID
-      ? await describeWebhookRuns(database, [
-          await loadWebhookRun(database, { ...identity, runID: delivery!.currentRunID })
-        ])
-      : [];
 
-    return {
-      delivery: delivery!,
-      payload: allowed ? { availability: "available", event } : { availability: "forbidden" },
-      currentRun: runs[0] ?? null
-    };
+    // HTTP webhooks receive only HTTP webhook events, so the payload is a webhook event.
+    return (await getWebhookDeliveryDetails(database, auth, identity)) as WebhookDeliveryDetails;
   }
 );
 

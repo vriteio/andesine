@@ -26,6 +26,7 @@ export {
   toWebhookOperationID,
   toWebhookDeliveryID,
   toWebhookRunID,
-  toWebhookAttemptID
+  toWebhookAttemptID,
+  toExtensionID
 } from "./id";
 export type { PublicIDPrefix } from "./id";

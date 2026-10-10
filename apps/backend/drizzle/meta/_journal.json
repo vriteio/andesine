@@ -239,6 +239,48 @@
       "when": 1790939142702,
       "tag": "0033_workspace-spending-limit",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1791224069977,
+      "tag": "0034_add_extensions_and_registry",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1791224954950,
+      "tag": "0035_add_manage_extensions_permission",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1791240590181,
+      "tag": "0036_add_extension_webhook_destinations",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1791241342484,
+      "tag": "0037_add_schema_migration_origin",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1791402640269,
+      "tag": "0038_add_extension_webhook_disabled_reason",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1791412083323,
+      "tag": "0039_add_extension_development_versions",
+      "breakpoints": true
     }
   ]
 }

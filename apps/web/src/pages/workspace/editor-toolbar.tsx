@@ -118,16 +118,7 @@ const EditorToolbar: Component = () => {
         <span class="flex-1 inline-flex items-center justify-center text-base font-medium leading-[1] bg-gray-50/2.5 backdrop-blur-sm rounded-lg overflow-hidden mr-4">
           <Show
             when={currentWorkspace()?.logo}
-            fallback={
-              <IconButton
-                icon="i-lucide:hexagon"
-                text="soft"
-                size="small"
-                variant="text"
-                hover="none"
-                badge
-              />
-            }
+            fallback={<IconButton icon="i-lucide:hexagon" variant="ghost" badge />}
           >
             {(logo) => (
               <span class="flex h-7 w-7 shrink-0 items-center justify-center">
@@ -149,7 +140,8 @@ const EditorToolbar: Component = () => {
                 <>
                   <span class="h-4 text-gray-200 flex justify-center items-center w-2">/</span>
                   <Button
-                    hover={item.path || currentEntry() ? "underline" : "none"}
+                    variant="ghost"
+                    hover={Boolean(item.path || currentEntry())}
                     link={
                       item.path && !currentEntry()
                         ? `/${params.workspaceID || ""}${item.path}`
@@ -157,9 +149,6 @@ const EditorToolbar: Component = () => {
                     }
                     onClick={currentEntry() ? returnToCurrent : undefined}
                     badge={!item.path}
-                    size="small"
-                    variant="text"
-                    color="base"
                     class={clsx(
                       "text-sm p-0.5 m-0.5 max-w-64 truncate",
                       currentEntry() && "cursor-pointer"
@@ -191,10 +180,7 @@ const EditorToolbar: Component = () => {
                     <span class="flex h-4 w-2 items-center justify-center text-gray-200">/</span>
                     <Button
                       badge
-                      size="small"
-                      variant="text"
-                      color="base"
-                      hover="none"
+                      variant="ghost"
                       class="m-0.5 max-w-64 gap-1 p-0.5 text-sm"
                       title={currentVersion().name || currentVersion().entryName}
                     >
@@ -217,10 +203,7 @@ const EditorToolbar: Component = () => {
                     <span class="flex h-4 w-2 items-center justify-center text-gray-200">/</span>
                     <Button
                       badge
-                      size="small"
-                      variant="text"
-                      color="base"
-                      hover="none"
+                      variant="ghost"
                       class="m-0.5 max-w-64 gap-1 p-0.5 text-sm"
                       title={currentVersion().name || `Version ${currentVersion().version}`}
                     >
@@ -251,9 +234,7 @@ const EditorToolbar: Component = () => {
         >
           <IconButton
             icon={inlineComparison() ? "i-lucide:columns-2" : "i-lucide:rows-2"}
-            size="small"
-            text="soft"
-            variant="text"
+            variant="ghost"
             onClick={() => {
               setSearchParams({ compareView: inlineComparison() ? undefined : "inline" });
             }}
@@ -265,9 +246,7 @@ const EditorToolbar: Component = () => {
         <Tooltip content="Return to current" placement="bottom" fixed>
           <IconButton
             icon="i-lucide:file-output"
-            size="small"
-            text="soft"
-            variant="text"
+            variant="ghost"
             onClick={returnToCurrent}
             aria-label="Return to current"
           />

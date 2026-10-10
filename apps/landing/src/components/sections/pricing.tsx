@@ -64,8 +64,8 @@ const Pricing: Component = () => {
           </div>
           <Button
             link={links.cloudSignUp}
-            color="contrast"
-            variant="outlined"
+            variant="secondary"
+            size="medium"
             class="self-start text-center w-full bg-gray-50"
           >
             Get started

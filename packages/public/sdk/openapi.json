@@ -19,6 +19,12 @@
         "scheme": "bearer",
         "bearerFormat": "Andesine API key",
         "description": "Use an Andesine API key as a Bearer token"
+      },
+      "extensionToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "An extension JWT signed with the extension's registered key: iss is the registry name, sub the ext_ ID (omitted for app-level operations), aud the instance API URL, and exp at most 5 minutes after iat."
       }
     },
     "schemas": {
@@ -2268,6 +2274,7 @@
           "roles",
           "webhooks",
           "read:webhooks",
+          "extensions",
           "workspace"
         ],
         "type": "string"
@@ -8680,6 +8687,4315 @@
           }
         },
         "x-sdk-example": { "collectionID": "coll_example", "limit": 20 }
+      }
+    },
+    "/extensions/self": {
+      "get": {
+        "operationId": "extensions.getSelf",
+        "summary": "Get the extension",
+        "description": "Returns the installed extension that the token's subject names, including disabled and uninstalled extensions.",
+        "tags": ["extensions"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^ext_[A-Za-z\\d]{1,22}$",
+                      "description": "ID of the installed extension"
+                    },
+                    "name": { "type": "string", "description": "Registry name" },
+                    "version": { "type": "string", "description": "Active version" },
+                    "workspaceID": { "type": "string", "pattern": "^ws_[A-Za-z\\d]{1,22}$" },
+                    "state": {
+                      "enum": ["active", "disabled", "uninstalled"],
+                      "type": "string",
+                      "description": "Uninstalled extensions remain readable until their last lifecycle event expires"
+                    },
+                    "disabledReason": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "manual",
+                            "approval_required",
+                            "configuration_required",
+                            "revoked"
+                          ],
+                          "type": "string"
+                        },
+                        { "type": "null" }
+                      ],
+                      "description": "Why the extension is disabled; null when it is active or uninstalled"
+                    }
+                  },
+                  "required": ["id", "name", "version", "workspaceID", "state", "disabledReason"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "BAD_REQUEST" },
+                        "status": { "const": 400 },
+                        "message": { "type": "string", "default": "Bad Request" },
+                        "data": { "$ref": "#/components/schemas/ValidationErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "UNAUTHORIZED" },
+                        "status": { "const": 401 },
+                        "message": { "type": "string", "default": "Unauthorized" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "FORBIDDEN" },
+                        "status": { "const": 403 },
+                        "message": { "type": "string", "default": "Forbidden" },
+                        "data": { "$ref": "#/components/schemas/ForbiddenErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "NOT_FOUND" },
+                        "status": { "const": 404 },
+                        "message": { "type": "string", "default": "Not Found" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "CONFLICT" },
+                        "status": { "const": 409 },
+                        "message": { "type": "string", "default": "Conflict" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "TOO_MANY_REQUESTS" },
+                        "status": { "const": 429 },
+                        "message": { "type": "string", "default": "Too Many Requests" },
+                        "data": { "$ref": "#/components/schemas/RateLimitErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "INTERNAL_SERVER_ERROR" },
+                        "status": { "const": 500 },
+                        "message": { "type": "string", "default": "Internal Server Error" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "SERVICE_UNAVAILABLE" },
+                        "status": { "const": 503 },
+                        "message": { "type": "string", "default": "Service Unavailable" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "extensionToken": [] }]
+      }
+    },
+    "/extensions/self/sessions/verify": {
+      "post": {
+        "operationId": "extensions.verifySession",
+        "summary": "Verify a session token",
+        "description": "Verifies a session token from the extension frontend and returns its member. Tokens of other extensions, expired tokens, and tokens of an earlier extension generation fail with NOT_FOUND.",
+        "tags": ["extensions"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "token": { "type": "string", "minLength": 1, "maxLength": 200 } },
+                "required": ["token"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "workspaceID": { "type": "string", "pattern": "^ws_[A-Za-z\\d]{1,22}$" },
+                    "version": {
+                      "type": "string",
+                      "description": "The extension version the session was issued for"
+                    },
+                    "member": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "description": "ID of the membership" },
+                        "userID": { "type": "string", "description": "ID of the user" },
+                        "profile": {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string" },
+                            "name": { "type": "string" },
+                            "image": { "type": "string" },
+                            "email": {
+                              "type": "string",
+                              "description": "Only with the read:memberships permission"
+                            }
+                          },
+                          "required": ["id"]
+                        }
+                      },
+                      "required": ["id", "userID", "profile"]
+                    }
+                  },
+                  "required": ["workspaceID", "version", "member"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "BAD_REQUEST" },
+                        "status": { "const": 400 },
+                        "message": { "type": "string", "default": "Bad Request" },
+                        "data": { "$ref": "#/components/schemas/ValidationErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "UNAUTHORIZED" },
+                        "status": { "const": 401 },
+                        "message": { "type": "string", "default": "Unauthorized" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "FORBIDDEN" },
+                        "status": { "const": 403 },
+                        "message": { "type": "string", "default": "Forbidden" },
+                        "data": { "$ref": "#/components/schemas/ForbiddenErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "NOT_FOUND" },
+                        "status": { "const": 404 },
+                        "message": { "type": "string", "default": "Not Found" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "CONFLICT" },
+                        "status": { "const": 409 },
+                        "message": { "type": "string", "default": "Conflict" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "TOO_MANY_REQUESTS" },
+                        "status": { "const": 429 },
+                        "message": { "type": "string", "default": "Too Many Requests" },
+                        "data": { "$ref": "#/components/schemas/RateLimitErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "INTERNAL_SERVER_ERROR" },
+                        "status": { "const": 500 },
+                        "message": { "type": "string", "default": "Internal Server Error" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "SERVICE_UNAVAILABLE" },
+                        "status": { "const": 503 },
+                        "message": { "type": "string", "default": "Service Unavailable" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "extensionToken": [] }]
+      }
+    },
+    "/extensions/self/installations": {
+      "get": {
+        "operationId": "extensions.listInstallations",
+        "summary": "List installations",
+        "description": "Lists the installations of the extension on this instance. Requires an app-level token: an extension JWT without a subject.",
+        "tags": ["extensions"],
+        "parameters": [
+          {
+            "name": "after",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^ext_[A-Za-z\\d]{1,22}$",
+              "description": "Return installations after this ID"
+            },
+            "allowEmptyValue": true,
+            "allowReserved": true
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 100 },
+            "allowEmptyValue": true,
+            "allowReserved": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "pattern": "^ext_[A-Za-z\\d]{1,22}$" },
+                          "workspaceID": { "type": "string", "pattern": "^ws_[A-Za-z\\d]{1,22}$" },
+                          "version": { "type": "string" },
+                          "state": {
+                            "enum": ["active", "disabled", "uninstalled"],
+                            "type": "string",
+                            "description": "Uninstalled extensions remain readable until their last lifecycle event expires"
+                          }
+                        },
+                        "required": ["id", "workspaceID", "version", "state"]
+                      }
+                    },
+                    "hasMore": { "type": "boolean" }
+                  },
+                  "required": ["data", "hasMore"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "BAD_REQUEST" },
+                        "status": { "const": 400 },
+                        "message": { "type": "string", "default": "Bad Request" },
+                        "data": { "$ref": "#/components/schemas/ValidationErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "UNAUTHORIZED" },
+                        "status": { "const": 401 },
+                        "message": { "type": "string", "default": "Unauthorized" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "FORBIDDEN" },
+                        "status": { "const": 403 },
+                        "message": { "type": "string", "default": "Forbidden" },
+                        "data": { "$ref": "#/components/schemas/ForbiddenErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "NOT_FOUND" },
+                        "status": { "const": 404 },
+                        "message": { "type": "string", "default": "Not Found" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "CONFLICT" },
+                        "status": { "const": 409 },
+                        "message": { "type": "string", "default": "Conflict" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "TOO_MANY_REQUESTS" },
+                        "status": { "const": 429 },
+                        "message": { "type": "string", "default": "Too Many Requests" },
+                        "data": { "$ref": "#/components/schemas/RateLimitErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "INTERNAL_SERVER_ERROR" },
+                        "status": { "const": 500 },
+                        "message": { "type": "string", "default": "Internal Server Error" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "SERVICE_UNAVAILABLE" },
+                        "status": { "const": 503 },
+                        "message": { "type": "string", "default": "Service Unavailable" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "extensionToken": [] }]
+      }
+    },
+    "/extensions/self/deliveries/{deliveryID}": {
+      "get": {
+        "operationId": "extensions.getSelfDelivery",
+        "summary": "Get a delivery",
+        "description": "Returns the event of a delivery to one of the extension's webhooks. Disabled and uninstalled extensions can read only lifecycle deliveries.",
+        "tags": ["extensions"],
+        "parameters": [
+          {
+            "name": "deliveryID",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "pattern": "^whdel_[A-Za-z\\d]{1,22}$" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deliveryID": { "type": "string", "pattern": "^whdel_[A-Za-z\\d]{1,22}$" },
+                    "event": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string", "pattern": "^whevt_[A-Za-z\\d]{1,22}$" },
+                            "operationID": {
+                              "type": "string",
+                              "pattern": "^whop_[A-Za-z\\d]{1,22}$"
+                            },
+                            "schemaVersion": { "const": 1 },
+                            "occurredAt": { "type": "string", "format": "date-time" },
+                            "workspaceID": {
+                              "type": "string",
+                              "pattern": "^ws_[A-Za-z\\d]{1,22}$"
+                            },
+                            "test": { "type": "boolean" },
+                            "subject": {
+                              "type": "object",
+                              "properties": {
+                                "kind": { "const": "entry" },
+                                "id": { "type": "string", "pattern": "^ent_[A-Za-z\\d]{1,22}$" }
+                              },
+                              "required": ["kind", "id"],
+                              "additionalProperties": false
+                            },
+                            "type": { "const": "entry.created" },
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "name": { "type": "string", "minLength": 1, "maxLength": 300 },
+                                "collectionID": {
+                                  "anyOf": [
+                                    { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+                                    { "type": "null" }
+                                  ]
+                                },
+                                "contentHash": { "type": "string", "pattern": "^[a-f\\d]{64}$" }
+                              },
+                              "required": ["name", "collectionID"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "operationID",
+                            "schemaVersion",
+                            "occurredAt",
+                            "workspaceID",
+                            "test",
+                            "subject",
+                            "type",
+                            "data"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string", "pattern": "^whevt_[A-Za-z\\d]{1,22}$" },
+                            "operationID": {
+                              "type": "string",
+                              "pattern": "^whop_[A-Za-z\\d]{1,22}$"
+                            },
+                            "schemaVersion": { "const": 1 },
+                            "occurredAt": { "type": "string", "format": "date-time" },
+                            "workspaceID": {
+                              "type": "string",
+                              "pattern": "^ws_[A-Za-z\\d]{1,22}$"
+                            },
+                            "test": { "type": "boolean" },
+                            "subject": {
+                              "type": "object",
+                              "properties": {
+                                "kind": { "const": "entry" },
+                                "id": { "type": "string", "pattern": "^ent_[A-Za-z\\d]{1,22}$" }
+                              },
+                              "required": ["kind", "id"],
+                              "additionalProperties": false
+                            },
+                            "type": { "const": "entry.updated" },
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "collectionID": {
+                                  "anyOf": [
+                                    { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+                                    { "type": "null" }
+                                  ]
+                                },
+                                "changedFields": {
+                                  "type": "array",
+                                  "minItems": 1,
+                                  "maxItems": 1,
+                                  "items": { "const": "name" }
+                                }
+                              },
+                              "required": ["collectionID", "changedFields"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "operationID",
+                            "schemaVersion",
+                            "occurredAt",
+                            "workspaceID",
+                            "test",
+                            "subject",
+                            "type",
+                            "data"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string", "pattern": "^whevt_[A-Za-z\\d]{1,22}$" },
+                            "operationID": {
+                              "type": "string",
+                              "pattern": "^whop_[A-Za-z\\d]{1,22}$"
+                            },
+                            "schemaVersion": { "const": 1 },
+                            "occurredAt": { "type": "string", "format": "date-time" },
+                            "workspaceID": {
+                              "type": "string",
+                              "pattern": "^ws_[A-Za-z\\d]{1,22}$"
+                            },
+                            "test": { "type": "boolean" },
+                            "subject": {
+                              "type": "object",
+                              "properties": {
+                                "kind": { "const": "entry" },
+                                "id": { "type": "string", "pattern": "^ent_[A-Za-z\\d]{1,22}$" }
+                              },
+                              "required": ["kind", "id"],
+                              "additionalProperties": false
+                            },
+                            "type": { "const": "entry.content_saved" },
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "collectionID": {
+                                  "anyOf": [
+                                    { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+                                    { "type": "null" }
+                                  ]
+                                },
+                                "contentHash": { "type": "string", "pattern": "^[a-f\\d]{64}$" },
+                                "savedAt": { "type": "string", "format": "date-time" }
+                              },
+                              "required": ["collectionID", "contentHash", "savedAt"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "operationID",
+                            "schemaVersion",
+                            "occurredAt",
+                            "workspaceID",
+                            "test",
+                            "subject",
+                            "type",
+                            "data"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string", "pattern": "^whevt_[A-Za-z\\d]{1,22}$" },
+                            "operationID": {
+                              "type": "string",
+                              "pattern": "^whop_[A-Za-z\\d]{1,22}$"
+                            },
+                            "schemaVersion": { "const": 1 },
+                            "occurredAt": { "type": "string", "format": "date-time" },
+                            "workspaceID": {
+                              "type": "string",
+                              "pattern": "^ws_[A-Za-z\\d]{1,22}$"
+                            },
+                            "test": { "type": "boolean" },
+                            "subject": {
+                              "type": "object",
+                              "properties": {
+                                "kind": { "const": "entry" },
+                                "id": { "type": "string", "pattern": "^ent_[A-Za-z\\d]{1,22}$" }
+                              },
+                              "required": ["kind", "id"],
+                              "additionalProperties": false
+                            },
+                            "type": { "const": "entry.moved" },
+                            "data": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "scopeTransition": { "const": "within" },
+                                    "reason": {
+                                      "enum": ["direct", "ancestor_moved", "reordered"],
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": "object",
+                                      "properties": {
+                                        "visibility": { "const": "visible" },
+                                        "parentID": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "pattern": "^coll_[A-Za-z\\d]{1,22}$"
+                                            },
+                                            { "type": "null" }
+                                          ],
+                                          "description": "Null means the workspace root, never a hidden parent"
+                                        },
+                                        "order": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 255
+                                        }
+                                      },
+                                      "required": ["visibility", "parentID"],
+                                      "additionalProperties": false
+                                    },
+                                    "to": {
+                                      "type": "object",
+                                      "properties": {
+                                        "visibility": { "const": "visible" },
+                                        "parentID": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "pattern": "^coll_[A-Za-z\\d]{1,22}$"
+                                            },
+                                            { "type": "null" }
+                                          ],
+                                          "description": "Null means the workspace root, never a hidden parent"
+                                        },
+                                        "order": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 255
+                                        }
+                                      },
+                                      "required": ["visibility", "parentID"],
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "required": ["scopeTransition", "reason", "from", "to"],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "scopeTransition": { "const": "entered" },
+                                    "reason": {
+                                      "enum": ["direct", "ancestor_moved", "reordered"],
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": "object",
+                                      "properties": { "visibility": { "const": "hidden" } },
+                                      "required": ["visibility"],
+                                      "additionalProperties": false
+                                    },
+                                    "to": {
+                                      "type": "object",
+                                      "properties": {
+                                        "visibility": { "const": "visible" },
+                                        "parentID": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "pattern": "^coll_[A-Za-z\\d]{1,22}$"
+                                            },
+                                            { "type": "null" }
+                                          ],
+                                          "description": "Null means the workspace root, never a hidden parent"
+                                        },
+                                        "order": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 255
+                                        }
+                                      },
+                                      "required": ["visibility", "parentID"],
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "required": ["scopeTransition", "reason", "from", "to"],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "scopeTransition": { "const": "left" },
+                                    "reason": {
+                                      "enum": ["direct", "ancestor_moved", "reordered"],
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": "object",
+                                      "properties": {
+                                        "visibility": { "const": "visible" },
+                                        "parentID": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "pattern": "^coll_[A-Za-z\\d]{1,22}$"
+                                            },
+                                            { "type": "null" }
+                                          ],
+                                          "description": "Null means the workspace root, never a hidden parent"
+                                        },
+                                        "order": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 255
+                                        }
+                                      },
+                                      "required": ["visibility", "parentID"],
+                                      "additionalProperties": false
+                                    },
+                                    "to": {
+                                      "type": "object",
+                                      "properties": { "visibility": { "const": "hidden" } },
+                                      "required": ["visibility"],
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "required": ["scopeTransition", "reason", "from", "to"],
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "operationID",
+                            "schemaVersion",
+                            "occurredAt",
+                            "workspaceID",
+                            "test",
+                            "subject",
+                            "type",
+                            "data"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string", "pattern": "^whevt_[A-Za-z\\d]{1,22}$" },
+                            "operationID": {
+                              "type": "string",
+                              "pattern": "^whop_[A-Za-z\\d]{1,22}$"
+                            },
+                            "schemaVersion": { "const": 1 },
+                            "occurredAt": { "type": "string", "format": "date-time" },
+                            "workspaceID": {
+                              "type": "string",
+                              "pattern": "^ws_[A-Za-z\\d]{1,22}$"
+                            },
+                            "test": { "type": "boolean" },
+                            "subject": {
+                              "type": "object",
+                              "properties": {
+                                "kind": { "const": "entry" },
+                                "id": { "type": "string", "pattern": "^ent_[A-Za-z\\d]{1,22}$" }
+                              },
+                              "required": ["kind", "id"],
+                              "additionalProperties": false
+                            },
+                            "type": { "const": "entry.deleted" },
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "name": { "type": "string", "minLength": 1, "maxLength": 300 },
+                                "collectionID": {
+                                  "anyOf": [
+                                    { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+                                    { "type": "null" }
+                                  ]
+                                },
+                                "deletedAt": { "type": "string", "format": "date-time" }
+                              },
+                              "required": ["name", "collectionID", "deletedAt"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "operationID",
+                            "schemaVersion",
+                            "occurredAt",
+                            "workspaceID",
+                            "test",
+                            "subject",
+                            "type",
+                            "data"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string", "pattern": "^whevt_[A-Za-z\\d]{1,22}$" },
+                            "operationID": {
+                              "type": "string",
+                              "pattern": "^whop_[A-Za-z\\d]{1,22}$"
+                            },
+                            "schemaVersion": { "const": 1 },
+                            "occurredAt": { "type": "string", "format": "date-time" },
+                            "workspaceID": {
+                              "type": "string",
+                              "pattern": "^ws_[A-Za-z\\d]{1,22}$"
+                            },
+                            "test": { "type": "boolean" },
+                            "subject": {
+                              "type": "object",
+                              "properties": {
+                                "kind": { "const": "entry" },
+                                "id": { "type": "string", "pattern": "^ent_[A-Za-z\\d]{1,22}$" }
+                              },
+                              "required": ["kind", "id"],
+                              "additionalProperties": false
+                            },
+                            "type": { "const": "entry.restored" },
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "name": { "type": "string", "minLength": 1, "maxLength": 300 },
+                                "collectionID": {
+                                  "anyOf": [
+                                    { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+                                    { "type": "null" }
+                                  ]
+                                }
+                              },
+                              "required": ["name", "collectionID"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "operationID",
+                            "schemaVersion",
+                            "occurredAt",
+                            "workspaceID",
+                            "test",
+                            "subject",
+                            "type",
+                            "data"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string", "pattern": "^whevt_[A-Za-z\\d]{1,22}$" },
+                            "operationID": {
+                              "type": "string",
+                              "pattern": "^whop_[A-Za-z\\d]{1,22}$"
+                            },
+                            "schemaVersion": { "const": 1 },
+                            "occurredAt": { "type": "string", "format": "date-time" },
+                            "workspaceID": {
+                              "type": "string",
+                              "pattern": "^ws_[A-Za-z\\d]{1,22}$"
+                            },
+                            "test": { "type": "boolean" },
+                            "subject": {
+                              "type": "object",
+                              "properties": {
+                                "kind": { "const": "collection" },
+                                "id": { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" }
+                              },
+                              "required": ["kind", "id"],
+                              "additionalProperties": false
+                            },
+                            "type": { "const": "collection.created" },
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "name": { "type": "string", "minLength": 1, "maxLength": 300 },
+                                "parentID": {
+                                  "anyOf": [
+                                    { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+                                    { "type": "null" }
+                                  ]
+                                }
+                              },
+                              "required": ["name", "parentID"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "operationID",
+                            "schemaVersion",
+                            "occurredAt",
+                            "workspaceID",
+                            "test",
+                            "subject",
+                            "type",
+                            "data"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string", "pattern": "^whevt_[A-Za-z\\d]{1,22}$" },
+                            "operationID": {
+                              "type": "string",
+                              "pattern": "^whop_[A-Za-z\\d]{1,22}$"
+                            },
+                            "schemaVersion": { "const": 1 },
+                            "occurredAt": { "type": "string", "format": "date-time" },
+                            "workspaceID": {
+                              "type": "string",
+                              "pattern": "^ws_[A-Za-z\\d]{1,22}$"
+                            },
+                            "test": { "type": "boolean" },
+                            "subject": {
+                              "type": "object",
+                              "properties": {
+                                "kind": { "const": "collection" },
+                                "id": { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" }
+                              },
+                              "required": ["kind", "id"],
+                              "additionalProperties": false
+                            },
+                            "type": { "const": "collection.updated" },
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "parentID": {
+                                  "anyOf": [
+                                    { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+                                    { "type": "null" }
+                                  ]
+                                },
+                                "changedFields": {
+                                  "type": "array",
+                                  "minItems": 1,
+                                  "maxItems": 3,
+                                  "items": {
+                                    "enum": ["name", "restricted", "publishingEnabled"],
+                                    "type": "string"
+                                  },
+                                  "uniqueItems": true
+                                }
+                              },
+                              "required": ["parentID", "changedFields"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "operationID",
+                            "schemaVersion",
+                            "occurredAt",
+                            "workspaceID",
+                            "test",
+                            "subject",
+                            "type",
+                            "data"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string", "pattern": "^whevt_[A-Za-z\\d]{1,22}$" },
+                            "operationID": {
+                              "type": "string",
+                              "pattern": "^whop_[A-Za-z\\d]{1,22}$"
+                            },
+                            "schemaVersion": { "const": 1 },
+                            "occurredAt": { "type": "string", "format": "date-time" },
+                            "workspaceID": {
+                              "type": "string",
+                              "pattern": "^ws_[A-Za-z\\d]{1,22}$"
+                            },
+                            "test": { "type": "boolean" },
+                            "subject": {
+                              "type": "object",
+                              "properties": {
+                                "kind": { "const": "collection" },
+                                "id": { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" }
+                              },
+                              "required": ["kind", "id"],
+                              "additionalProperties": false
+                            },
+                            "type": { "const": "collection.moved" },
+                            "data": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "scopeTransition": { "const": "within" },
+                                    "reason": {
+                                      "enum": ["direct", "ancestor_moved", "reordered"],
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": "object",
+                                      "properties": {
+                                        "visibility": { "const": "visible" },
+                                        "parentID": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "pattern": "^coll_[A-Za-z\\d]{1,22}$"
+                                            },
+                                            { "type": "null" }
+                                          ],
+                                          "description": "Null means the workspace root, never a hidden parent"
+                                        },
+                                        "order": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 255
+                                        }
+                                      },
+                                      "required": ["visibility", "parentID"],
+                                      "additionalProperties": false
+                                    },
+                                    "to": {
+                                      "type": "object",
+                                      "properties": {
+                                        "visibility": { "const": "visible" },
+                                        "parentID": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "pattern": "^coll_[A-Za-z\\d]{1,22}$"
+                                            },
+                                            { "type": "null" }
+                                          ],
+                                          "description": "Null means the workspace root, never a hidden parent"
+                                        },
+                                        "order": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 255
+                                        }
+                                      },
+                                      "required": ["visibility", "parentID"],
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "required": ["scopeTransition", "reason", "from", "to"],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "scopeTransition": { "const": "entered" },
+                                    "reason": {
+                                      "enum": ["direct", "ancestor_moved", "reordered"],
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": "object",
+                                      "properties": { "visibility": { "const": "hidden" } },
+                                      "required": ["visibility"],
+                                      "additionalProperties": false
+                                    },
+                                    "to": {
+                                      "type": "object",
+                                      "properties": {
+                                        "visibility": { "const": "visible" },
+                                        "parentID": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "pattern": "^coll_[A-Za-z\\d]{1,22}$"
+                                            },
+                                            { "type": "null" }
+                                          ],
+                                          "description": "Null means the workspace root, never a hidden parent"
+                                        },
+                                        "order": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 255
+                                        }
+                                      },
+                                      "required": ["visibility", "parentID"],
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "required": ["scopeTransition", "reason", "from", "to"],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "scopeTransition": { "const": "left" },
+                                    "reason": {
+                                      "enum": ["direct", "ancestor_moved", "reordered"],
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": "object",
+                                      "properties": {
+                                        "visibility": { "const": "visible" },
+                                        "parentID": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "pattern": "^coll_[A-Za-z\\d]{1,22}$"
+                                            },
+                                            { "type": "null" }
+                                          ],
+                                          "description": "Null means the workspace root, never a hidden parent"
+                                        },
+                                        "order": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 255
+                                        }
+                                      },
+                                      "required": ["visibility", "parentID"],
+                                      "additionalProperties": false
+                                    },
+                                    "to": {
+                                      "type": "object",
+                                      "properties": { "visibility": { "const": "hidden" } },
+                                      "required": ["visibility"],
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "required": ["scopeTransition", "reason", "from", "to"],
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "operationID",
+                            "schemaVersion",
+                            "occurredAt",
+                            "workspaceID",
+                            "test",
+                            "subject",
+                            "type",
+                            "data"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string", "pattern": "^whevt_[A-Za-z\\d]{1,22}$" },
+                            "operationID": {
+                              "type": "string",
+                              "pattern": "^whop_[A-Za-z\\d]{1,22}$"
+                            },
+                            "schemaVersion": { "const": 1 },
+                            "occurredAt": { "type": "string", "format": "date-time" },
+                            "workspaceID": {
+                              "type": "string",
+                              "pattern": "^ws_[A-Za-z\\d]{1,22}$"
+                            },
+                            "test": { "type": "boolean" },
+                            "subject": {
+                              "type": "object",
+                              "properties": {
+                                "kind": { "const": "collection" },
+                                "id": { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" }
+                              },
+                              "required": ["kind", "id"],
+                              "additionalProperties": false
+                            },
+                            "type": { "const": "collection.deleted" },
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "name": { "type": "string", "minLength": 1, "maxLength": 300 },
+                                "parentID": {
+                                  "anyOf": [
+                                    { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+                                    { "type": "null" }
+                                  ]
+                                },
+                                "deletedAt": { "type": "string", "format": "date-time" }
+                              },
+                              "required": ["name", "parentID", "deletedAt"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "operationID",
+                            "schemaVersion",
+                            "occurredAt",
+                            "workspaceID",
+                            "test",
+                            "subject",
+                            "type",
+                            "data"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string", "pattern": "^whevt_[A-Za-z\\d]{1,22}$" },
+                            "operationID": {
+                              "type": "string",
+                              "pattern": "^whop_[A-Za-z\\d]{1,22}$"
+                            },
+                            "schemaVersion": { "const": 1 },
+                            "occurredAt": { "type": "string", "format": "date-time" },
+                            "workspaceID": {
+                              "type": "string",
+                              "pattern": "^ws_[A-Za-z\\d]{1,22}$"
+                            },
+                            "test": { "type": "boolean" },
+                            "subject": {
+                              "type": "object",
+                              "properties": {
+                                "kind": { "const": "collection" },
+                                "id": { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" }
+                              },
+                              "required": ["kind", "id"],
+                              "additionalProperties": false
+                            },
+                            "type": { "const": "collection.restored" },
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "name": { "type": "string", "minLength": 1, "maxLength": 300 },
+                                "parentID": {
+                                  "anyOf": [
+                                    { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+                                    { "type": "null" }
+                                  ]
+                                }
+                              },
+                              "required": ["name", "parentID"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "operationID",
+                            "schemaVersion",
+                            "occurredAt",
+                            "workspaceID",
+                            "test",
+                            "subject",
+                            "type",
+                            "data"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string", "pattern": "^whevt_[A-Za-z\\d]{1,22}$" },
+                            "operationID": {
+                              "type": "string",
+                              "pattern": "^whop_[A-Za-z\\d]{1,22}$"
+                            },
+                            "schemaVersion": { "const": 1 },
+                            "occurredAt": { "type": "string", "format": "date-time" },
+                            "workspaceID": {
+                              "type": "string",
+                              "pattern": "^ws_[A-Za-z\\d]{1,22}$"
+                            },
+                            "test": { "type": "boolean" },
+                            "subject": {
+                              "type": "object",
+                              "properties": {
+                                "kind": { "const": "channel" },
+                                "code": { "type": "string", "minLength": 1, "maxLength": 50 }
+                              },
+                              "required": ["kind", "code"],
+                              "additionalProperties": false
+                            },
+                            "type": { "const": "publishing.channel_advanced" },
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "previousSnapshotID": {
+                                  "type": "string",
+                                  "pattern": "^snp_[A-Za-z\\d]{1,22}$"
+                                },
+                                "snapshotID": {
+                                  "type": "string",
+                                  "pattern": "^snp_[A-Za-z\\d]{1,22}$"
+                                },
+                                "reason": { "enum": ["publish", "unpublish"], "type": "string" }
+                              },
+                              "required": ["previousSnapshotID", "snapshotID", "reason"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "operationID",
+                            "schemaVersion",
+                            "occurredAt",
+                            "workspaceID",
+                            "test",
+                            "subject",
+                            "type",
+                            "data"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string", "pattern": "^whevt_[A-Za-z\\d]{1,22}$" },
+                            "operationID": {
+                              "type": "string",
+                              "pattern": "^whop_[A-Za-z\\d]{1,22}$"
+                            },
+                            "schemaVersion": { "const": 1 },
+                            "occurredAt": { "type": "string", "format": "date-time" },
+                            "workspaceID": {
+                              "type": "string",
+                              "pattern": "^ws_[A-Za-z\\d]{1,22}$"
+                            },
+                            "test": { "type": "boolean" },
+                            "subject": {
+                              "type": "object",
+                              "properties": {
+                                "kind": { "const": "channel" },
+                                "code": { "type": "string", "minLength": 1, "maxLength": 50 }
+                              },
+                              "required": ["kind", "code"],
+                              "additionalProperties": false
+                            },
+                            "type": { "const": "publishing.channel_created" },
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "name": { "type": "string", "minLength": 1, "maxLength": 50 },
+                                "builtIn": { "type": "boolean" },
+                                "snapshotID": {
+                                  "type": "string",
+                                  "pattern": "^snp_[A-Za-z\\d]{1,22}$"
+                                }
+                              },
+                              "required": ["name", "builtIn", "snapshotID"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "operationID",
+                            "schemaVersion",
+                            "occurredAt",
+                            "workspaceID",
+                            "test",
+                            "subject",
+                            "type",
+                            "data"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string", "pattern": "^whevt_[A-Za-z\\d]{1,22}$" },
+                            "operationID": {
+                              "type": "string",
+                              "pattern": "^whop_[A-Za-z\\d]{1,22}$"
+                            },
+                            "schemaVersion": { "const": 1 },
+                            "occurredAt": { "type": "string", "format": "date-time" },
+                            "workspaceID": {
+                              "type": "string",
+                              "pattern": "^ws_[A-Za-z\\d]{1,22}$"
+                            },
+                            "test": { "type": "boolean" },
+                            "subject": {
+                              "type": "object",
+                              "properties": {
+                                "kind": { "const": "channel" },
+                                "code": { "type": "string", "minLength": 1, "maxLength": 50 }
+                              },
+                              "required": ["kind", "code"],
+                              "additionalProperties": false
+                            },
+                            "type": { "const": "publishing.channel_deleted" },
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "name": { "type": "string", "minLength": 1, "maxLength": 50 },
+                                "snapshotID": {
+                                  "type": "string",
+                                  "pattern": "^snp_[A-Za-z\\d]{1,22}$"
+                                }
+                              },
+                              "required": ["name", "snapshotID"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "operationID",
+                            "schemaVersion",
+                            "occurredAt",
+                            "workspaceID",
+                            "test",
+                            "subject",
+                            "type",
+                            "data"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string", "pattern": "^whevt_[A-Za-z\\d]{1,22}$" },
+                            "operationID": {
+                              "type": "string",
+                              "pattern": "^whop_[A-Za-z\\d]{1,22}$"
+                            },
+                            "schemaVersion": { "const": 1 },
+                            "occurredAt": { "type": "string", "format": "date-time" },
+                            "workspaceID": {
+                              "type": "string",
+                              "pattern": "^ws_[A-Za-z\\d]{1,22}$"
+                            },
+                            "test": { "type": "boolean" },
+                            "subject": {
+                              "type": "object",
+                              "properties": {
+                                "kind": { "const": "extension" },
+                                "id": { "type": "string", "pattern": "^ext_[A-Za-z\\d]{1,22}$" }
+                              },
+                              "required": ["kind", "id"],
+                              "additionalProperties": false
+                            },
+                            "type": { "const": "extension.installed" },
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "version": { "type": "string", "minLength": 1, "maxLength": 64 }
+                              },
+                              "required": ["version"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "operationID",
+                            "schemaVersion",
+                            "occurredAt",
+                            "workspaceID",
+                            "test",
+                            "subject",
+                            "type",
+                            "data"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string", "pattern": "^whevt_[A-Za-z\\d]{1,22}$" },
+                            "operationID": {
+                              "type": "string",
+                              "pattern": "^whop_[A-Za-z\\d]{1,22}$"
+                            },
+                            "schemaVersion": { "const": 1 },
+                            "occurredAt": { "type": "string", "format": "date-time" },
+                            "workspaceID": {
+                              "type": "string",
+                              "pattern": "^ws_[A-Za-z\\d]{1,22}$"
+                            },
+                            "test": { "type": "boolean" },
+                            "subject": {
+                              "type": "object",
+                              "properties": {
+                                "kind": { "const": "extension" },
+                                "id": { "type": "string", "pattern": "^ext_[A-Za-z\\d]{1,22}$" }
+                              },
+                              "required": ["kind", "id"],
+                              "additionalProperties": false
+                            },
+                            "type": { "const": "extension.enabled" },
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "version": { "type": "string", "minLength": 1, "maxLength": 64 }
+                              },
+                              "required": ["version"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "operationID",
+                            "schemaVersion",
+                            "occurredAt",
+                            "workspaceID",
+                            "test",
+                            "subject",
+                            "type",
+                            "data"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string", "pattern": "^whevt_[A-Za-z\\d]{1,22}$" },
+                            "operationID": {
+                              "type": "string",
+                              "pattern": "^whop_[A-Za-z\\d]{1,22}$"
+                            },
+                            "schemaVersion": { "const": 1 },
+                            "occurredAt": { "type": "string", "format": "date-time" },
+                            "workspaceID": {
+                              "type": "string",
+                              "pattern": "^ws_[A-Za-z\\d]{1,22}$"
+                            },
+                            "test": { "type": "boolean" },
+                            "subject": {
+                              "type": "object",
+                              "properties": {
+                                "kind": { "const": "extension" },
+                                "id": { "type": "string", "pattern": "^ext_[A-Za-z\\d]{1,22}$" }
+                              },
+                              "required": ["kind", "id"],
+                              "additionalProperties": false
+                            },
+                            "type": { "const": "extension.disabled" },
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "version": { "type": "string", "minLength": 1, "maxLength": 64 },
+                                "reason": {
+                                  "enum": [
+                                    "manual",
+                                    "approval_required",
+                                    "configuration_required",
+                                    "revoked"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["version", "reason"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "operationID",
+                            "schemaVersion",
+                            "occurredAt",
+                            "workspaceID",
+                            "test",
+                            "subject",
+                            "type",
+                            "data"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string", "pattern": "^whevt_[A-Za-z\\d]{1,22}$" },
+                            "operationID": {
+                              "type": "string",
+                              "pattern": "^whop_[A-Za-z\\d]{1,22}$"
+                            },
+                            "schemaVersion": { "const": 1 },
+                            "occurredAt": { "type": "string", "format": "date-time" },
+                            "workspaceID": {
+                              "type": "string",
+                              "pattern": "^ws_[A-Za-z\\d]{1,22}$"
+                            },
+                            "test": { "type": "boolean" },
+                            "subject": {
+                              "type": "object",
+                              "properties": {
+                                "kind": { "const": "extension" },
+                                "id": { "type": "string", "pattern": "^ext_[A-Za-z\\d]{1,22}$" }
+                              },
+                              "required": ["kind", "id"],
+                              "additionalProperties": false
+                            },
+                            "type": { "const": "extension.updated" },
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "version": { "type": "string", "minLength": 1, "maxLength": 64 },
+                                "previousVersion": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 64
+                                }
+                              },
+                              "required": ["version", "previousVersion"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "operationID",
+                            "schemaVersion",
+                            "occurredAt",
+                            "workspaceID",
+                            "test",
+                            "subject",
+                            "type",
+                            "data"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string", "pattern": "^whevt_[A-Za-z\\d]{1,22}$" },
+                            "operationID": {
+                              "type": "string",
+                              "pattern": "^whop_[A-Za-z\\d]{1,22}$"
+                            },
+                            "schemaVersion": { "const": 1 },
+                            "occurredAt": { "type": "string", "format": "date-time" },
+                            "workspaceID": {
+                              "type": "string",
+                              "pattern": "^ws_[A-Za-z\\d]{1,22}$"
+                            },
+                            "test": { "type": "boolean" },
+                            "subject": {
+                              "type": "object",
+                              "properties": {
+                                "kind": { "const": "extension" },
+                                "id": { "type": "string", "pattern": "^ext_[A-Za-z\\d]{1,22}$" }
+                              },
+                              "required": ["kind", "id"],
+                              "additionalProperties": false
+                            },
+                            "type": { "const": "extension.configured" },
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "version": { "type": "string", "minLength": 1, "maxLength": 64 },
+                                "changedFields": {
+                                  "type": "array",
+                                  "maxItems": 100,
+                                  "items": { "type": "string", "maxLength": 64 },
+                                  "description": "Keys only, never values"
+                                }
+                              },
+                              "required": ["version", "changedFields"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "operationID",
+                            "schemaVersion",
+                            "occurredAt",
+                            "workspaceID",
+                            "test",
+                            "subject",
+                            "type",
+                            "data"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string", "pattern": "^whevt_[A-Za-z\\d]{1,22}$" },
+                            "operationID": {
+                              "type": "string",
+                              "pattern": "^whop_[A-Za-z\\d]{1,22}$"
+                            },
+                            "schemaVersion": { "const": 1 },
+                            "occurredAt": { "type": "string", "format": "date-time" },
+                            "workspaceID": {
+                              "type": "string",
+                              "pattern": "^ws_[A-Za-z\\d]{1,22}$"
+                            },
+                            "test": { "type": "boolean" },
+                            "subject": {
+                              "type": "object",
+                              "properties": {
+                                "kind": { "const": "extension" },
+                                "id": { "type": "string", "pattern": "^ext_[A-Za-z\\d]{1,22}$" }
+                              },
+                              "required": ["kind", "id"],
+                              "additionalProperties": false
+                            },
+                            "type": { "const": "extension.uninstalled" },
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "version": { "type": "string", "minLength": 1, "maxLength": 64 }
+                              },
+                              "required": ["version"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "operationID",
+                            "schemaVersion",
+                            "occurredAt",
+                            "workspaceID",
+                            "test",
+                            "subject",
+                            "type",
+                            "data"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ],
+                      "description": "The event as the extension's webhook receives it"
+                    }
+                  },
+                  "required": ["deliveryID", "event"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "BAD_REQUEST" },
+                        "status": { "const": 400 },
+                        "message": { "type": "string", "default": "Bad Request" },
+                        "data": { "$ref": "#/components/schemas/ValidationErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "UNAUTHORIZED" },
+                        "status": { "const": 401 },
+                        "message": { "type": "string", "default": "Unauthorized" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "FORBIDDEN" },
+                        "status": { "const": 403 },
+                        "message": { "type": "string", "default": "Forbidden" },
+                        "data": { "$ref": "#/components/schemas/ForbiddenErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "NOT_FOUND" },
+                        "status": { "const": 404 },
+                        "message": { "type": "string", "default": "Not Found" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "CONFLICT" },
+                        "status": { "const": 409 },
+                        "message": { "type": "string", "default": "Conflict" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "TOO_MANY_REQUESTS" },
+                        "status": { "const": 429 },
+                        "message": { "type": "string", "default": "Too Many Requests" },
+                        "data": { "$ref": "#/components/schemas/RateLimitErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "INTERNAL_SERVER_ERROR" },
+                        "status": { "const": 500 },
+                        "message": { "type": "string", "default": "Internal Server Error" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "SERVICE_UNAVAILABLE" },
+                        "status": { "const": 503 },
+                        "message": { "type": "string", "default": "Service Unavailable" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "extensionToken": [] }]
+      }
+    },
+    "/extensions/self/configuration": {
+      "get": {
+        "operationId": "extensions.getSelfConfiguration",
+        "summary": "Get the configuration",
+        "description": "Returns the extension's configuration, including secret fields, and its revision. Unset fields use their defaults.",
+        "tags": ["extensions"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "values": {
+                      "type": "object",
+                      "propertyNames": { "type": "string" },
+                      "additionalProperties": {
+                        "anyOf": [
+                          { "type": "string" },
+                          { "type": "number" },
+                          { "type": "boolean" },
+                          { "type": "null" },
+                          {
+                            "type": "array",
+                            "items": {
+                              "anyOf": [
+                                { "type": "string" },
+                                { "type": "number" },
+                                { "type": "boolean" },
+                                { "type": "null" },
+                                { "type": "array", "items": { "anyOf": [{}, { "type": "null" }] } },
+                                {
+                                  "type": "object",
+                                  "propertyNames": { "type": "string" },
+                                  "additionalProperties": {}
+                                }
+                              ]
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "propertyNames": { "type": "string" },
+                            "additionalProperties": {
+                              "anyOf": [
+                                { "type": "string" },
+                                { "type": "number" },
+                                { "type": "boolean" },
+                                { "type": "null" },
+                                { "type": "array", "items": { "anyOf": [{}, { "type": "null" }] } },
+                                {
+                                  "type": "object",
+                                  "propertyNames": { "type": "string" },
+                                  "additionalProperties": {}
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "description": "All values, including secret fields"
+                    },
+                    "revision": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991,
+                      "exclusiveMinimum": 0
+                    }
+                  },
+                  "required": ["values", "revision"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "BAD_REQUEST" },
+                        "status": { "const": 400 },
+                        "message": { "type": "string", "default": "Bad Request" },
+                        "data": { "$ref": "#/components/schemas/ValidationErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "UNAUTHORIZED" },
+                        "status": { "const": 401 },
+                        "message": { "type": "string", "default": "Unauthorized" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "FORBIDDEN" },
+                        "status": { "const": 403 },
+                        "message": { "type": "string", "default": "Forbidden" },
+                        "data": { "$ref": "#/components/schemas/ForbiddenErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "NOT_FOUND" },
+                        "status": { "const": 404 },
+                        "message": { "type": "string", "default": "Not Found" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "CONFLICT" },
+                        "status": { "const": 409 },
+                        "message": { "type": "string", "default": "Conflict" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "TOO_MANY_REQUESTS" },
+                        "status": { "const": 429 },
+                        "message": { "type": "string", "default": "Too Many Requests" },
+                        "data": { "$ref": "#/components/schemas/RateLimitErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "INTERNAL_SERVER_ERROR" },
+                        "status": { "const": 500 },
+                        "message": { "type": "string", "default": "Internal Server Error" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "SERVICE_UNAVAILABLE" },
+                        "status": { "const": 503 },
+                        "message": { "type": "string", "default": "Service Unavailable" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "extensionToken": [] }]
+      }
+    },
+    "/extensions/self/storage/entry": {
+      "get": {
+        "operationId": "extensions.getSelfStorageEntry",
+        "summary": "Get a storage entry",
+        "description": "Returns an entry of the extension's storage, or NOT_FOUND.",
+        "tags": ["extensions"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256,
+              "pattern": "^\\P{Cc}+$"
+            },
+            "allowEmptyValue": true,
+            "allowReserved": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "key": { "type": "string" },
+                    "value": {
+                      "anyOf": [
+                        { "type": "string" },
+                        { "type": "number" },
+                        { "type": "boolean" },
+                        { "type": "null" },
+                        {
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              { "type": "string" },
+                              { "type": "number" },
+                              { "type": "boolean" },
+                              { "type": "null" },
+                              { "type": "array", "items": { "anyOf": [{}, { "type": "null" }] } },
+                              {
+                                "type": "object",
+                                "propertyNames": { "type": "string" },
+                                "additionalProperties": {}
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "propertyNames": { "type": "string" },
+                          "additionalProperties": {
+                            "anyOf": [
+                              { "type": "string" },
+                              { "type": "number" },
+                              { "type": "boolean" },
+                              { "type": "null" },
+                              { "type": "array", "items": { "anyOf": [{}, { "type": "null" }] } },
+                              {
+                                "type": "object",
+                                "propertyNames": { "type": "string" },
+                                "additionalProperties": {}
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    "updatedAt": { "type": "string", "format": "date-time" }
+                  },
+                  "required": ["key", "value", "updatedAt"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "BAD_REQUEST" },
+                        "status": { "const": 400 },
+                        "message": { "type": "string", "default": "Bad Request" },
+                        "data": { "$ref": "#/components/schemas/ValidationErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "UNAUTHORIZED" },
+                        "status": { "const": 401 },
+                        "message": { "type": "string", "default": "Unauthorized" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "FORBIDDEN" },
+                        "status": { "const": 403 },
+                        "message": { "type": "string", "default": "Forbidden" },
+                        "data": { "$ref": "#/components/schemas/ForbiddenErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "NOT_FOUND" },
+                        "status": { "const": 404 },
+                        "message": { "type": "string", "default": "Not Found" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "CONFLICT" },
+                        "status": { "const": 409 },
+                        "message": { "type": "string", "default": "Conflict" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "TOO_MANY_REQUESTS" },
+                        "status": { "const": 429 },
+                        "message": { "type": "string", "default": "Too Many Requests" },
+                        "data": { "$ref": "#/components/schemas/RateLimitErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "INTERNAL_SERVER_ERROR" },
+                        "status": { "const": 500 },
+                        "message": { "type": "string", "default": "Internal Server Error" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "SERVICE_UNAVAILABLE" },
+                        "status": { "const": 503 },
+                        "message": { "type": "string", "default": "Service Unavailable" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "extensionToken": [] }]
+      },
+      "put": {
+        "operationId": "extensions.setSelfStorageEntry",
+        "summary": "Set a storage entry",
+        "description": "Creates or replaces an entry of the extension's storage. Values are JSON up to 128 KiB; the storage holds up to 10,000 entries and 10 MiB.",
+        "tags": ["extensions"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256,
+                    "pattern": "^\\P{Cc}+$"
+                  },
+                  "value": {
+                    "anyOf": [
+                      { "type": "string" },
+                      { "type": "number" },
+                      { "type": "boolean" },
+                      { "type": "null" },
+                      {
+                        "type": "array",
+                        "items": {
+                          "anyOf": [
+                            { "type": "string" },
+                            { "type": "number" },
+                            { "type": "boolean" },
+                            { "type": "null" },
+                            { "type": "array", "items": {} },
+                            {
+                              "type": "object",
+                              "propertyNames": { "type": "string" },
+                              "additionalProperties": {}
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "propertyNames": { "type": "string" },
+                        "additionalProperties": {
+                          "anyOf": [
+                            { "type": "string" },
+                            { "type": "number" },
+                            { "type": "boolean" },
+                            { "type": "null" },
+                            { "type": "array", "items": {} },
+                            {
+                              "type": "object",
+                              "propertyNames": { "type": "string" },
+                              "additionalProperties": {}
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                "required": ["key", "value"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "key": { "type": "string" },
+                    "updatedAt": { "type": "string", "format": "date-time" }
+                  },
+                  "required": ["key", "updatedAt"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "BAD_REQUEST" },
+                        "status": { "const": 400 },
+                        "message": { "type": "string", "default": "Bad Request" },
+                        "data": { "$ref": "#/components/schemas/ValidationErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "UNAUTHORIZED" },
+                        "status": { "const": 401 },
+                        "message": { "type": "string", "default": "Unauthorized" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "FORBIDDEN" },
+                        "status": { "const": 403 },
+                        "message": { "type": "string", "default": "Forbidden" },
+                        "data": { "$ref": "#/components/schemas/ForbiddenErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "NOT_FOUND" },
+                        "status": { "const": 404 },
+                        "message": { "type": "string", "default": "Not Found" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "CONFLICT" },
+                        "status": { "const": 409 },
+                        "message": { "type": "string", "default": "Conflict" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "TOO_MANY_REQUESTS" },
+                        "status": { "const": 429 },
+                        "message": { "type": "string", "default": "Too Many Requests" },
+                        "data": { "$ref": "#/components/schemas/RateLimitErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "INTERNAL_SERVER_ERROR" },
+                        "status": { "const": 500 },
+                        "message": { "type": "string", "default": "Internal Server Error" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "SERVICE_UNAVAILABLE" },
+                        "status": { "const": 503 },
+                        "message": { "type": "string", "default": "Service Unavailable" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "extensionToken": [] }]
+      },
+      "delete": {
+        "operationId": "extensions.deleteSelfStorageEntry",
+        "summary": "Delete a storage entry",
+        "description": "Deletes an entry of the extension's storage, if it exists.",
+        "tags": ["extensions"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256,
+              "pattern": "^\\P{Cc}+$"
+            },
+            "allowEmptyValue": true,
+            "allowReserved": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "deleted": { "type": "boolean" } },
+                  "required": ["deleted"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "BAD_REQUEST" },
+                        "status": { "const": 400 },
+                        "message": { "type": "string", "default": "Bad Request" },
+                        "data": { "$ref": "#/components/schemas/ValidationErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "UNAUTHORIZED" },
+                        "status": { "const": 401 },
+                        "message": { "type": "string", "default": "Unauthorized" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "FORBIDDEN" },
+                        "status": { "const": 403 },
+                        "message": { "type": "string", "default": "Forbidden" },
+                        "data": { "$ref": "#/components/schemas/ForbiddenErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "NOT_FOUND" },
+                        "status": { "const": 404 },
+                        "message": { "type": "string", "default": "Not Found" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "CONFLICT" },
+                        "status": { "const": 409 },
+                        "message": { "type": "string", "default": "Conflict" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "TOO_MANY_REQUESTS" },
+                        "status": { "const": 429 },
+                        "message": { "type": "string", "default": "Too Many Requests" },
+                        "data": { "$ref": "#/components/schemas/RateLimitErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "INTERNAL_SERVER_ERROR" },
+                        "status": { "const": 500 },
+                        "message": { "type": "string", "default": "Internal Server Error" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "SERVICE_UNAVAILABLE" },
+                        "status": { "const": 503 },
+                        "message": { "type": "string", "default": "Service Unavailable" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "extensionToken": [] }]
+      }
+    },
+    "/extensions/self/storage": {
+      "get": {
+        "operationId": "extensions.listSelfStorageEntries",
+        "summary": "List storage entries",
+        "description": "Lists the extension's storage entries in key order, optionally with a key prefix. A page ends early when its values reach 192 KiB.",
+        "tags": ["extensions"],
+        "parameters": [
+          {
+            "name": "prefix",
+            "in": "query",
+            "schema": { "type": "string", "maxLength": 256 },
+            "allowEmptyValue": true,
+            "allowReserved": true
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256,
+              "pattern": "^\\P{Cc}+$",
+              "description": "Return entries after this key"
+            },
+            "allowEmptyValue": true,
+            "allowReserved": true
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 100 },
+            "allowEmptyValue": true,
+            "allowReserved": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": { "type": "string" },
+                          "value": {
+                            "anyOf": [
+                              { "type": "string" },
+                              { "type": "number" },
+                              { "type": "boolean" },
+                              { "type": "null" },
+                              {
+                                "type": "array",
+                                "items": {
+                                  "anyOf": [
+                                    { "type": "string" },
+                                    { "type": "number" },
+                                    { "type": "boolean" },
+                                    { "type": "null" },
+                                    {
+                                      "type": "array",
+                                      "items": { "anyOf": [{}, { "type": "null" }] }
+                                    },
+                                    {
+                                      "type": "object",
+                                      "propertyNames": { "type": "string" },
+                                      "additionalProperties": {}
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "propertyNames": { "type": "string" },
+                                "additionalProperties": {
+                                  "anyOf": [
+                                    { "type": "string" },
+                                    { "type": "number" },
+                                    { "type": "boolean" },
+                                    { "type": "null" },
+                                    {
+                                      "type": "array",
+                                      "items": { "anyOf": [{}, { "type": "null" }] }
+                                    },
+                                    {
+                                      "type": "object",
+                                      "propertyNames": { "type": "string" },
+                                      "additionalProperties": {}
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "updatedAt": { "type": "string", "format": "date-time" }
+                        },
+                        "required": ["key", "value", "updatedAt"]
+                      }
+                    },
+                    "hasMore": { "type": "boolean" }
+                  },
+                  "required": ["data", "hasMore"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "BAD_REQUEST" },
+                        "status": { "const": 400 },
+                        "message": { "type": "string", "default": "Bad Request" },
+                        "data": { "$ref": "#/components/schemas/ValidationErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "UNAUTHORIZED" },
+                        "status": { "const": 401 },
+                        "message": { "type": "string", "default": "Unauthorized" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "FORBIDDEN" },
+                        "status": { "const": 403 },
+                        "message": { "type": "string", "default": "Forbidden" },
+                        "data": { "$ref": "#/components/schemas/ForbiddenErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "NOT_FOUND" },
+                        "status": { "const": 404 },
+                        "message": { "type": "string", "default": "Not Found" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "CONFLICT" },
+                        "status": { "const": 409 },
+                        "message": { "type": "string", "default": "Conflict" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "TOO_MANY_REQUESTS" },
+                        "status": { "const": 429 },
+                        "message": { "type": "string", "default": "Too Many Requests" },
+                        "data": { "$ref": "#/components/schemas/RateLimitErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "INTERNAL_SERVER_ERROR" },
+                        "status": { "const": 500 },
+                        "message": { "type": "string", "default": "Internal Server Error" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "SERVICE_UNAVAILABLE" },
+                        "status": { "const": 503 },
+                        "message": { "type": "string", "default": "Service Unavailable" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "extensionToken": [] }]
       }
     },
     "/collections": {

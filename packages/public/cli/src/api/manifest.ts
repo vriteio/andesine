@@ -7801,6 +7801,7 @@ const schemas: Record<string, JSONSchema> = {
       "roles",
       "webhooks",
       "read:webhooks",
+      "extensions",
       "workspace"
     ],
     type: "string"

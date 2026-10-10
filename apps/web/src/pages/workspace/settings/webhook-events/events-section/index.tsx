@@ -4,11 +4,8 @@ import { createMutation } from "@tanstack/solid-query";
 import { batch, type Component, createSignal, type JSX, Show, Suspense } from "solid-js";
 import { ActionConfirmationDialog } from "#web/components/action-confirmation-dialog";
 import { useNotify } from "#web/context/notifications";
-import { useWorkspace } from "#web/context/workspace";
-import { client } from "#web/lib/api";
 import {
   getWebhookErrorCode,
-  type Webhook,
   type WebhookEvent,
   type WebhookEventState,
   webhookEventsQuery
@@ -16,15 +13,14 @@ import {
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
 import { getWebhookHost } from "../../webhook/configuration";
+import type { WebhookEventsEndpoint, WebhookEventsSource } from "../source";
 import { formatEventCount, getReplayLabel } from "./event-item";
 import { EventTreeSkeleton } from "./event-skeleton";
 import { EventTree } from "./event-tree";
 import { TestEventSetting } from "./test-event-setting";
 
 interface EventsSectionProps {
-  webhook?: Webhook | null;
-  webhookID: string;
-  workspaceID: string;
+  source: WebhookEventsSource;
 }
 
 type EventFilter = WebhookEventState | "all";
@@ -37,7 +33,7 @@ const getFilterLabel = (label: string, count: number | undefined) => (
     </Show>
   </span>
 );
-const getFilterOptions = (webhook: Webhook | null | undefined) => {
+const getFilterOptions = (webhook: WebhookEventsEndpoint | null | undefined) => {
   const options: Array<{ value: EventFilter; label: JSX.Element }> = [
     { value: "all", label: "All" },
     {
@@ -67,28 +63,20 @@ const getReplayErrorMessage = (code: string | undefined) => {
 };
 const EventsSection: Component<EventsSectionProps> = (props) => {
   const notify = useNotify();
-  const { hasPermission } = useWorkspace();
   const [filter, setFilter] = createSignal<EventFilter>("all");
   const [pageCount, setPageCount] = createSignal(1);
   const [replayTargets, setReplayTargets] = createSignal<WebhookEvent[]>([]);
   const deliveries = createAsync(() => {
     const state = filter() === "all" ? undefined : (filter() as WebhookEventState);
 
-    return webhookEventsQuery({
-      workspaceID: props.workspaceID,
-      webhookID: props.webhookID,
-      state,
-      pageCount: pageCount()
-    });
+    return webhookEventsQuery({ ...props.source.target, state, pageCount: pageCount() });
   });
   const events = () => deliveries()?.data || [];
   const replayMutation = createMutation(() => ({
     retry: false,
-    mutationFn: (input: { deliveryIDs: string[]; expectedDestinationRevision: number }) => {
-      return client.webhooks.bulkRedeliver({ id: props.webhookID, ...input });
-    },
-    onSuccess: (_, input) => {
-      const count = input.deliveryIDs.length;
+    mutationFn: (deliveryIDs: string[]) => props.source.replay(deliveryIDs),
+    onSuccess: (_, deliveryIDs) => {
+      const count = deliveryIDs.length;
 
       setReplayTargets([]);
       notify({ type: "success", text: count === 1 ? "Replay queued" : `${count} replays queued` });
@@ -97,7 +85,12 @@ const EventsSection: Component<EventsSectionProps> = (props) => {
       console.error(error);
       setReplayTargets([]);
       notify({ type: "error", text: getReplayErrorMessage(getWebhookErrorCode(error)) });
-      void revalidate(["webhook", "webhook-events", "webhook-event-timeline"]);
+      void revalidate([
+        "webhook",
+        "extension-webhooks",
+        "webhook-events",
+        "webhook-event-timeline"
+      ]);
     }
   }));
   const replayLabel = () => getReplayLabel(replayTargets());
@@ -114,7 +107,7 @@ const EventsSection: Component<EventsSectionProps> = (props) => {
         opened={replayTargets().length > 0}
         title={`${replayLabel()} ${replayTargets().length === 1 ? "event" : formatEventCount(replayTargets().length)}?`}
         description={`Andesine sends the original events again to ${getWebhookHost(
-          props.webhook?.url || ""
+          props.source.endpoint?.url || ""
         )}, with the same event IDs and payloads. Receivers should ignore events they already processed.`}
         affected={replayTargets().map((event) => ({
           id: event.id,
@@ -125,24 +118,15 @@ const EventsSection: Component<EventsSectionProps> = (props) => {
           color: "primary",
           label: replayLabel(),
           loading: replayMutation.isPending,
-          onClick: () => {
-            const webhook = props.webhook;
-
-            if (webhook) {
-              replayMutation.mutate({
-                deliveryIDs: replayTargets().map(({ id }) => id),
-                expectedDestinationRevision: webhook.destinationRevision
-              });
-            }
-          }
+          onClick: () => replayMutation.mutate(replayTargets().map(({ id }) => id))
         }}
         onClose={() => {
           if (!replayMutation.isPending) setReplayTargets([]);
         }}
       />
       <SettingsSection label="Events">
-        <Show when={hasPermission("webhooks") && props.webhook}>
-          {(webhook) => <TestEventSetting webhook={webhook()} />}
+        <Show when={props.source.canTest && props.source.endpoint}>
+          <TestEventSetting source={props.source} />
         </Show>
         <Setting
           label="Event deliveries"
@@ -152,12 +136,12 @@ const EventsSection: Component<EventsSectionProps> = (props) => {
           <ToggleGroup
             value={filter()}
             setValue={(value) => changeFilter(value as EventFilter)}
-            options={getFilterOptions(props.webhook)}
+            options={getFilterOptions(props.source.endpoint)}
           />
         </Setting>
         <Suspense fallback={<EventTreeSkeleton />}>
           <Show
-            when={events().length && props.webhook}
+            when={events().length && props.source.endpoint}
             fallback={
               <Card
                 class="flex h-16 items-center justify-center gap-1 rounded-lg bg-white px-2 text-sm text-gray-400"
@@ -168,21 +152,12 @@ const EventsSection: Component<EventsSectionProps> = (props) => {
               </Card>
             }
           >
-            {(webhook) => (
-              <EventTree
-                events={events()}
-                webhook={webhook() as Webhook}
-                workspaceID={props.workspaceID}
-                canManage={hasPermission("webhooks")}
-                onReplay={setReplayTargets}
-              />
-            )}
+            <EventTree events={events()} source={props.source} onReplay={setReplayTargets} />
           </Show>
           <Show when={deliveries()?.pagination.hasMore}>
             <Button
-              variant="text"
+              variant="ghost"
               text="soft"
-              size="small"
               class="mt-1 self-center"
               onClick={() => setPageCount((current) => current + 1)}
             >

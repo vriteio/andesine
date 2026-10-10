@@ -95,8 +95,8 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
         : `${LexoRank.middle()}`,
       name: getAvailableContentName(
         {
-          entries: input.entriesCollection().find().fetch(),
-          collections: input.collectionsCollection().find().fetch()
+          entries: input.entriesCollection().find({}, { reactive: false }).fetch(),
+          collections: input.collectionsCollection().find({}, { reactive: false }).fetch()
         },
         { id, kind: "entry", parentID: collectionID, name: "Untitled" }
       ),

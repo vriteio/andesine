@@ -89,6 +89,11 @@ const isWorkspaceEventVisible = (
     return hasAuthorizationRequirements(auth, { session: ["read:webhooks"] });
   }
 
+  // Every member's editor resolves element views from the active view index.
+  if (event.action.startsWith("extension:")) {
+    return hasAuthorizationRequirements(auth, { session: true });
+  }
+
   if (event.action.startsWith("workspace:")) {
     return hasAuthorizationRequirements(auth, { session: true });
   }

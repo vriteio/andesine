@@ -53,9 +53,7 @@ const Select = <O extends Option>(props: SelectProps<O>): JSX.Element => {
             <Button
               {...triggerProps()}
               class={clsx("group/select-trigger flex w-full items-center px-2", props.triggerClass)}
-              variant="outlined"
-              color="contrast"
-              size="small"
+              variant="secondary"
               disabled={props.disabled}
             >
               <ArkSelect.ValueText

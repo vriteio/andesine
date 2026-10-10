@@ -63,6 +63,8 @@ const generateAPI = async (): Promise<void> => {
     await readFile(new URL("../sdk/openapi.json", root), "utf8")
   );
   const commands: APICommand[] = [];
+  // Extension API operations need extension JWTs, which the CLI does not sign.
+  const extensionOperations: string[] = [];
   const names = new Set<string>();
   const ids = new Set<string>();
   const schemas: Record<string, JSONSchema> = {};
@@ -112,6 +114,13 @@ const generateAPI = async (): Promise<void> => {
     for (const [method, operation] of Object.entries(item)) {
       if (!["get", "post", "put", "patch", "delete", "head", "options"].includes(method)) {
         throw new Error(`Unsupported path member: ${method} ${path}`);
+      }
+
+      const isExtensionOnly = operation.security?.every((item) => "extensionToken" in item);
+
+      if (isExtensionOnly && operation.security?.length) {
+        extensionOperations.push(operation.operationId);
+        continue;
       }
 
       if (!/^[a-z][A-Za-z\d]*\.[a-z][A-Za-z\d]*$/.test(operation.operationId)) {
@@ -282,7 +291,7 @@ const generateAPI = async (): Promise<void> => {
 
   const manifest = `/* eslint-disable max-lines */
 // Generated from SDK openapi.json. Do not edit.\nimport type { APICommand, JSONSchema } from "./types";\n\nconst commands: APICommand[] = ${JSON.stringify(commands, null, 2)};\nconst schemas: Record<string, JSONSchema> = ${JSON.stringify(schemas, null, 2)};\nexport { commands, schemas };\n`;
-  const bindings = `// Generated from SDK openapi.json. Do not edit.\nimport type { operations, OperationInput } from "@andesine/sdk";\nimport type { SDKOperation } from "./types";\n\nconst bindings: Record<keyof operations, SDKOperation> = {\n${commands.map((command) => `${JSON.stringify(command.id)}: (client, input, options) => client.${command.id}(input as OperationInput<${JSON.stringify(command.id)}>, options)`).join(",\n")}\n};\nexport { bindings };\n`;
+  const bindings = `// Generated from SDK openapi.json. Do not edit.\nimport type { operations, OperationInput } from "@andesine/sdk";\nimport type { SDKOperation } from "./types";\n\nconst bindings: Record<Exclude<keyof operations, ${extensionOperations.map((id) => JSON.stringify(id)).join(" | ") || "never"}>, SDKOperation> = {\n${commands.map((command) => `${JSON.stringify(command.id)}: (client, input, options) => client.${command.id}(input as OperationInput<${JSON.stringify(command.id)}>, options)`).join(",\n")}\n};\nexport { bindings };\n`;
 
   const formatting = {
     ...(await resolveConfig(new URL("package.json", root).pathname)),

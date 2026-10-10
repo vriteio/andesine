@@ -28,6 +28,7 @@ export * from "./workspaces";
 export * from "./publishing";
 export * from "./versions";
 export * from "./webhooks";
+export * from "./extensions";
 export * from "./schema-versions";
 export * from "./schema-migrations";
 export * from "./schemas";

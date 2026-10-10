@@ -95,6 +95,9 @@ const NewWorkspacePage: Component = () => {
             </div>
             <div class="flex flex-col my-4 gap-2.5">
               <Input
+                size="medium"
+                color="base"
+                variant="solid"
                 placeholder="Workspace name"
                 value={name()}
                 setValue={setName}
@@ -106,7 +109,8 @@ const NewWorkspacePage: Component = () => {
                     <IconButton
                       disabled={!name().trim() || createWorkspaceMutation.isPending}
                       icon="i-lucide:arrow-right"
-                      color="primary"
+                      variant="primary"
+                      size="medium"
                       onClick={handleCreate}
                     />
                   </Tooltip>
@@ -123,12 +127,8 @@ const NewWorkspacePage: Component = () => {
                     <IconButton
                       icon="i-lucide:log-out"
                       iconProps={{ class: "h-4 w-4" }}
-                      variant="text"
-                      text="primary"
-                      color="primary"
-                      size="small"
+                      variant="link"
                       label={() => <span>Log out</span>}
-                      hover="underline"
                       class="gap-1 inline-flex font-medium px-0 -mt-1"
                       loading={signOutMutation.isPending}
                       onClick={async () => {
@@ -143,12 +143,8 @@ const NewWorkspacePage: Component = () => {
                 <IconButton
                   icon="i-lucide:arrow-left"
                   iconProps={{ class: "h-4 w-4" }}
-                  variant="text"
-                  text="primary"
-                  color="primary"
-                  size="small"
+                  variant="link"
                   label={() => <span>Go back</span>}
-                  hover="underline"
                   class="gap-1 inline-flex font-medium px-0 -mt-1"
                   onClick={goBack}
                 ></IconButton>

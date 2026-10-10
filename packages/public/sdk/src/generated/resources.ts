@@ -197,6 +197,62 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
      */
     list: Operation<"entries.list", Workspace>;
   };
+  extensions: {
+    /**
+     * Get the extension
+     *
+     * Returns the installed extension that the token's subject names, including disabled and uninstalled extensions.
+     */
+    getSelf: Operation<"extensions.getSelf", Workspace>;
+    /**
+     * Verify a session token
+     *
+     * Verifies a session token from the extension frontend and returns its member. Tokens of other extensions, expired tokens, and tokens of an earlier extension generation fail with NOT_FOUND.
+     */
+    verifySession: Operation<"extensions.verifySession", Workspace>;
+    /**
+     * List installations
+     *
+     * Lists the installations of the extension on this instance. Requires an app-level token: an extension JWT without a subject.
+     */
+    listInstallations: Operation<"extensions.listInstallations", Workspace>;
+    /**
+     * Get a delivery
+     *
+     * Returns the event of a delivery to one of the extension's webhooks. Disabled and uninstalled extensions can read only lifecycle deliveries.
+     */
+    getSelfDelivery: Operation<"extensions.getSelfDelivery", Workspace>;
+    /**
+     * Get the configuration
+     *
+     * Returns the extension's configuration, including secret fields, and its revision. Unset fields use their defaults.
+     */
+    getSelfConfiguration: Operation<"extensions.getSelfConfiguration", Workspace>;
+    /**
+     * Get a storage entry
+     *
+     * Returns an entry of the extension's storage, or NOT_FOUND.
+     */
+    getSelfStorageEntry: Operation<"extensions.getSelfStorageEntry", Workspace>;
+    /**
+     * Set a storage entry
+     *
+     * Creates or replaces an entry of the extension's storage. Values are JSON up to 128 KiB; the storage holds up to 10,000 entries and 10 MiB.
+     */
+    setSelfStorageEntry: Operation<"extensions.setSelfStorageEntry", Workspace>;
+    /**
+     * Delete a storage entry
+     *
+     * Deletes an entry of the extension's storage, if it exists.
+     */
+    deleteSelfStorageEntry: Operation<"extensions.deleteSelfStorageEntry", Workspace>;
+    /**
+     * List storage entries
+     *
+     * Lists the extension's storage entries in key order, optionally with a key prefix. A page ends early when its values reach 192 KiB.
+     */
+    listSelfStorageEntries: Operation<"extensions.listSelfStorageEntries", Workspace>;
+  };
   collections: {
     /**
      * Create a collection
@@ -1374,6 +1430,98 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       path: "/entries/list",
       pathParams: [],
       queryParams: ["collectionID", "collectionPath", "collectionSlugPath", "cursor", "limit"],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    })
+  },
+  extensions: {
+    getSelf: operation<"extensions.getSelf", Workspace>(request, {
+      method: "get",
+      path: "/extensions/self",
+      pathParams: [],
+      queryParams: [],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    verifySession: operation<"extensions.verifySession", Workspace>(request, {
+      method: "post",
+      path: "/extensions/self/sessions/verify",
+      pathParams: [],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    listInstallations: operation<"extensions.listInstallations", Workspace>(request, {
+      method: "get",
+      path: "/extensions/self/installations",
+      pathParams: [],
+      queryParams: ["after", "limit"],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    getSelfDelivery: operation<"extensions.getSelfDelivery", Workspace>(request, {
+      method: "get",
+      path: "/extensions/self/deliveries/{deliveryID}",
+      pathParams: ["deliveryID"],
+      queryParams: [],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    getSelfConfiguration: operation<"extensions.getSelfConfiguration", Workspace>(request, {
+      method: "get",
+      path: "/extensions/self/configuration",
+      pathParams: [],
+      queryParams: [],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    getSelfStorageEntry: operation<"extensions.getSelfStorageEntry", Workspace>(request, {
+      method: "get",
+      path: "/extensions/self/storage/entry",
+      pathParams: [],
+      queryParams: ["key"],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    setSelfStorageEntry: operation<"extensions.setSelfStorageEntry", Workspace>(request, {
+      method: "put",
+      path: "/extensions/self/storage/entry",
+      pathParams: [],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    deleteSelfStorageEntry: operation<"extensions.deleteSelfStorageEntry", Workspace>(request, {
+      method: "delete",
+      path: "/extensions/self/storage/entry",
+      pathParams: [],
+      queryParams: ["key"],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    listSelfStorageEntries: operation<"extensions.listSelfStorageEntries", Workspace>(request, {
+      method: "get",
+      path: "/extensions/self/storage",
+      pathParams: [],
+      queryParams: ["prefix", "after", "limit"],
       body: false,
       multipart: false,
       binary: false,

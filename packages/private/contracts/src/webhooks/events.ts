@@ -1,4 +1,5 @@
 import { publicID } from "../primitives/id";
+import { uniqueItems } from "../primitives/unique";
 import { JSON_SCHEMA_REGISTRY } from "@orpc/zod/zod4";
 import * as z from "zod";
 import { webhookEventNames, webhookReadPermissions } from "./catalog-definitions";
@@ -10,7 +11,6 @@ type WebhookEventName = WebhookEvent["type"];
 // Strict objects reject accidental document, private matching, or destination data.
 const webhookChannelCodeType = z.string().min(1).max(50);
 const webhookReadPermissionType = z.enum(webhookReadPermissions);
-const uniqueItems = <T>(values: T[]): boolean => new Set(values).size === values.length;
 const nameType = z.string().min(1).max(300);
 const parentType = publicID("coll").nullable();
 const contentHashType = z.string().regex(/^[a-f\d]{64}$/);
@@ -160,6 +160,7 @@ const webhookEventType = z.discriminatedUnion("type", [
 ]);
 
 export {
+  envelopeType as webhookEnvelopeType,
   webhookChannelCodeType,
   webhookReadPermissionType,
   webhookEventSchemas,

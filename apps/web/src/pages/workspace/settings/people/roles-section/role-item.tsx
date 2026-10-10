@@ -113,12 +113,7 @@ const RoleItem: Component<{
                         !menuOpened() && "opacity-20 media-mouse:group-hover:opacity-100"
                       )}
                     >
-                      <IconButton
-                        icon="i-lucide:ellipsis-vertical"
-                        size="small"
-                        variant="text"
-                        text="soft"
-                      />
+                      <IconButton icon="i-lucide:ellipsis-vertical" variant="ghost" />
                     </div>
                   )}
                   items={dropdownOptions()}
@@ -143,9 +138,7 @@ const RoleItem: Component<{
                     icon="i-lucide:lock"
                     iconProps={{ class: "h-4 w-4" }}
                     class="h-7 w-7"
-                    size="small"
-                    variant="text"
-                    text="soft"
+                    variant="ghost"
                   />
                 </div>
               </Tooltip>

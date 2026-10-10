@@ -1,7 +1,6 @@
 import {
   createContext,
   createEffect,
-  createMemo,
   on,
   onCleanup,
   type ParentComponent,
@@ -148,18 +147,19 @@ const WorkspaceProvider: ParentComponent = (props) => {
       }
     }
   }));
-  const currentWorkspace = createMemo(() => {
+  // Plain functions, not memos: server memos compute once, before the workspaces may have loaded.
+  const currentWorkspace = () => {
     const workspaceList = workspaces() ?? [];
     const id = workspaceID();
 
     return workspaceList.find((workspace) => workspace.id === id);
-  });
-  const currentSession = createMemo(() => {
+  };
+  const currentSession = () => {
     const sessionList = sessions() ?? [];
     const id = currentWorkspace()?.userID;
 
     return sessionList.find((session) => session.user.id === id);
-  });
+  };
   const hasPermission = (required: Permission) => {
     const workspace = currentWorkspace();
 

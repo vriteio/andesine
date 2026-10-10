@@ -8,7 +8,8 @@ import {
   parseWebhookDestination,
   WebhookDestinationError,
   loadWebhookHTTPTarget,
-  WebhookDispatchUnavailableError
+  WebhookDispatchUnavailableError,
+  type WebhookExtensionTarget
 } from "@andesine/server/webhooks/destination";
 import { type WebhookDestinationConfig } from "@andesine/server/webhooks/destination/config";
 import { signWebhookPayload } from "@andesine/server/webhooks/signing";
@@ -20,9 +21,33 @@ interface DispatchWebhookHTTPInput {
   claim: ClaimedDeliveryRun;
   encryption: SecretEncryption;
   config: WebhookDestinationConfig;
+  /** The instance API URL, sent in extension notifications. */
+  instance: string;
 }
 
 const WEBHOOK_REQUEST_TIMEOUT_MS = 15_000;
+// Unsigned; the backend fetches the delivery with its JWT, so the payload never leaves Andesine.
+const createExtensionNotification = (
+  claim: ClaimedDeliveryRun,
+  extension: WebhookExtensionTarget,
+  instance: string
+): Buffer => {
+  const event = JSON.parse(claim.payload.toString("utf8")) as { type: string; occurredAt: string };
+
+  return Buffer.from(
+    JSON.stringify({
+      type: "delivery",
+      deliveryID: claim.deliveryID,
+      eventID: claim.eventID,
+      eventType: event.type,
+      extensionID: extension.id,
+      version: extension.version,
+      instance,
+      occurredAt: event.occurredAt
+    }),
+    "utf8"
+  );
+};
 const dispatchWebhookHTTP = async (
   input: DispatchWebhookHTTPInput
 ): Promise<DeliveryAttemptResult> => {
@@ -58,9 +83,12 @@ const dispatchWebhookHTTP = async (
 
     constrainDeadline(target.remainingMs);
 
+    const payload = target.extension
+      ? createExtensionNotification(claim, target.extension, input.instance)
+      : claim.payload;
     const response = await sendWebhookRequest({
       destination,
-      payload: claim.payload,
+      payload,
       signal,
       onConnect: () => {
         phase = "network";
@@ -77,15 +105,16 @@ const dispatchWebhookHTTP = async (
           throw new WebhookDispatchUnavailableError("destination_changed");
         }
 
-        const headers = signWebhookPayload({
-          ...claim,
-          encryption,
-          state: current.secrets,
-          now: new Date()
-        });
+        const headers = current.extension
+          ? {
+              "content-type": "application/json",
+              "webhook-id": claim.eventID,
+              "webhook-timestamp": Math.floor(Date.now() / 1000).toString()
+            }
+          : signWebhookPayload({ ...claim, encryption, state: current.secrets, now: new Date() });
 
         phase = "network";
-        return headers;
+        return { ...headers };
       }
     });
     const success = response.status >= 200 && response.status < 300;

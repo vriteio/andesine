@@ -32,6 +32,7 @@ interface MobileMenuOptionProps<O extends MenuItem> {
 
 interface MobileMenuIconProps {
   option: MenuItem;
+  loading?: boolean;
 }
 
 interface MobileMenuItemsProps<O extends MenuItem> {
@@ -45,21 +46,23 @@ interface MobileMenuItemsProps<O extends MenuItem> {
 const MobileMenuIcon: Component<MobileMenuIconProps> = (props) => (
   <Show when={props.option.icon}>
     <div class="relative flex h-6 w-6 shrink-0 items-center justify-center">
-      <div
-        class={clsx(
-          "h-5 w-5",
-          typeof props.option.icon === "string" && props.option.icon,
-          props.option.selected
-            ? typeof props.option.icon === "function"
-              ? "bg-gradient-to-tr bg-clip-text text-transparent from-secondary via-primary to-secondary media-mouse:group-data-[highlighted]/menu-item:text-white media-mouse:group-data-[highlighted]/menu-item:from-white media-mouse:group-data-[highlighted]/menu-item:via-white media-mouse:group-data-[highlighted]/menu-item:to-white"
-              : "bg-gradient-to-tr media-mouse:group-data-[highlighted]/menu-item:text-white media-mouse:group-data-[highlighted]/menu-item:from-white media-mouse:group-data-[highlighted]/menu-item:to-white"
-            : props.option.color === "danger"
-              ? "text-red-500"
-              : "text-gray-500"
-        )}
-      >
-        {typeof props.option.icon === "function" && <Dynamic component={props.option.icon} />}
-      </div>
+      <Show when={!props.loading} fallback={<Spinner class="h-5 w-5 text-gray-500" />}>
+        <div
+          class={clsx(
+            "h-5 w-5",
+            typeof props.option.icon === "string" && props.option.icon,
+            props.option.selected
+              ? typeof props.option.icon === "function"
+                ? "bg-gradient-to-tr bg-clip-text text-transparent from-secondary via-primary to-secondary media-mouse:group-data-[highlighted]/menu-item:text-white media-mouse:group-data-[highlighted]/menu-item:from-white media-mouse:group-data-[highlighted]/menu-item:via-white media-mouse:group-data-[highlighted]/menu-item:to-white"
+                : "bg-gradient-to-tr media-mouse:group-data-[highlighted]/menu-item:text-white media-mouse:group-data-[highlighted]/menu-item:from-white media-mouse:group-data-[highlighted]/menu-item:to-white"
+              : props.option.color === "danger"
+                ? "text-red-500"
+                : "text-gray-500"
+          )}
+        >
+          {typeof props.option.icon === "function" && <Dynamic component={props.option.icon} />}
+        </div>
+      </Show>
     </div>
   </Show>
 );
@@ -132,11 +135,12 @@ const MobileMenuOption = <O extends MenuItem>(props: MobileMenuOptionProps<O>) =
           class={itemClass()}
           onSelect={handleSelect}
         >
-          <div class={clsx("contents", loading() && "invisible")}>
+          {/* While loading, a spinner replaces the icon, or covers an item without one. */}
+          <div class={clsx("contents", loading() && !props.option.icon && "invisible")}>
             <Show when={props.option.selected}>
               <div class="absolute inset-0 -z-1 rounded-md bg-gradient-to-tr opacity-10 media-mouse:group-data-[highlighted]/menu-item:opacity-100 pointer-events-none" />
             </Show>
-            <MobileMenuIcon option={props.option} />
+            <MobileMenuIcon option={props.option} loading={loading()} />
             <div class="flex flex-1 gap-4">
               <span
                 title={props.option.label}
@@ -159,7 +163,7 @@ const MobileMenuOption = <O extends MenuItem>(props: MobileMenuOptionProps<O>) =
               </Show>
             </div>
           </div>
-          <Show when={loading()}>
+          <Show when={loading() && !props.option.icon}>
             <div class="absolute inset-0 flex items-center justify-center p-1.5">
               <Spinner class="h-full" />
             </div>

@@ -135,10 +135,6 @@ const SecuritySection: Component = () => {
               loading={addPasskeyMutation.isPending}
               iconProps={{ class: "h-4 w-4" }}
               icon="i-lucide:plus"
-              size="small"
-              color="contrast"
-              variant="outlined"
-              text="soft"
             />
           </div>
         </Setting>

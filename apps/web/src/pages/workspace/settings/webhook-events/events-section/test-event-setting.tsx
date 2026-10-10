@@ -2,12 +2,12 @@ import { type Card, DropdownMenu, IconButton } from "@andesine/components";
 import { createMutation } from "@tanstack/solid-query";
 import { type Component, type ComponentProps } from "solid-js";
 import { useNotify } from "#web/context/notifications";
-import { client } from "#web/lib/api";
-import { getWebhookErrorCode, type Webhook, type WebhookEventType } from "#web/lib/data";
+import { getWebhookErrorCode } from "#web/lib/data";
 import { Setting } from "../../setting";
+import type { WebhookEventsSource } from "../source";
 
 interface TestEventSettingProps {
-  webhook: Webhook;
+  source: WebhookEventsSource;
 }
 
 const getTestErrorMessage = (code: string | undefined) => {
@@ -27,13 +27,7 @@ const TestEventSetting: Component<TestEventSettingProps> = (props) => {
   const notify = useNotify();
   const testMutation = createMutation(() => ({
     retry: false,
-    mutationFn: (type: WebhookEventType) => {
-      return client.webhooks.sendTest({
-        id: props.webhook.id,
-        expectedRevision: props.webhook.revision,
-        type
-      });
-    },
+    mutationFn: (type: string) => props.source.sendTest(type),
     onSuccess: () => notify({ type: "success", text: "Test event queued" }),
     onError: (error) => {
       console.error(error);
@@ -42,7 +36,7 @@ const TestEventSetting: Component<TestEventSettingProps> = (props) => {
   }));
   // The menu shows a spinner on the chosen event until the request settles, then closes.
   const items = () => {
-    return props.webhook.eventTypes.map((type) => ({
+    return props.source.testEventTypes.map((type) => ({
       label: type,
       onClick: () => testMutation.mutateAsync(type).catch(() => undefined)
     }));
@@ -51,7 +45,11 @@ const TestEventSetting: Component<TestEventSettingProps> = (props) => {
   return (
     <Setting
       label="Send test event"
-      description="Send a signed sample of a selected event. Works while the webhook is disabled"
+      description={
+        props.source.target.extensionID
+          ? "Send a sample of a selected event to the development backend"
+          : "Send a signed sample of a selected event. Works while the webhook is disabled"
+      }
       fade={false}
     >
       <DropdownMenu
@@ -65,10 +63,6 @@ const TestEventSetting: Component<TestEventSettingProps> = (props) => {
             class="flex-row-reverse pr-1"
             iconProps={{ class: "h-4 w-4" }}
             icon="i-lucide:chevron-down"
-            size="small"
-            color="contrast"
-            variant="outlined"
-            text="soft"
           />
         )}
       />

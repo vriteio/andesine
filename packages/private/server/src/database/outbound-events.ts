@@ -1,4 +1,4 @@
-import { type WebhookEvent, type WebhookEventName } from "@andesine/contracts/webhooks";
+import { type OutboundEvent, type OutboundEventName } from "@andesine/contracts/webhooks";
 import { sql } from "drizzle-orm";
 import {
   boolean,
@@ -24,10 +24,10 @@ const outboundEvents = pgTable(
       .notNull()
       .references(() => workspaces.id, { onDelete: "cascade" }),
     operationID: uuid("operation_id").notNull(),
-    type: text("type").$type<WebhookEventName>().notNull(),
+    type: text("type").$type<OutboundEventName>().notNull(),
     schemaVersion: integer("schema_version").notNull().default(1),
-    subject: jsonb("subject").$type<WebhookEvent["subject"]>().notNull(),
-    data: jsonb("data").$type<WebhookEvent["data"]>().notNull(),
+    subject: jsonb("subject").$type<OutboundEvent["subject"]>().notNull(),
+    data: jsonb("data").$type<OutboundEvent["data"]>().notNull(),
     test: boolean("test").notNull().default(false),
     occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()

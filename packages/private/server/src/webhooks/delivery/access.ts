@@ -1,10 +1,11 @@
 import {
   entries,
+  extensions,
   outboundEventResources,
   type DatabaseTransaction
 } from "@andesine/server/database";
 import { toCollectionID, toEntryID, toUUID, toWorkspaceID } from "@andesine/contracts/primitives";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { getWebhookConfiguration } from "../endpoints";
 import { loadStoredWebhookEvent } from "../stored-event";
 import {
@@ -38,6 +39,25 @@ const getDeliveryAccessStopReason = async (
 
   if (!endpoint.eventTypes.includes(event.type) || endpoint.schemaVersion !== event.schemaVersion) {
     return "selection_changed";
+  }
+
+  if (event.subject.kind === "extension") return null;
+
+  if (endpoint.kind === "extension") {
+    // Extension webhooks receive other events only while their extension is active.
+    const [active] = await database
+      .select({ id: extensions.id })
+      .from(extensions)
+      .where(
+        and(
+          eq(extensions.id, endpoint.extensionID!),
+          eq(extensions.enabled, true),
+          isNull(extensions.disabledReason),
+          isNull(extensions.uninstalledAt)
+        )
+      );
+
+    if (!active) return "access_revoked";
   }
 
   // Synthetic samples contain no actual resources. Their example IDs must not

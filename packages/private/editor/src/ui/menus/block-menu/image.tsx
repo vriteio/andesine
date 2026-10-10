@@ -32,9 +32,6 @@ const ImageField = (props: ImageFieldProps) => {
         class="w-full min-w-0 bg-gray-50"
         label={props.label}
         placeholder={props.placeholder}
-        size="small"
-        color="contrast"
-        variant="outlined"
         maxLength={2000}
         value={value()}
         setValue={setValue}

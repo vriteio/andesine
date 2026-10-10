@@ -1,4 +1,5 @@
 import {
+  extensions,
   outboundDeliveries,
   outboundDeliveryRuns,
   outboundEvents,
@@ -9,10 +10,10 @@ import {
   type DatabaseTransaction as Database
 } from "@andesine/server/database";
 import type { WebhookRetentionPolicy } from "./retention";
-import { webhookConfigurationType } from "@andesine/contracts/webhooks";
+import { outboundConfigurationType } from "@andesine/contracts/webhooks";
 import { generateUUID } from "../primitives/id";
 import { toUUID } from "@andesine/contracts/primitives";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { loadWebhookScopeIndex, type WebhookScopeIndex } from "./scope";
 import { createWebhookOperation, type WebhookOperation } from "./operation";
 import { encodeWebhookPayload, projectWebhookEvent } from "./projection";
@@ -42,7 +43,12 @@ const createWebhookRecorder = async (
   input: CreateWebhookRecorderInput
 ): Promise<WebhookRecorder> => {
   const { database } = input;
-  const operation = createWebhookOperation(input.operation.workspaceID, input.operation.id);
+  const operation = createWebhookOperation(
+    input.operation.workspaceID,
+    input.operation.id,
+    input.operation.originExtensionID
+  );
+  const originExtensionID = operation.originExtensionID && toUUID(operation.originExtensionID);
   const workspaceID = toUUID(operation.workspaceID);
 
   if (typeof database.rollback !== "function") {
@@ -63,9 +69,13 @@ const createWebhookRecorder = async (
       revision: webhookEndpoints.revision,
       destinationRevision: webhookEndpoints.destinationRevision,
       executionGeneration: webhookEndpoints.executionGeneration,
+      kind: webhookEndpoints.kind,
+      extensionID: webhookEndpoints.extensionID,
+      extensionActive: sql<boolean>`coalesce(${extensions.enabled} and ${extensions.disabledReason} is null and ${extensions.uninstalledAt} is null, false)`,
       configuration: webhookEndpointRevisions.configuration
     })
     .from(webhookEndpoints)
+    .leftJoin(extensions, eq(extensions.id, webhookEndpoints.extensionID))
     .leftJoin(
       webhookEndpointRevisions,
       and(
@@ -83,7 +93,7 @@ const createWebhookRecorder = async (
       )
     );
   const endpoints = endpointRows.map((endpoint) => {
-    const configuration = webhookConfigurationType.parse(endpoint.configuration);
+    const configuration = outboundConfigurationType.parse(endpoint.configuration);
 
     if (!configuration.enabled) throw new Error("Webhook configuration revision is not enabled");
 
@@ -118,6 +128,16 @@ const createWebhookRecorder = async (
       const runs: Array<typeof outboundDeliveryRuns.$inferInsert> = [];
 
       for (const endpoint of endpoints) {
+        // Lifecycle events reach only the described extension, even when inactive; other events
+        // reach only active extensions, except the one that made the change.
+        const isSelectable =
+          event.subject.kind === "extension"
+            ? endpoint.extensionID === toUUID(event.subject.id)
+            : endpoint.kind === "http" ||
+              (endpoint.extensionActive && endpoint.extensionID !== originExtensionID);
+
+        if (!isSelectable) continue;
+
         const payload = projectWebhookEvent(change, endpoint.configuration, index);
 
         if (!payload) continue;

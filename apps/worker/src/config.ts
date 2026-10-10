@@ -5,6 +5,7 @@ import { versionRetentionConfigSchema } from "@andesine/server/versioning/config
 import { createWebhookRetentionPolicy } from "@andesine/server/webhooks/retention";
 import { billingModeConfigSchema } from "@andesine/server/billing/config";
 import { assetConfigSchema } from "@andesine/server/assets/config";
+import { extensionsConfigSchema } from "@andesine/server/extensions/config";
 import * as z from "zod";
 
 const configSchema = z
@@ -20,6 +21,7 @@ const configSchema = z
   })
   .extend({
     ...assetConfigSchema.shape,
+    ...extensionsConfigSchema.shape,
     WORKER_CONCURRENCY: z.coerce
       .number()
       .int()
@@ -28,9 +30,16 @@ const configSchema = z
       .describe("Maximum number of concurrent jobs"),
     WEBHOOK_WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(256).default(4),
     WEBHOOK_GLOBAL_CONCURRENCY: z.coerce.number().int().min(1).max(1024).default(16),
-    WEBHOOK_WORKSPACE_CONCURRENCY: z.coerce.number().int().min(1).max(1024).default(4)
+    WEBHOOK_WORKSPACE_CONCURRENCY: z.coerce.number().int().min(1).max(1024).default(4),
+    PUBLIC_API_HOST: z.string().describe("Public host of the API, for extension notifications"),
+    PUBLIC_SECURE: z.stringbool().optional().describe("Whether public URLs use HTTPS")
   });
-const config = configSchema.parse({ ...process.env });
+const baseConfig = configSchema.parse({ ...process.env });
+const config = {
+  ...baseConfig,
+  // Same composition as the backend; extension backends check it against their allowlist.
+  PUBLIC_API_URL: `${baseConfig.PUBLIC_SECURE ? "https" : "http"}://${baseConfig.PUBLIC_API_HOST}`
+};
 
 const webhookRetentionPolicy = createWebhookRetentionPolicy(config);
 

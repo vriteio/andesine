@@ -253,7 +253,7 @@ const TreeItem: Component<TreeItemProps> = (props) => {
                   "hidden media-mouse:group-hover:block"
               )}
             >
-              <Checkbox size="small" checked={props.selectionState ?? isSelected(props.id)} />
+              <Checkbox checked={props.selectionState ?? isSelected(props.id)} />
             </div>
           </Show>
         </div>

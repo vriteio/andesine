@@ -134,13 +134,14 @@ const getUserActions = (auth: SessionData, permissions: Permission[]): Collectio
   return { collectionActions, entryActions };
 };
 const getKeyActions = (auth: SessionData): CollectionAccess => {
-  if (auth.type !== "key" || !auth.key) {
+  const permissions = auth.key?.permissions ?? auth.extension?.permissions;
+
+  if (getUserAuthorization(auth) || !permissions) {
     return { collectionActions: [], entryActions: [] };
   }
 
   const collectionActions: CollectionAction[] = [];
   const entryActions: EntryAction[] = [];
-  const permissions = auth.key.permissions;
 
   if (hasGrantedPermission(permissions, "read:collections")) {
     collectionActions.push("collection:read");
@@ -268,7 +269,7 @@ const createAuthorizedCollectionTree = (
     if (!isCollectionVisible(input.auth, boundaryIDs, input.permissionsByBoundaryID)) continue;
 
     const access =
-      input.auth.type === "key"
+      input.auth.type === "key" || input.auth.type === "extension"
         ? getKeyActions(input.auth)
         : getUserActions(
             input.auth,

@@ -90,10 +90,7 @@ const SignInPage: Component = () => {
           Use one of the methods below, or
           <br />
           <Button
-            variant="text"
-            size="small"
-            hover="underline"
-            color="primary"
+            variant="link"
             class="px-0"
             link={appendRedirectTo(
               "/auth/email?mode=sign-in",
@@ -108,10 +105,10 @@ const SignInPage: Component = () => {
       <div class="flex flex-col gap-2.5">
         <IconButton
           icon="i-devicon:google"
-          class="w-full @hover:bg-gray-50 gap-1"
+          class="w-full gap-1"
           iconProps={{ class: "h-5.5 w-5.5" }}
-          variant="outlined"
-          color="contrast"
+          text="base"
+          size="medium"
           label={signingInWithGoogle() ? "Continuing with Google..." : "Continue with Google"}
           disabled={signingInWithGoogle() || signingInWithGitHub()}
           onClick={() => {
@@ -120,10 +117,10 @@ const SignInPage: Component = () => {
         />
         <IconButton
           icon="i-mdi:github"
-          class="w-full @hover:bg-gray-50"
+          class="w-full"
           iconProps={{ class: "text-black" }}
-          variant="outlined"
-          color="contrast"
+          text="base"
+          size="medium"
           label={signingInWithGitHub() ? "Continuing with GitHub..." : "Continue with GitHub"}
           disabled={signingInWithGoogle() || signingInWithGitHub()}
           onClick={() => {
@@ -137,10 +134,10 @@ const SignInPage: Component = () => {
         </div>
         <IconButton
           icon="i-lucide:fingerprint"
-          class="w-full @hover:bg-gray-50 gap-1"
+          class="w-full gap-1"
           iconProps={{ class: "h-5 w-5 text-gray-400" }}
-          variant="outlined"
-          color="contrast"
+          text="base"
+          size="medium"
           label="Passkey"
           onClick={signInWithPasskey}
           disabled={signingInWithPasskey() || signingInWithGoogle() || signingInWithGitHub()}
@@ -151,13 +148,9 @@ const SignInPage: Component = () => {
         <IconButton
           icon="i-lucide:arrow-right"
           iconProps={{ class: "h-4 w-4" }}
-          variant="text"
-          text="primary"
-          color="primary"
-          size="small"
+          variant="link"
           link={appendRedirectTo("/auth/sign-up", redirectTo(), searchParams.addAccount === "true")}
           label={() => <span>Sign up</span>}
-          hover="underline"
           class="flex-row-reverse gap-1 inline-flex font-medium px-0 -mt-1"
         ></IconButton>
       </div>

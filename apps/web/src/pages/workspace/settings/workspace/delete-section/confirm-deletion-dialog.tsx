@@ -69,7 +69,7 @@ const ConfirmDeletionDialog: Component<ConfirmDeletionDialogProps> = (props) => 
   };
 
   return (
-    <Dialog opened={props.opened} onOverlayClick={close} portal aria-label="Delete workspace">
+    <Dialog opened={props.opened} onOverlayClick={close} aria-label="Delete workspace">
       <div class="flex flex-col gap-0.5">
         <h3 class="text-lg font-semibold leading-tight">Delete workspace permanently?</h3>
         <p class="text-sm leading-tight text-gray-400">
@@ -94,9 +94,6 @@ const ConfirmDeletionDialog: Component<ConfirmDeletionDialogProps> = (props) => 
           disabled={deleteWorkspaceMutation.isPending}
           placeholder={currentWorkspace()?.name}
           class="font-mono"
-          size="small"
-          color="contrast"
-          variant="outlined"
           onKeyDown={(event) => {
             if (event.key !== "Enter" || !canConfirm()) return;
 
@@ -106,21 +103,11 @@ const ConfirmDeletionDialog: Component<ConfirmDeletionDialogProps> = (props) => 
         />
       </label>
       <div class="flex justify-end gap-2">
-        <IconButton
-          variant="outlined"
-          color="contrast"
-          size="small"
-          text="soft"
-          icon="i-lucide:x"
-          disabled={deleteWorkspaceMutation.isPending}
-          onClick={close}
-        >
+        <IconButton icon="i-lucide:x" disabled={deleteWorkspaceMutation.isPending} onClick={close}>
           Cancel
         </IconButton>
         <Button
-          color="danger"
-          variant="outlined"
-          size="small"
+          variant="danger"
           loading={deleteWorkspaceMutation.isPending}
           disabled={!canConfirm()}
           onClick={() => deleteWorkspaceMutation.mutate()}

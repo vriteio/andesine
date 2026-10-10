@@ -287,6 +287,154 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/extensions/self": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get the extension
+     * @description Returns the installed extension that the token's subject names, including disabled and uninstalled extensions.
+     */
+    get: operations["extensions.getSelf"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/extensions/self/sessions/verify": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Verify a session token
+     * @description Verifies a session token from the extension frontend and returns its member. Tokens of other extensions, expired tokens, and tokens of an earlier extension generation fail with NOT_FOUND.
+     */
+    post: operations["extensions.verifySession"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/extensions/self/installations": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List installations
+     * @description Lists the installations of the extension on this instance. Requires an app-level token: an extension JWT without a subject.
+     */
+    get: operations["extensions.listInstallations"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/extensions/self/deliveries/{deliveryID}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get a delivery
+     * @description Returns the event of a delivery to one of the extension's webhooks. Disabled and uninstalled extensions can read only lifecycle deliveries.
+     */
+    get: operations["extensions.getSelfDelivery"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/extensions/self/configuration": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get the configuration
+     * @description Returns the extension's configuration, including secret fields, and its revision. Unset fields use their defaults.
+     */
+    get: operations["extensions.getSelfConfiguration"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/extensions/self/storage/entry": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get a storage entry
+     * @description Returns an entry of the extension's storage, or NOT_FOUND.
+     */
+    get: operations["extensions.getSelfStorageEntry"];
+    /**
+     * Set a storage entry
+     * @description Creates or replaces an entry of the extension's storage. Values are JSON up to 128 KiB; the storage holds up to 10,000 entries and 10 MiB.
+     */
+    put: operations["extensions.setSelfStorageEntry"];
+    post?: never;
+    /**
+     * Delete a storage entry
+     * @description Deletes an entry of the extension's storage, if it exists.
+     */
+    delete: operations["extensions.deleteSelfStorageEntry"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/extensions/self/storage": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List storage entries
+     * @description Lists the extension's storage entries in key order, optionally with a key prefix. A page ends early when its values reach 192 KiB.
+     */
+    get: operations["extensions.listSelfStorageEntries"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/collections": {
     parameters: {
       query?: never;
@@ -2783,6 +2931,7 @@ export interface components {
       | "roles"
       | "webhooks"
       | "read:webhooks"
+      | "extensions"
       | "workspace";
     /** @enum {string} */
     BaseRole: "admin" | "viewer";
@@ -7358,6 +7507,2933 @@ export interface operations {
           "application/json": {
             data: components["schemas"]["EntrySummary"][];
             pagination: components["schemas"]["Pagination"];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "extensions.getSelf": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @description ID of the installed extension */
+            id: string;
+            /** @description Registry name */
+            name: string;
+            /** @description Active version */
+            version: string;
+            workspaceID: string;
+            /**
+             * @description Uninstalled extensions remain readable until their last lifecycle event expires
+             * @enum {string}
+             */
+            state: "active" | "disabled" | "uninstalled";
+            /** @description Why the extension is disabled; null when it is active or uninstalled */
+            disabledReason:
+              ("manual" | "approval_required" | "configuration_required" | "revoked") | null;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "extensions.verifySession": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          token: string;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            workspaceID: string;
+            /** @description The extension version the session was issued for */
+            version: string;
+            member: {
+              /** @description ID of the membership */
+              id: string;
+              /** @description ID of the user */
+              userID: string;
+              profile: {
+                id: string;
+                name?: string;
+                image?: string;
+                /** @description Only with the read:memberships permission */
+                email?: string;
+              };
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "extensions.listInstallations": {
+    parameters: {
+      query?: {
+        after?: string;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            data: {
+              id: string;
+              workspaceID: string;
+              version: string;
+              /**
+               * @description Uninstalled extensions remain readable until their last lifecycle event expires
+               * @enum {string}
+               */
+              state: "active" | "disabled" | "uninstalled";
+            }[];
+            hasMore: boolean;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "extensions.getSelfDelivery": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        deliveryID: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            deliveryID: string;
+            /** @description The event as the extension's webhook receives it */
+            event:
+              | {
+                  id: string;
+                  operationID: string;
+                  /** @constant */
+                  schemaVersion: 1;
+                  /** Format: date-time */
+                  occurredAt: string;
+                  workspaceID: string;
+                  test: boolean;
+                  subject: {
+                    /** @constant */
+                    kind: "entry";
+                    id: string;
+                  };
+                  /** @constant */
+                  type: "entry.created";
+                  data: {
+                    name: string;
+                    collectionID: string | null;
+                    contentHash?: string;
+                  };
+                }
+              | {
+                  id: string;
+                  operationID: string;
+                  /** @constant */
+                  schemaVersion: 1;
+                  /** Format: date-time */
+                  occurredAt: string;
+                  workspaceID: string;
+                  test: boolean;
+                  subject: {
+                    /** @constant */
+                    kind: "entry";
+                    id: string;
+                  };
+                  /** @constant */
+                  type: "entry.updated";
+                  data: {
+                    collectionID: string | null;
+                    changedFields: "name"[];
+                  };
+                }
+              | {
+                  id: string;
+                  operationID: string;
+                  /** @constant */
+                  schemaVersion: 1;
+                  /** Format: date-time */
+                  occurredAt: string;
+                  workspaceID: string;
+                  test: boolean;
+                  subject: {
+                    /** @constant */
+                    kind: "entry";
+                    id: string;
+                  };
+                  /** @constant */
+                  type: "entry.content_saved";
+                  data: {
+                    collectionID: string | null;
+                    contentHash: string;
+                    /** Format: date-time */
+                    savedAt: string;
+                  };
+                }
+              | {
+                  id: string;
+                  operationID: string;
+                  /** @constant */
+                  schemaVersion: 1;
+                  /** Format: date-time */
+                  occurredAt: string;
+                  workspaceID: string;
+                  test: boolean;
+                  subject: {
+                    /** @constant */
+                    kind: "entry";
+                    id: string;
+                  };
+                  /** @constant */
+                  type: "entry.moved";
+                  data:
+                    | {
+                        /** @constant */
+                        scopeTransition: "within";
+                        /** @enum {string} */
+                        reason: "direct" | "ancestor_moved" | "reordered";
+                        from: {
+                          /** @constant */
+                          visibility: "visible";
+                          /** @description Null means the workspace root, never a hidden parent */
+                          parentID: string | null;
+                          order?: string;
+                        };
+                        to: {
+                          /** @constant */
+                          visibility: "visible";
+                          /** @description Null means the workspace root, never a hidden parent */
+                          parentID: string | null;
+                          order?: string;
+                        };
+                      }
+                    | {
+                        /** @constant */
+                        scopeTransition: "entered";
+                        /** @enum {string} */
+                        reason: "direct" | "ancestor_moved" | "reordered";
+                        from: {
+                          /** @constant */
+                          visibility: "hidden";
+                        };
+                        to: {
+                          /** @constant */
+                          visibility: "visible";
+                          /** @description Null means the workspace root, never a hidden parent */
+                          parentID: string | null;
+                          order?: string;
+                        };
+                      }
+                    | {
+                        /** @constant */
+                        scopeTransition: "left";
+                        /** @enum {string} */
+                        reason: "direct" | "ancestor_moved" | "reordered";
+                        from: {
+                          /** @constant */
+                          visibility: "visible";
+                          /** @description Null means the workspace root, never a hidden parent */
+                          parentID: string | null;
+                          order?: string;
+                        };
+                        to: {
+                          /** @constant */
+                          visibility: "hidden";
+                        };
+                      };
+                }
+              | {
+                  id: string;
+                  operationID: string;
+                  /** @constant */
+                  schemaVersion: 1;
+                  /** Format: date-time */
+                  occurredAt: string;
+                  workspaceID: string;
+                  test: boolean;
+                  subject: {
+                    /** @constant */
+                    kind: "entry";
+                    id: string;
+                  };
+                  /** @constant */
+                  type: "entry.deleted";
+                  data: {
+                    name: string;
+                    collectionID: string | null;
+                    /** Format: date-time */
+                    deletedAt: string;
+                  };
+                }
+              | {
+                  id: string;
+                  operationID: string;
+                  /** @constant */
+                  schemaVersion: 1;
+                  /** Format: date-time */
+                  occurredAt: string;
+                  workspaceID: string;
+                  test: boolean;
+                  subject: {
+                    /** @constant */
+                    kind: "entry";
+                    id: string;
+                  };
+                  /** @constant */
+                  type: "entry.restored";
+                  data: {
+                    name: string;
+                    collectionID: string | null;
+                  };
+                }
+              | {
+                  id: string;
+                  operationID: string;
+                  /** @constant */
+                  schemaVersion: 1;
+                  /** Format: date-time */
+                  occurredAt: string;
+                  workspaceID: string;
+                  test: boolean;
+                  subject: {
+                    /** @constant */
+                    kind: "collection";
+                    id: string;
+                  };
+                  /** @constant */
+                  type: "collection.created";
+                  data: {
+                    name: string;
+                    parentID: string | null;
+                  };
+                }
+              | {
+                  id: string;
+                  operationID: string;
+                  /** @constant */
+                  schemaVersion: 1;
+                  /** Format: date-time */
+                  occurredAt: string;
+                  workspaceID: string;
+                  test: boolean;
+                  subject: {
+                    /** @constant */
+                    kind: "collection";
+                    id: string;
+                  };
+                  /** @constant */
+                  type: "collection.updated";
+                  data: {
+                    parentID: string | null;
+                    changedFields: ("name" | "restricted" | "publishingEnabled")[];
+                  };
+                }
+              | {
+                  id: string;
+                  operationID: string;
+                  /** @constant */
+                  schemaVersion: 1;
+                  /** Format: date-time */
+                  occurredAt: string;
+                  workspaceID: string;
+                  test: boolean;
+                  subject: {
+                    /** @constant */
+                    kind: "collection";
+                    id: string;
+                  };
+                  /** @constant */
+                  type: "collection.moved";
+                  data:
+                    | {
+                        /** @constant */
+                        scopeTransition: "within";
+                        /** @enum {string} */
+                        reason: "direct" | "ancestor_moved" | "reordered";
+                        from: {
+                          /** @constant */
+                          visibility: "visible";
+                          /** @description Null means the workspace root, never a hidden parent */
+                          parentID: string | null;
+                          order?: string;
+                        };
+                        to: {
+                          /** @constant */
+                          visibility: "visible";
+                          /** @description Null means the workspace root, never a hidden parent */
+                          parentID: string | null;
+                          order?: string;
+                        };
+                      }
+                    | {
+                        /** @constant */
+                        scopeTransition: "entered";
+                        /** @enum {string} */
+                        reason: "direct" | "ancestor_moved" | "reordered";
+                        from: {
+                          /** @constant */
+                          visibility: "hidden";
+                        };
+                        to: {
+                          /** @constant */
+                          visibility: "visible";
+                          /** @description Null means the workspace root, never a hidden parent */
+                          parentID: string | null;
+                          order?: string;
+                        };
+                      }
+                    | {
+                        /** @constant */
+                        scopeTransition: "left";
+                        /** @enum {string} */
+                        reason: "direct" | "ancestor_moved" | "reordered";
+                        from: {
+                          /** @constant */
+                          visibility: "visible";
+                          /** @description Null means the workspace root, never a hidden parent */
+                          parentID: string | null;
+                          order?: string;
+                        };
+                        to: {
+                          /** @constant */
+                          visibility: "hidden";
+                        };
+                      };
+                }
+              | {
+                  id: string;
+                  operationID: string;
+                  /** @constant */
+                  schemaVersion: 1;
+                  /** Format: date-time */
+                  occurredAt: string;
+                  workspaceID: string;
+                  test: boolean;
+                  subject: {
+                    /** @constant */
+                    kind: "collection";
+                    id: string;
+                  };
+                  /** @constant */
+                  type: "collection.deleted";
+                  data: {
+                    name: string;
+                    parentID: string | null;
+                    /** Format: date-time */
+                    deletedAt: string;
+                  };
+                }
+              | {
+                  id: string;
+                  operationID: string;
+                  /** @constant */
+                  schemaVersion: 1;
+                  /** Format: date-time */
+                  occurredAt: string;
+                  workspaceID: string;
+                  test: boolean;
+                  subject: {
+                    /** @constant */
+                    kind: "collection";
+                    id: string;
+                  };
+                  /** @constant */
+                  type: "collection.restored";
+                  data: {
+                    name: string;
+                    parentID: string | null;
+                  };
+                }
+              | {
+                  id: string;
+                  operationID: string;
+                  /** @constant */
+                  schemaVersion: 1;
+                  /** Format: date-time */
+                  occurredAt: string;
+                  workspaceID: string;
+                  test: boolean;
+                  subject: {
+                    /** @constant */
+                    kind: "channel";
+                    code: string;
+                  };
+                  /** @constant */
+                  type: "publishing.channel_advanced";
+                  data: {
+                    previousSnapshotID: string;
+                    snapshotID: string;
+                    /** @enum {string} */
+                    reason: "publish" | "unpublish";
+                  };
+                }
+              | {
+                  id: string;
+                  operationID: string;
+                  /** @constant */
+                  schemaVersion: 1;
+                  /** Format: date-time */
+                  occurredAt: string;
+                  workspaceID: string;
+                  test: boolean;
+                  subject: {
+                    /** @constant */
+                    kind: "channel";
+                    code: string;
+                  };
+                  /** @constant */
+                  type: "publishing.channel_created";
+                  data: {
+                    name: string;
+                    builtIn: boolean;
+                    snapshotID: string;
+                  };
+                }
+              | {
+                  id: string;
+                  operationID: string;
+                  /** @constant */
+                  schemaVersion: 1;
+                  /** Format: date-time */
+                  occurredAt: string;
+                  workspaceID: string;
+                  test: boolean;
+                  subject: {
+                    /** @constant */
+                    kind: "channel";
+                    code: string;
+                  };
+                  /** @constant */
+                  type: "publishing.channel_deleted";
+                  data: {
+                    name: string;
+                    snapshotID: string;
+                  };
+                }
+              | {
+                  id: string;
+                  operationID: string;
+                  /** @constant */
+                  schemaVersion: 1;
+                  /** Format: date-time */
+                  occurredAt: string;
+                  workspaceID: string;
+                  test: boolean;
+                  subject: {
+                    /** @constant */
+                    kind: "extension";
+                    id: string;
+                  };
+                  /** @constant */
+                  type: "extension.installed";
+                  data: {
+                    version: string;
+                  };
+                }
+              | {
+                  id: string;
+                  operationID: string;
+                  /** @constant */
+                  schemaVersion: 1;
+                  /** Format: date-time */
+                  occurredAt: string;
+                  workspaceID: string;
+                  test: boolean;
+                  subject: {
+                    /** @constant */
+                    kind: "extension";
+                    id: string;
+                  };
+                  /** @constant */
+                  type: "extension.enabled";
+                  data: {
+                    version: string;
+                  };
+                }
+              | {
+                  id: string;
+                  operationID: string;
+                  /** @constant */
+                  schemaVersion: 1;
+                  /** Format: date-time */
+                  occurredAt: string;
+                  workspaceID: string;
+                  test: boolean;
+                  subject: {
+                    /** @constant */
+                    kind: "extension";
+                    id: string;
+                  };
+                  /** @constant */
+                  type: "extension.disabled";
+                  data: {
+                    version: string;
+                    /** @enum {string} */
+                    reason: "manual" | "approval_required" | "configuration_required" | "revoked";
+                  };
+                }
+              | {
+                  id: string;
+                  operationID: string;
+                  /** @constant */
+                  schemaVersion: 1;
+                  /** Format: date-time */
+                  occurredAt: string;
+                  workspaceID: string;
+                  test: boolean;
+                  subject: {
+                    /** @constant */
+                    kind: "extension";
+                    id: string;
+                  };
+                  /** @constant */
+                  type: "extension.updated";
+                  data: {
+                    version: string;
+                    previousVersion: string;
+                  };
+                }
+              | {
+                  id: string;
+                  operationID: string;
+                  /** @constant */
+                  schemaVersion: 1;
+                  /** Format: date-time */
+                  occurredAt: string;
+                  workspaceID: string;
+                  test: boolean;
+                  subject: {
+                    /** @constant */
+                    kind: "extension";
+                    id: string;
+                  };
+                  /** @constant */
+                  type: "extension.configured";
+                  data: {
+                    version: string;
+                    /** @description Keys only, never values */
+                    changedFields: string[];
+                  };
+                }
+              | {
+                  id: string;
+                  operationID: string;
+                  /** @constant */
+                  schemaVersion: 1;
+                  /** Format: date-time */
+                  occurredAt: string;
+                  workspaceID: string;
+                  test: boolean;
+                  subject: {
+                    /** @constant */
+                    kind: "extension";
+                    id: string;
+                  };
+                  /** @constant */
+                  type: "extension.uninstalled";
+                  data: {
+                    version: string;
+                  };
+                };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "extensions.getSelfConfiguration": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @description All values, including secret fields */
+            values: {
+              [key: string]:
+                | string
+                | number
+                | boolean
+                | null
+                | (
+                    | string
+                    | number
+                    | boolean
+                    | null
+                    | (unknown | null)[]
+                    | {
+                        [key: string]: unknown;
+                      }
+                  )[]
+                | {
+                    [key: string]:
+                      | string
+                      | number
+                      | boolean
+                      | null
+                      | (unknown | null)[]
+                      | {
+                          [key: string]: unknown;
+                        };
+                  };
+            };
+            revision: number;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "extensions.getSelfStorageEntry": {
+    parameters: {
+      query: {
+        key: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            key: string;
+            value:
+              | string
+              | number
+              | boolean
+              | null
+              | (
+                  | string
+                  | number
+                  | boolean
+                  | null
+                  | (unknown | null)[]
+                  | {
+                      [key: string]: unknown;
+                    }
+                )[]
+              | {
+                  [key: string]:
+                    | string
+                    | number
+                    | boolean
+                    | null
+                    | (unknown | null)[]
+                    | {
+                        [key: string]: unknown;
+                      };
+                };
+            /** Format: date-time */
+            updatedAt: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "extensions.setSelfStorageEntry": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          key: string;
+          value:
+            | string
+            | number
+            | boolean
+            | null
+            | (
+                | string
+                | number
+                | boolean
+                | null
+                | unknown[]
+                | {
+                    [key: string]: unknown;
+                  }
+              )[]
+            | {
+                [key: string]:
+                  | string
+                  | number
+                  | boolean
+                  | null
+                  | unknown[]
+                  | {
+                      [key: string]: unknown;
+                    };
+              };
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            key: string;
+            /** Format: date-time */
+            updatedAt: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "extensions.deleteSelfStorageEntry": {
+    parameters: {
+      query: {
+        key: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            deleted: boolean;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "extensions.listSelfStorageEntries": {
+    parameters: {
+      query?: {
+        prefix?: string;
+        after?: string;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            data: {
+              key: string;
+              value:
+                | string
+                | number
+                | boolean
+                | null
+                | (
+                    | string
+                    | number
+                    | boolean
+                    | null
+                    | (unknown | null)[]
+                    | {
+                        [key: string]: unknown;
+                      }
+                  )[]
+                | {
+                    [key: string]:
+                      | string
+                      | number
+                      | boolean
+                      | null
+                      | (unknown | null)[]
+                      | {
+                          [key: string]: unknown;
+                        };
+                  };
+              /** Format: date-time */
+              updatedAt: string;
+            }[];
+            hasMore: boolean;
           };
         };
       };

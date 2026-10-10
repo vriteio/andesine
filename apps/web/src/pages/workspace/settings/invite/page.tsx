@@ -113,9 +113,6 @@ const InviteSettingsPage: Component = () => {
               type="email"
               autocomplete="email"
               placeholder="colleague@example.com"
-              variant="outlined"
-              color="contrast"
-              size="small"
               value={email()}
               setValue={setEmail}
               class="w-full max-w-md"
@@ -148,10 +145,6 @@ const InviteSettingsPage: Component = () => {
           <div class="flex items-center justify-end gap-2">
             <Tooltip content="Go back">
               <IconButton
-                variant="outlined"
-                color="contrast"
-                text="soft"
-                size="small"
                 icon="i-lucide:chevron-left"
                 onClick={navigateToPeople}
                 disabled={inviteMutation.isPending}
@@ -163,9 +156,6 @@ const InviteSettingsPage: Component = () => {
               wrapperClass="flex-1"
             >
               <Button
-                color="primary"
-                variant="outlined"
-                size="small"
                 class="flex w-full items-center justify-center gap-1"
                 disabled={Boolean(fillError())}
                 loading={inviteMutation.isPending}

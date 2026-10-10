@@ -29,7 +29,7 @@ const aiRateLimits = {
 } as const;
 
 const countsAPICalls = (sessionData: SessionData, trackUsage?: false): boolean => {
-  const usesAPICredentials = sessionData.type === "key" || sessionData.type === "oauth";
+  const usesAPICredentials = sessionData.type !== "session";
 
   return config.BILLING_ENABLED && usesAPICredentials && trackUsage !== false;
 };
@@ -116,6 +116,13 @@ const authorized = base.middleware(async ({ procedure, context, next }, input) =
     headers: context.reqHeaders!,
     requireWorkspace: meta.requireWorkspace !== false
   });
+
+  if (sessionData.extension && !sessionData.extension.active && !meta.inactiveExtensions) {
+    throw new ORPCError("FORBIDDEN", {
+      message: "The extension is disabled or uninstalled",
+      data: { hints: ["Read the extension's state with GET /extensions/self."] }
+    });
+  }
 
   if (sessionData.type === "oauth" && !isPublicAPI(meta)) {
     throw new ORPCError("FORBIDDEN", {

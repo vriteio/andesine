@@ -190,7 +190,8 @@ const ClientEditor: Component<EditorProps> = (props) => {
             awareness: currentProvider?.awareness || null,
             schema: editorMode === "schema",
             user: collaborationUser,
-            editable: () => props.editable ?? true
+            editable: () => props.editable ?? true,
+            elementViews: props.elementViews
           });
         }
       }),
@@ -410,6 +411,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
           />
           <BlockMenuArea
             editor={editableEditor()}
+            blockActions={props.blockActions}
             menuContainerRef={menuContainerRef}
             notify={(type, text) => props.notify?.(type, text)}
           >
@@ -424,6 +426,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
                     editor={editor()!}
                     menuContainerRef={menuContainerRef}
                     mode={props.mode || "entry"}
+                    elementViews={props.elementViews}
                   />
                   <BubbleMenu editor={editor()!} menuContainerRef={menuContainerRef} />
                   <DragHandleMenu editor={editor()!} menuContainerRef={menuContainerRef} />

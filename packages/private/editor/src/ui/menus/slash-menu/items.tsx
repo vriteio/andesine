@@ -1,5 +1,5 @@
 import { createRef } from "@andesine/components";
-import type { EditorMode } from "#editor/client-types";
+import type { ElementViewOption, EditorMode } from "#editor/client-types";
 import type { Editor } from "@tiptap/core";
 import type { ResolvedPos } from "@tiptap/pm/model";
 import { FRAGMENT_BLOCK_TYPES, type FragmentBlockType } from "@andesine/document";
@@ -243,6 +243,35 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
   ];
 };
 
+/** Elements with views, e.g. from extensions, inserted with their tags. */
+const createElementViewItems = (options: ElementViewOption[]): SlashMenuItem[] => {
+  return options.map((option) => ({
+    label: option.label,
+    description: option.description,
+    icon: option.icon ?? "i-lucide:code-xml",
+    group: "Elements",
+    schemaKind: "block",
+    schemaBlockType: "element",
+    ref: createRef<HTMLElement | null>(null),
+    command({ editor, range }) {
+      return editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .insertElement({ name: option.element, selfClosing: option.selfClosing })
+        .run();
+    }
+  }));
+};
+/** Places the element items after the block items. */
+const withElementItems = (
+  items: SlashMenuItem[],
+  elementItems: SlashMenuItem[]
+): SlashMenuItem[] => {
+  const index = items.findLastIndex((item) => item.group === "Blocks") + 1;
+
+  return [...items.slice(0, index), ...elementItems, ...items.slice(index)];
+};
 const getAvailableSlashMenuItems = (
   items: SlashMenuItem[],
   editor: Editor,
@@ -292,4 +321,10 @@ const getAvailableSlashMenuItems = (
   });
 };
 
-export { createSlashMenuItems, getAvailableSlashMenuItems, isInsideTableCell };
+export {
+  createElementViewItems,
+  createSlashMenuItems,
+  getAvailableSlashMenuItems,
+  isInsideTableCell,
+  withElementItems
+};

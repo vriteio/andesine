@@ -94,9 +94,6 @@ const PropertyMenu = (props: PropertyMenuProps): JSX.Element => {
             <Input
               class="w-full min-w-0 bg-gray-50"
               label="Property name"
-              size="small"
-              color="contrast"
-              variant="outlined"
               placeholder="Property"
               maxLength={MAX_PROPERTY_NAME_LENGTH}
               tabIndex={nameInputTabIndex()}

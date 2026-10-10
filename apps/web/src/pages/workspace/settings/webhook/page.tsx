@@ -291,10 +291,6 @@ const WebhookEditor: Component<WebhookEditorProps> = (props) => {
           <div class="flex items-center justify-end gap-2">
             <Tooltip content="Go back">
               <IconButton
-                variant="outlined"
-                color="contrast"
-                text="soft"
-                size="small"
                 icon="i-lucide:chevron-left"
                 disabled={saving()}
                 onClick={navigateToAPI}
@@ -307,9 +303,6 @@ const WebhookEditor: Component<WebhookEditorProps> = (props) => {
                 wrapperClass="flex-1"
               >
                 <Button
-                  color="primary"
-                  variant="outlined"
-                  size="small"
                   class="flex w-full items-center justify-center gap-1"
                   disabled={formDisabled() || Boolean(fillError())}
                   loading={saving()}

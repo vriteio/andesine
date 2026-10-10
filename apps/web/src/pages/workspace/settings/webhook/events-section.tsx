@@ -1,4 +1,4 @@
-import { Input } from "@andesine/components";
+import { Card, Input } from "@andesine/components";
 import clsx from "clsx";
 import { type Component, createMemo, createSignal, For, Show } from "solid-js";
 import type { SetStoreFunction } from "solid-js/store";
@@ -128,9 +128,6 @@ const EventsSection: Component<EventsSectionProps> = (props) => {
       >
         <Input
           placeholder="Search events"
-          variant="outlined"
-          color="contrast"
-          size="small"
           value={search()}
           setValue={setSearch}
           class="w-full max-w-md"
@@ -155,7 +152,15 @@ const EventsSection: Component<EventsSectionProps> = (props) => {
         {(results) => (
           <For
             each={results()}
-            fallback={<span class="py-2 text-sm text-gray-400">No matching events</span>}
+            fallback={
+              <Card
+                class="my-1 flex h-10 items-center justify-center gap-1 rounded-lg bg-white px-2 text-sm text-gray-400"
+                shade
+              >
+                <div class="i-lucide:search-x h-4.5 w-4.5 text-gray-300" />
+                No matching events
+              </Card>
+            }
           >
             {(event) => (
               <EventRow

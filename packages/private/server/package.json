@@ -19,6 +19,14 @@
       "types": "./src/data/index.ts",
       "default": "./src/data/index.ts"
     },
+    "./extensions": {
+      "types": "./src/extensions/index.ts",
+      "default": "./src/extensions/index.ts"
+    },
+    "./extensions/config": {
+      "types": "./src/extensions/config-schema.ts",
+      "default": "./src/extensions/config-schema.ts"
+    },
     "./primitives": {
       "types": "./src/primitives/index.ts",
       "default": "./src/primitives/index.ts"

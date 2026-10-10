@@ -442,6 +442,7 @@ const findDisallowedElementBlock = (
 
 export {
   ELEMENT_BLOCKS,
+  ELEMENT_TAG_NAME,
   parseElement,
   getElementTagName,
   getElementData,

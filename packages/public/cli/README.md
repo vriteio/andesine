@@ -32,6 +32,72 @@ template of this CLI release, with `@andesine/pages` and `@andesine/ui` pinned t
 same version. Then run `npm install` and `npm run dev` in the directory. The command
 needs no credentials.
 
+## Extensions
+
+```sh
+npx andesine extensions init hello --name acme/hello
+npx andesine extensions build
+npx andesine extensions keys generate
+npx andesine extensions keys check --registry https://registry.example.com/index.json
+npx andesine extensions keys revoke key-2026-10-07
+```
+
+`extensions init` creates an extension with a Solid frontend and a Node backend in a new or
+empty directory (default `extension`), and generates its first backend key.
+
+`extensions build` loads `andesine.config.ts`, validates the manifest with the same rules
+as the extension registry, bundles the frontend into one script with a generated
+`startExtension` call for the manifest's view entries, and generates the CSS of the views
+and of the manifest icons. It writes `dist/frontend.js`, `dist/styles.css`,
+`dist/icons.css`, and `dist/extension.json` (the manifest and the SHA-256 digest and size
+of each file). Builds are deterministic.
+
+`extensions keys generate` creates an Ed25519 key pair. The public key goes to
+`andesine.keys.json`, which the manifest imports; the private key goes to
+`.andesine/keys/<kid>.json` (mode 0600) and is never uploaded. `keys check` compares the
+private key in `ANDESINE_EXTENSION_KEY` or `--key` with the manifest keys and, with
+`--registry`, with the keys of the registry entry. `keys revoke` moves a key ID to
+`revokedKeys`. Extension commands use `--root <directory>` (default: current directory);
+only `dev` and `test-event` need credentials.
+
+### Local development
+
+```sh
+npx andesine --base-url http://localhost:3333 --workspace ws_... extensions dev
+npx andesine extensions test-event content entry.created
+npx andesine extensions dev --remove
+```
+
+`extensions dev` runs the extension on a local instance for the signed-in member only. It
+needs `andesine auth login` against that instance (API keys cannot develop extensions), a
+selected workspace, and `EXTENSIONS_DEVELOPMENT_ENABLED=true` on the local backend; it refuses
+other hosts than `localhost`, `127.0.0.1`, `[::1]`, `*.localhost`, `*.local`, and `*.test`.
+It creates a development key pair in `.andesine/keys/development.json`, uploads only its
+public key with each build, and writes the private key and the instance URL to the backend's
+environment file (`--env-file`, default `.env`). `--backend <url>` uses a local backend URL
+in place of the manifest's, so the manifest can keep its HTTPS deployment URL. Each change rebuilds and reloads the
+extension; a failed build waits for the next change. A build that asks for more permissions
+waits for approval in Settings → Extensions. Ctrl+C stops the extension and keeps its
+configuration and storage. `extensions test-event <webhook> <type>` sends a sample event to a
+webhook and reports the first attempt; `extensions dev --remove` uninstalls the development
+extension and deletes its state.
+
+### Registry
+
+```sh
+npx andesine extensions registry check --published <site checkout>
+npx andesine extensions registry build --published <site checkout> --site-url https://extensions.andesine.app
+```
+
+For the CI of an extension registry repository (projects under `extensions/<scope>/<name>`,
+each with `andesine.registry.json` for the publisher, and `registry/revocations.json`).
+`registry check` validates every project with the instance rules: manifests, keys (published
+keys never change, revoked keys stay revoked), version order, published versions that cannot
+change and must rebuild to the same styles, revocations, and no removed extensions.
+`registry build` runs the check, writes each new version's files and `version.json` next to the
+published ones without overwriting them, and writes `index.json` last. Dependencies of each
+project must be installed.
+
 ## Project configuration
 
 Run `andesine init` for guided setup. It uses Clack prompts and progress indicators

@@ -281,10 +281,8 @@ const TableCellMenu = (props: TableCellMenuProps) => {
                 icon="i-lucide:ellipsis-vertical"
                 iconProps={{ style: { width: "12px", height: "12px" } }}
                 aria-label="Cell actions"
-                variant="outlined"
-                color="contrast"
-                size="xs"
                 text="softer"
+                size="xs"
                 class="absolute z-40 pointer-events-auto h-4 w-4 p-0 rounded-[0.25rem]"
                 style={{
                   left: `${point().x + 8}px`,

@@ -5,6 +5,7 @@ import { billingRouter } from "./billing";
 import { collectionsRouter } from "./collections";
 import { contentRouter } from "./content";
 import { entriesRouter } from "./entries";
+import { extensionsRouter } from "./extensions";
 import { groupsRouter } from "./groups";
 import { api } from "./implement";
 import { keysRouter } from "./keys";
@@ -26,6 +27,7 @@ const router = api.router({
   auth: authRouter,
   instance: instanceRouter,
   entries: entriesRouter,
+  extensions: extensionsRouter,
   groups: groupsRouter,
   collections: collectionsRouter,
   content: contentRouter,

@@ -44,6 +44,17 @@ import {
 } from "./versions";
 import { workspaces } from "./workspaces";
 import { webhookEndpoints, webhookEndpointRevisions } from "./webhooks";
+import {
+  extensionActiveViews,
+  extensionConfigurations,
+  extensionDevelopmentVersions,
+  extensionElementViews,
+  extensionRegistryKeys,
+  extensionRegistryVersions,
+  extensionSecrets,
+  extensionStorage,
+  extensions
+} from "./extensions";
 import { outboundEvents, outboundEventResources } from "./outbound-events";
 import {
   outboundDeliveries,
@@ -104,7 +115,16 @@ const schema = {
   outboundEventResources,
   outboundDeliveries,
   outboundDeliveryRuns,
-  outboundDeliveryAttempts
+  outboundDeliveryAttempts,
+  extensionRegistryVersions,
+  extensionRegistryKeys,
+  extensions,
+  extensionElementViews,
+  extensionActiveViews,
+  extensionStorage,
+  extensionConfigurations,
+  extensionSecrets,
+  extensionDevelopmentVersions
 };
 
 export { schema };

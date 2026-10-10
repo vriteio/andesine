@@ -1,4 +1,5 @@
 import {
+  extensions,
   outboundEvents,
   webhookEndpoints,
   workspaces,
@@ -20,7 +21,10 @@ const scanWebhookCleanup = async (database: Database, cursor: string | null = nu
         sql`(exists (select 1 from ${webhookEndpoints}
         where ${webhookEndpoints.workspaceID} = ${workspaces.id})
         or exists (select 1 from ${outboundEvents}
-          where ${outboundEvents.workspaceID} = ${workspaces.id}))`
+          where ${outboundEvents.workspaceID} = ${workspaces.id})
+        or exists (select 1 from ${extensions}
+          where ${extensions.workspaceID} = ${workspaces.id}
+            and ${extensions.uninstalledAt} is not null))`
       )
     )
     .orderBy(asc(workspaces.id))

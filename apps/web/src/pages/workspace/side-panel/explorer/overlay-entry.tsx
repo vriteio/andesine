@@ -209,9 +209,7 @@ const OverlayEntry: Component<OverlayEntryProps> = (props) => {
                         <IconButton
                           data-entry-menu-trigger
                           icon="i-lucide:ellipsis-vertical"
-                          size="small"
-                          variant="text"
-                          text="soft"
+                          variant="ghost"
                         />
                       </div>
                     </Show>

@@ -6,7 +6,7 @@ import { config } from "#backend/lib/config";
 import { consumeRateLimit, RATE_LIMITS } from "#backend/lib/security";
 import { Auth } from "#backend/services/auth";
 import { OpenAPIHandler } from "@orpc/openapi/fastify";
-import { onError, ORPCError } from "@orpc/server";
+import { onError, ORPCError, ValidationError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fastify";
 import { RequestHeadersPlugin, ResponseHeadersPlugin } from "@orpc/server/plugins";
 import type { StandardHandleResult } from "@orpc/server/standard";
@@ -60,28 +60,32 @@ const routerPlugin: FastifyPluginAsync = async (app) => {
         .send({ error: "Too many invite attempts. Please try again later." });
     }
   };
-  const logORPCError = (error: unknown, options?: unknown, pathname?: string) => {
-    // Webhook input URLs and failed output validation can contain credentials
-    // or a one-time secret. Do not log request options, causes, or raw errors.
-    if (pathname && /^\/(?:rpc\/)?webhooks(?:\/|$)/.test(pathname)) {
-      console.error("Webhook request failed", {
-        code: error instanceof ORPCError ? error.code : "INTERNAL_SERVER_ERROR"
-      });
+  // Never log values: request options hold credentials and validation errors hold the input.
+  const logORPCError = (error: unknown, pathname: string) => {
+    const group = /^\/(?:rpc\/)?(webhooks|extensions)(?:\/|$)/.exec(pathname)?.[1];
+    const code = error instanceof ORPCError ? error.code : "INTERNAL_SERVER_ERROR";
+
+    // Webhook and extension inputs can contain credentials, session tokens, or secrets.
+    if (group) {
+      console.error(`${group === "webhooks" ? "Webhook" : "Extension"} request failed`, { code });
       return;
     }
 
-    if (error instanceof ORPCError) {
-      const cause = (error as { cause?: unknown }).cause;
-
-      console.error(error.message, {
-        code: error.code,
-        cause,
-        options
-      });
+    if (!(error instanceof ORPCError)) {
+      console.error(error, { pathname });
       return;
     }
 
-    console.error(error, { options });
+    const cause = (error as { cause?: unknown }).cause;
+
+    if (cause instanceof ValidationError) {
+      const issues = cause.issues.map(({ path, message }) => ({ path, message }));
+
+      console.error(error.message, { pathname, code, issues });
+      return;
+    }
+
+    console.error(error.message, { pathname, code, cause });
   };
   const openAPIHandler = new OpenAPIHandler(router, {
     plugins: [
@@ -92,7 +96,7 @@ const routerPlugin: FastifyPluginAsync = async (app) => {
     interceptors: [
       withStreamHeaders,
       onError((error, options) => {
-        logORPCError(error, options, options.request.url.pathname);
+        logORPCError(error, options.request.url.pathname);
         throw withErrorHints(error);
       })
     ]
@@ -102,7 +106,7 @@ const routerPlugin: FastifyPluginAsync = async (app) => {
     interceptors: [
       withStreamHeaders,
       onError((error, options) => {
-        logORPCError(error, options, options.request.url.pathname);
+        logORPCError(error, options.request.url.pathname);
       })
     ]
   });

@@ -5,6 +5,7 @@ import { encryptionConfigSchema } from "@andesine/server/security/config";
 import { webhookDestinationConfigSchema } from "@andesine/server/webhooks/destination/config";
 import { billingConfigSchema } from "#backend/lib/billing/config-schema";
 import * as z from "zod";
+import { extensionsConfigSchema } from "@andesine/server/extensions/config";
 
 const cookieDomain = z.preprocess(
   (value) => {
@@ -32,6 +33,7 @@ const configSchema = billingConfigSchema.safeExtend({
     .stringbool()
     .optional()
     .describe("Whether to use secure connections for public URLs"),
+  ...extensionsConfigSchema.shape,
   // Secrets
   SECRET: secret.describe("Secret for signing tokens and encrypting data"),
   ...encryptionConfigSchema.shape,

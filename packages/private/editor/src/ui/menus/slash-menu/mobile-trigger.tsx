@@ -4,7 +4,8 @@ import { type Accessor, createSignal, onCleanup, onMount, Show, type Component }
 import { Portal } from "solid-js/web";
 import { EDITOR_MENU_Z_INDEX } from "#editor/ui/constants";
 import { SlashMenuDropdown } from "./dropdown";
-import { createSlashMenuItems, getAvailableSlashMenuItems, isInsideTableCell } from "./items";
+import { getAvailableSlashMenuItems, isInsideTableCell } from "./items";
+import { type SlashMenuItem } from "./component";
 import type { EditorMode } from "#editor/client-types";
 
 interface Position {
@@ -18,13 +19,13 @@ const MobileSlashMenuTrigger: Component<{
   editor: Editor;
   menuContainerRef: Accessor<HTMLElement | null>;
   mode: EditorMode;
+  items: Accessor<SlashMenuItem[]>;
 }> = (props) => {
   const [positionFrame, setPositionFrame] = createRef<number | null>(null);
   const [activeParagraphElement, setActiveParagraphElementRef] = createRef<HTMLElement | null>(
     null
   );
-  const items = createSlashMenuItems();
-  const availableItems = () => getAvailableSlashMenuItems(items, props.editor, props.mode);
+  const availableItems = () => getAvailableSlashMenuItems(props.items(), props.editor, props.mode);
   const [focused, setFocused] = createSignal(props.editor.isFocused);
   const [opened, setOpened] = createSignal(false);
   const [position, setPosition] = createSignal<Position | null>(null, {
@@ -178,10 +179,7 @@ const MobileSlashMenuTrigger: Component<{
                     data-menu
                     icon="i-lucide:plus"
                     label="Add block"
-                    variant="text"
-                    color="contrast"
-                    size="small"
-                    text="soft"
+                    variant="ghost"
                     onPointerDown={(event) => {
                       if (event.button !== 0) return;
 

@@ -1,5 +1,7 @@
 import { createCodeBlockMenuItems } from "./code-block";
 import { createElementMenuItems } from "./element";
+import { createExtensionActionMenuItems } from "./extension-actions";
+import type { BlockActions } from "#editor/client-types";
 import { createImageMenuItems } from "./image";
 import { isBlockSelection } from "#editor/extensions/block-selection";
 import { DropdownMenu, IconButton, type MenuItem } from "@andesine/components";
@@ -39,8 +41,11 @@ interface BlockMenuProps {
   menuID: string;
   notify(type: "success" | "error", text: string): void;
   editor: Editor | null;
+  blockActions?: BlockActions;
   textMenuSelectionRange: BlockControlRange | null;
   anchorPoint: { x: number; y: number } | null;
+  /** The last context menu's point, which the dropdown keeps internally. */
+  contextMenuPoint: { x: number; y: number } | null;
   menuOpened: boolean;
   setMenuOpened(opened: boolean): void;
 }
@@ -62,11 +67,17 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
   const [hoverAreaHeight, setHoverAreaHeight] = createSignal(0);
   const [triggerAvailable, setTriggerAvailable] = createSignal(false);
   const [contextMenuMode, setContextMenuMode] = createSignal(false);
+  // Menus of block actions, which open in the menu's place, keep the trigger like the open menu.
+  const [triggerHolds, setTriggerHolds] = createSignal(0);
   const [imageItems, setImageItems] = createSignal<BlockMenuItems>([]);
   const [codeItems, setCodeItems] = createSignal<BlockMenuItems>([]);
   const [elementItems, setElementItems] = createSignal<BlockMenuItems>([]);
   const [tableItems, setTableItems] = createSignal<BlockMenuItems>([]);
   const [turnIntoItems, setTurnIntoItems] = createSignal<BlockMenuItems>([]);
+  const [extensionItems, setExtensionItems] = createSignal<BlockMenuItems>([]);
+
+  let trigger: HTMLDivElement | undefined;
+
   const menuItems = (): BlockMenuItem[][] => {
     const tableActions = tableItems();
 
@@ -97,15 +108,40 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
       ...getMenuGroups(codeItems()),
       ...getMenuGroups(turnIntoItems()),
       ...getMenuGroups(elementItems()),
+      ...getMenuGroups(extensionItems()),
       items
     ];
   };
+  const triggerPinned = () => props.menuOpened || triggerHolds() > 0;
   const handleOpenedChange = (opened: boolean) => {
     props.setMenuOpened(opened);
 
-    if (!opened) {
+    if (!opened && !triggerHolds()) {
       setTriggerAvailable(false);
     }
+  };
+  // Keeps the trigger shown and in place until the returned release is called.
+  const holdTrigger = () => {
+    let released = false;
+
+    setTriggerHolds((holds) => holds + 1);
+
+    return () => {
+      if (released) return;
+
+      released = true;
+      setTriggerHolds((holds) => holds - 1);
+      if (!triggerPinned()) setTriggerAvailable(false);
+    };
+  };
+  // What the menu is anchored to: the context menu's point, another point, or the trigger.
+  const getMenuAnchor = (): DOMRect | null => {
+    const point = contextMenuMode() ? props.contextMenuPoint : props.anchorPoint;
+
+    if (point) return new DOMRect(point.x, point.y, 0, 0);
+    if (contextMenuMode()) return null;
+
+    return trigger?.getBoundingClientRect() ?? null;
   };
   const getCurrentTarget = () => {
     const editor = props.editor;
@@ -168,6 +204,14 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
       setElementItems(editor && !editor.isDestroyed ? createElementMenuItems(editor) : []);
       setTableItems(editor && !editor.isDestroyed ? createTableMenuItems(editor) : []);
       setTurnIntoItems(editor && !editor.isDestroyed ? createTurnIntoMenuItem(editor) : []);
+      setExtensionItems(
+        editor && !editor.isDestroyed && props.blockActions
+          ? createExtensionActionMenuItems(editor, props.blockActions, props.menuID, {
+              getMenuAnchor,
+              holdTrigger
+            })
+          : []
+      );
     };
 
     updateMenuItems();
@@ -214,10 +258,10 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
     }
 
     const hideTrigger = debounce(() => {
-      if (!props.menuOpened) setTriggerAvailable(false);
+      if (!triggerPinned()) setTriggerAvailable(false);
     }, BLOCK_CONTROL_HIDE_DELAY);
     const updatePosition = (event: PointerEvent) => {
-      if (props.menuOpened && !contextMenuMode()) return;
+      if (triggerPinned() && !contextMenuMode()) return;
 
       try {
         const pointerTarget = getBlockControlTargetAtY(editor, event.clientY, {
@@ -283,7 +327,7 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
     };
     const handlePointerLeave = () => {
       // Opened dropdown forces the trigger to remain visible
-      if (!props.menuOpened) {
+      if (!triggerPinned()) {
         hideTrigger();
       }
     };
@@ -312,6 +356,7 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
       onContextMenuChange={setContextMenuMode}
       trigger={() => (
         <div
+          ref={trigger}
           class="absolute pointer-events-auto"
           data-block-menu-trigger
           data-menu
@@ -334,10 +379,6 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
           />
           <IconButton
             icon="i-lucide:ellipsis"
-            variant="outlined"
-            color="contrast"
-            size="small"
-            text="soft"
             onClick={(event) => {
               event.stopPropagation();
               event.preventDefault();

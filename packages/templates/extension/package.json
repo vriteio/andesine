@@ -1,0 +1,28 @@
+{
+  "name": "@andesine/extension-template",
+  "version": "0.6.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "build": "andesine extensions build",
+    "dev": "andesine extensions dev --backend http://localhost:3000",
+    "backend": "node --env-file-if-exists=.env --import tsx src/backend/server.ts",
+    "check": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "dependencies": {
+    "@andesine/extensions": "workspace:*",
+    "@andesine/sdk": "workspace:*",
+    "solid-js": "^1.9.14",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.2",
+    "andesine": "workspace:*",
+    "tsx": "^4.23.5",
+    "typescript": "6.0.3"
+  }
+}

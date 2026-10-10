@@ -40,10 +40,10 @@ const EditorLoadErrorView: Component<EditorLoadErrorViewProps> = (props) => {
           </div>
           <IconButton
             icon={props.actionIcon}
-            class="w-full @hover:bg-gray-50 gap-1"
+            class="w-full gap-1"
             iconProps={{ class: "h-5 w-5 text-gray-400" }}
-            variant="outlined"
-            color="contrast"
+            text="base"
+            size="medium"
             label={props.actionLabel}
             onClick={props.onAction}
           />

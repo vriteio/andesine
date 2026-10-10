@@ -78,7 +78,6 @@ const BillingProcessingDialog: Component<BillingProcessingDialogProps> = (props)
       opened={props.opened}
       onOverlayClick={close}
       closeOnEscape={state() === "delayed"}
-      portal
       aria-label="Confirming subscription"
     >
       <div class="flex flex-col gap-0.5">
@@ -101,20 +100,10 @@ const BillingProcessingDialog: Component<BillingProcessingDialogProps> = (props)
         }
       >
         <div class="flex gap-2">
-          <IconButton
-            variant="outlined"
-            color="contrast"
-            text="soft"
-            size="small"
-            icon="i-lucide:x"
-            onClick={close}
-          >
+          <IconButton icon="i-lucide:x" onClick={close}>
             Close
           </IconButton>
           <Button
-            color="primary"
-            variant="outlined"
-            size="small"
             class="flex-1"
             onClick={() => {
               void poll();

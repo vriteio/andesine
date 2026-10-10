@@ -1,5 +1,6 @@
 {
   "name": "@andesine/contracts",
+  "version": "0.0.0",
   "type": "module",
   "private": true,
   "exports": {
@@ -46,6 +47,26 @@
     "./events": {
       "types": "./src/events/index.ts",
       "default": "./src/events/index.ts"
+    },
+    "./extensions": {
+      "types": "./src/extensions/index.ts",
+      "default": "./src/extensions/index.ts"
+    },
+    "./extensions/configuration": {
+      "types": "./src/extensions/configuration.ts",
+      "default": "./src/extensions/configuration.ts"
+    },
+    "./extensions/manifest": {
+      "types": "./src/extensions/manifest.ts",
+      "default": "./src/extensions/manifest.ts"
+    },
+    "./extensions/registry": {
+      "types": "./src/extensions/registry.ts",
+      "default": "./src/extensions/registry.ts"
+    },
+    "./extensions/styles": {
+      "types": "./src/extensions/styles.ts",
+      "default": "./src/extensions/styles.ts"
     },
     "./instance": {
       "types": "./src/instance/index.ts",

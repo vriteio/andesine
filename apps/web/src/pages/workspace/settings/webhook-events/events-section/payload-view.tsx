@@ -53,9 +53,8 @@ const PayloadView: Component<PayloadViewProps> = (props) => {
           >
             <IconButton
               icon="i-lucide:copy"
+              variant="ghost"
               size="xs"
-              variant="text"
-              text="soft"
               onClick={() => {
                 void copyText(source(), {
                   success: "Payload copied to clipboard",

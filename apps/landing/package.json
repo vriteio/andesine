@@ -17,6 +17,7 @@
     "three": "^0.185.1"
   },
   "devDependencies": {
+    "@andesine/uno-preset": "workspace:*",
     "@astrojs/check": "^0.9.10",
     "@iconify/json": "^2.2.509",
     "@types/three": "^0.185.4",

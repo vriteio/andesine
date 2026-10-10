@@ -13,7 +13,8 @@ import {
   createOutboundEvent,
   createWebhookOperation,
   createWebhookRecorder,
-  getWebhookEntryContext
+  getWebhookEntryContext,
+  getWebhookOriginUUID
 } from "@andesine/server/webhooks/recording";
 import { webhookRetentionPolicy } from "#backend/lib/webhooks/policy";
 import {
@@ -278,6 +279,7 @@ const planEntryMove = withAuthorization<MoveEntryInput, ResolvedMoveEntry, MoveE
               sourceOrder: resolved.sourceOrder
             },
             initiatedBy: auth.session?.memberID ? toUUID(auth.session.memberID) : null,
+            originExtensionID: getWebhookOriginUUID(),
             totalEntries: 1
           })
           .returning();

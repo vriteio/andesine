@@ -1,0 +1,26 @@
+{
+  "name": "@andesine/uno-preset",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./extensions": {
+      "types": "./src/extensions.ts",
+      "default": "./src/extensions.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@andesine/contracts": "workspace:*",
+    "unocss": "^66.7.5"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3"
+  }
+}

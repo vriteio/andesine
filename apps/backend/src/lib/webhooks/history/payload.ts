@@ -5,6 +5,7 @@ import {
   restoreWebhookEventResources,
   loadStoredWebhookEvent
 } from "@andesine/server/webhooks/recording";
+import { isWebhookEvent } from "@andesine/contracts/webhooks";
 import type { SessionData } from "#backend/lib/policy/session";
 import { and, eq } from "drizzle-orm";
 import { canReadWebhookPayload } from "../payload-access";
@@ -16,6 +17,10 @@ const readRetainedWebhookPayload = async (
   delivery: WebhookDeliveryRow
 ) => {
   const event = await loadStoredWebhookEvent(database, delivery);
+
+  // Only extension webhooks receive lifecycle events; they carry no workspace content.
+  if (!isWebhookEvent(event)) return { event, allowed: true };
+
   const scopes: WebhookResourceScope[] = [];
 
   if (!event.test && event.subject.kind !== "channel") {

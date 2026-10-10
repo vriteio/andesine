@@ -206,6 +206,8 @@ const schemaMigrations = pgTable(
     initiatedBy: uuid("initiated_by").references(() => memberships.id, {
       onDelete: "set null"
     }),
+    // The extension that started it, whose webhooks skip its events; no FK, to outlive it.
+    originExtensionID: uuid("origin_extension_id"),
     totalEntries: integer("total_entries").notNull().default(0),
     processedEntries: integer("processed_entries").notNull().default(0),
     error: text("error"),

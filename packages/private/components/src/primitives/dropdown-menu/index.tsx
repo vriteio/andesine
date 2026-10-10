@@ -195,26 +195,32 @@ const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
                   : "media-mouse:data-[highlighted]:bg-gray-100")
             )}
           >
-            <div class={clsx("contents", loading() && "invisible")}>
+            {/* While loading, a spinner replaces the icon, or covers an item without one. */}
+            <div class={clsx("contents", loading() && !option.icon && "invisible")}>
               <Show when={option.selected}>
                 <div class="absolute inset-0 -z-1 rounded-md bg-gradient-to-tr opacity-10 media-mouse:group-data-[highlighted]/menu-item:opacity-100 pointer-events-none" />
               </Show>
               <Show when={option.icon}>
-                <div
-                  class={clsx(
-                    "h-4.5 w-4.5",
-                    typeof option.icon === "string" && option.icon,
-                    option.selected
-                      ? typeof option.icon === "function"
-                        ? "bg-gradient-to-tr bg-clip-text text-transparent from-secondary via-primary to-secondary media-mouse:group-data-[highlighted]/menu-item:text-white media-mouse:group-data-[highlighted]/menu-item:from-white media-mouse:group-data-[highlighted]/menu-item:via-white media-mouse:group-data-[highlighted]/menu-item:to-white"
-                        : "bg-gradient-to-tr media-mouse:group-data-[highlighted]/menu-item:text-white media-mouse:group-data-[highlighted]/menu-item:from-white media-mouse:group-data-[highlighted]/menu-item:to-white"
-                      : option.color === "danger"
-                        ? "text-red-500"
-                        : "text-gray-500"
-                  )}
+                <Show
+                  when={!loading()}
+                  fallback={<Spinner class="h-4.5 w-4.5 shrink-0 text-gray-500" />}
                 >
-                  {typeof option.icon === "function" && option.icon()}
-                </div>
+                  <div
+                    class={clsx(
+                      "h-4.5 w-4.5",
+                      typeof option.icon === "string" && option.icon,
+                      option.selected
+                        ? typeof option.icon === "function"
+                          ? "bg-gradient-to-tr bg-clip-text text-transparent from-secondary via-primary to-secondary media-mouse:group-data-[highlighted]/menu-item:text-white media-mouse:group-data-[highlighted]/menu-item:from-white media-mouse:group-data-[highlighted]/menu-item:via-white media-mouse:group-data-[highlighted]/menu-item:to-white"
+                          : "bg-gradient-to-tr media-mouse:group-data-[highlighted]/menu-item:text-white media-mouse:group-data-[highlighted]/menu-item:from-white media-mouse:group-data-[highlighted]/menu-item:to-white"
+                        : option.color === "danger"
+                          ? "text-red-500"
+                          : "text-gray-500"
+                    )}
+                  >
+                    {typeof option.icon === "function" && option.icon()}
+                  </div>
+                </Show>
               </Show>
               <div class="px-1 flex flex-1 gap-4">
                 <span
@@ -235,7 +241,7 @@ const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
                 </Show>
               </div>
             </div>
-            <Show when={loading()}>
+            <Show when={loading() && !option.icon}>
               <div
                 class={clsx(
                   "absolute inset-0 flex items-center justify-center p-1.5",

@@ -113,23 +113,8 @@ const RotateKeyDialog: Component<RotateKeyDialogProps> = (props) => {
         itemClass="flex-1"
       />
       <div class="flex gap-2">
-        <IconButton
-          variant="outlined"
-          color="contrast"
-          text="soft"
-          size="small"
-          icon="i-lucide:x"
-          disabled={props.loading}
-          onClick={handleClose}
-        />
-        <Button
-          color="primary"
-          variant="outlined"
-          size="small"
-          loading={props.loading}
-          onClick={() => props.onConfirm(expiresIn())}
-          class="flex-1"
-        >
+        <IconButton icon="i-lucide:x" disabled={props.loading} onClick={handleClose} />
+        <Button loading={props.loading} onClick={() => props.onConfirm(expiresIn())} class="flex-1">
           Rotate key
         </Button>
       </div>

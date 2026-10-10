@@ -37,7 +37,6 @@ const SchemaMigrationFailureDialog = () => {
   return (
     <Dialog
       opened={Boolean(migration())}
-      portal
       aria-label="Schema migration failed"
       onOverlayClick={close}
     >
@@ -59,14 +58,7 @@ const SchemaMigrationFailureDialog = () => {
               </div>
             </div>
             <div class="flex justify-end">
-              <IconButton
-                color="contrast"
-                icon="i-lucide:x"
-                size="small"
-                text="soft"
-                variant="outlined"
-                onClick={close}
-              >
+              <IconButton icon="i-lucide:x" onClick={close}>
                 Close
               </IconButton>
             </div>

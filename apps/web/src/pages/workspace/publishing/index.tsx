@@ -312,9 +312,7 @@ const PublishingPanel: Component<PublishingPanelProps> = (props) => {
                       <IconButton
                         aria-label="Open publishing menu"
                         icon="i-lucide:ellipsis-vertical"
-                        size="small"
-                        text="soft"
-                        variant="text"
+                        variant="ghost"
                       />
                     </div>
                   )}
@@ -334,7 +332,8 @@ const PublishingPanel: Component<PublishingPanelProps> = (props) => {
                 <div class="flex flex-1 flex-col pt-1">
                   <Button
                     class="flex w-full items-center justify-start gap-1 py-0.5 pl-0.5"
-                    variant="text"
+                    variant="ghost"
+                    size="medium"
                     onClick={() => {
                       const input = queryInput();
 

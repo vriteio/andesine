@@ -5,6 +5,8 @@ interface TypedAuthorizationRequirements {
   key?: KeyPermission[] | true;
   session?: Permission[] | true;
   oauth?: Permission[] | true;
+  /** Operations of the extension API: only the extension principal (extension JWT). */
+  extension?: true;
 }
 interface ParsedPermission {
   access: string;

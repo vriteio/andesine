@@ -82,9 +82,6 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
       <Match when={props.attrs.type === "number"}>
         <Input
           type="number"
-          variant="outlined"
-          color="contrast"
-          size="small"
           placeholder={props.defaultValue ? "Default number" : "Enter number"}
           class={clsx("w-full min-w-0", !props.selected && RESTING_INPUT_OVERRIDES)}
           value={inputValue()}
@@ -105,7 +102,6 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
           <div class="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-r from-gray-100 opacity-0 transition-opacity media-mouse:group-hover/property-value:opacity-100" />
           <span class="relative z-1">
             <Checkbox
-              size="small"
               checked={props.attrs.value === true}
               setChecked={(value) => props.updateAttributes({ value }, { select: true })}
             />
@@ -124,9 +120,6 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
       <Match when={props.attrs.type === "url"}>
         <Input
           type="url"
-          variant="outlined"
-          color="contrast"
-          size="small"
           placeholder={props.defaultValue ? "Default URL" : "https://example.com"}
           class={clsx("w-full min-w-0", !props.selected && RESTING_INPUT_OVERRIDES)}
           value={inputValue()}
@@ -201,10 +194,6 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
                             </span>
                           )
                     }
-                    size="small"
-                    text="soft"
-                    variant="outlined"
-                    color="contrast"
                   />
                 </TagList>
               </div>

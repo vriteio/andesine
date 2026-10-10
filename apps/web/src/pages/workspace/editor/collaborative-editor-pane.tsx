@@ -6,6 +6,8 @@ import clsx from "clsx";
 import { type Component, createEffect, createMemo, Show } from "solid-js";
 import { useNotify } from "#web/context/notifications";
 import { config } from "#web/lib/api";
+import { createElementViews } from "#web/components/extensions/element-views";
+import { createBlockActions } from "#web/components/extensions/block-actions";
 import { CollaborationStatusIndicator } from "./collaboration-status-indicator";
 import { type DocumentLoadState, useDocumentLoadState } from "./document-load-state";
 import { getCollaborationStatus, getCollaborationUser } from "./editor-collaboration";
@@ -40,6 +42,8 @@ interface CollaborativeEditorPaneProps {
 
 const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props) => {
   const notify = useNotify();
+  const elementViews = config.PUBLIC_EXTENSIONS_ENABLED ? createElementViews() : undefined;
+  const extensionActions = config.PUBLIC_EXTENSIONS_ENABLED ? createBlockActions() : undefined;
   const selectedDocumentID = () => props.documentID;
   const {
     documentLoadState,
@@ -194,6 +198,8 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
                   providerAttempt={providerAttempt()}
                   editable={editable()}
                   mode={props.mode}
+                  elementViews={elementViews}
+                  blockActions={extensionActions?.blockActions}
                   staticTitle={props.staticTitle}
                   notify={(type, text) => notify({ type, text })}
                   collaborationUser={collaborationUser()}
@@ -251,6 +257,7 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
           )}
         </Show>
       </Show>
+      {extensionActions && <extensionActions.BlockActionView />}
     </div>
   );
 };

@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.6.0
+
+- No changes; versioned with the other public Andesine packages.
+
+## 0.5.0
+
+- Add the extension API operations `extensions.getSelf`,
+  `extensions.verifySession`, `extensions.listInstallations`,
+  `extensions.getSelfConfiguration`, and the storage operations
+  `extensions.getSelfStorageEntry`, `extensions.setSelfStorageEntry`,
+  `extensions.deleteSelfStorageEntry`, and `extensions.listSelfStorageEntries`. They use an
+  extension JWT (`extensionToken` security scheme), not an API key.
+- Add `@andesine/sdk/extensions` for extension backends: `createExtensionBackend`
+  signs and caches extension JWTs (EdDSA or ES256 private JWK with `kid`),
+  `createClient(instance, extensionID?)` returns API clients for an installation
+  or app-level calls, and `verifySession(headers)` verifies a frontend session
+  token. `receive(body)` handles an extension webhook notification and
+  fetches its delivery (`extensions.getSelfDelivery`). Only the configured
+  `trustedInstances` are accepted.
+- Add the `extensions` role permission (manage workspace extensions) to the role types.
+
 ## 0.4.0
 
 - Document the limits: per-minute rate limits, the monthly API call and AI credit

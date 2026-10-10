@@ -1,6 +1,6 @@
 import { type outboundEventResources } from "@andesine/server/database";
 import { publicID, toCollectionID, toEntryID, toUUID } from "@andesine/contracts/primitives";
-import { webhookEventType, type WebhookEvent } from "@andesine/contracts/webhooks";
+import { outboundEventType, type OutboundEvent } from "@andesine/contracts/webhooks";
 import type { WebhookResourceScope, WebhookScopeIndex } from "./scope";
 import type { WebhookOperation } from "./operation";
 
@@ -11,7 +11,7 @@ interface WebhookEventResource {
   after: WebhookResourceScope | null;
 }
 interface WebhookEventChange {
-  event: WebhookEvent;
+  event: OutboundEvent;
   resources: WebhookEventResource[];
 }
 
@@ -22,7 +22,7 @@ const validateWebhookEventChange = (
   operation: WebhookOperation,
   index: WebhookScopeIndex
 ): WebhookEventChange => {
-  const event = webhookEventType.parse(change.event);
+  const event = outboundEventType.parse(change.event);
   const resources = structuredClone(change.resources);
   const identities = new Set<string>();
 
@@ -59,6 +59,13 @@ const validateWebhookEventChange = (
 
       if (!validScope) throw new Error("Invalid captured webhook resource scope");
     }
+  }
+
+  // Lifecycle events describe an extension, not workspace content.
+  if (event.subject.kind === "extension") {
+    if (resources.length) throw new Error("Extension lifecycle events have no resources");
+
+    return { event, resources };
   }
 
   if (event.subject.kind === "channel") {

@@ -6,6 +6,7 @@ import { Tree, TREE_ROOT_ID, type TreeMap, TreeSkeleton } from "#web/components/
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
 import { client } from "#web/lib/api";
+import { createOptimisticOverrides, type OptimisticOverrides } from "#web/lib/primitives";
 import { getWebhookErrorCode, type Webhook, webhooksQuery } from "#web/lib/data";
 import { SecretDialog } from "../../secret-dialog";
 import { Setting } from "../../setting";
@@ -17,6 +18,8 @@ import { WebhookItem } from "./webhook-item";
 interface WebhookListProps {
   canManage: boolean;
   workspaceID: string;
+  /** New states shown until the refetched webhooks take over. */
+  optimistic: OptimisticOverrides<WebhookStateOverride>;
   isPending(id: string): boolean;
   onDelete(webhooks: Webhook[]): void;
   onEvents(webhook: Webhook): void;
@@ -32,10 +35,14 @@ interface WebhookLoadErrorProps {
   onRetry(): void;
 }
 
+type WebhookStateOverride = Pick<Webhook, "enabled" | "disabledReason">;
+
 const WebhookList: Component<WebhookListProps> = (props) => {
   const webhooks = createAsync(() => webhooksQuery(props.workspaceID), { initialValue: [] });
   const orderedWebhooks = createMemo(() => {
-    return [...webhooks()].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    return webhooks()
+      .map((webhook) => ({ ...webhook, ...props.optimistic.get(webhook.id) }))
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   });
   const getWebhooks = (ids: string[]) => {
     return orderedWebhooks().filter((webhook) => ids.includes(webhook.id));
@@ -43,6 +50,8 @@ const WebhookList: Component<WebhookListProps> = (props) => {
   const webhooksTree = createMemo<TreeMap>(() => ({
     [TREE_ROOT_ID]: { items: orderedWebhooks().map((webhook) => webhook.id), levels: [] }
   }));
+
+  props.optimistic.sync(webhooks);
 
   return (
     <Show
@@ -89,7 +98,7 @@ const WebhookLoadError: Component<WebhookLoadErrorProps> = (props) => (
   >
     <div class="i-lucide:circle-alert h-5.5 w-5.5 text-gray-300" />
     Webhooks could not be loaded
-    <Button variant="outlined" color="contrast" size="small" onClick={props.onRetry}>
+    <Button variant="secondary" onClick={props.onRetry}>
       Retry
     </Button>
   </Card>
@@ -131,8 +140,22 @@ const WebhooksSection: Component = () => {
 
     notify({ type: "error", text: fallback });
   };
+  const optimistic = createOptimisticOverrides<WebhookStateOverride>((id): boolean => {
+    return Boolean(
+      stateMutation.isPending &&
+      stateMutation.variables?.webhooks.some((webhook) => webhook.id === id)
+    );
+  });
   const stateMutation = createMutation(() => ({
     retry: false,
+    onMutate: (input: StateMutationInput): void => {
+      const state = {
+        enabled: input.enabled,
+        disabledReason: input.enabled ? null : "manual"
+      } as const;
+
+      input.webhooks.forEach(({ id }) => optimistic.set(id, state));
+    },
     mutationFn: (input: StateMutationInput) => {
       return client.webhooks.bulkSetEnabled({
         enabled: input.enabled,
@@ -146,7 +169,8 @@ const WebhooksSection: Component = () => {
       notify({ type: "success", text: `${subject} ${input.enabled ? "enabled" : "disabled"}` });
       void refresh();
     },
-    onError: (error) => {
+    onError: (error, input) => {
+      input.webhooks.forEach(({ id }) => optimistic.clear(id));
       handleError(error, "Failed to change webhook state. Check the list before trying again");
     }
   }));
@@ -215,10 +239,6 @@ const WebhooksSection: Component = () => {
                 onClick={() => navigate(`${settingsPath()}/webhook`)}
                 iconProps={{ class: "h-4 w-4" }}
                 icon="i-lucide:plus"
-                size="small"
-                color="contrast"
-                variant="outlined"
-                text="soft"
               />
             </Show>
           </div>
@@ -233,6 +253,7 @@ const WebhooksSection: Component = () => {
               <WebhookList
                 workspaceID={workspaceID()}
                 canManage={hasPermission("webhooks")}
+                optimistic={optimistic}
                 isPending={isPending}
                 onEdit={openWebhook}
                 onEvents={(webhook) => {

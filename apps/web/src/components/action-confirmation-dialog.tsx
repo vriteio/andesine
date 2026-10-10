@@ -51,14 +51,14 @@ interface ConfirmationDialogActionButtonProps {
   disabled?: boolean;
 }
 
+const actionVariants = { danger: "danger", primary: "primary", base: "secondary" } as const;
+
 const ConfirmationDialogActionButton: Component<ConfirmationDialogActionButtonProps> = (props) => (
   <Show
     when={props.action.icon}
     fallback={
       <Button
-        color={props.color || "contrast"}
-        variant="outlined"
-        size="small"
+        variant={actionVariants[props.color ?? "base"]}
         loading={props.action.loading}
         disabled={props.disabled}
         onClick={props.action.onClick}
@@ -73,9 +73,8 @@ const ConfirmationDialogActionButton: Component<ConfirmationDialogActionButtonPr
         icon={icon()}
         iconProps={{ class: clsx("h-4 w-4", props.secondary && "text-gray-400") }}
         label={props.action.label}
-        color={props.color || "contrast"}
-        variant="outlined"
-        size="small"
+        variant={actionVariants[props.color ?? "base"]}
+        text="base"
         loading={props.action.loading}
         disabled={props.disabled}
         onClick={props.action.onClick}
@@ -114,7 +113,6 @@ const ActionConfirmationDialog: Component<ActionConfirmationDialogProps> = (prop
       opened={props.opened}
       onOverlayClick={props.onClose}
       cardClass={displayedState().secondaryAction ? "relative" : undefined}
-      portal
       aria-label={displayedState().title}
     >
       <div class="flex flex-col gap-0.5">
@@ -164,10 +162,6 @@ const ActionConfirmationDialog: Component<ActionConfirmationDialogProps> = (prop
         fallback={
           <div class="flex justify-end gap-2">
             <IconButton
-              variant="outlined"
-              color="contrast"
-              size="small"
-              text="soft"
               icon="i-lucide:x"
               disabled={displayedState().action.loading}
               onClick={props.onClose}
@@ -186,9 +180,7 @@ const ActionConfirmationDialog: Component<ActionConfirmationDialogProps> = (prop
           <>
             <Tooltip content="Close" wrapperClass="absolute right-2 top-2" placement="left">
               <IconButton
-                variant="text"
-                text="soft"
-                size="small"
+                variant="ghost"
                 icon="i-lucide:x"
                 disabled={displayedState().action.loading || secondaryAction().loading}
                 onClick={props.onClose}

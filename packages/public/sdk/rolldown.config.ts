@@ -9,7 +9,8 @@ export default defineConfig({
     "index": "src/index.ts",
     "streaming": "src/streaming.ts",
     "content-slug": "src/content-slug.ts",
-    "webhooks": "src/webhooks.ts"
+    "webhooks": "src/webhooks.ts",
+    "extensions": "src/extensions.ts"
   },
   plugins: [webhookValidatorPlugin(import.meta.dirname), dts({ cwd: import.meta.dirname })],
   platform: "neutral",

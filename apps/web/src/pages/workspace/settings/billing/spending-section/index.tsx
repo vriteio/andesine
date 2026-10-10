@@ -68,10 +68,6 @@ const SpendingSection: Component = () => {
                 class="flex-row-reverse pr-1"
                 iconProps={{ class: "h-4 w-4" }}
                 icon="i-lucide:gauge"
-                size="small"
-                color="contrast"
-                variant="outlined"
-                text="soft"
                 onClick={() => setDialogOpened(true)}
               />
             </Show>

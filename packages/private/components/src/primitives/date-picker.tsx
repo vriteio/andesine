@@ -128,9 +128,7 @@ const DatePicker: Component<DatePickerProps> = (props) => {
             props.triggerClass
           )}
           data-state={opened() ? "open" : "closed"}
-          variant="outlined"
-          color="contrast"
-          size="small"
+          variant="secondary"
           disabled={props.disabled}
         >
           <Show when={props.showCalendarIcon !== false}>
@@ -160,9 +158,6 @@ const DatePicker: Component<DatePickerProps> = (props) => {
             });
           }}
           class=":base-2: w-full min-w-0 bg-gray-50 rounded-md"
-          color="contrast"
-          variant="outlined"
-          size="small"
           value={inputValue()}
           setValue={setInputValue}
           onConfirm={commitInputValue}
@@ -173,8 +168,7 @@ const DatePicker: Component<DatePickerProps> = (props) => {
         <div class=":base: flex items-center justify-between">
           <IconButton
             type="button"
-            size="small"
-            variant="text"
+            variant="ghost"
             text="softer"
             icon="i-lucide:chevron-left"
             aria-label="Previous month"
@@ -185,8 +179,7 @@ const DatePicker: Component<DatePickerProps> = (props) => {
           <span class=":base: text-sm font-medium text-gray-700">{monthLabel()}</span>
           <IconButton
             type="button"
-            size="small"
-            variant="text"
+            variant="ghost"
             text="softer"
             icon="i-lucide:chevron-right"
             aria-label="Next month"
@@ -209,8 +202,7 @@ const DatePicker: Component<DatePickerProps> = (props) => {
               return (
                 <Button
                   type="button"
-                  color={selected() ? "primary" : "contrast"}
-                  variant={selected() || today() ? "outlined" : "text"}
+                  variant={selected() ? "primary" : today() ? "secondary" : "ghost"}
                   text={adjacentMonth() ? "soft" : undefined}
                   class={clsx(
                     ":base-2: aspect-square p-1 flex justify-center items-center",

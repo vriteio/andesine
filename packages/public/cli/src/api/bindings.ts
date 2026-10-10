@@ -2,7 +2,21 @@
 import type { operations, OperationInput } from "@andesine/sdk";
 import type { SDKOperation } from "./types";
 
-const bindings: Record<keyof operations, SDKOperation> = {
+const bindings: Record<
+  Exclude<
+    keyof operations,
+    | "extensions.getSelf"
+    | "extensions.verifySession"
+    | "extensions.listInstallations"
+    | "extensions.getSelfDelivery"
+    | "extensions.getSelfConfiguration"
+    | "extensions.getSelfStorageEntry"
+    | "extensions.setSelfStorageEntry"
+    | "extensions.deleteSelfStorageEntry"
+    | "extensions.listSelfStorageEntries"
+  >,
+  SDKOperation
+> = {
   "assets.attach": (client, input, options) =>
     client.assets.attach(input as OperationInput<"assets.attach">, options),
   "assets.get": (client, input, options) =>

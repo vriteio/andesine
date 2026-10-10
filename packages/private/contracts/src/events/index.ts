@@ -19,6 +19,8 @@ export type { SchemaEvent } from "./schemas";
 export { versionEventType } from "./versions";
 export type { VersionEvent } from "./versions";
 export { webhookEventType } from "./webhooks";
+export { extensionEventType } from "./extensions";
+export type { ExtensionEvent } from "./extensions";
 export type { WebhookEvent } from "./webhooks";
 export { entryEventType } from "./entries";
 export type { EntryEvent } from "./entries";

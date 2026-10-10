@@ -14,7 +14,7 @@ const stringToRegex = (str: string): RegExp => {
 };
 const slashMenuPluginKey = new PluginKey("slashMenu");
 const createSlashMenuPlugin = (options: {
-  menuItems: SlashMenuItem[];
+  menuItems: Accessor<SlashMenuItem[]>;
   mode: EditorMode;
   editor: Editor;
   menuContainerRef: Accessor<HTMLElement | null>;
@@ -63,7 +63,7 @@ const createSlashMenuPlugin = (options: {
       ];
       const filteredItems: SlashMenuItem[] = [];
 
-      getAvailableSlashMenuItems(options.menuItems, options.editor, options.mode).forEach(
+      getAvailableSlashMenuItems(options.menuItems(), options.editor, options.mode).forEach(
         (item) => {
           for (const condition of conditions) {
             if (condition(item) && !filteredItems.includes(item)) {

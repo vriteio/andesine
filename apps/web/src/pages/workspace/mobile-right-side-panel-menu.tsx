@@ -4,7 +4,7 @@ import { Dynamic } from "solid-js/web";
 import { usePublishing } from "#web/context/publishing";
 import { useWorkspace } from "#web/context/workspace";
 import { PublishingMenu } from "./publishing-menu";
-import { useRightSidePanelOptions } from "./right-side-panel";
+import { RightSidePanelIcon, useRightSidePanelOptions } from "./right-side-panel";
 
 interface MobileRightSidePanelMenuProps {
   entryID?: string;
@@ -41,9 +41,7 @@ const MobileRightSidePanelMenu: Component<MobileRightSidePanelMenuProps> = (prop
         trigger={() => (
           <IconButton
             icon="i-lucide:ellipsis-vertical"
-            size="small"
-            text="soft"
-            variant="text"
+            variant="ghost"
             aria-label="Open document tools"
           />
         )}
@@ -84,7 +82,9 @@ const MobileRightSidePanelMenu: Component<MobileRightSidePanelMenuProps> = (prop
                                 class="group relative flex min-h-7 w-full flex-1 select-none items-center gap-1 overflow-hidden rounded-lg pl-0.5 text-left font-medium outline-none @hover:bg-gradient-to-r @hover:from-gray-500/10 @hover:to-transparent"
                               >
                                 <div class="flex h-6 w-6 items-center justify-center">
-                                  <div class={`${option.icon} h-5 w-5 text-gray-400`} />
+                                  <RightSidePanelIcon option={option}>
+                                    <div class={`${option.icon} h-5 w-5 text-gray-400`} />
+                                  </RightSidePanelIcon>
                                 </div>
                                 <span class="min-w-0 flex-1 truncate">{option.label}</span>
                               </button>

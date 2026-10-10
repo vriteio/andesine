@@ -15,6 +15,7 @@ import { getContentSnapshot, setDocumentTitle } from "./document";
 import { prepareSchemaMigrationDocuments } from "./schema-content";
 import { collab } from "./server";
 import type { ContentSnapshot } from "./types";
+import { getWebhookOrigin } from "@andesine/server/webhooks/recording";
 
 interface OpenDocumentContentConnectionOptions {
   includeDeleted?: boolean;
@@ -70,6 +71,7 @@ const updateDocumentTitle = async (
   const connection = await collab.openDirectConnection(documentName, {
     contributorID,
     webhookOperationID,
+    webhookOriginExtensionID: getWebhookOrigin(),
     workspaceID
   });
 
@@ -115,6 +117,7 @@ const replaceDocumentContent = async (
     if (previous.hash === hash) return;
 
     connection.context.webhookOperationID = webhookOperationID;
+    connection.context.webhookOriginExtensionID = getWebhookOrigin();
     replaceContentDocument(document, content);
   });
 

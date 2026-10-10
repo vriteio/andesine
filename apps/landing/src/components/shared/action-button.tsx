@@ -15,8 +15,8 @@ const ActionButton: Component<ActionButtonProps> = (props) => (
   <div data-entry="up" data-entry-delay={props.entryDelay}>
     <Button
       link={props.link}
-      color={props.primary ? "primary" : "contrast"}
-      variant={props.primary ? "solid" : "outlined"}
+      variant={props.primary ? "primary" : "secondary"}
+      size="medium"
       class="relative flex h-full w-full flex-col items-start justify-start overflow-hidden rounded-2xl px-4 py-3 text-left md:px-6 md:py-4"
     >
       <Show when={props.primary}>

@@ -17,6 +17,8 @@ import { renderElementTag } from "./tag-presence";
 import { createElementDiffView } from "../../../extensions/version-diff/element";
 import { closeHistory } from "@tiptap/pm/history";
 import { yUndoPluginKey } from "@tiptap/y-tiptap";
+import type { ElementViews } from "../../../client-types";
+import { createElementExtensionView, getElementAncestors } from "./extension-view";
 
 interface ElementViewOptions {
   owner: unknown;
@@ -24,6 +26,7 @@ interface ElementViewOptions {
   user(): { name: string; color: string };
   editable(): boolean;
   schema: boolean;
+  elementViews?: ElementViews;
 }
 
 const createElementViewRenderer =
@@ -55,6 +58,17 @@ const createElementViewRenderer =
     contentDOM.dataset.elementContent = "";
     contentDOM.className = "element-content";
     dom.append(opening, contentDOM, closing);
+
+    const extensionView = createElementExtensionView({
+      dom,
+      contentDOM,
+      closing,
+      elementViews: options.elementViews,
+      onChange: () => render(),
+      editor,
+      getPos,
+      canEdit: () => canEdit() && !presence.getRemote()
+    });
 
     const diff = createElementDiffView(dom, opening, closing, options.owner);
     const presence = createElementAwareness(awareness, () => node.attrs.id, options.user);
@@ -100,7 +114,9 @@ const createElementViewRenderer =
           closing.textContent = text;
         }
       }
-      contentDOM.hidden = closing.hidden = node.attrs.selfClosing;
+      contentDOM.hidden = node.attrs.selfClosing;
+      closing.hidden = node.attrs.selfClosing || extensionView.active();
+      opening.hidden = extensionView.active();
       dom.toggleAttribute("data-element-editing", editing);
       dom.toggleAttribute("data-element-locked", !!remote);
       opening.title = closing.title = remote ? `${remote.name} is editing this tag.` : "";
@@ -117,6 +133,14 @@ const createElementViewRenderer =
         );
         opening.setAttribute("aria-disabled", String(!canEdit() || Boolean(remote)));
       }
+      extensionView.update(
+        {
+          name: node.attrs.name,
+          ancestors: getElementAncestors(editor.state.doc, getPos()),
+          editing
+        },
+        node.attrs.props
+      );
     };
     const finish = (
       action: "enter" | "down" | "up" | "cancel" | "blur",
@@ -372,14 +396,13 @@ const createElementViewRenderer =
         return true;
       },
       stopEvent(event) {
-        return (
-          opening.contains(event.target as globalThis.Node) ||
-          closing.contains(event.target as globalThis.Node)
-        );
+        const target = event.target as globalThis.Node;
+
+        return opening.contains(target) || closing.contains(target) || extensionView.owns(target);
       },
       ignoreMutation(mutation) {
         if (mutation.type === "selection") {
-          return editing && !contentDOM.contains(mutation.target);
+          return (editing || extensionView.active()) && !contentDOM.contains(mutation.target);
         }
         if (mutation.type === "attributes" && mutation.target === contentDOM) {
           return true;
@@ -387,6 +410,7 @@ const createElementViewRenderer =
         return mutation.target !== contentDOM && !contentDOM.contains(mutation.target);
       },
       destroy() {
+        extensionView.destroy();
         diff.destroy();
         destroyed = true;
         generation += 1;

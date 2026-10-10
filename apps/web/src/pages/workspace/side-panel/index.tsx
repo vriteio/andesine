@@ -1,5 +1,7 @@
 import { useLocation, useParams, useSearchParams } from "@solidjs/router";
 import { type Accessor, type Component, Match, Switch } from "solid-js";
+import { ExtensionPanelView } from "#web/components/extensions/panel-view";
+import { getExtensionPanels } from "#web/lib/extensions";
 
 import { ExplorerPanel } from "./explorer";
 import { HelpPanel } from "./help";
@@ -10,7 +12,14 @@ interface SidePanelProps {
   selectedPanel?: PrimaryPanel;
 }
 
-type PrimaryPanel = "explorer" | "help" | "settings";
+/** Extension panels are `ext:<extensionID>:<panelID>`. */
+type PrimaryPanel = "explorer" | "help" | "settings" | `ext:${string}`;
+
+const EXTENSION_PANEL_PREFIX = "ext:";
+
+const findLeftExtensionPanel = (panel: string) => {
+  return getExtensionPanels("left").find(({ id }) => id === panel);
+};
 
 const usePrimaryPanel = (): Accessor<PrimaryPanel> => {
   const location = useLocation();
@@ -19,8 +28,14 @@ const usePrimaryPanel = (): Accessor<PrimaryPanel> => {
   const settingsPath = () => `/${params.workspaceID || ""}/settings`;
 
   return () => {
-    if (searchParams[LEFT_SIDE_PANEL_PARAM] === "help") {
+    const requested = searchParams[LEFT_SIDE_PANEL_PARAM];
+
+    if (requested === "help") {
       return "help";
+    }
+
+    if (typeof requested === "string" && findLeftExtensionPanel(requested)) {
+      return requested as PrimaryPanel;
     }
 
     if (
@@ -46,6 +61,12 @@ const SidePanel: Component<SidePanelProps> = (props) => {
       <Match when={panel() === "help"}>
         <HelpPanel />
       </Match>
+      <Match
+        when={panel().startsWith(EXTENSION_PANEL_PREFIX) && findLeftExtensionPanel(panel())}
+        keyed
+      >
+        {(item) => <ExtensionPanelView item={item} context={{}} />}
+      </Match>
       <Match when={panel() === "explorer"}>
         <ExplorerPanel />
       </Match>
@@ -53,5 +74,5 @@ const SidePanel: Component<SidePanelProps> = (props) => {
   );
 };
 
-export { SidePanel, usePrimaryPanel };
+export { SidePanel, usePrimaryPanel, findLeftExtensionPanel };
 export type { PrimaryPanel };

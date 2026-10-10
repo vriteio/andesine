@@ -55,9 +55,7 @@ const Notification: Component<NotificationProps> = (props) => (
       </span>
       <IconButton
         aria-label="Dismiss notification"
-        size="small"
-        variant="text"
-        text="soft"
+        variant="ghost"
         onClick={() => props.onDismiss?.()}
         icon="i-lucide:x"
       />

@@ -119,9 +119,7 @@ const AccessItem: Component<AccessItemProps> = (props) => {
                 >
                   <IconButton
                     icon="i-lucide:ellipsis-vertical"
-                    size="small"
-                    variant="text"
-                    text="soft"
+                    variant="ghost"
                     disabled={props.disabled}
                     loading={props.loading}
                   />

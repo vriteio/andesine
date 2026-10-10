@@ -30,7 +30,6 @@ const createImageDuplicatePrompt = () => {
       {(prompt) => (
         <Dialog
           opened
-          portal
           size="small"
           cardClass="relative"
           aria-label="Image already exists"
@@ -38,9 +37,7 @@ const createImageDuplicatePrompt = () => {
         >
           <Tooltip content="Close" wrapperClass="absolute right-2 top-2" placement="left">
             <IconButton
-              variant="text"
-              text="soft"
-              size="small"
+              variant="ghost"
               icon="i-lucide:x"
               aria-label="Cancel image upload"
               onClick={() => prompt().choose("cancel")}
@@ -70,10 +67,8 @@ const createImageDuplicatePrompt = () => {
             <IconButton
               icon="i-lucide:image"
               iconProps={{ class: "h-4 w-4" }}
-              size="small"
+              variant="primary"
               class="w-full"
-              variant="outlined"
-              color="primary"
               label="Use existing image"
               onClick={() => prompt().choose("reuse")}
             />
@@ -85,10 +80,8 @@ const createImageDuplicatePrompt = () => {
             <IconButton
               icon="i-lucide:upload"
               iconProps={{ class: "h-4 w-4 text-gray-400" }}
-              size="small"
+              text="base"
               class="w-full"
-              variant="outlined"
-              color="contrast"
               label="Upload anyway"
               onClick={() => prompt().choose("upload")}
             />

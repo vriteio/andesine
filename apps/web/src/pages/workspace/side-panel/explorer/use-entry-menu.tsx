@@ -17,7 +17,10 @@ const useEntryMenu = (entryID: string) => {
     setMenuOpened(false);
     queueMicrotask(() => setRenaming(entryID));
   };
+  // Built only while the menu is open; every row's queries would otherwise run on each change.
   const dropdownOptions = createMemo(() => {
+    if (!menuOpened()) return [];
+
     const options: Array<MenuItem[]> = [];
     const selectedCount = selection().length;
     const isMulti = selectedCount > 1;

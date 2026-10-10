@@ -7,7 +7,8 @@
     "build": "rolldown -c rolldown.config.mjs",
     "typecheck": "tsc --noEmit",
     "start": "node ./dist/index.js",
-    "dev": "tsx watch ./src/index.ts"
+    "dev": "tsx watch ./src/index.ts",
+    "extensions:refresh": "node --env-file-if-exists=../../.env ./dist/refresh-extension-registry.js"
   },
   "dependencies": {
     "@andesine/document": "workspace:*",

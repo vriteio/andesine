@@ -160,10 +160,7 @@ const EmailPage: Component = () => {
           <div class="text-gray-400 leading-5 text-sm">
             Provide your email to continue, or <br />
             <Button
-              variant="text"
-              size="small"
-              hover="underline"
-              color="primary"
+              variant="link"
               class="px-0"
               link={appendRedirectTo(
                 mode() === "sign-in" ? "/auth/sign-in" : "/auth/sign-up",
@@ -176,6 +173,9 @@ const EmailPage: Component = () => {
           </div>
           <div class="flex flex-col my-4 gap-2.5">
             <Input
+              size="medium"
+              color="base"
+              variant="solid"
               type="email"
               placeholder="name@email.com"
               autocomplete="email"
@@ -189,7 +189,8 @@ const EmailPage: Component = () => {
                   <IconButton
                     disabled={!validateEmail(email()) || sendOTPMutation.isPending}
                     icon="i-lucide:arrow-right"
-                    color="primary"
+                    variant="primary"
+                    size="medium"
                     onClick={handleSendOTP}
                   />
                 </Tooltip>
@@ -203,17 +204,13 @@ const EmailPage: Component = () => {
                 <IconButton
                   icon="i-lucide:arrow-right"
                   iconProps={{ class: "h-4 w-4" }}
-                  variant="text"
-                  text="primary"
-                  color="primary"
-                  size="small"
+                  variant="link"
                   link={appendRedirectTo(
                     "/auth/sign-up",
                     redirectTo(),
                     searchParams.addAccount === "true"
                   )}
                   label={() => <span>Sign up</span>}
-                  hover="underline"
                   class="flex-row-reverse gap-1 inline-flex font-medium px-0 -mt-1"
                 ></IconButton>
               </div>
@@ -223,10 +220,7 @@ const EmailPage: Component = () => {
                 <span>Already have an account?</span>
                 <IconButton
                   icon="i-lucide:arrow-right"
-                  variant="text"
-                  text="primary"
-                  color="primary"
-                  size="small"
+                  variant="link"
                   link={appendRedirectTo(
                     "/auth/sign-in",
                     redirectTo(),
@@ -234,7 +228,6 @@ const EmailPage: Component = () => {
                   )}
                   label={() => <span>Sign in</span>}
                   iconProps={{ class: "w-4 h-4" }}
-                  hover="underline"
                   class="flex-row-reverse gap-1 inline-flex font-medium px-0 -mt-1"
                 ></IconButton>
               </div>
@@ -249,11 +242,7 @@ const EmailPage: Component = () => {
               : "To complete registration, enter the code sent to:"}
             <br />
             <IconButton
-              color="primary"
-              text="primary"
-              variant="text"
-              hover="underline"
-              size="small"
+              variant="link"
               class="flex-row-reverse gap-1 inline-flex px-0 -mt-1"
               icon="i-lucide:pencil"
               label={() => <span>{email()}</span>}
@@ -267,7 +256,7 @@ const EmailPage: Component = () => {
             <OTPInput value={otp()} setValue={setOTP} onEnter={handleVerifyOTP} />
             <Button
               loading={verifyingOTP()}
-              color="primary"
+              size="medium"
               disabled={!otpFilled()}
               class="w-full mt-1"
               onClick={handleVerifyOTP}
@@ -283,10 +272,7 @@ const EmailPage: Component = () => {
                 iconProps={{
                   class: "w-3.5 h-3.5"
                 }}
-                variant="text"
-                text="primary"
-                color="primary"
-                size="small"
+                variant="link"
                 label={() => (
                   <span>{throttlingOTP() ? `Resend in ${otpResendSeconds()}s` : "Resend"}</span>
                 )}
@@ -295,7 +281,6 @@ const EmailPage: Component = () => {
                   sendOTPMutation.isPending || verifyOTPMutation.isPending || throttlingOTP()
                 }
                 onClick={handleResendOTP}
-                hover="underline"
                 class="flex-row-reverse gap-1 inline-flex font-medium px-0"
               />
             </div>

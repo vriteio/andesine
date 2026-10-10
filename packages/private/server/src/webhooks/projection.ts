@@ -1,7 +1,7 @@
 import {
-  type WebhookConfiguration,
-  webhookEventType,
-  type WebhookEvent
+  type OutboundConfiguration,
+  outboundEventType,
+  type OutboundEvent
 } from "@andesine/contracts/webhooks";
 import {
   createWebhookScopeAccess,
@@ -14,9 +14,9 @@ import type { WebhookEventChange } from "./recording-context";
 // Never use this to replace the fixed bytes of an existing delivery after a scope change.
 const projectWebhookEvent = (
   change: WebhookEventChange,
-  configuration: WebhookConfiguration,
+  configuration: OutboundConfiguration,
   index: WebhookScopeIndex
-): WebhookEvent | null => {
+): OutboundEvent | null => {
   const { event, resources } = change;
   const access = createWebhookScopeAccess(configuration, index);
   const allowsScope = (scope: WebhookResourceScope | null): boolean => {
@@ -31,6 +31,9 @@ const projectWebhookEvent = (
   ) {
     return null;
   }
+
+  // The recorder offers lifecycle events only to the described extension's webhooks.
+  if (event.subject.kind === "extension") return event;
 
   if (event.subject.kind === "channel") {
     if (!access.allowsChannel(event.subject.code)) return null;
@@ -56,7 +59,7 @@ const projectWebhookEvent = (
     if (!beforeVisible && !afterVisible) return null;
 
     // A side outside the scope is reported as hidden, never with its location.
-    return webhookEventType.parse({
+    return outboundEventType.parse({
       ...event,
       data: {
         reason: event.data.reason,
@@ -72,8 +75,8 @@ const projectWebhookEvent = (
 
   return allowsScope(scope) ? event : null;
 };
-const encodeWebhookPayload = (event: WebhookEvent): Buffer => {
-  const payload = Buffer.from(JSON.stringify(webhookEventType.parse(event)), "utf8");
+const encodeWebhookPayload = (event: OutboundEvent): Buffer => {
+  const payload = Buffer.from(JSON.stringify(outboundEventType.parse(event)), "utf8");
 
   if (payload.length > 262_144) throw new Error("Webhook payload exceeds 256 KiB");
 

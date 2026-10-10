@@ -17,15 +17,24 @@ import {
   Suspense
 } from "solid-js";
 import { useLayout } from "#web/context/layout";
+import { config } from "#web/lib/api";
 import { PublishingProvider } from "#web/context/publishing";
 import { WorkspaceProvider } from "#web/context/workspace";
 import { EditorToolbar } from "./editor-toolbar";
 import { Menu } from "./menu";
 import { ProfileMenu } from "./profile-menu";
-import { type PrimaryPanel, SidePanel, usePrimaryPanel } from "./side-panel";
+import {
+  findLeftExtensionPanel,
+  type PrimaryPanel,
+  SidePanel,
+  usePrimaryPanel
+} from "./side-panel";
 import { VerticalResizeHandle } from "./vertical-resize-handle";
 import { SnapshotErrorDialog } from "./snapshot-error-dialog";
 import { SearchDialog } from "./search-dialog";
+import { ExtensionLoader } from "#web/components/extensions/extension-loader";
+import { ExtensionMember } from "#web/components/extensions/extension-member";
+import { ExtensionNotices } from "#web/components/extensions/extension-notices";
 import { isOffline } from "#web/lib/offline";
 import { createMediaQuery } from "@solid-primitives/media";
 import { useNotify } from "#web/context/notifications";
@@ -126,7 +135,8 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
       navigate(`${workspacePath()}${currentEntryID ? `/${currentEntryID}` : ""}`);
     } else {
       setSearchParams({
-        [LEFT_SIDE_PANEL_PARAM]: nextPanel === "help" ? "help" : undefined
+        [LEFT_SIDE_PANEL_PARAM]:
+          nextPanel === "help" || nextPanel.startsWith("ext:") ? nextPanel : undefined
       });
     }
 
@@ -244,7 +254,7 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
               </Suspense>
             </Card>
             <nav
-              class="min-h-12 z-20 box-content grid shrink-0 grid-cols-5 items-center border-t border-gray-200 bg-gray-100 pb-[env(safe-area-inset-bottom,0px)] md:hidden"
+              class="min-h-12 z-20 box-content grid shrink-0 grid-flow-col auto-cols-fr items-center border-t border-gray-200 bg-gray-100 pb-[env(safe-area-inset-bottom,0px)] md:hidden"
               aria-label="Workspace navigation"
             >
               <Menu
@@ -260,11 +270,9 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
         </div>
         <Dropdown
           title={
-            mobilePanel() === "explorer"
-              ? "Explorer"
-              : mobilePanel() === "settings"
-                ? "Settings"
-                : "Help"
+            findLeftExtensionPanel(mobilePanel())?.panel.name ??
+            { explorer: "Explorer", settings: "Settings", help: "Help" }[mobilePanel() as string] ??
+            "Help"
           }
           class="md:hidden"
           anchorPoint={{ x: 0, y: 0 }}
@@ -285,6 +293,11 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
           onClose={() => setSearchOpened(false)}
         />
         <SnapshotErrorDialog />
+        <Show when={config.PUBLIC_EXTENSIONS_ENABLED}>
+          <ExtensionMember />
+          <ExtensionLoader />
+          <ExtensionNotices />
+        </Show>
       </PublishingProvider>
     </WorkspaceProvider>
   );

@@ -27,9 +27,6 @@ const AddAccessMenu: Component<AddAccessMenuProps> = (props) => {
         autofocus
         class="w-full min-w-0 bg-gray-50"
         label={`Filter ${principalLabel().toLowerCase()}s`}
-        size="small"
-        color="contrast"
-        variant="outlined"
         placeholder={`Search ${props.label.toLocaleLowerCase()}`}
         tabIndex={searchInputTabIndex()}
         value={search()}
@@ -94,10 +91,6 @@ const AddAccessMenu: Component<AddAccessMenuProps> = (props) => {
           class="flex-row-reverse pr-1"
           iconProps={{ class: "h-4 w-4" }}
           icon="i-lucide:plus"
-          size="small"
-          color="contrast"
-          variant="outlined"
-          text="soft"
           disabled={props.loading || props.roles.length === 0}
         />
       )}

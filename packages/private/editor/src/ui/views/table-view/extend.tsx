@@ -266,10 +266,7 @@ const TableExtensionControls = (props: TableExtensionControlsProps) => {
                 }
               >
                 <IconButton
-                  variant="outlined"
-                  color="contrast"
                   size="xs"
-                  text="soft"
                   icon="i-lucide:plus"
                   iconProps={{ style: { width: "12px", height: "12px" } }}
                   aria-label={axis === "column" ? "Add columns" : "Add rows"}

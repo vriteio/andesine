@@ -13,7 +13,7 @@ import { type Component, createEffect, createSignal, Suspense, For, Show } from 
 import { Dynamic } from "solid-js/web";
 
 import { useNotify } from "#web/context/notifications";
-import { type Permission } from "#web/lib/api";
+import { config, type Permission } from "#web/lib/api";
 import { Setting } from "../setting";
 import { SettingsSection } from "../settings-section";
 import { rolesQuery, useRoleMutations } from "#web/lib/data";
@@ -28,6 +28,7 @@ type Resource =
   | "memberships"
   | "roles"
   | "webhooks"
+  | "extensions"
   | "workspace";
 type ResourceAccess = Record<Resource, AccessLevel>;
 
@@ -70,6 +71,12 @@ const resources: Array<{
     description: "View or manage webhooks"
   },
   {
+    id: "extensions",
+    label: "Extensions",
+    description: "Install, configure, and remove workspace extensions",
+    defaultView: true
+  },
+  {
     id: "memberships",
     label: "Members",
     description: "Invite and remove members, manage groups, and assign permitted roles",
@@ -88,6 +95,9 @@ const resources: Array<{
     defaultView: true
   }
 ];
+const visibleResources = resources.filter((resource) => {
+  return resource.id !== "extensions" || config.PUBLIC_EXTENSIONS_ENABLED;
+});
 const { accessToPermissions, emptyAccess, permissionsToAccess } = createPermissionAccessMapper<
   Resource,
   Permission
@@ -105,6 +115,7 @@ const { accessToPermissions, emptyAccess, permissionsToAccess } = createPermissi
     },
     { id: "memberships", write: "memberships" },
     { id: "roles", write: "roles" },
+    { id: "extensions", write: "extensions" },
     { id: "workspace", write: "workspace" }
   ]
 });
@@ -205,9 +216,6 @@ const RoleSettingsPage: Component = () => {
             <Input
               maxlength={50}
               placeholder="Content manager"
-              variant="outlined"
-              color="contrast"
-              size="small"
               value={roleName()}
               setValue={(name) => {
                 setRoleName(name);
@@ -236,7 +244,7 @@ const RoleSettingsPage: Component = () => {
           </Setting>
         </SettingsSection>
         <SettingsSection label="Permissions">
-          <For each={resources}>
+          <For each={visibleResources}>
             {(resource) => (
               <Setting label={resource.label} description={resource.description} fade={false} hover>
                 <ToggleGroup
@@ -279,10 +287,6 @@ const RoleSettingsPage: Component = () => {
           <div class="flex items-center justify-end gap-2">
             <Tooltip content="Go back">
               <IconButton
-                variant="outlined"
-                color="contrast"
-                text="soft"
-                size="small"
                 icon="i-lucide:chevron-left"
                 onClick={navigateToPeople}
                 disabled={mutationPending()}
@@ -294,9 +298,6 @@ const RoleSettingsPage: Component = () => {
               wrapperClass="flex-1"
             >
               <Button
-                color="primary"
-                variant="outlined"
-                size="small"
                 class="flex w-full items-center justify-center gap-1"
                 disabled={Boolean(fillError())}
                 loading={mutationPending()}

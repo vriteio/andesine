@@ -26,7 +26,10 @@ const useCollectionMenu = (collectionID: string) => {
     setMenuOpened(false);
     queueMicrotask(() => setRenaming(id));
   };
+  // Built only while the menu is open; every row's queries would otherwise run on each change.
   const dropdownOptions = createMemo(() => {
+    if (!menuOpened()) return [];
+
     const opts: Array<Array<MenuItem | (() => JSX.Element)>> = [];
     const selectedCount = selection().length;
     const isMulti = selectedCount > 1;

@@ -9,31 +9,35 @@ const SiteFooter: Component = () => (
         link={links.email}
         icon="i-lucide:mail"
         aria-label="Email Andesine"
-        variant="text"
+        variant="ghost"
         text="softer"
+        size="medium"
       />
       <IconButton
         link={links.social.x}
         icon="i-mdi:twitter"
         aria-label="Andesine on X"
-        variant="text"
+        variant="ghost"
         text="softer"
+        size="medium"
         target="_blank"
       />
       <IconButton
         link={links.social.linkedin}
         icon="i-mdi:linkedin"
         aria-label="Andesine on LinkedIn"
-        variant="text"
+        variant="ghost"
         text="softer"
+        size="medium"
         target="_blank"
       />
       <IconButton
         link={links.repository}
         icon="i-mdi:github"
         aria-label="Andesine on GitHub"
-        variant="text"
+        variant="ghost"
         text="softer"
+        size="medium"
         target="_blank"
       />
     </nav>
@@ -44,18 +48,18 @@ const SiteFooter: Component = () => (
         <Button
           link={links.legal.privacy}
           target="_blank"
-          variant="text"
-          hover="underline"
+          variant="ghost"
           text="softer"
+          size="medium"
         >
           Privacy policy
         </Button>
         <Button
           link={links.legal.terms}
           target="_blank"
-          variant="text"
-          hover="underline"
+          variant="ghost"
           text="softer"
+          size="medium"
         >
           Terms of service
         </Button>

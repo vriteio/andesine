@@ -7,7 +7,7 @@ import {
   parseWebhookDestination,
   WebhookDestinationError
 } from "@andesine/server/webhooks/destination";
-import { reconcileWebhookEndpoint } from "@andesine/server/webhooks/delivery";
+import { reconcileWebhookConfiguration } from "@andesine/server/webhooks/delivery";
 import { loadWebhookEndpoint } from "@andesine/server/webhooks/recording";
 import { isIP } from "node:net";
 import { type WebhookConfiguration } from "@andesine/contracts/webhooks";
@@ -99,25 +99,6 @@ const recordWebhookRevision = async (
     configuration: input.configuration,
     createdAt: input.now
   });
-};
-const reconcileWebhookConfiguration = async (
-  database: DatabaseTransaction,
-  workspaceID: string,
-  id: string
-): Promise<void> => {
-  let cursor: string | null = null;
-
-  do {
-    const result = await reconcileWebhookEndpoint(database, {
-      workspaceID,
-      endpointID: id,
-      afterRunID: cursor
-    });
-
-    if (!result.acquired) throw new Error("Webhook configuration requires the workspace lock");
-
-    cursor = result.cursor;
-  } while (cursor);
 };
 const limitWebhookManagement = async (
   workspaceID: string,

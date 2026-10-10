@@ -12,7 +12,10 @@ const externals = new Set([
 
 export default defineConfig({
   cwd: __dirname,
-  input: "./src/index.ts",
+  input: {
+    "index": "./src/index.ts",
+    "refresh-extension-registry": "./src/refresh-extension-registry.ts"
+  },
   platform: "node",
   tsconfig: "./tsconfig.json",
   external(id) {
@@ -23,7 +26,8 @@ export default defineConfig({
     return externals.has(id) || (!id.startsWith(".") && !path.isAbsolute(id));
   },
   output: {
-    file: path.resolve(__dirname, "dist/index.js"),
+    dir: path.resolve(__dirname, "dist"),
+    entryFileNames: "[name].js",
     format: "esm",
     sourcemap: false
   }

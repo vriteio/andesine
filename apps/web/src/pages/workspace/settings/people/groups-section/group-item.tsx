@@ -94,12 +94,7 @@ const GroupItem: Component<GroupItemProps> = (props) => {
                 <div
                   class={clsx(!menuOpened() && "opacity-20 media-mouse:group-hover:opacity-100")}
                 >
-                  <IconButton
-                    icon="i-lucide:ellipsis-vertical"
-                    size="small"
-                    variant="text"
-                    text="soft"
-                  />
+                  <IconButton icon="i-lucide:ellipsis-vertical" variant="ghost" />
                 </div>
               )}
               items={dropdownOptions()}

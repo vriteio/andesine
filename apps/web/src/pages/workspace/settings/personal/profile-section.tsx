@@ -47,9 +47,6 @@ const ProfileForm: Component = () => {
           placeholder="Your name"
           class={clsx("w-full", updateProfileNameMutation.isPending && "animate-pulse")}
           disabled={updateProfileNameMutation.isPending}
-          size="small"
-          color="contrast"
-          variant="outlined"
           value={name()}
           setValue={setName}
           slot={() => (

@@ -121,7 +121,7 @@ const DevicePage: Component = () => {
           <div role="status" class="flex flex-col gap-2">
             <h1 class="text-2xl font-semibold">{completionMessage().text}</h1>
             <p class="text-sm leading-5 text-gray-400">{completionMessage().description}</p>
-            <Button color="primary" class="w-full mt-1" onClick={closeTab}>
+            <Button size="medium" class="w-full mt-1" onClick={closeTab}>
               Close tab
             </Button>
           </div>
@@ -180,7 +180,7 @@ const DevicePage: Component = () => {
           <Show
             when={session()}
             fallback={
-              <Button link={signInLink()} color="primary" class="w-full mt-1">
+              <Button link={signInLink()} size="medium" class="w-full mt-1">
                 Sign in to continue
               </Button>
             }
@@ -190,9 +190,7 @@ const DevicePage: Component = () => {
                 <IconButton
                   aria-label="Deny access"
                   icon="i-lucide:x"
-                  variant="outlined"
-                  color="contrast"
-                  text="soft"
+                  size="medium"
                   disabled={!validCode() || busy()}
                   loading={
                     respondMutation.isPending && respondMutation.variables?.decision === "deny"
@@ -202,7 +200,7 @@ const DevicePage: Component = () => {
               </Tooltip>
               <Button
                 class="flex-1"
-                color="primary"
+                size="medium"
                 disabled={!validCode() || busy()}
                 loading={
                   respondMutation.isPending && respondMutation.variables?.decision === "approve"
@@ -221,14 +219,10 @@ const DevicePage: Component = () => {
               <IconButton
                 icon="i-lucide:arrow-right-left"
                 iconProps={{ class: "w-3.5 h-3.5" }}
-                variant="text"
-                text="primary"
-                color="primary"
-                size="small"
+                variant="link"
                 label={() => <span>Change account</span>}
                 disabled={busy()}
                 link={signInLink()}
-                hover="underline"
                 class="flex-row-reverse gap-1 inline-flex font-medium px-0"
               />
             </div>

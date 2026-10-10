@@ -331,9 +331,6 @@ const PublishingPanelActions: Component<PublishingPanelActionsProps> = (props) =
             fallback={
               <Button
                 class="flex w-full items-center justify-center gap-1"
-                color="primary"
-                size="small"
-                variant="outlined"
                 loading={publishLoading()}
                 disabled={!canPublishTree() || props.mutationPending}
                 onClick={publishTree}
@@ -345,9 +342,6 @@ const PublishingPanelActions: Component<PublishingPanelActionsProps> = (props) =
           >
             <Button
               class="flex w-full items-center justify-center gap-1"
-              color="primary"
-              size="small"
-              variant="outlined"
               loading={unpublishLoading()}
               disabled={props.mutationPending}
               onClick={unpublishTree}
@@ -363,9 +357,6 @@ const PublishingPanelActions: Component<PublishingPanelActionsProps> = (props) =
           fallback={
             <Button
               class="flex w-full items-center justify-center gap-1"
-              color="primary"
-              size="small"
-              variant="outlined"
               loading={publishLoading()}
               disabled={publishableCount() + unpublishableCount() === 0 || props.mutationPending}
               onClick={publishSelection}
@@ -377,9 +368,6 @@ const PublishingPanelActions: Component<PublishingPanelActionsProps> = (props) =
         >
           <Button
             class="flex w-full items-center justify-center gap-1"
-            color="primary"
-            size="small"
-            variant="outlined"
             loading={unpublishLoading()}
             disabled={unpublishableCount() === 0 || props.mutationPending}
             onClick={unpublishSelection}
@@ -392,13 +380,9 @@ const PublishingPanelActions: Component<PublishingPanelActionsProps> = (props) =
       <Tooltip content={revertLabel()} placement="top" fixed wrapperClass="shrink-0">
         <IconButton
           aria-label={revertLabel()}
-          color="contrast"
           disabled={!revertTarget().canRevert || props.mutationPending}
           icon="i-lucide:undo-2"
           loading={revertLoading()}
-          size="small"
-          text="soft"
-          variant="outlined"
           onClick={() => props.onRevert(revertTarget())}
         />
       </Tooltip>

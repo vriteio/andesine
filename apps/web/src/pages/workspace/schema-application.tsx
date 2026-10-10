@@ -72,9 +72,7 @@ const SchemaApplication: Component<SchemaApplicationProps> = (props) => {
   return (
     <>
       <IconButton
-        color="contrast"
-        variant="outlined"
-        size="small"
+        text="base"
         disabled={!canApply()}
         class="flex items-center pl-1"
         title={

@@ -11,6 +11,8 @@ import { client } from "#web/lib/api";
 interface WebhookQueryInput {
   webhookID: string;
   workspaceID: string;
+  /** Selects an extension's webhook; `webhookID` is then its manifest webhook ID. */
+  extensionID?: string;
 }
 interface WebhookCatalogEvent extends WebhookEventDefinition {
   type: WebhookEventName;
@@ -22,6 +24,11 @@ interface WebhookEventsQueryInput extends WebhookQueryInput {
 interface WebhookEventQueryInput extends WebhookQueryInput {
   deliveryID: string;
 }
+interface DeliveryPageInput {
+  cursor?: string;
+  state?: WebhookEventState;
+  limit: number;
+}
 interface WebhookRunTimeline {
   attempts: WebhookAttempt[];
   run: WebhookRun;
@@ -29,12 +36,13 @@ interface WebhookRunTimeline {
 
 type Webhook = Awaited<ReturnType<typeof client.webhooks.get>>;
 type WebhookEventType = WebhookEventName;
-type WebhookEventPage = Awaited<ReturnType<typeof client.webhooks.listDeliveries>>;
+// Extension webhook history types also allow lifecycle events, so they cover both kinds.
+type WebhookEventPage = Awaited<ReturnType<typeof client.extensions.listWebhookDeliveries>>;
 type WebhookEvent = WebhookEventPage["data"][number];
 type WebhookEventState = WebhookEvent["state"];
 type WebhookRun = Awaited<ReturnType<typeof client.webhooks.listRuns>>["data"][number];
 type WebhookAttempt = Awaited<ReturnType<typeof client.webhooks.listAttempts>>["data"][number];
-type WebhookEventDetails = Awaited<ReturnType<typeof client.webhooks.getDelivery>>;
+type WebhookEventDetails = Awaited<ReturnType<typeof client.extensions.getWebhookDelivery>>;
 type WebhookFailureCategory = NonNullable<WebhookEvent["lastFailureCategory"]>;
 
 // The workspace ID is part of each cache key so workspace switches never reuse settings.
@@ -48,6 +56,36 @@ const webhookQuery = query(
   (input: WebhookQueryInput) => client.webhooks.get({ id: input.webhookID }),
   "webhook"
 );
+const listDeliveries = (input: WebhookQueryInput, page: DeliveryPageInput) => {
+  const { extensionID, webhookID } = input;
+
+  return extensionID
+    ? client.extensions.listWebhookDeliveries({ extensionID, webhookID, ...page })
+    : client.webhooks.listDeliveries({ id: webhookID, ...page });
+};
+const getDelivery = (input: WebhookEventQueryInput) => {
+  const { extensionID, webhookID, deliveryID } = input;
+
+  return extensionID
+    ? client.extensions.getWebhookDelivery({ extensionID, webhookID, deliveryID })
+    : client.webhooks.getDelivery({ id: webhookID, deliveryID });
+};
+const listRuns = (input: WebhookEventQueryInput, cursor: string | undefined) => {
+  const { extensionID, webhookID, deliveryID } = input;
+  const page = { deliveryID, cursor, limit: 100 };
+
+  return extensionID
+    ? client.extensions.listWebhookRuns({ extensionID, webhookID, ...page })
+    : client.webhooks.listRuns({ id: webhookID, ...page });
+};
+const listAttempts = (input: WebhookEventQueryInput, runID: string) => {
+  const { extensionID, webhookID, deliveryID } = input;
+  const page = { deliveryID, runID, limit: 100 };
+
+  return extensionID
+    ? client.extensions.listWebhookAttempts({ extensionID, webhookID, ...page })
+    : client.webhooks.listAttempts({ id: webhookID, ...page });
+};
 // Rebuild the cursor chain on each refresh so page boundaries follow current results.
 const webhookEventsQuery = query(async (input: WebhookEventsQueryInput) => {
   const result: WebhookEventPage = {
@@ -56,8 +94,7 @@ const webhookEventsQuery = query(async (input: WebhookEventsQueryInput) => {
   };
 
   for (let index = 0; index < input.pageCount; index++) {
-    const page = await client.webhooks.listDeliveries({
-      id: input.webhookID,
+    const page = await listDeliveries(input, {
       cursor: result.pagination.nextCursor ?? undefined,
       state: input.state,
       limit: 25
@@ -72,17 +109,16 @@ const webhookEventsQuery = query(async (input: WebhookEventsQueryInput) => {
   return result;
 }, "webhook-events");
 const webhookEventQuery = query((input: WebhookEventQueryInput) => {
-  return client.webhooks.getDelivery({ id: input.webhookID, deliveryID: input.deliveryID });
+  return getDelivery(input);
 }, "webhook-event");
 // Replays can add any number of runs; attempts per run are bounded by the retry schedule.
 const webhookEventTimelineQuery = query(async (input: WebhookEventQueryInput) => {
-  const request = { id: input.webhookID, deliveryID: input.deliveryID, limit: 100 };
   const runs: WebhookRun[] = [];
 
   let cursor: string | undefined;
 
   do {
-    const page = await client.webhooks.listRuns({ ...request, cursor });
+    const page = await listRuns(input, cursor);
 
     runs.push(...page.data);
     cursor = page.pagination.hasMore ? (page.pagination.nextCursor ?? undefined) : undefined;
@@ -90,7 +126,7 @@ const webhookEventTimelineQuery = query(async (input: WebhookEventQueryInput) =>
 
   return Promise.all(
     runs.map(async (run): Promise<WebhookRunTimeline> => {
-      const attempts = await client.webhooks.listAttempts({ ...request, runID: run.id });
+      const attempts = await listAttempts(input, run.id);
 
       return { run, attempts: attempts.data };
     })
@@ -147,6 +183,7 @@ export {
   webhooksQuery
 };
 export type {
+  WebhookQueryInput,
   Webhook,
   WebhookAttempt,
   WebhookCatalogEvent,

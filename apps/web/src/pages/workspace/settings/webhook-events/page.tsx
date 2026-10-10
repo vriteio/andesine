@@ -1,9 +1,12 @@
 import { Button, IconButton, Tooltip } from "@andesine/components";
 import { createAsync, revalidate, useNavigate, useParams } from "@solidjs/router";
 import { type Component, Show } from "solid-js";
+import { useWorkspace } from "#web/context/workspace";
+import { client } from "#web/lib/api";
 import { type Webhook, webhookQuery } from "#web/lib/data";
 import { LoadError } from "../webhook/load-notices";
 import { EventsSection } from "./events-section";
+import type { WebhookEventsSource } from "./source";
 import { StatusSection } from "./status-section";
 
 interface EventsViewProps {
@@ -17,6 +20,7 @@ interface WebhookLoadResult {
 
 const EventsView: Component<EventsViewProps> = (props) => {
   const navigate = useNavigate();
+  const { hasPermission } = useWorkspace();
   const webhookResult = createAsync<WebhookLoadResult>(async () => {
     try {
       return {
@@ -29,6 +33,39 @@ const EventsView: Component<EventsViewProps> = (props) => {
     }
   });
   const navigateToAPI = () => navigate(`/${props.workspaceID}/settings/api`);
+  const source: WebhookEventsSource = {
+    target: { webhookID: props.webhookID, workspaceID: props.workspaceID },
+    get endpoint() {
+      return webhookResult()?.webhook;
+    },
+    get canManage() {
+      return hasPermission("webhooks");
+    },
+    get canTest() {
+      return hasPermission("webhooks");
+    },
+    get testEventTypes() {
+      return webhookResult()?.webhook?.eventTypes ?? [];
+    },
+    replay: (deliveryIDs) => {
+      const webhook = webhookResult()!.webhook!;
+
+      return client.webhooks.bulkRedeliver({
+        id: webhook.id,
+        deliveryIDs,
+        expectedDestinationRevision: webhook.destinationRevision
+      });
+    },
+    sendTest: (type) => {
+      const webhook = webhookResult()!.webhook!;
+
+      return client.webhooks.sendTest({
+        id: webhook.id,
+        expectedRevision: webhook.revision,
+        type: type as Webhook["eventTypes"][number]
+      });
+    }
+  };
 
   return (
     <Show
@@ -47,29 +84,16 @@ const EventsView: Component<EventsViewProps> = (props) => {
         <Show when={webhookResult()?.webhook}>
           {(webhook) => <StatusSection webhook={webhook()} />}
         </Show>
-        <EventsSection
-          webhook={webhookResult()?.webhook}
-          webhookID={props.webhookID}
-          workspaceID={props.workspaceID}
-        />
+        <EventsSection source={source} />
         <div class="flex h-4 w-full items-center justify-center">
           <div class="h-px flex-1 bg-gray-200" />
         </div>
         <div class="flex items-center gap-2">
           <Tooltip content="Go back">
-            <IconButton
-              variant="outlined"
-              color="contrast"
-              text="soft"
-              size="small"
-              icon="i-lucide:chevron-left"
-              onClick={navigateToAPI}
-            />
+            <IconButton icon="i-lucide:chevron-left" onClick={navigateToAPI} />
           </Tooltip>
           <Button
-            variant="outlined"
-            color="contrast"
-            size="small"
+            variant="secondary"
             class="flex-1"
             onClick={() => {
               navigate(

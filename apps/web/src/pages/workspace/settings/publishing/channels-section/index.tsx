@@ -235,10 +235,6 @@ const ChannelsSection: Component = () => {
               disabled={mutationPending()}
               iconProps={{ class: "h-4 w-4" }}
               icon="i-lucide:plus"
-              size="small"
-              color="contrast"
-              variant="outlined"
-              text="soft"
             />
           </Show>
         </Setting>
@@ -258,8 +254,8 @@ const ChannelsSection: Component = () => {
                   <IconButton
                     label={() => <span class="px-1">Try again</span>}
                     icon="i-lucide:refresh-cw"
-                    size="small"
-                    variant="text"
+                    variant="ghost"
+                    text="base"
                     onClick={() => refresh()}
                   />
                 </Card>

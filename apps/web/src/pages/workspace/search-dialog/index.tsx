@@ -320,6 +320,8 @@ const SearchDialog: Component<SearchDialogProps> = (props) => {
     <div class="flex min-h-0 w-full flex-1 flex-col gap-2">
       <div class="flex shrink-0 items-center gap-1 px-1 pt-1">
         <Input
+          color="base"
+          variant="solid"
           ref={(input) => {
             setInputRef(input);
             if (props.opened) focusInput();
@@ -328,7 +330,6 @@ const SearchDialog: Component<SearchDialogProps> = (props) => {
           setValue={setQueryValue}
           placeholder="Search or ask a question"
           aria-label="Search query"
-          size="small"
           maxLength={500}
           onKeyDown={handleInputKeyDown}
           role={showingAnswer() ? undefined : "combobox"}
@@ -429,7 +430,6 @@ const SearchDialog: Component<SearchDialogProps> = (props) => {
         cardClass="max-h-[80dvh] p-1 gap-2"
         wrapperClass="absolute top-[10dvh]"
         aria-label="Search workspace"
-        portal
       >
         {content()}
       </Dialog>

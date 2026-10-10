@@ -346,10 +346,7 @@ const TableControls = (props: TableControlsProps) => {
                       )}
                     />
                     <IconButton
-                      variant="outlined"
-                      color="contrast"
                       size="xs"
-                      text="soft"
                       icon={
                         axis === "column" ? "i-lucide:grip-horizontal" : "i-lucide:grip-vertical"
                       }

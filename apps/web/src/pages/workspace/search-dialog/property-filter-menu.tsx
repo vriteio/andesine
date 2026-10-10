@@ -355,9 +355,6 @@ const NewPropertyFilterMenu: Component<NewPropertyFilterMenuProps> = (props) => 
                 "w-full justify-center md:py-0.5",
                 !valid() && "!cursor-default opacity-70"
               )}
-              variant="outlined"
-              color="primary"
-              size="small"
               aria-disabled={!valid()}
               onClick={() => {
                 if (valid()) props.add(filter());
@@ -376,10 +373,8 @@ const NewPropertyFilterMenu: Component<NewPropertyFilterMenuProps> = (props) => 
         <Tooltip content="Add property filter">
           <IconButton
             type="button"
-            variant="text"
+            variant="ghost"
             icon="i-lucide:list-filter-plus"
-            text="soft"
-            size="small"
             disabled={props.disabled}
             aria-label="Add property filter"
           />
@@ -409,9 +404,7 @@ const PropertyFilterMenu: Component<FilterMenuProps> = (props) => {
       placement="bottom-start"
       trigger={() => (
         <Button
-          variant="outlined"
-          color="contrast"
-          size="small"
+          variant="secondary"
           class="flex max-w-64 items-center p-0.5 pl-1.5 pr-0.5 gap-1"
           aria-label={`Edit filter: ${getFilterSummary(props.filter)}`}
           badge

@@ -1,6 +1,7 @@
 export type { ContentMark, ContentNode } from "./types";
 export {
   ELEMENT_BLOCKS,
+  ELEMENT_TAG_NAME,
   parseElement,
   getElementTagName,
   getElementData,

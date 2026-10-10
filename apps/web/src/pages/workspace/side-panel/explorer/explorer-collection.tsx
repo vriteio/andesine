@@ -292,9 +292,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                           <IconButton
                             data-collection-menu-trigger
                             icon="i-lucide:ellipsis-vertical"
-                            size="small"
-                            variant="text"
-                            text="soft"
+                            variant="ghost"
                           />
                         </div>
                       </Show>

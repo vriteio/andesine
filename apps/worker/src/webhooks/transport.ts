@@ -1,5 +1,4 @@
 import { type WebhookDestination } from "@andesine/server/webhooks/destination";
-import { type WebhookSignatureHeaders } from "@andesine/server/webhooks/signing";
 import { Agent as HTTPAgent, request as requestHTTP } from "node:http";
 import { Agent as HTTPSAgent, request as requestHTTPS } from "node:https";
 import { connectWebhookDestination } from "./connection";
@@ -13,7 +12,7 @@ interface SendWebhookRequestInput {
   payload: Buffer;
   signal: AbortSignal;
   onConnect: () => void;
-  prepareHeaders: () => Promise<WebhookSignatureHeaders>;
+  prepareHeaders: () => Promise<Record<string, string>>;
 }
 
 const sendWebhookRequest = async (input: SendWebhookRequestInput): Promise<WebhookHTTPResponse> => {

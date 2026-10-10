@@ -15,7 +15,8 @@ import { Fragment, type Node as ProseMirrorNode, type ResolvedPos } from "@tipta
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
     element: {
-      insertElement(): ReturnType;
+      /** Without an element, inserts an empty tag and starts editing it. */
+      insertElement(element?: { name: string; selfClosing: boolean }): ReturnType;
       wrapInElement(): ReturnType;
       editElement(position?: number, selectName?: boolean, edge?: "start" | "end"): ReturnType;
       formatElementTag(position?: number): ReturnType;
@@ -51,11 +52,21 @@ const Element = BaseElement.extend({
   addCommands() {
     return {
       insertElement:
-        () =>
+        (element) =>
         ({ tr, dispatch }) => {
           const { $from } = tr.selection;
           const id = nanoid();
-          const node = this.type.create({ id });
+          const data = element && {
+            name: element.name,
+            props: {},
+            selfClosing: element.selfClosing
+          };
+          const node = data
+            ? this.type.create(
+                { id, ...data, source: formatElement(data) },
+                data.selfClosing ? null : this.type.schema.nodes.paragraph.create()
+              )
+            : this.type.create({ id });
 
           if ($from.parent.type.name !== "paragraph" || !allowsElement($from)) {
             return false;
@@ -76,8 +87,15 @@ const Element = BaseElement.extend({
               if (child.attrs.id !== id) {
                 return;
               }
-              tr.setSelection(NodeSelection.create(tr.doc, position));
-              tr.setMeta("elementEdit", { position, selectName: true });
+              if (!data) {
+                tr.setSelection(NodeSelection.create(tr.doc, position));
+                tr.setMeta("elementEdit", { position, selectName: true });
+              } else if (data.selfClosing) {
+                tr.setSelection(NodeSelection.create(tr.doc, position));
+              } else {
+                // Inside the element's first paragraph.
+                tr.setSelection(TextSelection.create(tr.doc, position + 2));
+              }
             });
           }
           return true;

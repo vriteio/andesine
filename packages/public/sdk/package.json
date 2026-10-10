@@ -1,6 +1,6 @@
 {
   "name": "@andesine/sdk",
-  "version": "0.4.0",
+  "version": "0.6.0",
   "description": "TypeScript API client for Andesine",
   "type": "module",
   "license": "MIT",
@@ -29,6 +29,10 @@
     "./webhooks": {
       "types": "./dist/webhooks.d.ts",
       "import": "./dist/webhooks.js"
+    },
+    "./extensions": {
+      "types": "./dist/extensions.d.ts",
+      "import": "./dist/extensions.js"
     }
   },
   "scripts": {

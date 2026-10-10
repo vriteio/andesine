@@ -14,7 +14,6 @@ const CopyFallbackDialog: Component<CopyFallbackDialogProps> = (props) => (
     opened={props.opened}
     onOverlayClick={props.onClose}
     size="large"
-    portal
     aria-label={props.title || "Copy manually"}
   >
     <div class="flex flex-col gap-0.5">
@@ -29,9 +28,7 @@ const CopyFallbackDialog: Component<CopyFallbackDialogProps> = (props) => (
     >
       {props.value}
     </Card>
-    <Button color="primary" variant="outlined" size="small" onClick={props.onClose}>
-      Close
-    </Button>
+    <Button onClick={props.onClose}>Close</Button>
   </Dialog>
 );
 

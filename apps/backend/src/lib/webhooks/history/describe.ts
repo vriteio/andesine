@@ -7,7 +7,8 @@ import {
 import {
   type WebhookDelivery,
   type WebhookRun,
-  type WebhookAttempt
+  type WebhookAttempt,
+  type WebhookEventName
 } from "@andesine/contracts/webhooks";
 import {
   toWebhookID,
@@ -114,7 +115,8 @@ const describeWebhookDeliveries = async (
       id: toWebhookDeliveryID(delivery.id),
       endpointID: toWebhookID(delivery.endpointID),
       eventID: toWebhookEventID(delivery.eventID),
-      type: event.type,
+      // Described deliveries belong to HTTP webhooks, which receive only HTTP webhook events.
+      type: event.type as WebhookEventName,
       occurredAt: event.occurredAt.toISOString(),
       test: event.test,
       state: delivery.state,

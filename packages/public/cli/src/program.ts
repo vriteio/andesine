@@ -9,6 +9,7 @@ import { createOutput } from "./output";
 import { initPages } from "./pages/init";
 import { registerAPI } from "./api/register";
 import { registerTypes } from "./types/register";
+import { registerExtensions } from "./extensions/register";
 
 /** Register custom commands and the generated public API group. */
 const createProgram = (signal: AbortSignal) => {
@@ -118,6 +119,7 @@ const createProgram = (signal: AbortSignal) => {
   });
   registerAPI(program, signal);
   registerTypes(program, signal);
+  registerExtensions(program, signal);
   program.action(() => {
     program.outputHelp();
   });

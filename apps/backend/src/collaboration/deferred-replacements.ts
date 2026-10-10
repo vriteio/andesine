@@ -3,6 +3,7 @@ import type { ContentNode } from "@andesine/document";
 import { getContentSnapshot } from "./document";
 import { setPersistedDocumentSchemaRevision, type ContentConnection } from "./operations";
 import type { ContentSnapshot } from "./types";
+import { getWebhookOrigin } from "@andesine/server/webhooks/recording";
 
 interface DeferredDocumentReplacements {
   prepare: (
@@ -28,6 +29,8 @@ const createDeferredDocumentReplacements = (
   webhookOperationID: string
 ): DeferredDocumentReplacements => {
   const replacements: DocumentReplacement[] = [];
+  // Captured now: the replacements apply after the caller's transaction commits.
+  const webhookOriginExtensionID = getWebhookOrigin();
 
   let applied = false;
 
@@ -76,6 +79,7 @@ const createDeferredDocumentReplacements = (
 
           // Check and replace synchronously, after the current snapshot is durable.
           connection.context.webhookOperationID = webhookOperationID;
+          connection.context.webhookOriginExtensionID = webhookOriginExtensionID;
           replaceContentDocument(document, content);
         });
 

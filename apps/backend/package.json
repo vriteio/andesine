@@ -37,6 +37,7 @@
     "date-fns": "^4.4.0",
     "drizzle-orm": "catalog:",
     "fastify": "^5.11.2",
+    "jose": "6.2.8",
     "lexorank": "catalog:",
     "nodemailer": "^9.0.4",
     "pg": "catalog:",

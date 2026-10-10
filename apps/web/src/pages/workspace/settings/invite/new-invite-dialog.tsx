@@ -59,22 +59,8 @@ const NewInviteDialog: Component<NewInviteDialogProps> = (props) => {
         {props.link}
       </Card>
       <div class="flex gap-2">
-        <IconButton
-          variant="outlined"
-          color="contrast"
-          text="soft"
-          size="small"
-          icon="i-lucide:x"
-          onClick={props.onClose}
-        />
-        <Button
-          color="primary"
-          variant="outlined"
-          size="small"
-          onClick={copyLink}
-          disabled={copied()}
-          class="flex-1"
-        >
+        <IconButton icon="i-lucide:x" onClick={props.onClose} />
+        <Button onClick={copyLink} disabled={copied()} class="flex-1">
           {copied() ? "Copied!" : "Copy link"}
         </Button>
       </div>

@@ -20,19 +20,17 @@ import { TreeItem, useTree } from "#web/components/tree";
 import {
   getWebhookNextAttemptLabel,
   isWebhookEventReplayable,
-  type Webhook,
   type WebhookEvent
 } from "#web/lib/data";
 import { formatDate, formatRelativeTime } from "#web/lib/primitives";
+import type { WebhookEventsSource } from "../source";
 import { EventDetails } from "./event-details";
 
 interface EventItemProps {
-  canManage: boolean;
   event: WebhookEvent;
   nextID?: string;
   previousID?: string;
-  webhook: Webhook;
-  workspaceID: string;
+  source: WebhookEventsSource;
   getEvents(ids: string[]): WebhookEvent[];
   onReplay(events: WebhookEvent[]): void;
 }
@@ -78,7 +76,7 @@ const EventItem: Component<EventItemProps> = (props) => {
     return `${state}. ${getWebhookNextAttemptLabel(nextAttemptAt)} ${formatRelativeTime(nextAttemptAt)}`;
   };
   const replayUnavailable = () => {
-    if (!props.webhook.enabled) return "Enable the webhook to replay";
+    if (!props.source.endpoint?.enabled) return "Enable the webhook to replay";
 
     return isWebhookEventReplayable(props.event) ? false : "This event is already being sent";
   };
@@ -86,7 +84,7 @@ const EventItem: Component<EventItemProps> = (props) => {
   const multiMenuItems = (selected: WebhookEvent[]): MenuItem[][] => {
     const replayable = selected.filter(isWebhookEventReplayable);
     const count = formatEventCount(replayable.length || selected.length);
-    const disabled = !props.webhook.enabled
+    const disabled = !props.source.endpoint?.enabled
       ? "Enable the webhook to replay"
       : !replayable.length && "None of the selected events can be replayed";
 
@@ -107,7 +105,7 @@ const EventItem: Component<EventItemProps> = (props) => {
   const menuItems = createMemo((): MenuItem[][] => {
     const selected = props.getEvents(selection());
 
-    if (!props.canManage) return [];
+    if (!props.source.canManage) return [];
     if (selected.length > 1) return multiMenuItems(selected);
     if (props.event.test) return [];
 
@@ -147,8 +145,8 @@ const EventItem: Component<EventItemProps> = (props) => {
           id={props.event.id}
           label={props.event.type}
           topLevel
-          checkbox={props.canManage}
-          selectable={props.canManage}
+          checkbox={props.source.canManage}
+          selectable={props.source.canManage}
           keyboardMenu={menuItems().flat()}
           onOpenMenu={() => {
             if (menuItems().length) setMenuOpened(true);
@@ -201,12 +199,7 @@ const EventItem: Component<EventItemProps> = (props) => {
                         !menuOpened() && "opacity-20 media-mouse:group-hover:opacity-100"
                       )}
                     >
-                      <IconButton
-                        icon="i-lucide:ellipsis-vertical"
-                        size="small"
-                        variant="text"
-                        text="soft"
-                      />
+                      <IconButton icon="i-lucide:ellipsis-vertical" variant="ghost" />
                     </div>
                   )}
                   items={menuItems()}
@@ -217,11 +210,7 @@ const EventItem: Component<EventItemProps> = (props) => {
         />
       </DropdownArea>
       <Show when={isExpanded(props.event.id)}>
-        <EventDetails
-          event={props.event}
-          webhookID={props.webhook.id}
-          workspaceID={props.workspaceID}
-        />
+        <EventDetails event={props.event} target={props.source.target} />
       </Show>
     </div>
   );

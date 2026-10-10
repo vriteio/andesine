@@ -1,4 +1,5 @@
 import { isBlockSelection, setBlockSelectionAtCoords } from "#editor/extensions";
+import type { BlockActions } from "#editor/client-types";
 import { DropdownArea, useShortcuts } from "@andesine/components";
 import { type Editor, isTextSelection } from "@tiptap/core";
 import {
@@ -18,6 +19,7 @@ import { rangeContainsInheritedField } from "#editor/ui/block-utils";
 
 interface BlockMenuAreaProps {
   editor: Editor | null;
+  blockActions?: BlockActions;
   menuContainerRef: Accessor<HTMLElement | null>;
   notify(type: "success" | "error", text: string): void;
 }
@@ -27,6 +29,9 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
   const menuID = createUniqueId();
   const [menuOpened, setMenuOpened] = createSignal(false);
   const [menuAnchorPoint, setMenuAnchorPoint] = createSignal<{ x: number; y: number } | null>(null);
+  const [contextMenuPoint, setContextMenuPoint] = createSignal<{ x: number; y: number } | null>(
+    null
+  );
   const [textMenuSelectionRange, setTextMenuSelectionRange] =
     createSignal<BlockControlRange | null>(null);
   const handleCopy = () => {
@@ -196,7 +201,12 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
             return false;
           }
 
-          return view.dom.contains(event.target as Node);
+          const isInEditor = view.dom.contains(event.target as Node);
+
+          // Where a context menu opens, so block action menus can open in its place.
+          if (isInEditor) setContextMenuPoint({ x: event.clientX, y: event.clientY });
+
+          return isInEditor;
         }}
       >
         {props.children}
@@ -207,7 +217,9 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
                 menuID={menuID}
                 notify={props.notify}
                 anchorPoint={menuAnchorPoint()}
+                contextMenuPoint={contextMenuPoint()}
                 editor={props.editor}
+                blockActions={props.blockActions}
                 menuOpened={menuOpened()}
                 setMenuOpened={handleMenuOpenedChange}
                 textMenuSelectionRange={textMenuSelectionRange()}

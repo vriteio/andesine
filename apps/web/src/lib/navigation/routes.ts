@@ -8,6 +8,8 @@ import {
   useParams
 } from "@solidjs/router";
 import { type Accessor, createMemo, lazy } from "solid-js";
+import { type ExtensionIconSource } from "#web/components/extensions/extension-icon";
+import { useRouteExtension } from "./route-extension";
 
 import CollectionPage from "../../pages/workspace/collection/page";
 import SettingsLayout from "../../pages/workspace/settings/layout";
@@ -23,6 +25,11 @@ import APISettingsPage from "../../pages/workspace/settings/api/page";
 import KeySettingsPage from "../../pages/workspace/settings/key/page";
 import WebhookSettingsPage from "../../pages/workspace/settings/webhook/page";
 import WebhookEventsPage from "../../pages/workspace/settings/webhook-events/page";
+import ExtensionsSettingsPage from "../../pages/workspace/settings/extensions/page";
+import ExtensionPage from "../../pages/workspace/settings/extension/page";
+import ExtensionSettingsPage from "../../pages/workspace/settings/extension-settings/page";
+import ExtensionInstallPage from "../../pages/workspace/settings/extension-install/page";
+import ExtensionWebhookEventsPage from "../../pages/workspace/settings/extension-webhook-events/page";
 
 const AuthLayout = lazy(() => import("../../pages/auth/layout"));
 const DevicePage = lazy(() => import("../../pages/auth/device/page"));
@@ -37,13 +44,24 @@ const SchemaPage = lazy(() => import("../../pages/workspace/schema/page"));
 
 interface RouteData {
   title: string;
+  /** Shown at the top-left of the settings header. */
+  extensionIcon?: ExtensionIconSource;
+  /** Data the page names, e.g. its extension, loads in the browser; a spinner shows meanwhile. */
+  loading?: boolean;
   breadcrumbs: Array<{
     label: string;
     path?: string;
   }>;
 }
+/** Loaded data that route titles and breadcrumbs name. */
+interface RouteContext {
+  extension: (ExtensionIconSource & { displayName: string }) | null;
+}
 
-const routesData: Record<string, (params: Params, query: SearchParams) => RouteData> = {
+const routesData: Record<
+  string,
+  (params: Params, query: SearchParams, context: RouteContext) => RouteData
+> = {
   "/:workspaceID/settings/personal": () => ({
     title: "Personal",
     breadcrumbs: [{ label: "Settings" }, { label: "Personal", path: "/settings/personal" }]
@@ -119,6 +137,67 @@ const routesData: Record<string, (params: Params, query: SearchParams) => RouteD
       {
         label: params.webhookID ? "Edit webhook" : "Create webhook",
         path: `/settings/webhook/${params.webhookID || ""}`
+      }
+    ]
+  }),
+  "/:workspaceID/settings/extensions": () => ({
+    title: "Extensions",
+    breadcrumbs: [{ label: "Settings" }, { label: "Extensions", path: "/settings/extensions" }]
+  }),
+  "/:workspaceID/settings/extension/:extensionID": (params, _query, { extension }) => ({
+    title: extension?.displayName ?? "Extension",
+    extensionIcon: extension ?? undefined,
+    loading: !extension,
+    breadcrumbs: [
+      { label: "Settings" },
+      { label: "Extensions", path: "/settings/extensions" },
+      {
+        label: extension?.displayName ?? "Extension",
+        path: `/settings/extension/${params.extensionID}`
+      }
+    ]
+  }),
+  "/:workspaceID/settings/extension/:extensionID/settings": (params, _query, { extension }) => ({
+    title: extension ? `${extension.displayName} settings` : "Extension settings",
+    extensionIcon: extension ?? undefined,
+    loading: !extension,
+    breadcrumbs: [
+      { label: "Settings" },
+      { label: "Extensions", path: "/settings/extensions" },
+      {
+        label: extension?.displayName ?? "Extension",
+        path: `/settings/extension/${params.extensionID}`
+      },
+      { label: "Settings", path: `/settings/extension/${params.extensionID}/settings` }
+    ]
+  }),
+  "/:workspaceID/settings/extension/:extensionID/webhook/:webhookID/events": (
+    params,
+    _query,
+    { extension }
+  ) => ({
+    title: "Webhook events",
+    breadcrumbs: [
+      { label: "Settings" },
+      { label: "Extensions", path: "/settings/extensions" },
+      {
+        label: extension?.displayName ?? "Extension",
+        path: `/settings/extension/${params.extensionID}`
+      },
+      {
+        label: "Webhook events",
+        path: `/settings/extension/${params.extensionID}/webhook/${params.webhookID}/events`
+      }
+    ]
+  }),
+  "/:workspaceID/settings/extension-install/:scope/:name": (params) => ({
+    title: "Install extension",
+    breadcrumbs: [
+      { label: "Settings" },
+      { label: "Extensions", path: "/settings/extensions" },
+      {
+        label: "Install extension",
+        path: `/settings/extension-install/${params.scope}/${params.name}`
       }
     ]
   }),
@@ -199,6 +278,26 @@ const routes: RouteDefinition[] = [
             component: KeySettingsPage
           },
           {
+            path: "/extensions",
+            component: ExtensionsSettingsPage
+          },
+          {
+            path: "/extension/:extensionID/webhook/:webhookID/events",
+            component: ExtensionWebhookEventsPage
+          },
+          {
+            path: "/extension/:extensionID/settings",
+            component: ExtensionSettingsPage
+          },
+          {
+            path: "/extension/:extensionID",
+            component: ExtensionPage
+          },
+          {
+            path: "/extension-install/:scope/:name",
+            component: ExtensionInstallPage
+          },
+          {
             path: "/webhook/:webhookID/events",
             component: WebhookEventsPage
           },
@@ -228,18 +327,21 @@ const routes: RouteDefinition[] = [
   }
 ];
 
+/** Data such as an extension's name fills in after hydration. */
 const useRouteData = (): Accessor<RouteData | null> => {
   const params = useParams();
   const location = useLocation();
   const currentMatches = useCurrentMatches();
+  const extension = useRouteExtension();
   const routeData = createMemo(() => {
     const matches = currentMatches();
+    const context: RouteContext = { extension: extension() };
 
     for (const match of matches) {
       const routeData = routesData[match.route.pattern];
 
       if (routeData) {
-        return routeData(params, location.query);
+        return routeData(params, location.query, context);
       }
     }
 
@@ -256,7 +358,7 @@ const useRouteData = (): Accessor<RouteData | null> => {
       ? routesData[optionalRoutePatterns[settingsRoute]]
       : null;
 
-    if (optionalRouteData) return optionalRouteData(params, location.query);
+    if (optionalRouteData) return optionalRouteData(params, location.query, context);
 
     return null;
   });

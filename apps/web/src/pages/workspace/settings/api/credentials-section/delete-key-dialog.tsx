@@ -57,9 +57,6 @@ const DeleteKeyDialog: Component<DeleteKeyDialogProps> = (props) => {
           disabled={props.loading}
           placeholder={confirmationText()}
           class="font-mono"
-          size="small"
-          color="contrast"
-          variant="outlined"
           onKeyDown={(event) => {
             if (event.key !== "Enter" || props.loading || confirmation() !== confirmationText()) {
               return;
@@ -71,19 +68,9 @@ const DeleteKeyDialog: Component<DeleteKeyDialogProps> = (props) => {
         />
       </label>
       <div class="flex gap-2">
-        <IconButton
-          variant="outlined"
-          color="contrast"
-          text="soft"
-          size="small"
-          icon="i-lucide:x"
-          disabled={props.loading}
-          onClick={handleClose}
-        />
+        <IconButton icon="i-lucide:x" disabled={props.loading} onClick={handleClose} />
         <Button
-          color="danger"
-          variant="outlined"
-          size="small"
+          variant="danger"
           loading={props.loading}
           disabled={confirmation() !== confirmationText()}
           onClick={() => props.onConfirm(visibleKeys().map(({ id }) => id))}

@@ -35,6 +35,11 @@ import {
   recoverAbandonedSchemaMigrations,
   reconcileFailedSchemaMigrationJob
 } from "./schema-migrations";
+import {
+  EXTENSION_REGISTRY_JOB_NAME,
+  isExtensionRegistryEnabled,
+  refreshExtensions
+} from "./extensions/registry";
 
 const MAINTENANCE_QUEUE_NAME = "maintenance";
 const MAINTENANCE_INTERVAL_MS = 60_000;
@@ -74,6 +79,16 @@ const jobHandlers = new Map([
 const maintenanceHandlers = new Map([
   ["schema-migration-recovery", () => recoverAbandonedSchemaMigrations(searchIndexingQueue)]
 ]);
+const maintenanceIntervals = new Map<string, number>();
+
+if (isExtensionRegistryEnabled()) {
+  maintenanceHandlers.set(EXTENSION_REGISTRY_JOB_NAME, () => refreshExtensions(publishEvent));
+  maintenanceIntervals.set(
+    EXTENSION_REGISTRY_JOB_NAME,
+    config.EXTENSIONS_REGISTRY_REFRESH_SECONDS * 1000
+  );
+}
+
 const assetStorage = createAssetStorage(config);
 if (assetStorage) {
   maintenanceHandlers.set("asset-search-indexing", () => indexAssetSearch(typesenseClient));
@@ -258,9 +273,13 @@ const startBackgroundWorkers = async (): Promise<void> => {
 
     await maintenanceQueue.upsertJobScheduler(
       name,
-      { every: MAINTENANCE_INTERVAL_MS },
+      { every: maintenanceIntervals.get(name) ?? MAINTENANCE_INTERVAL_MS },
       { name, data: {}, opts: SEARCH_INDEXING_DEFAULT_JOB_OPTIONS }
     );
+  }
+  // A refresh scheduled before the registry was turned off would have no handler.
+  if (!maintenanceHandlers.has(EXTENSION_REGISTRY_JOB_NAME)) {
+    await maintenanceQueue.removeJobScheduler(EXTENSION_REGISTRY_JOB_NAME);
   }
   if (shutdownPromise) return;
 

@@ -1,12 +1,18 @@
-name: Publish public package
+name: Publish public packages
 
+# Pushes publish every package whose committed version is not on npm yet; the manual run
+# publishes one package. Keep this file name: npm trusted publishing refers to it.
 on:
+  push:
+    branches: [andesine]
+    paths:
+      - "packages/public/*/package.json"
   workflow_dispatch:
     inputs:
       package:
         description: Package to publish
         type: choice
-        options: [sdk, converters, cli]
+        options: [sdk, converters, extensions, ui, pages, cli]
         required: true
       version:
         description: Exact version already committed in the package.json
@@ -23,7 +29,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: publish-public-${{ inputs.package }}
+  group: publish-public-packages
   cancel-in-progress: false
 
 jobs:
@@ -34,9 +40,11 @@ jobs:
       contents: read
       id-token: write
     env:
-      PACKAGE_NAME: ${{ inputs.package }}
-      PACKAGE_VERSION: ${{ inputs.version }}
-      PACKAGE_TAG: ${{ inputs.tag }}
+      # Dependencies first: pages needs sdk and converters, and the CLI needs the SDK.
+      PUBLISH_ORDER: sdk converters extensions ui pages cli
+      INPUT_PACKAGE: ${{ inputs.package }}
+      INPUT_VERSION: ${{ inputs.version }}
+      INPUT_TAG: ${{ inputs.tag }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -47,53 +55,91 @@ jobs:
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
       - uses: pnpm/action-setup@v6
-      - name: Check release version
+      - name: Plan releases
         run: |
-          case "$PACKAGE_NAME" in sdk|converters|cli) ;; *) exit 1 ;; esac
-          actual_version="$(jq -r '.version' "packages/public/$PACKAGE_NAME/package.json")"
-          if [ "$actual_version" != "$PACKAGE_VERSION" ]; then
-            echo "Expected $PACKAGE_VERSION, found $actual_version. Commit the version change first."
-            exit 1
-          fi
-          if [[ "$PACKAGE_TAG" == "latest" && "$actual_version" == *-* ]]; then
-            echo "Publish prerelease versions with the next tag."
-            exit 1
-          fi
-          archive_name="$(jq -r '.name | ltrimstr("@") | gsub("/"; "-")' "packages/public/$PACKAGE_NAME/package.json")"
-          echo "PACKAGE_ARCHIVE=$archive_name-$actual_version.tgz" >> "$GITHUB_ENV"
-      - run: pnpm install --frozen-lockfile
-      - name: Check CLI SDK release
-        if: inputs.package == 'cli'
-        run: |
-          sdk_version="$(jq -r '.version' packages/public/sdk/package.json)"
-          published_version="$(npm view "@andesine/sdk@$sdk_version" version)" || {
-            echo "Publish @andesine/sdk@$sdk_version before the CLI."
-            exit 1
+          is_published() {
+            [ "$(npm view "$1@$2" version 2>/dev/null)" = "$2" ]
           }
-          if [ "$published_version" != "$sdk_version" ]; then
-            echo "Publish @andesine/sdk@$sdk_version before the CLI."
-            exit 1
-          fi
-      - name: Check source
+          releases=""
+
+          for package in $PUBLISH_ORDER; do
+            manifest="packages/public/$package/package.json"
+            name="$(jq -r '.name' "$manifest")"
+            version="$(jq -r '.version' "$manifest")"
+
+            if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+              [ "$package" = "$INPUT_PACKAGE" ] || continue
+              if [ "$version" != "$INPUT_VERSION" ]; then
+                echo "Expected $INPUT_VERSION, found $version. Commit the version change first."
+                exit 1
+              fi
+              tag="$INPUT_TAG"
+            else
+              is_published "$name" "$version" && continue
+              if [[ "$version" == *-* ]]; then tag=next; else tag=latest; fi
+            fi
+
+            if [[ "$tag" == "latest" && "$version" == *-* ]]; then
+              echo "Publish prerelease versions with the next tag."
+              exit 1
+            fi
+
+            releases+="$package:$version:$tag "
+          done
+
+          echo "RELEASES=$releases" >> "$GITHUB_ENV"
+          echo "Releases: ${releases:-none}"
+      - if: env.RELEASES != ''
+        run: pnpm install --frozen-lockfile
+      - name: Check, pack, and publish
+        if: env.RELEASES != ''
         run: |
-          pnpm exec eslint "packages/public/$PACKAGE_NAME"
-          pnpm exec prettier --check "packages/public/$PACKAGE_NAME"
-      - name: Check generated API files
-        if: inputs.package == 'sdk' || inputs.package == 'cli'
-        run: |
-          pnpm api:generate
-          git diff --exit-code -- packages/public/sdk/openapi.json packages/public/sdk/src/generated
-      - name: Build, check, and pack
-        run: |
+          is_published() {
+            [ "$(npm view "$1@$2" version 2>/dev/null)" = "$2" ]
+          }
           mkdir -p "$RUNNER_TEMP/packages"
-          pnpm --filter "./packages/public/$PACKAGE_NAME" pack --pack-destination "$RUNNER_TEMP/packages"
-      - name: Check generated CLI bindings
-        if: inputs.package == 'cli'
-        run: git diff --exit-code -- packages/public/cli/src/api/manifest.ts packages/public/cli/src/api/bindings.ts
+
+          if [[ " $RELEASES" == *" sdk:"* || " $RELEASES" == *" cli:"* ]]; then
+            pnpm api:generate
+            git diff --exit-code -- packages/public/sdk/openapi.json packages/public/sdk/src/generated
+          fi
+
+          for release in $RELEASES; do
+            IFS=: read -r package version tag <<< "$release"
+            directory="packages/public/$package"
+            name="$(jq -r '.name' "$directory/package.json")"
+            echo "::group::$name@$version ($tag)"
+
+            # Packing pins workspace dependencies to their current versions, which must be on npm.
+            for dependency in $(jq -r '(.dependencies // {}) | to_entries[] | select(.value | startswith("workspace:")) | .key' "$directory/package.json"); do
+              dependency_manifest="$(grep -l "\"name\": \"$dependency\"" packages/public/*/package.json)"
+              dependency_version="$(jq -r '.version' "$dependency_manifest")"
+              if ! is_published "$dependency" "$dependency_version"; then
+                echo "Publish $dependency@$dependency_version before $name."
+                exit 1
+              fi
+            done
+
+            pnpm exec eslint "$directory"
+            pnpm exec prettier --check "$directory"
+            if [ "$package" = "cli" ]; then
+              # The CLI bundles the project templates.
+              pnpm exec eslint packages/templates
+              pnpm exec prettier --check packages/templates
+            fi
+
+            pnpm --filter "./$directory" pack --pack-destination "$RUNNER_TEMP/packages"
+            if [ "$package" = "cli" ]; then
+              git diff --exit-code -- packages/public/cli/src/api/manifest.ts packages/public/cli/src/api/bindings.ts
+            fi
+
+            archive="$(jq -r '.name | ltrimstr("@") | gsub("/"; "-")' "$directory/package.json")-$version.tgz"
+            npm publish "$RUNNER_TEMP/packages/$archive" --access public --provenance --tag "$tag"
+            echo "::endgroup::"
+          done
       - uses: actions/upload-artifact@v4
+        if: env.RELEASES != ''
         with:
-          name: andesine-${{ inputs.package }}-${{ inputs.version }}
+          name: public-packages-${{ github.sha }}
           path: ${{ runner.temp }}/packages/*.tgz
           if-no-files-found: error
-      - name: Publish checked tarball
-        run: npm publish "$RUNNER_TEMP/packages/$PACKAGE_ARCHIVE" --access public --provenance --tag "$PACKAGE_TAG"

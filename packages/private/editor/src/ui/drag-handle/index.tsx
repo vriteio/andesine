@@ -282,10 +282,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       <Show when={isEmptyParagraph()}>
         <IconButton
           icon="i-lucide:plus"
-          variant="text"
-          color="contrast"
-          size="small"
-          text="soft"
+          variant="ghost"
           class="pointer-events-auto"
           badge
           onClick={(e) => {
@@ -308,10 +305,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       <IconButton
         icon="i-lucide:grip-vertical"
         class="pointer-events-auto cursor-grab active:cursor-grabbing"
-        variant="text"
-        color="contrast"
-        size="small"
-        text="soft"
+        variant="ghost"
         badge
       />
     </div>

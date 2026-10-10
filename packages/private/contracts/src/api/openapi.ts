@@ -13,7 +13,7 @@ const generateOpenAPI = async (contract: APIContract, baseURL: string) => {
     filter: ({ contract, path }) => {
       const meta = contract["~orpc"].meta;
       const name = path.join(".");
-      const isPublic = isPublicAPI(meta) || name === "content.getAsset";
+      const isPublic = (isPublicAPI(meta) && !meta.cli) || name === "content.getAsset";
 
       if (isPublic) metadata.set(name, meta);
 
@@ -41,6 +41,13 @@ const generateOpenAPI = async (contract: APIContract, baseURL: string) => {
           scheme: "bearer",
           bearerFormat: "Andesine API key",
           description: "Use an Andesine API key as a Bearer token"
+        },
+        extensionToken: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+          description:
+            "An extension JWT signed with the extension's registered key: iss is the registry name, sub the ext_ ID (omitted for app-level operations), aud the instance API URL, and exp at most 5 minutes after iat."
         }
       }
     }
@@ -56,8 +63,11 @@ const generateOpenAPI = async (contract: APIContract, baseURL: string) => {
       const example = meta?.example;
       const required = meta?.required;
       const oauthOnly = required && required !== true && required.oauth && !required.key;
+      const extensionOnly = required && required !== true && required.extension;
 
       if (oauthOnly) operation.security = [{ oauth: [] }];
+
+      if (extensionOnly) operation.security = [{ extensionToken: [] }];
 
       if (meta?.requireWorkspace !== false && operation.operationId !== "content.getAsset") {
         operation.parameters = [

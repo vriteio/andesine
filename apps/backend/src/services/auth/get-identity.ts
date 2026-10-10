@@ -15,7 +15,9 @@ const getIdentity = async (input: { auth: SessionData }) => {
     return { type: auth.type, keyID: auth.key.keyID, workspaceID: auth.workspaceID };
   }
 
-  if (!actor || auth.type === "key") throw new ORPCError("UNAUTHORIZED");
+  if (!actor || (auth.type !== "session" && auth.type !== "oauth")) {
+    throw new ORPCError("UNAUTHORIZED");
+  }
 
   const [user] = await db
     .select()

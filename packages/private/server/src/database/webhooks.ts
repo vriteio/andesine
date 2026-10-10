@@ -1,4 +1,8 @@
-import { type WebhookConfiguration, type WebhookEventName } from "@andesine/contracts/webhooks";
+import {
+  type OutboundConfiguration,
+  type OutboundEventName,
+  type WebhookConfiguration
+} from "@andesine/contracts/webhooks";
 import { sql } from "drizzle-orm";
 import {
   boolean,
@@ -13,9 +17,11 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
   varchar
 } from "drizzle-orm/pg-core";
+import { extensions } from "./extensions";
 import { bytea, timestamps } from "./shared";
 import { workspaces } from "./workspaces";
 
@@ -33,10 +39,16 @@ const webhookEndpoints = pgTable(
     workspaceID: uuid("workspace_id")
       .notNull()
       .references(() => workspaces.id, { onDelete: "cascade" }),
+    // `extension` rows are managed by an extension's manifest webhooks, never by the public API.
+    kind: text("kind", { enum: ["http", "extension"] })
+      .notNull()
+      .default("http"),
+    extensionID: uuid("extension_id"),
+    extensionWebhookID: varchar("extension_webhook_id", { length: 64 }),
     name: varchar("name", { length: 100 }).notNull(),
     url: varchar("url", { length: 2048 }).notNull(),
     enabled: boolean("enabled").notNull().default(false),
-    eventTypes: text("event_types").array().$type<WebhookEventName[]>().notNull(),
+    eventTypes: text("event_types").array().$type<OutboundEventName[]>().notNull(),
     schemaVersion: integer("schema_version").notNull().default(1),
     collections: jsonb("collections").$type<WebhookConfiguration["collections"]>().notNull(),
     channels: jsonb("channels").$type<WebhookConfiguration["channels"]>().notNull(),
@@ -50,7 +62,10 @@ const webhookEndpoints = pgTable(
     previousSecretCiphertext: bytea("previous_secret_ciphertext"),
     previousSecretExpiresAt: timestamp("previous_secret_expires_at", { withTimezone: true }),
     secretRotatedAt: timestamp("secret_rotated_at", { withTimezone: true }).notNull().defaultNow(),
-    disabledReason: text("disabled_reason", { enum: ["manual", "failures"] }).default("manual"),
+    // `extension`: an extension webhook without lifecycle events while its extension is inactive.
+    disabledReason: text("disabled_reason", { enum: ["manual", "failures", "extension"] }).default(
+      "manual"
+    ),
     consecutiveFailures: integer("consecutive_failures").notNull().default(0),
     firstFailureAt: timestamp("first_failure_at", { withTimezone: true }),
     lastFailureAt: timestamp("last_failure_at", { withTimezone: true }),
@@ -70,12 +85,25 @@ const webhookEndpoints = pgTable(
     check("webhook_endpoints_selection_valid", sql`cardinality(${table.eventTypes}) > 0`),
     check(
       "webhook_endpoints_disabled_valid",
-      sql`(${table.enabled} and ${table.disabledReason} is null) or (not ${table.enabled} and ${table.disabledReason} is not null and ${table.disabledReason} in ('manual', 'failures'))`
+      sql`(${table.enabled} and ${table.disabledReason} is null) or (not ${table.enabled} and (${table.disabledReason} in ('manual', 'failures') or (${table.kind} = 'extension' and ${table.disabledReason} = 'extension')))`
     ),
+    foreignKey({
+      name: "webhook_endpoints_extension_fk",
+      columns: [table.workspaceID, table.extensionID],
+      foreignColumns: [extensions.workspaceID, extensions.id]
+    }).onDelete("cascade"),
+    check(
+      "webhook_endpoints_kind_valid",
+      sql`(${table.kind} = 'http' and ${table.extensionID} is null and ${table.extensionWebhookID} is null) or (${table.kind} = 'extension' and ${table.extensionID} is not null and ${table.extensionWebhookID} is not null)`
+    ),
+    // Extension webhooks send unsigned notifications, so they have no signing secrets.
     check(
       "webhook_endpoints_secrets_valid",
-      sql`(${table.deletedAt} is null and ${table.currentSecretCiphertext} is not null and octet_length(${table.currentSecretCiphertext}) > 0) or (${table.deletedAt} is not null and not ${table.enabled} and ${table.currentSecretCiphertext} is null and ${table.previousSecretCiphertext} is null)`
+      sql`(${table.kind} = 'extension' and ${table.currentSecretCiphertext} is null and ${table.previousSecretCiphertext} is null) or (${table.kind} = 'http' and ((${table.deletedAt} is null and ${table.currentSecretCiphertext} is not null and octet_length(${table.currentSecretCiphertext}) > 0) or (${table.deletedAt} is not null and not ${table.enabled} and ${table.currentSecretCiphertext} is null and ${table.previousSecretCiphertext} is null)))`
     ),
+    uniqueIndex("webhook_endpoints_extension_webhook_unique")
+      .on(table.extensionID, table.extensionWebhookID)
+      .where(sql`${table.deletedAt} is null`),
     check(
       "webhook_endpoints_overlap_valid",
       sql`(${table.previousSecretCiphertext} is null and ${table.previousSecretExpiresAt} is null) or (${table.previousSecretCiphertext} is not null and octet_length(${table.previousSecretCiphertext}) > 0 and ${table.previousSecretExpiresAt} is not null and ${table.previousSecretExpiresAt} > ${table.secretRotatedAt})`
@@ -109,7 +137,7 @@ const webhookEndpointRevisions = pgTable(
     endpointID: uuid("endpoint_id").notNull(),
     revision: integer("revision").notNull(),
     destinationRevision: integer("destination_revision").notNull(),
-    configuration: jsonb("configuration").$type<WebhookConfiguration>().notNull(),
+    configuration: jsonb("configuration").$type<OutboundConfiguration>().notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
   },
   (table) => [

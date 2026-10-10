@@ -1,10 +1,13 @@
 # Public Andesine packages
 
-`@andesine/sdk`, `@andesine/converters`, and the `andesine` CLI are MIT-licensed packages.
+`@andesine/sdk`, `@andesine/converters`, `@andesine/extensions`, and the `andesine` CLI are
+MIT-licensed packages.
 Each package has its own version and changelog. Their MIT licenses apply to the
 files in these packages; the repository's other code keeps its existing license.
 
 The [CLI implementation plan](./CLI-IMPLEMENTATION.md) records the reviewed steps.
+The project templates that `andesine pages init` and `andesine extensions init` copy are in
+[`packages/templates`](../templates); they are MIT-licensed, private workspace packages.
 The packages have independent versions. The CLI depends on an exact SDK version;
 publish that SDK version before releasing the CLI. Converters are independent.
 
@@ -18,6 +21,7 @@ and worker runtimes. The CLI requires Node.js 22.12+ and runs only in Node.js.
 pnpm install --frozen-lockfile
 pnpm build --filter=@andesine/sdk
 pnpm build --filter=@andesine/converters
+pnpm build --filter=@andesine/extensions
 pnpm build --filter=andesine
 ```
 
@@ -46,6 +50,7 @@ To build and inspect the exact npm archives without publishing:
 mkdir -p dist/packages
 pnpm --filter @andesine/sdk pack --pack-destination dist/packages
 pnpm --filter @andesine/converters pack --pack-destination dist/packages
+pnpm --filter @andesine/extensions pack --pack-destination dist/packages
 pnpm --filter ./packages/public/cli pack --pack-destination dist/packages
 ```
 
@@ -157,6 +162,23 @@ the failed package. npm does not allow replacing an already published version.
 Deployment and publication are separate actions; they were not performed during
 implementation. See the [CLI release review](./CLI-RELEASE-REVIEW.md) for package
 verification and remaining platform/browser checks.
+
+## Extensions rollout order (0.5.0)
+
+1. Apply backend migrations `0034_add_extensions_and_registry` through
+   `0039_add_extension_development_versions`. Deploy the backend and worker with
+   `PUBLIC_EXTENSIONS_ENABLED`, `MAX_EXTENSIONS_PER_WORKSPACE`, `EXTENSIONS_REGISTRY_URL`
+   (`https://extensions.andesine.app/index.json`), and `EXTENSIONS_REGISTRY_REFRESH_SECONDS`;
+   keep `EXTENSIONS_DEVELOPMENT_ENABLED` off on hosted deployments.
+2. Deploy the web app with the same `PUBLIC_EXTENSIONS_ENABLED`.
+3. Publish `@andesine/sdk@0.5.0` (extension API operations and `@andesine/sdk/extensions`).
+4. Publish `@andesine/extensions@0.5.0`; it has no SDK dependency. Its first publication is
+   local (see the npm setup above), then configure its trusted publisher.
+5. Publish `andesine@0.5.0`, then verify `extensions init`, `build`, and `dev` against the
+   published packages.
+6. Push the `andesine` branch of vriteio/extensions, set up GitHub Pages and the
+   `extensions.andesine.app` DNS record, and let its CI (pinned to `andesine@0.5.0`) publish the
+   registry.
 
 ## Andesine Pages release
 

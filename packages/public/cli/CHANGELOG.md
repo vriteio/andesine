@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.6.0
+
+- Validate extension manifests with the 0.6.0 rules: `settingsSections` is no longer
+  accepted, and element views accept a `description` and an `icon`, whose CSS
+  `extensions build` generates with the other manifest icons.
+- Update the `extensions init` template: block action samples without UI (“Shout”), with a
+  `Menu` (“Count words”), and with a `Dialog` (“Wrap in Note”); a “More” menu and an “About”
+  dialog in the panel sample; a description and an icon for the Note view; and a local setup
+  guide in its README. The bookmarks panel and the About settings section samples, and the
+  declared request URL, are removed.
+- Simplify the buttons of the `pages init` template: one `variant` (`primary`, `secondary`, or
+  `ghost`) replaces `variant` and `color`, and buttons default to the small size.
+
+## 0.5.0
+
+- Accept the `extensions` role permission (manage workspace extensions) in role commands.
+- Add `andesine extensions init [directory]`, which creates an extension with a backend
+  from the template of the same release and generates its first backend key.
+- Add `andesine extensions build`: manifest validation with the registry rules, the
+  frontend bundle with the generated `startExtension` call, view and icon CSS, and
+  `dist/extension.json` with the artifact digests and sizes.
+- Add `andesine extensions keys generate`, `check`, and `revoke`. Private keys stay in
+  `.andesine/keys` and are never uploaded.
+- Leave extension-only API operations (which need extension JWTs) out of the generated
+  command bindings.
+- Add `andesine extensions dev`, which runs an extension on a local instance for the
+  signed-in member: it uploads each build with a development key, reloads it on changes,
+  writes the key and the instance URL to the backend's `.env`, and stops it on exit
+  (`--remove` uninstalls it; `--backend <url>` points it at a local backend). It refuses hosts
+  that are not local.
+- Add `andesine extensions test-event <webhook> <type>` for sample events to the
+  development extension's webhooks.
+- Add `andesine extensions registry check` and `registry build` for extension registry CI:
+  validation with the instance rules, new versions without overwriting published ones, and
+  the registry index.
+
 ## 0.4.0
 
 - Add `andesine pages init [directory]`, which creates an Andesine Pages site from

@@ -88,7 +88,7 @@ const Input: Component<InputProps> = (props) => {
           for={inputID()}
           class={clsx(
             ":base: leading-[1] text-gray-400 group-focus-within:text-gray-500",
-            inputSizes[props.size || "medium"].label,
+            inputSizes[props.size || "small"].label,
             props.labelClass
           )}
         >
@@ -104,10 +104,10 @@ const Input: Component<InputProps> = (props) => {
           ref={props.ref}
           class={clsx(
             `:base: flex items-center justify-start flex-1 rounded-lg ring-offset-1 placeholder:opacity-50`,
-            inputSizes[props.size || "medium"].field,
-            inputSizes[props.size || "medium"].input,
-            inputColors[props.color || "base"],
-            inputVariants[props.variant || "solid"],
+            inputSizes[props.size || "small"].field,
+            inputSizes[props.size || "small"].input,
+            inputColors[props.color || "contrast"],
+            inputVariants[props.variant || "outlined"],
             props.class
           )}
           value={props.value}

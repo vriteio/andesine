@@ -102,6 +102,8 @@ const ImageSearch = (props: ImageSearchProps) => {
     <div class="flex min-h-0 w-full flex-1 flex-col gap-2">
       <div class="flex shrink-0 items-center gap-1 px-1 pt-1">
         <Input
+          color="base"
+          variant="solid"
           ref={(input) => {
             if (md()) queueMicrotask(() => input.focus({ preventScroll: true }));
           }}
@@ -133,15 +135,12 @@ const ImageSearch = (props: ImageSearchProps) => {
           }}
           maxLength={500}
           class="min-w-0 flex-1 bg-transparent focus:shadow-none"
-          size="small"
         />
         <Tooltip content="Close">
           <IconButton
             type="button"
-            variant="text"
+            variant="ghost"
             icon="i-lucide:x"
-            text="soft"
-            size="small"
             aria-label="Close image search"
             onClick={props.onClose}
           />
@@ -288,7 +287,6 @@ const ImagePicker = (props: ImageSearchProps) => {
         opened
         onOverlayClick={props.onClose}
         size="xlarge"
-        portal
         backdrop={false}
         cardClass="max-h-[80dvh] p-1 gap-2"
         wrapperClass="absolute top-[10dvh]"

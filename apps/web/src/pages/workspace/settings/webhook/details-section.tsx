@@ -20,9 +20,6 @@ const DetailsSection: Component<DetailsSectionProps> = (props) => (
     >
       <Input
         placeholder="My webhook"
-        variant="outlined"
-        color="contrast"
-        size="small"
         value={props.draft.name}
         setValue={(value) => props.setDraft("name", value)}
         disabled={props.disabled}
@@ -37,9 +34,6 @@ const DetailsSection: Component<DetailsSectionProps> = (props) => (
     >
       <Input
         placeholder="https://example.com/webhooks/andesine"
-        variant="outlined"
-        color="contrast"
-        size="small"
         type="url"
         value={props.draft.url}
         setValue={(value) => props.setDraft("url", value)}

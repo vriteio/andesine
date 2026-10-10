@@ -4,6 +4,7 @@ import { getUserAuthorization, type SessionData } from "#backend/lib/policy";
 import { resolveUserAuthorization } from "#backend/lib/auth/user-authorization";
 import { getEffectivePlan } from "#backend/lib/billing";
 import { ORPCError } from "@orpc/server";
+import { getExtensionSessionData, isExtensionToken } from "./get-extension-session-data";
 import { getKeySessionData } from "./get-key-session-data";
 import { OAuth } from "./oauth";
 
@@ -21,9 +22,13 @@ const getSessionData = async (input: GetSessionDataInput): Promise<SessionData> 
 
     if (!token) throw new ORPCError("UNAUTHORIZED");
 
-    data = token.startsWith("and_at_")
-      ? await OAuth.getSessionData({ ...input, token })
-      : await getKeySessionData(token);
+    if (token.startsWith("and_at_")) {
+      data = await OAuth.getSessionData({ ...input, token });
+    } else if (isExtensionToken(token)) {
+      data = await getExtensionSessionData(token);
+    } else {
+      data = await getKeySessionData(token);
+    }
   } else {
     const result = await auth.api.getSession({ headers: input.headers });
 

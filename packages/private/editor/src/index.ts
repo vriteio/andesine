@@ -36,6 +36,15 @@ export type {
   EditorProvider,
   EditorProviderSetup,
   EditorProviderSetupResult,
+  ElementViewMount,
+  ElementViewRenderer,
+  ElementViewOption,
+  ElementViews,
+  BlockAction,
+  BlockActionOrigin,
+  BlockMenuPlacement,
+  BlockActions,
+  BlockActionTarget,
   MergedVersionDiff,
   VersionComparison
 } from "./client-types";

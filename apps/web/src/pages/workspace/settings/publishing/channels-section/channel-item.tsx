@@ -125,9 +125,7 @@ const ChannelItem: Component<ChannelItemProps> = (props) => {
                     >
                       <IconButton
                         icon="i-lucide:ellipsis-vertical"
-                        size="small"
-                        variant="text"
-                        text="soft"
+                        variant="ghost"
                         loading={props.loading}
                       />
                     </div>
@@ -150,9 +148,7 @@ const ChannelItem: Component<ChannelItemProps> = (props) => {
                     icon="i-lucide:lock"
                     iconProps={{ class: "h-4 w-4" }}
                     class="h-7 w-7"
-                    size="small"
-                    variant="text"
-                    text="soft"
+                    variant="ghost"
                   />
                 </div>
               </Tooltip>

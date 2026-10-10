@@ -1,0 +1,2 @@
+ALTER TABLE "webhook_endpoints" DROP CONSTRAINT "webhook_endpoints_disabled_valid";--> statement-breakpoint
+ALTER TABLE "webhook_endpoints" ADD CONSTRAINT "webhook_endpoints_disabled_valid" CHECK (("webhook_endpoints"."enabled" and "webhook_endpoints"."disabled_reason" is null) or (not "webhook_endpoints"."enabled" and ("webhook_endpoints"."disabled_reason" in ('manual', 'failures') or ("webhook_endpoints"."kind" = 'extension' and "webhook_endpoints"."disabled_reason" = 'extension'))));

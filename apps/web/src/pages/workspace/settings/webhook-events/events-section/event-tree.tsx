@@ -1,14 +1,13 @@
 import { type Component, createMemo, Show } from "solid-js";
 import { Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
-import type { Webhook, WebhookEvent } from "#web/lib/data";
+import type { WebhookEvent } from "#web/lib/data";
+import type { WebhookEventsSource } from "../source";
 import { EventItem } from "./event-item";
 import { EVENT_ITEM_HEIGHT } from "./event-skeleton";
 
 interface EventTreeProps {
-  canManage: boolean;
   events: WebhookEvent[];
-  webhook: Webhook;
-  workspaceID: string;
+  source: WebhookEventsSource;
   onReplay(events: WebhookEvent[]): void;
 }
 
@@ -42,13 +41,11 @@ const EventTree: Component<EventTreeProps> = (props) => {
         <Show when={events().get(id)}>
           {(event) => (
             <EventItem
-              canManage={props.canManage}
               event={event()}
               previousID={order()[order().indexOf(id) - 1]}
               nextID={order()[order().indexOf(id) + 1]}
               getEvents={getEvents}
-              webhook={props.webhook}
-              workspaceID={props.workspaceID}
+              source={props.source}
               onReplay={props.onReplay}
             />
           )}

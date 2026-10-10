@@ -17,7 +17,7 @@ const WorkspaceDeleteSection: Component = () => {
           description="Delete this workspace and all its data"
           fade={false}
         >
-          <Button color="danger" variant="outlined" size="small" onClick={() => setOpened(true)}>
+          <Button variant="danger" onClick={() => setOpened(true)}>
             Delete workspace
           </Button>
         </Setting>

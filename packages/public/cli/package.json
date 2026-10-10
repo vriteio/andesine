@@ -1,6 +1,6 @@
 {
   "name": "andesine",
-  "version": "0.4.0",
+  "version": "0.6.0",
   "description": "Command-line tools for Andesine",
   "type": "module",
   "license": "MIT",
@@ -31,22 +31,33 @@
     "node": ">=22.12.0"
   },
   "dependencies": {
+    "@andesine/sdk": "workspace:*",
+    "@babel/core": "^7.29.7",
     "@clack/prompts": "1.7.0",
     "@commander-js/extra-typings": "15.0.0",
+    "@iconify-json/lucide": "^1.2.140",
+    "@iconify-json/tabler": "^1.2.41",
+    "@iconify/utils": "^3.1.4",
+    "@orpc/zod": "^1.14.14",
+    "babel-preset-solid": "^1.9.12",
+    "base-x": "^5.0.1",
     "commander": "15.0.0",
-    "zod": "4.5.4",
-    "@andesine/sdk": "workspace:*",
     "open": "11.0.0",
-    "proper-lockfile": "4.1.2"
+    "proper-lockfile": "4.1.2",
+    "rolldown": "^1.2.2",
+    "unocss": "^66.7.5",
+    "zod": "4.5.4"
   },
   "devDependencies": {
+    "@andesine/contracts": "workspace:*",
+    "@andesine/uno-preset": "workspace:*",
+    "@types/babel__core": "^7.20.5",
     "@types/node": "^26.1.2",
-    "publint": "0.3.24",
-    "rolldown": "^1.2.2",
-    "typescript": "6.0.3",
     "@types/proper-lockfile": "4.1.4",
+    "prettier": "^3.9.6",
+    "publint": "0.3.24",
     "tsx": "^4.23.5",
-    "prettier": "^3.9.6"
+    "typescript": "6.0.3"
   },
   "repository": {
     "type": "git",

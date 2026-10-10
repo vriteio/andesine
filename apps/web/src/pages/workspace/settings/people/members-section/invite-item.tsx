@@ -119,9 +119,7 @@ const InviteItem: Component<{
                 >
                   <IconButton
                     icon="i-lucide:ellipsis-vertical"
-                    size="small"
-                    variant="text"
-                    text="soft"
+                    variant="ghost"
                     loading={props.loading}
                   />
                 </div>

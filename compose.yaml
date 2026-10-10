@@ -123,6 +123,7 @@ services:
         PUBLIC_APP_HOST: ${PUBLIC_APP_HOST}
         PUBLIC_COOKIE_DOMAIN: ${PUBLIC_COOKIE_DOMAIN}
         PUBLIC_SECURE: ${PUBLIC_SECURE}
+        PUBLIC_EXTENSIONS_ENABLED: ${PUBLIC_EXTENSIONS_ENABLED:-false}
     depends_on:
       - backend
     env_file:

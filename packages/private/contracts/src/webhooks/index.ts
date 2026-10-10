@@ -74,3 +74,18 @@ export type {
   WebhookReadPermission
 } from "./catalog-definitions";
 export { webhookReadRequirements, webhookManageRequirements } from "./permission-requirements";
+export {
+  extensionLifecycleEventNames,
+  extensionLifecycleEventSchemas,
+  outboundEventNameType,
+  outboundEventType,
+  outboundConfigurationType,
+  isExtensionLifecycleEvent,
+  isWebhookEvent
+} from "./outbound";
+export type {
+  ExtensionLifecycleEventName,
+  OutboundConfiguration,
+  OutboundEvent,
+  OutboundEventName
+} from "./outbound";

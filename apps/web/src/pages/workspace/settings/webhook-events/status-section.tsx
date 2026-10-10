@@ -1,12 +1,12 @@
 import { type Component, Show } from "solid-js";
-import type { Webhook } from "#web/lib/data";
+import type { WebhookEventsEndpoint } from "./source";
 import { Setting } from "../setting";
 import { SettingsSection } from "../settings-section";
 import { getWebhookHost } from "../webhook/configuration";
 import { TimeAgo } from "#web/components/time-ago";
 
 interface StatusSectionProps {
-  webhook: Webhook;
+  webhook: WebhookEventsEndpoint;
 }
 interface WebhookStatus {
   date?: string | null;
@@ -16,7 +16,7 @@ interface WebhookStatus {
 }
 
 // The date renders after the description, followed by the optional suffix.
-const getStatus = (webhook: Webhook): WebhookStatus => {
+const getStatus = (webhook: WebhookEventsEndpoint): WebhookStatus => {
   const { firstFailureAt, lastFailureAt, lastSuccessAt, consecutiveFailures } = webhook.health;
   const failingSince = firstFailureAt || lastFailureAt;
 

@@ -8,6 +8,7 @@ import { db } from "#backend/lib/adapters";
 import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";
+import { runWithWebhookOrigin } from "@andesine/server/webhooks/recording";
 import {
   type CollectionAction,
   type EntryAction,
@@ -169,7 +170,7 @@ function withAuthorization<Input, Resolved = undefined, Result = void>(
     context: InternalAuthorizedServiceContext<Input, Resolved>
   ) => Promise<Result>;
 
-  return async (serviceInput: Input & AuthorizedServiceInput): Promise<Result> => {
+  const runService = async (serviceInput: Input & AuthorizedServiceInput): Promise<Result> => {
     const { auth, skipAuthorization, ...rawInput } = serviceInput;
     const input = rawInput as Input;
     const workspaceID = toUUID(auth.workspaceID);
@@ -269,6 +270,14 @@ function withAuthorization<Input, Resolved = undefined, Result = void>(
       },
       options.transaction === "snapshot" ? { isolationLevel: "repeatable read" } : undefined
     );
+  };
+
+  // Changes made with an extension JWT carry its origin, so its own webhooks skip them.
+  return (serviceInput: Input & AuthorizedServiceInput): Promise<Result> => {
+    const { auth } = serviceInput;
+    const origin = auth.type === "extension" ? auth.extension!.extensionID : null;
+
+    return runWithWebhookOrigin(origin, () => runService(serviceInput));
   };
 }
 const withExplicitWorkspace = <Input, Result = void>(

@@ -12,6 +12,11 @@ import type { Webhook } from "#web/lib/data";
 import { formatRelativeTime } from "#web/lib/primitives";
 import { getWebhookHost } from "../../webhook/configuration";
 
+interface WebhookState {
+  enabled: boolean;
+  disabledReason: string | null;
+  health: Webhook["health"];
+}
 interface WebhookItemProps {
   canManage: boolean;
   loading?: boolean;
@@ -24,7 +29,8 @@ interface WebhookItemProps {
   onSetEnabled(webhooks: Webhook[], enabled: boolean): void;
 }
 
-const getStateIcon = (webhook: Webhook) => {
+// Extension webhooks also pause while their extension is off (`extension`).
+const getStateIcon = (webhook: WebhookState) => {
   if (webhook.enabled) return "i-lucide:webhook text-gray-400";
   if (webhook.disabledReason === "failures") return "i-lucide:circle-alert text-red-500";
 
@@ -33,7 +39,7 @@ const getStateIcon = (webhook: Webhook) => {
 };
 const formatCount = (count: number) => (count === 1 ? "1 webhook" : `${count} webhooks`);
 // Summarizes endpoint health for the state icon tooltip.
-const getStateLabel = (webhook: Webhook) => {
+const getStateLabel = (webhook: WebhookState) => {
   const { lastFailureAt, lastSuccessAt, consecutiveFailures } = webhook.health;
 
   if (webhook.disabledReason === "failures") {
@@ -42,6 +48,7 @@ const getStateLabel = (webhook: Webhook) => {
       : "Disabled after repeated failures";
   }
 
+  if (webhook.disabledReason === "extension") return "Paused while the extension is off";
   if (!webhook.enabled) return "Disabled";
 
   if (consecutiveFailures > 0 && lastFailureAt) {
@@ -69,7 +76,7 @@ const WebhookItem: Component<WebhookItemProps> = (props) => {
         ? [
             {
               label: props.webhook.enabled ? "Disable" : "Enable",
-              icon: props.webhook.enabled ? "i-lucide:circle-pause" : "i-lucide:circle-play",
+              icon: props.webhook.enabled ? "i-lucide:pause" : "i-lucide:play",
               onClick: () => props.onSetEnabled([props.webhook], !props.webhook.enabled)
             },
             { label: "Rotate secret", icon: "i-lucide:rotate-ccw-key", onClick: props.onRotate }
@@ -105,7 +112,7 @@ const WebhookItem: Component<WebhookItemProps> = (props) => {
           ? [
               {
                 label: `Enable ${formatCount(disabled.length)}`,
-                icon: "i-lucide:circle-play",
+                icon: "i-lucide:play",
                 onClick: apply(() => props.onSetEnabled(disabled, true))
               }
             ]
@@ -114,7 +121,7 @@ const WebhookItem: Component<WebhookItemProps> = (props) => {
           ? [
               {
                 label: `Disable ${formatCount(enabled.length)}`,
-                icon: "i-lucide:circle-pause",
+                icon: "i-lucide:pause",
                 onClick: apply(() => props.onSetEnabled(enabled, false))
               }
             ]
@@ -137,6 +144,8 @@ const WebhookItem: Component<WebhookItemProps> = (props) => {
     return props.canManage && selected.length > 1 ? multiOptions(selected) : singleOptions();
   });
   const menuAvailable = () => !props.loading;
+  // A function, so reading it in TreeItem's event handlers creates no memo.
+  const selectable = () => props.canManage && !props.loading;
 
   createEffect(() => {
     if (menuOpened()) {
@@ -156,8 +165,8 @@ const WebhookItem: Component<WebhookItemProps> = (props) => {
         id={props.webhook.id}
         label={props.webhook.name}
         topLevel
-        checkbox={props.canManage && !props.loading}
-        selectable={props.canManage && !props.loading}
+        checkbox={selectable()}
+        selectable={selectable()}
         class={clsx("px-1 py-0.5", props.loading && "animate-pulse")}
         icon={
           <Tooltip content={getStateLabel(props.webhook)} fixed>
@@ -203,9 +212,7 @@ const WebhookItem: Component<WebhookItemProps> = (props) => {
                 >
                   <IconButton
                     icon="i-lucide:ellipsis-vertical"
-                    size="small"
-                    variant="text"
-                    text="soft"
+                    variant="ghost"
                     loading={props.loading}
                   />
                 </div>
@@ -219,4 +226,4 @@ const WebhookItem: Component<WebhookItemProps> = (props) => {
   );
 };
 
-export { WebhookItem };
+export { WebhookItem, getStateIcon, getStateLabel };
