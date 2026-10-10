@@ -7,6 +7,7 @@ on:
     branches: [andesine]
     paths:
       - "packages/public/*/package.json"
+      - ".github/workflows/publish-public-package.yml"
   workflow_dispatch:
     inputs:
       package:
@@ -98,6 +99,8 @@ jobs:
             [ "$(npm view "$1@$2" version 2>/dev/null)" = "$2" ]
           }
           mkdir -p "$RUNNER_TEMP/packages"
+          # New versions take minutes to show in `npm view`, so this run's own releases count too.
+          published_now=" "
 
           if [[ " $RELEASES" == *" sdk:"* || " $RELEASES" == *" cli:"* ]]; then
             pnpm api:generate
@@ -114,7 +117,7 @@ jobs:
             for dependency in $(jq -r '(.dependencies // {}) | to_entries[] | select(.value | startswith("workspace:")) | .key' "$directory/package.json"); do
               dependency_manifest="$(grep -l "\"name\": \"$dependency\"" packages/public/*/package.json)"
               dependency_version="$(jq -r '.version' "$dependency_manifest")"
-              if ! is_published "$dependency" "$dependency_version"; then
+              if [[ "$published_now" != *" $dependency@$dependency_version "* ]] && ! is_published "$dependency" "$dependency_version"; then
                 echo "Publish $dependency@$dependency_version before $name."
                 exit 1
               fi
@@ -135,6 +138,7 @@ jobs:
 
             archive="$(jq -r '.name | ltrimstr("@") | gsub("/"; "-")' "$directory/package.json")-$version.tgz"
             npm publish "$RUNNER_TEMP/packages/$archive" --access public --provenance --tag "$tag"
+            published_now+="$name@$version "
             echo "::endgroup::"
           done
       - uses: actions/upload-artifact@v4

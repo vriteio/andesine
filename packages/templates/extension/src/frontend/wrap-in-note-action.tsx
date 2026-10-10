@@ -41,9 +41,7 @@ export const WrapInNoteAction = (props: BlockActionProps) => {
         <ToggleGroup value={tone()} options={tones} onChange={setTone} />
         <Show when={error()}>{(message) => <Text tone="danger">{message()}</Text>}</Show>
         <Stack direction="row" gap="small" justify="end">
-          <Button onClick={() => editor.close()}>
-            Cancel
-          </Button>
+          <Button onClick={() => editor.close()}>Cancel</Button>
           <Button variant="primary" onClick={wrap}>
             Wrap
           </Button>
