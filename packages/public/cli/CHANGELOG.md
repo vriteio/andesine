@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.7.0
 
 - Add `andesine mcp`: an MCP server over stdio for AI agents, with `--read-only`. Its
   `upload_image` tool uploads local images for entries. It also has resources (entries,

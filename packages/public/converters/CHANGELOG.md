@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.7.0
 
 - Add the `properties: { as: "element", name }` mapping: each property becomes a self-closing
   element in its position, with `name`, `value`, and `type` when the value doesn't show it.

@@ -1,6 +1,6 @@
 {
   "name": "@andesine/mcpb",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "Claude Desktop extension for the Andesine MCP server",
   "type": "module",
   "private": true,

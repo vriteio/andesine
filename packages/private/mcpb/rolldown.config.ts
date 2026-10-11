@@ -1,7 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { defineConfig } from "rolldown";
-import { version } from "./package.json";
 
 const manifest = JSON.parse(
   await readFile(path.join(import.meta.dirname, "manifest.json"), "utf8")
@@ -24,7 +23,7 @@ export default defineConfig({
         this.emitFile({
           type: "asset",
           fileName: "manifest.json",
-          source: `${JSON.stringify({ ...manifest, version }, null, 2)}\n`
+          source: `${JSON.stringify(manifest, null, 2)}\n`
         });
         this.emitFile({ type: "asset", fileName: "icon.png", source: icon });
         this.emitFile({ type: "asset", fileName: "LICENSE", source: license });

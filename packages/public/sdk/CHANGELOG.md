@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.7.0
 
 - `auth.getIdentity` returns `client` (ID and registered name) for OAuth access tokens.
 - Webhook events have an `actor`: the member, API key, extension, or app (OAuth client ID and

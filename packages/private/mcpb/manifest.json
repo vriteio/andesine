@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "andesine",
   "display_name": "Andesine",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Search, read, write, and publish Andesine workspace content",
   "long_description": "Connects Claude to an Andesine workspace with an API key: search and read entries, edit them as MDX, upload local images, save versions, and publish. The key's workspace and permissions limit what Claude can do.",
   "author": {

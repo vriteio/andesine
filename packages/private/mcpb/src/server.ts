@@ -1,7 +1,7 @@
 import { createMCPServer, readLocalFile } from "@andesine/mcp";
 import { createClient } from "@andesine/sdk";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { version } from "../package.json";
+import { version } from "../manifest.json";
 
 // Claude Desktop passes the extension settings as environment variables (manifest.json).
 const client = createClient({

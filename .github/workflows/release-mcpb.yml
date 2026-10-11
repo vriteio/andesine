@@ -1,12 +1,12 @@
 name: Release Claude Desktop extension
 
 # Builds andesine.mcpb and attaches it to a GitHub release. Run it after bumping the version
-# in packages/private/mcpb/package.json; the release tag is mcpb-v<version>.
+# in packages/private/mcpb/manifest.json; the release tag is mcpb-v<version>.
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: Exact version already committed in packages/private/mcpb/package.json
+        description: Exact version already committed in packages/private/mcpb/manifest.json
         type: string
         required: true
 
@@ -31,7 +31,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - name: Check the version
         run: |
-          version="$(jq -r '.version' packages/private/mcpb/package.json)"
+          version="$(jq -r '.version' packages/private/mcpb/manifest.json)"
           if [ "$version" != "$INPUT_VERSION" ]; then
             echo "Expected $INPUT_VERSION, found $version. Commit the version change first."
             exit 1
