@@ -92,15 +92,31 @@ const createExportConverter = <T>(
           await adapter.encode({ ...node, type: "heading", attrs: { level: 1 } }, context)
         );
       } else if (node.type === "property") {
-        if (settings.properties !== undefined && settings.properties !== "omit") {
-          const name = String(node.attrs?.label || "Property");
-          const value = node.attrs?.value ?? "";
-          const normalized =
-            node.attrs?.type === "number" ? (value === "" ? null : Number(value)) : value;
+        const mapping = settings.properties ?? "omit";
+        const name = String(node.attrs?.label || "Property");
+        const type = String(node.attrs?.type || "text");
+        const value = node.attrs?.value ?? "";
+        const normalized = type === "number" ? (value === "" ? null : Number(value)) : value;
 
+        if (mapping === "omit") return [];
+
+        if (mapping.as === "frontmatter") {
           setMetadata(frontmatter, name, normalized);
+          return [];
         }
-        return [];
+        result = await context.encode({
+          type: "element",
+          attrs: {
+            name: mapping.name,
+            // The type is written only when import can't infer it from the value.
+            props: {
+              name,
+              ...(getPropertyType(normalized) !== type && { type }),
+              value: normalized
+            },
+            selfClosing: true
+          }
+        });
       } else if (node.type === "fragment") {
         const name = String(node.attrs?.name || "Content");
         const mapping =
@@ -204,6 +220,19 @@ const createImportConverter = <T>(
         if (content.type !== "element") return [content];
 
         const props = content.attrs?.props as Record<string, unknown> | undefined;
+        const propertyMapping =
+          typeof settings.properties === "object" && settings.properties.as === "element"
+            ? settings.properties
+            : undefined;
+
+        if (propertyMapping?.name === content.attrs?.name) {
+          if (typeof props?.name !== "string") {
+            throw new ConversionError("Property elements require a name", path);
+          }
+
+          return [createProperty(props.name, props.value, props.type)];
+        }
+
         const fragmentName = typeof props?.name === "string" ? props.name : undefined;
         const mapping = fragmentName
           ? (lookup(settings.fragments?.named, fragmentName) ?? settings.fragments?.default)
@@ -241,19 +270,7 @@ const createImportConverter = <T>(
       for (const [label, value] of Object.entries(input.frontmatter)) {
         if (label === titleKey) continue;
 
-        const type =
-          typeof value === "number"
-            ? "number"
-            : typeof value === "boolean"
-              ? "checkbox"
-              : Array.isArray(value) && value.every((item) => typeof item === "string")
-                ? "multi-select"
-                : "text";
-
-        if (type === "text" && value !== null && typeof value !== "string")
-          throw new ConversionError(`Property ${label} cannot represent this frontmatter value`);
-
-        properties.push({ type: "property", attrs: { label, type, value: value ?? "" } });
+        properties.push(createProperty(label, value));
       }
     }
     const body: ContentNode[] = settings.targetFragment
@@ -308,6 +325,31 @@ const createConverter = <T>(
   ...createExportConverter(adapter, defaults),
   ...createImportConverter(adapter, defaults)
 });
+const PROPERTY_TYPES = ["text", "number", "checkbox", "date", "url", "select", "multi-select"];
+const getPropertyType = (value: unknown): string => {
+  const stringArray = Array.isArray(value) && value.every((item) => typeof item === "string");
+
+  if (typeof value === "number") return "number";
+  if (typeof value === "boolean") return "checkbox";
+  if (stringArray) return "multi-select";
+
+  return "text";
+};
+const createProperty = (label: string, value: unknown, type?: unknown): ContentNode => {
+  const propertyType = type === undefined ? getPropertyType(value) : type;
+  const textValue = !["number", "checkbox", "multi-select"].includes(String(propertyType));
+  const supportedType = typeof propertyType === "string" && PROPERTY_TYPES.includes(propertyType);
+  const unsupportedValue =
+    textValue && value !== null && value !== undefined && typeof value !== "string";
+
+  if (!supportedType) {
+    throw new ConversionError(`Property ${label} has an unsupported type: ${String(type)}`);
+  }
+
+  if (unsupportedValue) throw new ConversionError(`Property ${label} cannot represent this value`);
+
+  return { type: "property", attrs: { label, type: propertyType, value: value ?? "" } };
+};
 const setMetadata = (metadata: Record<string, unknown>, key: string, value: unknown): void => {
   if (Object.hasOwn(metadata, key))
     throw new ConversionError(`Duplicate frontmatter field: ${key}`);

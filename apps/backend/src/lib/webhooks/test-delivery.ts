@@ -1,3 +1,4 @@
+import { getWebhookActor } from "@andesine/server/webhooks/recording";
 import {
   workspaces,
   outboundDeliveries,
@@ -46,6 +47,7 @@ const createWebhookTestDelivery = async (
     operationID: toWebhookOperationID(generateUUID()),
     workspaceID: toWorkspaceID(endpoint.workspaceID),
     occurredAt: now.toISOString(),
+    actor: getWebhookActor(),
     test: true
   });
 

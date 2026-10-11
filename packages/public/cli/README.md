@@ -353,6 +353,64 @@ and recorded schema revisions; collections with no recorded schema use a general
 type without warnings. These API commands return metadata only; use
 `andesine types generate` to write TypeScript files.
 
+## MCP server
+
+AI agents can search, read, edit, and publish workspace content through the
+Andesine MCP server. There are two ways to connect.
+
+**Remote server (chat apps):** add `https://<api>/mcp` as a custom connector in
+Claude, ChatGPT, or another client that supports OAuth. The client signs you in,
+and you pick the workspace and read or read and write access. To connect another
+workspace, add the connector again. `https://<api>/mcp/<workspaceID>` connects one
+fixed workspace. Clients that send headers can use an API key as a Bearer token
+instead; the key's workspace is used. The instance must be reachable over public
+HTTPS for apps that connect from their own servers.
+
+[![Add to Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en/install-mcp?name=andesine&config=eyJ1cmwiOiJodHRwczovL2FwaS5hbmRlc2luZS5hcHAvbWNwIn0%3D)
+
+```sh
+gemini extensions install https://github.com/vriteio/andesine
+codex mcp add andesine --url https://api.andesine.app/mcp
+```
+
+**Local server (coding agents):** `andesine mcp` runs the server over stdio with
+the CLI login or `ANDESINE_API_KEY`, and the project's workspace. It also has
+`upload_image`, which uploads local image files.
+
+```sh
+andesine init --mcp
+```
+
+`init --mcp` adds the server to `.mcp.json` (Claude Code, VS Code) and to the
+files of other clients that the project uses: `.cursor/mcp.json`,
+`.gemini/settings.json`, and `.codex/config.toml` (Codex reads it only in trusted
+projects). Other servers and settings in these files are kept. You can also add
+the server with a client's own command:
+
+```sh
+claude mcp add --scope project andesine -- npx -y andesine mcp
+codex mcp add andesine -- npx -y andesine mcp
+```
+
+The server uses the workspace of `andesine.json` in the directory where the
+client starts it, or `--workspace <id>`. `--read-only` lists only the tools that
+read content. For an API key, tools that the key's permissions don't allow aren't
+listed.
+
+**Claude Code plugin:** the plugin adds the local server and a skill on when to
+use the MCP tools, the CLI, and the SDK:
+
+```text
+/plugin install andesine --marketplace vriteio/andesine
+```
+
+On Claude Code versions before 2.1.275, add the marketplace first:
+`/plugin marketplace add vriteio/andesine`, then `/plugin install andesine@andesine`.
+
+Both servers have the same tools, resources (entries, published content, collection
+schemas, a workspace overview, and an MDX guide), and prompts (`draft-entry`,
+`update-docs`, `review-entry`, `answer`, `release-notes`, and `reorganize`).
+
 ## Content type generator
 
 ```sh

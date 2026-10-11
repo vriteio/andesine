@@ -23,7 +23,7 @@ import { type ResolvedSchemaDefinition } from "@andesine/contracts/schema";
 import { ORPCError } from "@orpc/server";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { ZodError } from "zod";
-import { getWebhookOriginUUID } from "../../webhooks/operation";
+import { getWebhookActor } from "../../webhooks/operation";
 
 interface CreateEffectiveSchemaChangeInput {
   database: Database;
@@ -292,7 +292,7 @@ const createEffectiveSchemaChange = async (
       schemaVersionID: input.schemaVersionID,
       status: "queued",
       initiatedBy: input.initiatedBy,
-      originExtensionID: getWebhookOriginUUID()
+      webhookActor: getWebhookActor()
     })
     .returning();
 

@@ -7,13 +7,17 @@ import {
 } from "@andesine/contracts/primitives";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash } from "node:crypto";
-import { outboundEventType, type OutboundEvent } from "@andesine/contracts/webhooks";
+import {
+  outboundEventType,
+  type OutboundEvent,
+  type WebhookActor
+} from "@andesine/contracts/webhooks";
 
 interface WebhookOperation {
   id: string;
   workspaceID: string;
-  /** The extension whose JWT made the change (`ext_` ID); its webhooks do not receive it. */
-  originExtensionID: string | null;
+  /** Who made the change, sent in event envelopes; an extension's webhooks skip its own. */
+  actor: WebhookActor | null;
 }
 
 type WebhookEventData = {
@@ -21,25 +25,19 @@ type WebhookEventData = {
 }[OutboundEvent["type"]];
 
 // Set by the backend for each service call from the verified principal, never from input.
-const webhookOriginStorage = new AsyncLocalStorage<string | null>();
-const runWithWebhookOrigin = <T>(originExtensionID: string | null, run: () => T): T => {
-  return webhookOriginStorage.run(originExtensionID, run);
+const webhookActorStorage = new AsyncLocalStorage<WebhookActor | null>();
+const runWithWebhookActor = <T>(actor: WebhookActor | null, run: () => T): T => {
+  return webhookActorStorage.run(actor, run);
 };
-const getWebhookOrigin = (): string | null => webhookOriginStorage.getStore() ?? null;
-/** The origin's UUID, for records that carry it to later jobs. */
-const getWebhookOriginUUID = (): string | null => {
-  const origin = getWebhookOrigin();
-
-  return origin && toUUID(origin);
-};
+const getWebhookActor = (): WebhookActor | null => webhookActorStorage.getStore() ?? null;
 const createWebhookOperation = (
   workspaceID: string,
   id = toWebhookOperationID(generateUUID()),
-  originExtensionID = getWebhookOrigin()
+  actor = getWebhookActor()
 ): WebhookOperation => ({
   id: publicID("whop").parse(id),
   workspaceID: publicID("ws").parse(workspaceID),
-  originExtensionID: originExtensionID && publicID("ext").parse(originExtensionID)
+  actor
 });
 // Reuse the operation ID and semantic item key when retrying a transaction/job item.
 // A second change to the same resource within that operation needs a different key.
@@ -72,17 +70,12 @@ const createOutboundEvent = (
     id: toWebhookEventID(uuid),
     operationID: operation.id,
     workspaceID: operation.workspaceID,
+    actor: operation.actor,
     schemaVersion: 1,
     occurredAt: occurredAt.toISOString(),
     test: false
   });
 };
 
-export {
-  createWebhookOperation,
-  createOutboundEvent,
-  getWebhookOrigin,
-  getWebhookOriginUUID,
-  runWithWebhookOrigin
-};
+export { createWebhookOperation, createOutboundEvent, getWebhookActor, runWithWebhookActor };
 export type { WebhookOperation, WebhookEventData };

@@ -1,0 +1,12 @@
+{
+  "name": "andesine",
+  "displayName": "Andesine",
+  "version": "0.1.1",
+  "description": "Search, read, write, and publish Andesine workspace content from Cursor",
+  "author": { "name": "Andesine" },
+  "homepage": "https://andesine.app",
+  "repository": "https://github.com/vriteio/andesine",
+  "license": "MIT",
+  "keywords": ["andesine", "cms", "docs", "knowledge-base", "mcp"],
+  "logo": "assets/logo.png"
+}

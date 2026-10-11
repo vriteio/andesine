@@ -1,0 +1,1 @@
+ALTER TABLE "schema_migrations" ADD COLUMN "webhook_actor" jsonb;

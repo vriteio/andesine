@@ -18,6 +18,14 @@ interface UserAuthorizationInput {
   type: "session" | "oauth";
   headers: Headers;
   requireWorkspace?: boolean;
+  oauth?: OAuthTokenDetails;
+}
+interface OAuthTokenDetails {
+  clientID: string;
+  clientName?: string;
+  scopes: string[];
+  /** Set for MCP tokens, which belong to one workspace. */
+  workspaceID?: string;
 }
 
 const SESSION_TTL = 300;
@@ -29,9 +37,21 @@ const tryResolveUUID = (id: string | undefined | null) => {
     return null;
   }
 };
-const resolveOAuthWorkspaceID = (value: string | null): string => {
+const resolveOAuthWorkspaceID = (value: string | null, tokenWorkspaceID?: string): string => {
+  const requestedWorkspaceID = value ?? tokenWorkspaceID ?? null;
+  const otherWorkspace =
+    tokenWorkspaceID !== undefined && requestedWorkspaceID !== tokenWorkspaceID;
   const workspaceID =
-    value && publicID("ws").safeParse(value).success ? tryResolveUUID(value) : null;
+    requestedWorkspaceID && publicID("ws").safeParse(requestedWorkspaceID).success
+      ? tryResolveUUID(requestedWorkspaceID)
+      : null;
+
+  if (otherWorkspace) {
+    throw new ORPCError("FORBIDDEN", {
+      message: "The access token belongs to another workspace",
+      data: { hints: ["Connect the MCP server of this workspace to get a token for it."] }
+    });
+  }
 
   if (!workspaceID) {
     throw new ORPCError("BAD_REQUEST", {
@@ -50,13 +70,21 @@ const resolveUserAuthorization = async (input: UserAuthorizationInput): Promise<
 
   if (!user || user.deletingAt) throw new ORPCError("UNAUTHORIZED");
 
+  const oauthDetails = {
+    clientID: input.oauth?.clientID ?? CLI_CLIENT_ID,
+    clientName: input.oauth?.clientName,
+    ...(input.oauth?.clientID !== CLI_CLIENT_ID && {
+      scopes: input.oauth?.scopes,
+      workspaceID: input.oauth?.workspaceID
+    })
+  };
   const basicSessionData = (): SessionData => ({
     id: `${input.type}:user:${userID}:no-workspace`,
     type: input.type,
     subscriptionPlan: "free",
     workspaceID: "",
     [input.type]: {
-      ...(input.type === "oauth" && { clientID: CLI_CLIENT_ID }),
+      ...(input.type === "oauth" && oauthDetails),
       userID: toUserID(userID),
       memberID: "",
       roleID: "",
@@ -70,7 +98,7 @@ const resolveUserAuthorization = async (input: UserAuthorizationInput): Promise<
   const requestedWorkspaceID = input.headers.get("x-workspace-id");
   const workspaceID =
     input.type === "oauth"
-      ? resolveOAuthWorkspaceID(requestedWorkspaceID)
+      ? resolveOAuthWorkspaceID(requestedWorkspaceID, input.oauth?.workspaceID)
       : tryResolveUUID(requestedWorkspaceID) || user.currentWorkspaceID || null;
 
   if (!workspaceID) throw new ORPCError("UNAUTHORIZED");
@@ -110,13 +138,16 @@ const resolveUserAuthorization = async (input: UserAuthorizationInput): Promise<
   if (!row) throw new ORPCError("UNAUTHORIZED");
 
   const data: SessionData = {
-    id: input.type === "session" ? cacheKey : `oauth:user:${userID}:${workspaceID}`,
+    id:
+      input.type === "session"
+        ? cacheKey
+        : `oauth:${oauthDetails.clientID}:${userID}:${workspaceID}`,
     type: input.type,
     subscriptionPlan: row.subscriptionPlan,
     customerID: row.customerID || undefined,
     workspaceID: toWorkspaceID(row.workspaceID),
     [input.type]: {
-      ...(input.type === "oauth" && { clientID: CLI_CLIENT_ID }),
+      ...(input.type === "oauth" && oauthDetails),
       userID: toUserID(userID),
       memberID: toMembershipID(row.memberID),
       roleID: toRoleID(row.roleID),

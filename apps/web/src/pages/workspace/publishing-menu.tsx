@@ -61,7 +61,8 @@ const VERSION_REASON_DETAILS: Record<VersionReason, VersionReasonDetails> = {
   "auto": { icon: "i-lucide:circle-dot-dashed", label: "Automatic" },
   "manual": { icon: "i-lucide:circle-dot", label: "Manual" },
   "revert": { icon: "i-lucide:refresh-ccw-dot", label: "Revert" },
-  "schema-migration": { icon: "i-lucide:database-backup", label: "Schema migration" }
+  "schema-migration": { icon: "i-lucide:database-backup", label: "Schema migration" },
+  "import": { icon: "i-lucide:import", label: "Import" }
 };
 const PublishingStatusIcon: Component<PublishingStatusIconProps> = (props) => {
   const large = () => props.size === "large";

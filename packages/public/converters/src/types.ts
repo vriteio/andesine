@@ -77,8 +77,12 @@ interface DecodeHandlers<T> {
 interface BaseConverterOptions {
   /** Map the title to an H1 by default, omit it, or use frontmatter in supported formats. */
   title?: "heading" | "omit" | { as: "frontmatter"; key?: string };
-  /** Omit properties by default, or map labels and values to frontmatter. Duplicate keys throw. */
-  properties?: "omit" | { as: "frontmatter" };
+  /**
+   * Omit properties by default, map labels and values to frontmatter (duplicate keys throw), or
+   * map each property to a self-closing element in its position. Imports with a mapping read both
+   * frontmatter and matching elements.
+   */
+  properties?: "omit" | PropertyMapping;
   /** Fragment mappings. Defaults to unwrapping content; unwrapped boundaries cannot be restored. */
   fragments?: {
     /** Fallback for fragments without a named mapping. Defaults to "unwrap". */
@@ -190,6 +194,7 @@ interface FormatAdapter<T> extends ExportFormatAdapter<T>, ImportFormatAdapter<T
 type Awaitable<T> = T | Promise<T>;
 type HandlerResult<T> = T | T[] | null;
 type FragmentMapping = "unwrap" | "omit" | { as: "element"; name: string };
+type PropertyMapping = { as: "frontmatter" } | { as: "element"; name: string };
 
 export type {
   Awaitable,
@@ -210,6 +215,7 @@ export type {
   ImportFormatAdapter,
   FormatAdapter,
   FragmentMapping,
+  PropertyMapping,
   HandlerResult,
   ImageReference
 };

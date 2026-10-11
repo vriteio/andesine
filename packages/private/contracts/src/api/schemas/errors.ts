@@ -43,6 +43,33 @@ const contentSchemaMismatchErrorDataType = errorDataType.extend({
   expectedHash: schemaHashType,
   actualSchema: contentSchemaMetadataType.nullable()
 });
+const contentFormatInvalidErrorDataType = errorDataType.extend({
+  line: z.number().int().optional().describe("Line of the error in the source"),
+  column: z.number().int().optional().describe("Column of the error in the source")
+});
+const contentOperationInvalidErrorDataType = errorDataType.extend({
+  index: z.number().int().describe("Index of the operation that failed"),
+  reason: z.enum(["not_found", "ambiguous"]).describe("Why the operation's anchor didn't match")
+});
+const contentPreconditionFailedErrorDataType = errorDataType.extend({
+  field: z.string().describe("Expected field that didn't match"),
+  current: z.string().nullable().describe("Current value of the field")
+});
+const contentImageUnavailableErrorDataType = errorDataType.extend({
+  url: z.string().describe("Image URL in the content"),
+  assetID: z.string().describe("Imported image"),
+  assetStatus: z.string().describe("Status of the image when the write stopped waiting")
+});
+const contentLinkInvalidErrorDataType = errorDataType.extend({
+  href: z.string().describe("Link that doesn't point to an entry")
+});
+const contentHashMismatchErrorDataType = errorDataType.extend({
+  hash: z.string().length(64).describe("Hash of the current content"),
+  changedIDs: z
+    .array(z.string())
+    .optional()
+    .describe("Entries of a bulk call that kept the change, because they were edited meanwhile")
+});
 const schemaFieldKeyConflictErrorDataType = errorDataType.extend({
   key: z.string(),
   kind: z.enum(["fragment", "property"]),
@@ -104,6 +131,12 @@ export {
   contentSchemaIssueType,
   contentSchemaInvalidErrorDataType,
   contentSchemaMismatchErrorDataType,
+  contentFormatInvalidErrorDataType,
+  contentHashMismatchErrorDataType,
+  contentImageUnavailableErrorDataType,
+  contentLinkInvalidErrorDataType,
+  contentPreconditionFailedErrorDataType,
+  contentOperationInvalidErrorDataType,
   schemaFieldKeyConflictErrorDataType,
   assetValidationErrorDataType,
   assetConflictErrorDataType,

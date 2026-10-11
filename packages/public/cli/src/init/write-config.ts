@@ -1,5 +1,4 @@
 import { CLIError, exitCodes } from "../errors";
-import type { ProjectConfig } from "../config/schema";
 import { randomUUID } from "node:crypto";
 import { link, lstat, mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -24,10 +23,10 @@ const readProjectFile = async (file: string): Promise<string | undefined> => {
   }
 };
 
-/** Recheck the reviewed file under a lock, then replace it with complete JSON. */
+/** Recheck the reviewed file under a lock, then replace it with complete JSON, or with text. */
 const writeProjectConfig = async (
   file: string,
-  config: ProjectConfig,
+  config: object | string,
   expected: string | undefined,
   signal: AbortSignal
 ): Promise<void> => {
@@ -51,7 +50,9 @@ const writeProjectConfig = async (
 
     const info = expected === undefined ? undefined : await lstat(file);
 
-    await writeFile(temporary, `${JSON.stringify(config, null, 2)}\n`, {
+    const content = typeof config === "string" ? config : `${JSON.stringify(config, null, 2)}\n`;
+
+    await writeFile(temporary, content, {
       flag: "wx",
       mode: info?.mode ?? 0o644
     });

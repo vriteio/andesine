@@ -1,3 +1,4 @@
+import type { WebhookActor } from "@andesine/contracts/webhooks";
 import {
   workspaces,
   contents,
@@ -117,9 +118,12 @@ const storeEntryDocument = async ({
   const pendingContributorIDs = getPendingContributors(documentName);
   const contributorIDs = pendingContributorIDs.map(toUUID);
   const webhookOperationID = lastContext.webhookOperationID;
-  const webhookOriginExtensionID = webhookOperationID
-    ? (lastContext.webhookOriginExtensionID ?? null)
-    : null;
+  // Editor saves can combine several people's changes; name a member only when there's one.
+  const editorActor: WebhookActor | null =
+    pendingContributorIDs.length === 1 && pendingContributorIDs[0]!.startsWith("ms_")
+      ? { type: "member", memberID: pendingContributorIDs[0]! }
+      : null;
+  const webhookActor = webhookOperationID ? (lastContext.webhookActor ?? null) : editorActor;
   const stored = await db.transaction(async (tx) => {
     const [workspace] = await tx
       .select({ id: workspaces.id })
@@ -185,7 +189,7 @@ const storeEntryDocument = async ({
     const operation = createWebhookOperation(
       toWorkspaceID(workspaceID),
       webhookOperationID,
-      webhookOriginExtensionID
+      webhookActor
     );
     const recorder = await createWebhookRecorder({
       retentionPolicy: webhookRetentionPolicy,
@@ -389,7 +393,7 @@ const storeEntryDocument = async ({
   // later edits if the connection context is retained by a debounced store.
   if (stored && lastContext.webhookOperationID === webhookOperationID) {
     delete lastContext.webhookOperationID;
-    delete lastContext.webhookOriginExtensionID;
+    delete lastContext.webhookActor;
   }
 
   clearPendingContributors(documentName, pendingContributorIDs);

@@ -30,9 +30,26 @@ const entryPropertyType = z.object({
   value: entryPropertyValueType
 });
 const entrySummaryType = entryType.extend({ path: z.string(), slugPath: z.string() });
+const entryReferenceType = z
+  .discriminatedUnion("available", [
+    z.object({
+      id: z.string(),
+      available: z.literal(true),
+      path: z.string(),
+      slugPath: z.string(),
+      title: z.string(),
+      collectionID: z.string().nullable()
+    }),
+    z.object({ id: z.string(), available: z.literal(false) })
+  ])
+  .describe("Linked entry; deleted and unreadable entries are unavailable");
+const entryReferencesType = z
+  .record(z.string(), entryReferenceType)
+  .describe("Entries linked with entry: links in the content, by entry ID");
 const entryDetailsType = entrySummaryType.extend({
   schema: contentSchemaMetadataType.nullable(),
   updatedAt: z.iso.datetime().describe("Time when the entry content was last updated"),
+  hash: z.string().length(64).describe("Hash of the current content, comparable to version hashes"),
   content: contentNodeType,
   fragments: z.record(z.string(), entryFragmentType),
   properties: z.record(z.string(), entryPropertyType)
@@ -43,6 +60,7 @@ const entryListType = z.object({
 });
 
 export {
+  entryReferencesType,
   entrySummaryType,
   entryFragmentType,
   entryPropertyKindType,

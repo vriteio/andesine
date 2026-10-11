@@ -8,7 +8,8 @@ import { db } from "#backend/lib/adapters";
 import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";
-import { runWithWebhookOrigin } from "@andesine/server/webhooks/recording";
+import { runWithWebhookActor } from "@andesine/server/webhooks/recording";
+import type { WebhookActor } from "@andesine/contracts/webhooks";
 import {
   type CollectionAction,
   type EntryAction,
@@ -152,6 +153,26 @@ const lockWorkspace = async (
 
   if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
 };
+/** Principals without a membership have no actor. */
+const getWebhookActor = (auth: SessionData): WebhookActor | null => {
+  if (auth.type === "extension" && auth.extension) {
+    return { type: "extension", extensionID: auth.extension.extensionID };
+  }
+
+  if (auth.type === "key" && auth.key) return { type: "key", keyID: auth.key.keyID };
+
+  if (auth.type === "oauth" && auth.oauth?.memberID) {
+    return {
+      type: "app",
+      memberID: auth.oauth.memberID,
+      clientID: auth.oauth.clientID,
+      // Registered names have no length limit; the webhook actor schema does.
+      name: (auth.oauth.clientName ?? auth.oauth.clientID).slice(0, 200)
+    };
+  }
+
+  return auth.session?.memberID ? { type: "member", memberID: auth.session.memberID } : null;
+};
 function withAuthorization<Input, Resolved = undefined, Result = void>(
   options: WithAuthorizationTreeOptions<Input, Resolved>,
   handler: (context: AuthorizedTreeServiceContext<Input, Resolved>) => Promise<Result>
@@ -272,12 +293,9 @@ function withAuthorization<Input, Resolved = undefined, Result = void>(
     );
   };
 
-  // Changes made with an extension JWT carry its origin, so its own webhooks skip them.
+  // Webhook events name the actor; an extension's own webhooks skip its changes.
   return (serviceInput: Input & AuthorizedServiceInput): Promise<Result> => {
-    const { auth } = serviceInput;
-    const origin = auth.type === "extension" ? auth.extension!.extensionID : null;
-
-    return runWithWebhookOrigin(origin, () => runService(serviceInput));
+    return runWithWebhookActor(getWebhookActor(serviceInput.auth), () => runService(serviceInput));
   };
 }
 const withExplicitWorkspace = <Input, Result = void>(

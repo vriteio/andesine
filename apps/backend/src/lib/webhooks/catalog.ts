@@ -17,6 +17,7 @@ const sampleEnvelope = {
   schemaVersion: 1,
   occurredAt: "2026-09-25T12:00:00.000Z",
   workspaceID: "ws_example",
+  actor: { type: "member", memberID: "ms_example" },
   test: true
 } as const;
 const entrySubject = { kind: "entry", id: "ent_example" } as const;

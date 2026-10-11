@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased
+
+- Add `andesine mcp`: an MCP server over stdio for AI agents, with `--read-only`. Its
+  `upload_image` tool uploads local images for entries. It also has resources (entries,
+  published content, collection schemas, a workspace overview, and an MDX guide, with path
+  completion) and prompts (`draft-entry`, `update-docs`, `review-entry`, `answer`,
+  `release-notes`, and `reorganize`).
+- `andesine init` sets up type generation, the MCP server, or both. `--mcp` adds the
+  MCP server to `.mcp.json` and to the Cursor, Gemini CLI, and Codex files of the
+  project; `--types` and `--no-types` select type generation. An interactive init asks
+  what to set up.
+- `andesine mcp` stops with an error when no workspace is selected.
+- Add `mcpName` (`app.andesine/andesine`) for the official MCP Registry.
+- Add the `entries move`, `entries bulk-update`, `entries bulk-move`, `collections move`, and
+  `publishing update-channel` commands. `versions create` takes an optional
+  `document`. `entries update` takes `document`, `expectedHash`, and `version`, and prints the
+  new hash. `entries create` takes an optional `document`. Content reads take `--content-format mdx`
+  (or `blocks` for entries), and content writes take `--mdx`. `entries update` takes
+  `--operations`, and `entries create` takes `--fields`. The `assets attach` command is removed;
+  content writes attach the images they reference. `entries create` takes `--path`; target collections also take
+  `--collection-path`, `--collection-slug-path`, and the `--parent-*` and `--new-parent-*`
+  forms; and renames
+  and moves take `--expected-name`, `--expected-collection-id`, and `--expected-parent-id`.
+
 ## 0.6.0
 
 - Validate extension manifests with the 0.6.0 rules: `settingsSections` is no longer

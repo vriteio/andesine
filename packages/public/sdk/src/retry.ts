@@ -24,6 +24,17 @@ const retryDelay = (attempt: number, response?: Response): number => {
 
   return Math.min(1000 * 2 ** attempt, 30_000) + Math.random() * 250;
 };
+// A retry can reach the server while the first attempt of an idempotent write still runs.
+const isInProgressWrite = async (request: Request, response: Response): Promise<boolean> => {
+  if (response.status !== 409 || !request.headers.has("Idempotency-Key")) return false;
+
+  const body: unknown = await response
+    .clone()
+    .json()
+    .catch(() => null);
+
+  return (body as { code?: unknown } | null)?.code === "IDEMPOTENCY_KEY_IN_PROGRESS";
+};
 const fetchWithRetries = async (
   fetcher: typeof fetch,
   request: Request,
@@ -47,9 +58,11 @@ const fetchWithRetries = async (
       continue;
     }
 
-    if (attempt >= retries || ![429, 500, 502, 503, 504].includes(response.status)) {
-      return response;
-    }
+    const retryable =
+      [429, 500, 502, 503, 504].includes(response.status) ||
+      (await isInProgressWrite(request, response));
+
+    if (attempt >= retries || !retryable) return response;
 
     const delay = retryDelay(attempt, response);
 

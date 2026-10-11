@@ -1,5 +1,6 @@
 export * from "./api-keys";
 export * from "./billing";
+export * from "./connected-apps";
 export * from "./passkeys";
 export * from "./people";
 export * from "./publishing";

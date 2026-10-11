@@ -176,9 +176,17 @@ request execution, response reading, and retry delays. Supply `signal` per call
 for cancellation.
 
 Retries are **disabled by default**. Set `retries: 2` on the client or a call to
-allow up to two retries of GET requests. Reads retry network `TypeError` failures
-and HTTP 429, 500, 502, 503, and 504. They respect `Retry-After`, otherwise use
-increasing delays with jitter. Writes are never retried automatically.
+allow up to two retries of GET requests and idempotent writes. They retry network
+`TypeError` failures and HTTP 429, 500, 502, 503, and 504. They respect
+`Retry-After`, otherwise use increasing delays with jitter. Other writes are never
+retried automatically.
+
+Idempotent writes (`entries.create`, `entries.update`, and `versions.create`) send
+an `Idempotency-Key` header, generated for each call unless you supply one in
+`headers`. The server applies a key once and returns the first result for 24 hours,
+so retries can't apply a write twice. A retry that arrives while the first attempt
+still runs gets `IDEMPOTENCY_KEY_IN_PROGRESS` and is retried after `Retry-After`. Supply your own key to make a write safe
+across separate calls, for example after a process restart.
 
 ```ts
 await client.entries.get(

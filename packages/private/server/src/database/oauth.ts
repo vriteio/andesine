@@ -12,6 +12,9 @@ import {
 import { users } from "./users";
 import { sessions } from "./auth";
 
+/** The Andesine CLI's provisioned OAuth client (device flow). */
+const CLI_CLIENT_ID = "andesine-cli";
+
 // Keep Better Auth field names (userId, clientId, etc.) for its Drizzle adapter.
 const oauthClients = pgTable(
   "oauth_clients",
@@ -221,6 +224,7 @@ const deviceCodes = pgTable(
 );
 
 export {
+  CLI_CLIENT_ID,
   oauthClients,
   oauthResources,
   oauthClientResources,

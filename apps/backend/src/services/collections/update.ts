@@ -7,10 +7,12 @@ import { type Collection } from "@andesine/contracts/entities";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { normalizeCollectionName, ROOT_COLLECTION_NAME } from "@andesine/contracts/content";
+import { assertExpectedValue } from "#backend/lib/content";
 import { withAuthorization } from "#backend/lib/policy";
 
 interface UpdateCollectionInput extends Partial<Pick<Collection, "name">> {
   id: string;
+  expectedName?: string;
 }
 
 const updateCollection = withAuthorization<UpdateCollectionInput>(
@@ -48,6 +50,12 @@ const updateCollection = withAuthorization<UpdateCollectionInput>(
       );
 
     if (!collection?.parentID) throw new ORPCError("NOT_FOUND");
+
+    assertExpectedValue(
+      "name",
+      input.expectedName === undefined ? undefined : normalizeCollectionName(input.expectedName),
+      collection.name
+    );
 
     if (collection.name === name) return;
 

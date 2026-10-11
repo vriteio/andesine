@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Add the `properties: { as: "element", name }` mapping: each property becomes a self-closing
+  element in its position, with `name`, `value`, and `type` when the value doesn't show it.
+  Imports with a property mapping read both frontmatter and matching elements.
+
 ## 0.6.0
 
 - No changes; versioned with the other public Andesine packages.

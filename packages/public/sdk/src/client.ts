@@ -146,6 +146,11 @@ const createClient = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       headers.set("Authorization", `Bearer ${credential}`);
     }
 
+    // One key for all attempts, so retries of a write apply it once.
+    if (definition.idempotent && !headers.has("Idempotency-Key")) {
+      headers.set("Idempotency-Key", crypto.randomUUID());
+    }
+
     const timer =
       timeout > 0
         ? setTimeout(
@@ -182,7 +187,11 @@ const createClient = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
               }
             : undefined,
           fetch: (request) =>
-            fetchWithRetries(fetcher, request, definition.method === "get" ? retries : 0)
+            fetchWithRetries(
+              fetcher,
+              request,
+              definition.method === "get" || definition.idempotent ? retries : 0
+            )
         }
       );
 

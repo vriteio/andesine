@@ -275,6 +275,13 @@ or restricted resources can become unavailable. Publication snapshot references
 can expire under the workspace policy; webhooks do not pin snapshots. Handle
 missing references explicitly.
 
+Each event has an `actor`: who made the change. It is a member (`memberID`), an
+API key (`keyID`), an extension (`extensionID`), or an app such as an MCP client
+(`clientID`, the `name` that the app registered, and the authorizing `memberID`).
+It is `null` for changes by Andesine itself, and for editor saves that combine
+several people's edits. App names are chosen by the app; don't use them for
+access decisions. An extension's own webhooks don't receive its changes.
+
 ## Rotation, replay, and recovery
 
 Normal rotation returns a new secret once and signs with both old and new keys

@@ -148,7 +148,8 @@ const createAssetsContract = (maxUploadBytes: number) => {
         outputStructure: "detailed"
       })
       .meta({ example: { assetID: "ast_example", entryID: "ent_example" } })
-      .meta({ required: { session: true, key: ["entries"] } })
+      // Editor only: API content writes attach the images they reference.
+      .meta({ required: { session: true } })
       .input(z.object({ assetID: publicID("ast"), entryID: publicID("ent") }))
       .output(z.object({ status: z.literal(204), headers: assetHeadersType })),
     register: authenticatedContract

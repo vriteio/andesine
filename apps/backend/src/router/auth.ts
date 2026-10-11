@@ -26,6 +26,14 @@ const authRouter = handlers.router({
       });
     }
   ),
+  listConnectedApps: authorizedHandlers.listConnectedApps.handler(({ context }) => {
+    context.resHeaders?.set("Cache-Control", "private, no-store");
+
+    return Auth.OAuth.listConnectedApps({ userID: context.auth.session!.userID });
+  }),
+  revokeConnectedApp: authorizedHandlers.revokeConnectedApp.handler(({ context, input }) => {
+    return Auth.OAuth.revokeConnectedApp({ ...input, userID: context.auth.session!.userID });
+  }),
   getIdentity: authorizedHandlers.getIdentity.handler(({ context }) => {
     context.resHeaders?.set("Cache-Control", "private, no-store");
 

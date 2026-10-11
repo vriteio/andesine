@@ -1,0 +1,20 @@
+{
+  "name": "@andesine/mcpb",
+  "version": "0.1.0",
+  "description": "Claude Desktop extension for the Andesine MCP server",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "rolldown -c && mcpb pack dist andesine.mcpb",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@andesine/mcp": "workspace:*",
+    "@andesine/sdk": "workspace:*",
+    "@anthropic-ai/mcpb": "2.1.2",
+    "@modelcontextprotocol/sdk": "catalog:",
+    "@types/node": "^26.1.2",
+    "rolldown": "^1.2.2",
+    "typescript": "6.0.3"
+  }
+}

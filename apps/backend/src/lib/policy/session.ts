@@ -42,7 +42,14 @@ interface SessionData {
   subscriptionPlan: string;
   customerID?: string;
   session?: UserAuthorization;
-  oauth?: UserAuthorization & { clientID: string };
+  /** For MCP clients, scopes limit the role's permissions. */
+  oauth?: UserAuthorization & {
+    clientID: string;
+    /** Registered client name, for webhook actors. */
+    clientName?: string;
+    scopes?: string[];
+    workspaceID?: string;
+  };
   key?: { keyID: string; permissions: KeyPermission[]; publishable?: PublishableKeyScope };
   extension?: ExtensionAuthorization;
 }
@@ -71,7 +78,12 @@ const sessionDataType: z.ZodType<SessionData> = z.discriminatedUnion("type", [
   }),
   sessionDataBaseType.extend({
     type: z.literal("oauth"),
-    oauth: userAuthorizationType.extend({ clientID: z.string() })
+    oauth: userAuthorizationType.extend({
+      clientID: z.string(),
+      clientName: z.string().optional(),
+      scopes: z.array(z.string()).optional(),
+      workspaceID: z.string().optional()
+    })
   }),
   sessionDataBaseType.extend({
     type: z.literal("key"),

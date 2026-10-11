@@ -55,6 +55,11 @@ const publishingEventType = z.union([
     })
   }),
   z.object({
+    action: z.literal("publishing:channel-update"),
+    memberID: id().optional(),
+    data: z.object({ code: publishingChannelCodeType, name: publishingChannelNameType })
+  }),
+  z.object({
     action: z.literal("publishing:channel-delete"),
     memberID: id().optional(),
     data: z.object({ code: publishingChannelCodeType })

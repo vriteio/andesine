@@ -27,11 +27,19 @@ const rootRedirectQuery = query(async () => {
   }
 
   const url = new URL(event ? event.request.url : window.location.href);
-  const isDeviceRoute = url.pathname.replace(/\/$/, "") === "/auth/device";
+  const pathname = url.pathname.replace(/\/$/, "");
+  const isDeviceRoute = pathname === "/auth/device";
+  const isConnectRoute = pathname === "/auth/connect";
+  // The OAuth server sends people to sign in with a signed request for the consent page.
+  const isOAuthSignIn =
+    pathname === "/auth/sign-in" &&
+    url.searchParams.has("sig") &&
+    url.searchParams.has("client_id");
+  const consentPath = `/auth/connect${url.search}`;
   const offlineState = readOfflineState();
   const offlinePath = typeof window !== "undefined" ? window.location.pathname : "";
 
-  if (isOffline() && offlineState && !isDeviceRoute) {
+  if (isOffline() && offlineState && !isDeviceRoute && !isConnectRoute) {
     if (
       !offlineState.workspaces.some(
         (workspace) =>
@@ -57,7 +65,9 @@ const rootRedirectQuery = query(async () => {
   const redirectTo = normalizeRedirectTo(url.searchParams.get("redirectTo"));
 
   if (!data?.session) {
-    if (!isAuthRoute) {
+    if (isOAuthSignIn) throw redirect(appendRedirectTo("/auth/sign-in", consentPath));
+
+    if (!isAuthRoute || isConnectRoute) {
       throw redirect(appendRedirectTo("/auth/sign-in", `${url.pathname}${url.search}`));
     }
 
@@ -65,7 +75,9 @@ const rootRedirectQuery = query(async () => {
   } else {
     const { currentWorkspaceID } = data.user;
 
-    if (isDeviceRoute || (isAuthRoute && isAddAccount)) {
+    if (isOAuthSignIn) throw redirect(consentPath);
+
+    if (isDeviceRoute || isConnectRoute || (isAuthRoute && isAddAccount)) {
       return { success: true };
     }
 

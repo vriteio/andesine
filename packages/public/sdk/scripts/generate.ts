@@ -107,8 +107,10 @@ for (const [path, item] of Object.entries(document.paths || {})) {
     const streaming = Object.values(operation.responses || {}).some((response) => {
       return "content" in response && Boolean(response.content?.["text/event-stream"]);
     });
+    const idempotent = (operation as { "x-idempotent"?: boolean })["x-idempotent"] === true;
     const definition = {
       ...(streaming && { streaming: true }),
+      ...(idempotent && { idempotent: true }),
       method,
       path,
       pathParams: parameters

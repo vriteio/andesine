@@ -53,6 +53,7 @@ export type {
   WebhookUpdateResult
 } from "../api/schemas/webhooks";
 export {
+  webhookActorType,
   webhookChannelCodeType,
   webhookReadPermissionType,
   webhookEventSchemas,
@@ -60,7 +61,7 @@ export {
   webhookEventType,
   uniqueItems
 } from "./events";
-export type { WebhookEvent, WebhookEventName } from "./events";
+export type { WebhookActor, WebhookEvent, WebhookEventName } from "./events";
 export {
   webhookEventCategories,
   webhookEventDefinitions,

@@ -7,6 +7,8 @@ import {
   type PublishingRevertSelection
 } from "#backend/lib/publishing";
 import { type AuthorizedCollectionTree, withAuthorization } from "#backend/lib/policy";
+import { resolveCollectionTarget } from "#backend/lib/content";
+import { ORPCError } from "@orpc/server";
 import {
   toCollectionID,
   toEntryID,
@@ -41,7 +43,9 @@ interface ChannelContentCollection {
 }
 interface GetChannelContentInput {
   channel: string;
-  collectionID: string;
+  collectionID?: string;
+  collectionPath?: string;
+  collectionSlugPath?: string;
 }
 interface GetChannelContentResult {
   channel: string;
@@ -78,7 +82,16 @@ const getChannelContent = withAuthorization<
     tree: true
   },
   async ({ authorization, database, input, workspaceID }) => {
-    const changeSet = await loadPublishingChangeSet(database, workspaceID, input);
+    const collectionID = await resolveCollectionTarget(database, workspaceID, input);
+
+    if (!collectionID) {
+      throw new ORPCError("BAD_REQUEST", { message: "Use a publishing root collection" });
+    }
+
+    const changeSet = await loadPublishingChangeSet(database, workspaceID, {
+      channel: input.channel,
+      collectionID: toCollectionID(collectionID)
+    });
     const channelCollections: ChannelContentCollection[] = [];
     const channelEntries: ChannelContentEntry[] = [];
 

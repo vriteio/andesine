@@ -6,6 +6,7 @@ import { webhookEventNames, webhookReadPermissions } from "./catalog-definitions
 
 type WebhookEvent = z.infer<typeof webhookEventType>;
 type WebhookEventName = WebhookEvent["type"];
+type WebhookActor = z.infer<typeof webhookActorType>;
 
 // Wire schemas must not load database, configuration, or application services.
 // Strict objects reject accidental document, private matching, or destination data.
@@ -23,12 +24,26 @@ const channelSubjectType = z.strictObject({
   kind: z.literal("channel"),
   code: webhookChannelCodeType
 });
+const webhookActorType = z
+  .discriminatedUnion("type", [
+    z.strictObject({ type: z.literal("member"), memberID: publicID("ms") }),
+    z.strictObject({ type: z.literal("key"), keyID: publicID("adn") }),
+    z.strictObject({ type: z.literal("extension"), extensionID: publicID("ext") }),
+    z.strictObject({
+      type: z.literal("app"),
+      memberID: publicID("ms").describe("The member who authorized the app"),
+      clientID: z.string().min(1).max(2048).describe("OAuth client ID"),
+      name: z.string().max(200).describe("Name that the app registered, such as an MCP client")
+    })
+  ])
+  .describe("Who made the change; null for changes by Andesine itself");
 const envelopeType = z.strictObject({
   id: publicID("whevt"),
   operationID: publicID("whop"),
   schemaVersion: z.literal(1),
   occurredAt: z.iso.datetime(),
   workspaceID: publicID("ws"),
+  actor: webhookActorType.nullable().default(null),
   test: z.boolean()
 });
 const visibleLocationType = z.strictObject({
@@ -161,6 +176,7 @@ const webhookEventType = z.discriminatedUnion("type", [
 
 export {
   envelopeType as webhookEnvelopeType,
+  webhookActorType,
   webhookChannelCodeType,
   webhookReadPermissionType,
   webhookEventSchemas,
@@ -168,4 +184,4 @@ export {
   webhookEventType,
   uniqueItems
 };
-export type { WebhookEvent, WebhookEventName };
+export type { WebhookActor, WebhookEvent, WebhookEventName };

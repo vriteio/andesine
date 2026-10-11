@@ -10,6 +10,7 @@ import { initPages } from "./pages/init";
 import { registerAPI } from "./api/register";
 import { registerTypes } from "./types/register";
 import { registerExtensions } from "./extensions/register";
+import { serveMCP } from "./mcp/serve";
 
 /** Register custom commands and the generated public API group. */
 const createProgram = (signal: AbortSignal) => {
@@ -29,7 +30,11 @@ const createProgram = (signal: AbortSignal) => {
 
   program
     .command("init")
-    .description("Configure this project for Andesine content and type generation")
+    .description("Configure this project for Andesine type generation and the MCP server")
+    .option("--types", "Set up type generation (default unless only --mcp is given)")
+    .option("--no-types", "Skip type generation setup")
+    .option("--mcp", "Add the MCP server to the project's AI agent configuration")
+    .option("--no-mcp", "Skip MCP server setup")
     .addOption(
       new Option("--source <source>", "Type source: published (default) or current").choices([
         "published",
@@ -108,6 +113,19 @@ const createProgram = (signal: AbortSignal) => {
     )
     .action(async (_options, command) => {
       await logout(await createCommandContext(command.optsWithGlobals(), signal));
+    });
+
+  program
+    .command("mcp")
+    .description(
+      "Run an MCP server over stdio for AI agents, with the selected profile or ANDESINE_API_KEY"
+    )
+    .option("--read-only", "List only the tools that read content")
+    .action(async (options, command) => {
+      await serveMCP(
+        await createCommandContext({ ...command.optsWithGlobals(), interactive: false }, signal),
+        options
+      );
     });
 
   program.addHelpText(

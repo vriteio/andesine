@@ -33,6 +33,7 @@ import ExtensionWebhookEventsPage from "../../pages/workspace/settings/extension
 
 const AuthLayout = lazy(() => import("../../pages/auth/layout"));
 const DevicePage = lazy(() => import("../../pages/auth/device/page"));
+const ConnectPage = lazy(() => import("../../pages/auth/connect/page"));
 const EmailPage = lazy(() => import("../../pages/auth/email/page"));
 const SignInPage = lazy(() => import("../../pages/auth/sign-in/page"));
 const SignUpPage = lazy(() => import("../../pages/auth/sign-up/page"));
@@ -218,7 +219,8 @@ const routes: RouteDefinition[] = [
       { path: "/sign-in", component: SignInPage },
       { path: "/sign-up", component: SignUpPage },
       { path: "/email", component: EmailPage },
-      { path: "/device", component: DevicePage }
+      { path: "/device", component: DevicePage },
+      { path: "/connect", component: ConnectPage }
     ]
   },
   { path: "/invite", component: InvitePage },

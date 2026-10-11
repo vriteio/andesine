@@ -575,7 +575,9 @@ const publishingRouter = handlers.router({
     return Publishing.Channels.getContent({
       auth: context.auth,
       channel: input.channel,
-      collectionID: input.collectionID
+      collectionID: input.collectionID,
+      collectionPath: input.collectionPath,
+      collectionSlugPath: input.collectionSlugPath
     });
   }),
   createChannel: authorizedHandlers.createChannel.handler(async ({ context, input }) => {
@@ -587,6 +589,21 @@ const publishingRouter = handlers.router({
     emitPublishingEvent(context.auth.workspaceID, {
       action: "publishing:channel-create",
       data: channel,
+      memberID: getUserAuthorization(context.auth)?.memberID
+    });
+
+    return channel;
+  }),
+  updateChannel: authorizedHandlers.updateChannel.handler(async ({ context, input }) => {
+    const channel = await Publishing.Channels.update({
+      auth: context.auth,
+      code: input.code,
+      name: input.name
+    });
+
+    emitPublishingEvent(context.auth.workspaceID, {
+      action: "publishing:channel-update",
+      data: { code: channel.code, name: channel.name },
       memberID: getUserAuthorization(context.auth)?.memberID
     });
 

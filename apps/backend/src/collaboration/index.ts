@@ -1,15 +1,17 @@
 export {
   getCurrentDocumentContent,
+  getLoadedDocumentContent,
   getCurrentSchemaDefinition,
   openDocumentContentConnection,
   prepareSchemaMigrationConnections,
-  replaceDocumentContent,
+  readDocumentContent,
   setPersistedDocumentSchemaRevision,
+  updateDocumentContent,
   updateDocumentTitle
 } from "./operations";
 export { collab, shutdownCollaboration } from "./server";
-export { getContentSnapshot } from "./document";
+export { createContentState, getContentSnapshot } from "./document";
 export { createDeferredDocumentReplacements } from "./deferred-replacements";
 export type { DeferredDocumentReplacements } from "./deferred-replacements";
-export type { CollaborationContext, ContentSnapshot } from "./types";
+export type { CollaborationContext, ContentSnapshot, ContentState } from "./types";
 export type { ContentConnection, OpenDocumentContentConnectionOptions } from "./operations";

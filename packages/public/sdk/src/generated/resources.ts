@@ -36,20 +36,6 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
      */
     importURL: Operation<"assets.importURL", Workspace>;
     /**
-     * Attach an asset
-     *
-     * Attaches a ready image to an entry. This does not insert an image node into the document.
-     *
-     * Required API key permissions: entries. Write permissions also grant read access for the same resource.
-     *
-     * @example
-     * await client.assets.attach({
-     *   "assetID": "ast_example",
-     *   "entryID": "ent_example"
-     * });
-     */
-    attach: Operation<"assets.attach", Workspace>;
-    /**
      * Register an image upload
      *
      * Reserves an image upload for an entry. Supply the byte count and lowercase SHA-256 checksum of the file. Call assets.upload before expiresAt, then use assets.get to check processing status.
@@ -97,7 +83,7 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
     /**
      * Get credential identity
      *
-     * Returns the authenticated user for OAuth or browser credentials, or the key and workspace IDs for an API key. Does not require a workspace selection and does not count toward API usage.
+     * Returns the authenticated user for OAuth or browser credentials, or the key and workspace IDs and the permissions of an API key. Does not require a workspace selection and does not count toward API usage.
      */
     getIdentity: Operation<"auth.getIdentity", Workspace>;
   };
@@ -116,7 +102,7 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
     /**
      * Create an entry
      *
-     * Creates an entry and its initial document. The name defaults to Untitled. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed and NFC-normalized. Derived URL slugs must be unique across sibling entries and collections, including case and punctuation variants. Names cannot contain a slash or equal a single dot or two dots. A collection schema can set the initial content.
+     * Creates an entry and its initial document, in the collection given by collectionID, collectionPath, or collectionSlugPath (the top level by default). The name defaults to Untitled, or comes from the title of the supplied document or mdx. fields sets property values and fragment MDX by field name or key. path places the entry at a full name path and creates missing parent collections; a name already used there is a conflict. A repeated request with the same Idempotency-Key header returns the first result for 24 hours. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed and NFC-normalized. Derived URL slugs must be unique across sibling entries and collections, including case and punctuation variants. Names cannot contain a slash or equal a single dot or two dots. A collection schema sets the initial content without a document; a document must match it.
      *
      * Required API key permissions: entries. Write permissions also grant read access for the same resource.
      *
@@ -156,9 +142,9 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
      */
     delete: Operation<"entries.delete", Workspace>;
     /**
-     * Rename an entry
+     * Update an entry
      *
-     * Updates the entry name. Rejects names already used by a sibling entry or collection. An active schema migration can block this action.
+     * Renames the entry, replaces its content with document or mdx, or edits it with operations (with name, also renames). document and mdx need expectedHash, the hash of the content they replace (from entries.get); a different current hash returns CONTENT_HASH_MISMATCH. Operations anchor on block IDs, unique text, and field keys from entries.get with contentFormat blocks; expectedHash is optional for them, and a missing or ambiguous anchor returns CONTENT_OPERATION_INVALID. Only the changed blocks change, so live edits elsewhere are kept. Current content without a version is first saved as an auto version. version also saves the new content as a named version. Rejects names already used by a sibling entry or collection. expectedName applies the update only when the entry still has that name. An active schema migration can block this action. A repeated request with the same Idempotency-Key header returns the first result for 24 hours.
      *
      * Required API key permissions: entries. Write permissions also grant read access for the same resource.
      *
@@ -169,6 +155,62 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
      * });
      */
     update: Operation<"entries.update", Workspace>;
+    /**
+     * Update entries
+     *
+     * Writes content of many entries in one workspace lock, with the items of entries.update; a name without content is written as the title. All items are checked before any content changes, and all or none apply. Error messages name the failing item by index. Each entry can appear once. A repeated request with the same Idempotency-Key header returns the first result for 24 hours.
+     *
+     * Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.entries.bulkUpdate({
+     *   "items": [
+     *     {
+     *       "id": "ent_example",
+     *       "operations": [
+     *         {
+     *           "type": "replaceText",
+     *           "find": "v1",
+     *           "replace": "v2"
+     *         }
+     *       ]
+     *     }
+     *   ]
+     * });
+     */
+    bulkUpdate: Operation<"entries.bulkUpdate", Workspace>;
+    /**
+     * Move an entry
+     *
+     * Moves the entry to another collection or position. Without order, it keeps its position in the same collection and goes last in a new one. Rejects names already used in the new collection. A move that changes the schema can start a schema migration, which needs confirmedDataLoss when it can remove content.
+     *
+     * Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.entries.move({
+     *   "id": "ent_example",
+     *   "collectionID": "coll_example"
+     * });
+     */
+    move: Operation<"entries.move", Workspace>;
+    /**
+     * Move entries
+     *
+     * Moves many entries in one workspace lock, with the items of entries.move; all or none apply. Moves that need a schema migration aren't supported; move those entries with entries.move. Error messages name the failing item by index. Each entry can appear once.
+     *
+     * Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.entries.bulkMove({
+     *   "items": [
+     *     {
+     *       "id": "ent_example",
+     *       "collectionPath": "/Guides"
+     *     }
+     *   ]
+     * });
+     */
+    bulkMove: Operation<"entries.bulkMove", Workspace>;
     /**
      * Get an entry
      *
@@ -310,6 +352,20 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
      * });
      */
     update: Operation<"collections.update", Workspace>;
+    /**
+     * Move a collection
+     *
+     * Moves the collection to another parent or position. Without a new parent, it stays in its parent. Without index, it keeps its position in the same parent and goes last in a new one. Rejects names already used in the new parent. A move that changes the schema can start a schema migration, which needs confirmedDataLoss when it can remove content.
+     *
+     * Required API key permissions: collections. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.collections.move({
+     *   "id": "coll_example",
+     *   "newParentID": "coll_parent"
+     * });
+     */
+    move: Operation<"collections.move", Workspace>;
     /**
      * List collections
      *
@@ -1158,6 +1214,20 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
      */
     getChannelContent: Operation<"publishing.getChannelContent", Workspace>;
     /**
+     * Rename a publishing channel
+     *
+     * Changes the display name of a publishing channel. The channel code, which content reads and webhooks use, doesn't change.
+     *
+     * Required API key permissions: publishing. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.publishing.updateChannel({
+     *   "code": "preview",
+     *   "name": "Staging"
+     * });
+     */
+    updateChannel: Operation<"publishing.updateChannel", Workspace>;
+    /**
      * Delete a publishing channel
      *
      * Deletes a custom channel and its publication assignments. The default published channel cannot be deleted.
@@ -1183,7 +1253,7 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
     /**
      * Create an entry version
      *
-     * Saves a version of the current entry content. Optionally assigns a name.
+     * Saves a version of the current entry content, or of supplied document (ProseMirror JSON) or mdx, which must match the editor and the entry's collection schema. Never changes the current content. Optionally assigns a name. Publish the version with publishing.publishEntry. A repeated request with the same Idempotency-Key header returns the first result for 24 hours.
      *
      * Required API key permissions: versions. Write permissions also grant read access for the same resource.
      *
@@ -1309,16 +1379,6 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       binary: false,
       anonymous: false
     }),
-    attach: operation<"assets.attach", Workspace>(request, {
-      method: "post",
-      path: "/assets/{assetID}/attachments",
-      pathParams: ["assetID"],
-      queryParams: [],
-      body: true,
-      multipart: false,
-      binary: false,
-      anonymous: false
-    }),
     register: operation<"assets.register", Workspace>(request, {
       method: "post",
       path: "/assets/uploads",
@@ -1376,6 +1436,7 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
   },
   entries: {
     create: operation<"entries.create", Workspace>(request, {
+      idempotent: true,
       method: "post",
       path: "/entries",
       pathParams: [],
@@ -1406,9 +1467,41 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       anonymous: false
     }),
     update: operation<"entries.update", Workspace>(request, {
+      idempotent: true,
       method: "put",
       path: "/entries/{id}",
       pathParams: ["id"],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    bulkUpdate: operation<"entries.bulkUpdate", Workspace>(request, {
+      idempotent: true,
+      method: "post",
+      path: "/entries/bulk/update",
+      pathParams: [],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    move: operation<"entries.move", Workspace>(request, {
+      method: "post",
+      path: "/entries/{id}/move",
+      pathParams: ["id"],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    bulkMove: operation<"entries.bulkMove", Workspace>(request, {
+      method: "post",
+      path: "/entries/bulk/move",
+      pathParams: [],
       queryParams: [],
       body: true,
       multipart: false,
@@ -1419,7 +1512,7 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       method: "get",
       path: "/entries/get",
       pathParams: [],
-      queryParams: ["id", "path", "slugPath", "expectedSchemaHash"],
+      queryParams: ["id", "path", "slugPath", "expectedSchemaHash", "contentFormat"],
       body: false,
       multipart: false,
       binary: false,
@@ -1569,6 +1662,16 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       binary: false,
       anonymous: false
     }),
+    move: operation<"collections.move", Workspace>(request, {
+      method: "post",
+      path: "/collections/{id}/move",
+      pathParams: ["id"],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
     list: operation<"collections.list", Workspace>(request, {
       method: "get",
       path: "/collections/list",
@@ -1644,7 +1747,15 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       method: "get",
       path: "/content/entries/get",
       pathParams: [],
-      queryParams: ["entryID", "path", "slugPath", "expectedSchemaHash", "channel", "snapshotID"],
+      queryParams: [
+        "entryID",
+        "path",
+        "slugPath",
+        "expectedSchemaHash",
+        "channel",
+        "snapshotID",
+        "contentFormat"
+      ],
       body: false,
       multipart: false,
       binary: false,
@@ -2281,8 +2392,18 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       method: "get",
       path: "/publishing/channels/{channel}/content",
       pathParams: ["channel"],
-      queryParams: ["collectionID"],
+      queryParams: ["collectionID", "collectionPath", "collectionSlugPath"],
       body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    updateChannel: operation<"publishing.updateChannel", Workspace>(request, {
+      method: "put",
+      path: "/publishing/channels/{code}",
+      pathParams: ["code"],
+      queryParams: [],
+      body: true,
       multipart: false,
       binary: false,
       anonymous: false
@@ -2312,6 +2433,7 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
   },
   versions: {
     create: operation<"versions.create", Workspace>(request, {
+      idempotent: true,
       method: "post",
       path: "/entries/{entryID}/versions",
       pathParams: ["entryID"],
@@ -2335,7 +2457,7 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       method: "get",
       path: "/versions/{id}",
       pathParams: ["id"],
-      queryParams: ["expectedSchemaHash"],
+      queryParams: ["expectedSchemaHash", "contentFormat"],
       body: false,
       multipart: false,
       binary: false,

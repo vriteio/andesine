@@ -19,8 +19,8 @@ interface VersionDetails extends VersionSummary {
   document: ContentNode;
   schema: ContentSchemaMetadata | null;
 }
-type VersionReason = "auto" | "manual" | "revert" | "schema-migration";
-const versionReasonType = z.enum(["auto", "manual", "revert", "schema-migration"]);
+type VersionReason = "auto" | "manual" | "revert" | "schema-migration" | "import";
+const versionReasonType = z.enum(["auto", "manual", "revert", "schema-migration", "import"]);
 const versionSummaryType = z.object({
   id: id().describe("ID of the version"),
   entryID: id().describe("ID of the versioned entry"),

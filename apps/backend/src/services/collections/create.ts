@@ -8,26 +8,41 @@ import { type Collection } from "@andesine/contracts/entities";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { withAuthorization } from "#backend/lib/policy";
+import { resolveCollectionTarget } from "#backend/lib/content";
 import { normalizeCollectionName, ROOT_COLLECTION_NAME } from "@andesine/contracts/content";
 
 interface CreateCollectionInput extends Partial<Pick<Collection, "id" | "name" | "restricted">> {
   parentID?: string;
+  parentPath?: string;
+  parentSlugPath?: string;
+}
+interface ResolvedCreateCollection {
+  parentID: string | null;
 }
 const createCollection = withAuthorization<
   CreateCollectionInput,
-  undefined,
+  ResolvedCreateCollection,
   Collection & { path: string; slugPath: string }
 >(
   {
-    actions: ({ input }) => ({
-      collections: [{ action: "collection:create-child", collectionID: input.parentID }]
+    actions: ({ resolved }) => ({
+      collections: [{ action: "collection:create-child", collectionID: resolved.parentID }]
     }),
+    resolve: async ({ database, input, workspaceID }) => {
+      const parentID = await resolveCollectionTarget(database, workspaceID, {
+        collectionID: input.parentID,
+        collectionPath: input.parentPath,
+        collectionSlugPath: input.parentSlugPath
+      });
+
+      return { parentID: parentID ?? null };
+    },
     permissions: (input) =>
       input.restricted ? { session: ["restricted_collections"] } : undefined,
     plan: (input) => (input.restricted ? "pro" : undefined),
     transaction: "locked-workspace"
   },
-  async ({ database, input, workspaceID }) => {
+  async ({ database, input, resolved, workspaceID }) => {
     const requestedName = normalizeCollectionName(input.name ?? "Untitled");
 
     if (requestedName === ROOT_COLLECTION_NAME) {
@@ -59,7 +74,7 @@ const createCollection = withAuthorization<
       });
     }
 
-    const parentID = input.parentID ? toUUID(input.parentID) : root.id;
+    const parentID = resolved.parentID ?? root.id;
     const [parent] = await database
       .select({ id: collections.id })
       .from(collections)

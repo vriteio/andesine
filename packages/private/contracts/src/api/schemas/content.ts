@@ -7,6 +7,7 @@ import { publishingChannelCodeType } from "../../publishing/channel";
 import * as z from "zod";
 import { assetFileFormatType, assetVariantType } from "./assets";
 import { entryFragmentType, entryPropertyType } from "./entries";
+import { mdxContentType } from "./formats";
 
 interface PublishedTreeEntryOutput {
   path: string;
@@ -49,6 +50,7 @@ const publishedContentType = z.object({
   version: versionSummaryType,
   assets: z.array(publishedAssetType),
   content: contentNodeType,
+  mdx: mdxContentType.optional(),
   fragments: z.record(z.string(), entryFragmentType),
   properties: z.record(z.string(), entryPropertyType)
 });

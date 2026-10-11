@@ -3,6 +3,12 @@ import {
   contentNameConflictErrorDataType,
   contentSchemaInvalidErrorDataType,
   contentSchemaMismatchErrorDataType,
+  contentFormatInvalidErrorDataType,
+  contentHashMismatchErrorDataType,
+  contentImageUnavailableErrorDataType,
+  contentLinkInvalidErrorDataType,
+  contentPreconditionFailedErrorDataType,
+  contentOperationInvalidErrorDataType,
   schemaFieldKeyConflictErrorDataType,
   assetValidationErrorDataType,
   assetConflictErrorDataType,
@@ -44,6 +50,31 @@ const contentReadErrors = {
 const contentPublicationErrors = {
   CONTENT_SCHEMA_INVALID: { status: 409, data: contentSchemaInvalidErrorDataType }
 };
+const contentFormatErrors = {
+  CONTENT_FORMAT_INVALID: { status: 400, data: contentFormatInvalidErrorDataType },
+  CONTENT_LINK_INVALID: { status: 409, data: contentLinkInvalidErrorDataType },
+  CONTENT_IMAGE_UNAVAILABLE: { status: 409, data: contentImageUnavailableErrorDataType }
+};
+const contentPreconditionErrors = {
+  CONTENT_PRECONDITION_FAILED: { status: 409, data: contentPreconditionFailedErrorDataType }
+};
+const idempotencyErrors = {
+  IDEMPOTENCY_KEY_IN_PROGRESS: {
+    status: 409,
+    message: "A request with this Idempotency-Key is in progress",
+    data: errorDataType
+  },
+  IDEMPOTENCY_KEY_REUSED: {
+    status: 422,
+    message: "This Idempotency-Key was used with a different request",
+    data: errorDataType
+  }
+};
+const contentWriteErrors = {
+  ...contentPublicationErrors,
+  CONTENT_HASH_MISMATCH: { status: 409, data: contentHashMismatchErrorDataType },
+  CONTENT_OPERATION_INVALID: { status: 409, data: contentOperationInvalidErrorDataType }
+};
 const schemaMigrationErrors = {
   SCHEMA_FIELD_KEY_CONFLICT: { status: 409, data: schemaFieldKeyConflictErrorDataType },
   SCHEMA_MIGRATION_IN_PROGRESS: {
@@ -74,6 +105,10 @@ export {
   contentDeliveryErrors,
   contentReadErrors,
   contentPublicationErrors,
+  contentFormatErrors,
+  contentPreconditionErrors,
+  contentWriteErrors,
+  idempotencyErrors,
   commonErrors,
   assetErrors,
   schemaMigrationErrors,

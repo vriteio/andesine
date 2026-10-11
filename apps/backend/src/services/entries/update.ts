@@ -4,27 +4,33 @@ import {
   createOutboundEvent,
   createWebhookOperation,
   createWebhookRecorder,
-  getWebhookEntryContext
+  getWebhookEntryContext,
+  type WebhookOperation
 } from "@andesine/server/webhooks/recording";
 import { webhookRetentionPolicy } from "#backend/lib/webhooks/policy";
+import { assertExpectedValue } from "#backend/lib/content";
 import { toUUID, toWorkspaceID } from "@andesine/contracts/primitives";
-import { type Entry } from "@andesine/contracts/entities";
+import { type VersionDetails } from "@andesine/contracts/versions";
 import { and, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { normalizeEntryName } from "@andesine/contracts/content";
 import { withAuthorization } from "#backend/lib/policy";
+import { bulkUpdateEntries, type BulkUpdateItem } from "./bulk-update";
 
-interface UpdateEntryInput extends Partial<Pick<Entry, "name">> {
-  id: string;
+interface UpdateEntryInput extends BulkUpdateItem {
+  contributorIDs: string[];
 }
 interface ResolvedUpdateEntry {
   entry: { id: string; name: string; collectionID: string | null };
 }
 interface UpdateEntryResult {
-  webhookOperationID?: string;
+  createdVersions: VersionDetails[];
+  hash?: string;
+  version?: VersionDetails;
+  webhookOperation?: WebhookOperation;
 }
 
-const updateEntry = withAuthorization<UpdateEntryInput, ResolvedUpdateEntry, UpdateEntryResult>(
+const renameEntry = withAuthorization<UpdateEntryInput, ResolvedUpdateEntry, UpdateEntryResult>(
   {
     actions: ({ resolved }) => ({
       entries: [{ action: "entry:update", collectionID: resolved.entry.collectionID }]
@@ -49,11 +55,16 @@ const updateEntry = withAuthorization<UpdateEntryInput, ResolvedUpdateEntry, Upd
     transaction: "locked-workspace"
   },
   async ({ database, input, resolved, workspaceID }) => {
-    if (input.name === undefined) return {};
+    const expectedName =
+      input.expectedName === undefined ? undefined : normalizeEntryName(input.expectedName);
+
+    assertExpectedValue("name", expectedName, resolved.entry.name);
+
+    if (input.name === undefined) return { createdVersions: [] };
 
     const name = normalizeEntryName(input.name);
 
-    if (name === resolved.entry.name) return {};
+    if (name === resolved.entry.name) return { createdVersions: [] };
 
     const operation = createWebhookOperation(toWorkspaceID(workspaceID));
     const recorder = await createWebhookRecorder({
@@ -95,7 +106,35 @@ const updateEntry = withAuthorization<UpdateEntryInput, ResolvedUpdateEntry, Upd
       }
     ]);
 
-    return { webhookOperationID: operation.id };
+    return { createdVersions: [], webhookOperation: operation };
+  }
+);
+
+/**
+ * Renames the entry, or writes its content as `entries.bulkUpdate` does for one item: a diff
+ * when the current hash matches `expectedHash`, after saving unsaved replaced content.
+ */
+const updateEntry = withAuthorization<UpdateEntryInput, undefined, UpdateEntryResult>(
+  {},
+  async ({ auth, input }) => {
+    const { contributorIDs, ...item } = input;
+    const writesContent = [item.document, item.mdx, item.operations].some(
+      (value) => value !== undefined
+    );
+
+    if (!writesContent) return renameEntry({ ...input, auth });
+
+    const result = await bulkUpdateEntries({ auth, items: [item], contributorIDs });
+    const [updated] = result.items;
+
+    // One item has no other entries that could keep a change, so this is never set.
+    if (result.error) throw result.error;
+
+    return {
+      createdVersions: result.createdVersions,
+      hash: updated.hash,
+      version: updated.version
+    };
   }
 );
 

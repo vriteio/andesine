@@ -1,6 +1,11 @@
 import { publicCollectionType } from "./schemas/collections";
-import { collectionSelectorShape, hasOptionalCollectionSelector } from "./schemas/paths";
-import { contentNameErrors, schemaMigrationErrors } from "./errors";
+import {
+  collectionSelectorShape,
+  contentPathType,
+  contentSlugPathType,
+  hasOptionalCollectionSelector
+} from "./schemas/paths";
+import { contentNameErrors, contentPreconditionErrors, schemaMigrationErrors } from "./errors";
 import { MAX_PAGE_SIZE, MAX_BULK_ITEMS } from "../limits";
 import { collectionType } from "../entities/collections";
 import { id } from "../primitives/id";
@@ -25,6 +30,16 @@ const restrictedAssignmentsType = z.object({
   groups: z.array(restrictedGroupAssignmentType),
   members: z.array(restrictedMemberAssignmentType)
 });
+const hasOptionalParentSelector = (input: {
+  parentID?: string;
+  parentPath?: string;
+  parentSlugPath?: string;
+}): boolean => {
+  return (
+    [input.parentID, input.parentPath, input.parentSlugPath].filter((value) => value !== undefined)
+      .length <= 1
+  );
+};
 const collectionsContract = baseContract.prefix("/collections").router({
   listRestrictedAssignments: sessionContract
     .route({ method: "GET", path: "/{id}/restricted-assignments" })
@@ -51,10 +66,16 @@ const collectionsContract = baseContract.prefix("/collections").router({
       collectionType
         .pick({ id: true, name: true })
         .extend({
-          parentID: id().describe("ID of the parent collection,"),
+          parentID: id().describe("ID of the parent collection"),
+          parentPath: contentPathType.describe("Name path of the parent collection"),
+          parentSlugPath: contentSlugPathType.describe("Slug path of the parent collection"),
           restricted: z.boolean().describe("Whether to restrict access to the collection tree")
         })
         .partial()
+        .refine(hasOptionalParentSelector, {
+          message: "Use only one of parentID, parentPath, or parentSlugPath",
+          path: ["parentID"]
+        })
     )
     .output(publicCollectionType),
   bulkDelete: authenticatedContract
@@ -94,6 +115,7 @@ const collectionsContract = baseContract.prefix("/collections").router({
     )
     .output(z.void()),
   update: authenticatedContract
+    .errors(contentPreconditionErrors)
     .errors(contentNameErrors)
     .errors(schemaMigrationErrors)
     .route({
@@ -109,7 +131,8 @@ const collectionsContract = baseContract.prefix("/collections").router({
     .input(
       z.object({
         id: id().describe("ID of the collection to be updated"),
-        name: collectionName().optional().describe("New name of the collection")
+        name: collectionName().optional().describe("New name of the collection"),
+        expectedName: collectionName().optional().describe("Name the collection must still have")
       })
     )
     .output(z.void()),
@@ -122,27 +145,64 @@ const collectionsContract = baseContract.prefix("/collections").router({
       })
     )
     .output(z.void()),
-  move: sessionContract
+  move: authenticatedContract
     .errors(contentNameErrors)
     .errors(schemaMigrationErrors)
+    .errors(contentPreconditionErrors)
+    .route({
+      summary: "Move a collection",
+      description:
+        "Moves the collection to another parent or position. Without a new parent, it stays in its parent. Without index, it keeps its position in the same parent and goes last in a new one. Rejects names already used in the new parent. A move that changes the schema can start a schema migration, which needs confirmedDataLoss when it can remove content.",
+      tags: ["collections"],
+      method: "POST",
+      path: "/{id}/move"
+    })
+    .meta({ example: { id: "coll_example", newParentID: "coll_parent" } })
+    .meta({ required: { session: true, key: ["collections"] } })
     .input(
-      z.object({
-        id: id().describe("ID of the collection to be moved"),
-        newParentID: id()
-          .nullable()
-          .optional()
-          .describe("ID of the new parent collection, or null for the top level"),
-        index: z
-          .number()
-          .int()
-          .min(0)
-          .optional()
-          .describe("New zero-based index in the parent collection's descendants array"),
-        confirmedDataLoss: z
-          .boolean()
-          .default(false)
-          .describe("Confirmation that a schema migration caused by the move can remove content")
-      })
+      z
+        .object({
+          id: id().describe("ID of the collection to be moved"),
+          newParentID: id()
+            .nullable()
+            .optional()
+            .describe("ID of the new parent collection, or null for the top level"),
+          newParentPath: contentPathType
+            .optional()
+            .describe("Name path of the new parent collection; / is the top level"),
+          newParentSlugPath: contentSlugPathType
+            .optional()
+            .describe("Slug path of the new parent collection; / is the top level"),
+          expectedParentID: id()
+            .nullable()
+            .optional()
+            .describe(
+              "ID of the parent that must still contain the collection, or null for the top level"
+            ),
+          index: z
+            .number()
+            .int()
+            .min(0)
+            .optional()
+            .describe("New zero-based index in the parent collection's descendants array"),
+          confirmedDataLoss: z
+            .boolean()
+            .default(false)
+            .describe("Confirmation that a schema migration caused by the move can remove content")
+        })
+        .refine(
+          (input) => {
+            return (
+              [input.newParentID, input.newParentPath, input.newParentSlugPath].filter(
+                (value) => value !== undefined
+              ).length <= 1
+            );
+          },
+          {
+            message: "Use only one of newParentID, newParentPath, or newParentSlugPath",
+            path: ["newParentID"]
+          }
+        )
     )
     .output(
       z.object({

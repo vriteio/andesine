@@ -22,6 +22,8 @@ interface ORPCMeta {
   inactiveExtensions?: boolean;
   /** A web operation that the CLI also calls with OAuth; never in the OpenAPI document. */
   cli?: boolean;
+  /** A repeated request with the same Idempotency-Key header returns the first result. */
+  idempotent?: boolean;
 }
 
 const isPublicAPI = (meta: ORPCMeta): boolean => {

@@ -19,6 +19,7 @@ export type {
   ImportFormatAdapter,
   FormatAdapter,
   FragmentMapping,
+  PropertyMapping,
   HandlerResult,
   ImageReference
 } from "./types";

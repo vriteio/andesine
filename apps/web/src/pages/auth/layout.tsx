@@ -13,11 +13,13 @@ const tips = [
 
 const AuthLayout: Component<RouteSectionProps> = (props) => {
   const location = useLocation();
-  const isDeviceRoute = () => location.pathname.replace(/\/$/, "") === "/auth/device";
+  const pathname = () => location.pathname.replace(/\/$/, "");
+  // Signed-in OAuth pages keep the session, so they keep the offline state and render complete.
+  const isOAuthRoute = () => ["/auth/device", "/auth/connect"].includes(pathname());
 
   onMount(() => {
     if (
-      !isDeviceRoute() &&
+      !isOAuthRoute() &&
       new URLSearchParams(window.location.search).get("addAccount") !== "true"
     ) {
       lockOfflineState();
@@ -34,7 +36,7 @@ const AuthLayout: Component<RouteSectionProps> = (props) => {
           <div class="relative flex flex-col w-80 max-w-full">
             <Suspense
               fallback={
-                <Show when={!isDeviceRoute()}>
+                <Show when={!isOAuthRoute()}>
                   <div class="flex flex-col w-full">
                     <Skeleton
                       class={[

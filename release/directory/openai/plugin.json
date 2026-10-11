@@ -1,0 +1,99 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "andesine",
+  "version": "0.1.0",
+  "description": "Search, read, write, and publish the content of an Andesine workspace: a knowledge base, headless CMS, and docs platform.",
+  "author": { "name": "Andesine", "url": "https://andesine.app" },
+  "homepage": "https://andesine.app",
+  "repository": "https://github.com/vriteio/andesine",
+  "license": "MIT",
+  "keywords": ["docs", "knowledge base", "cms", "writing"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Andesine",
+        "shortDescription": "Your docs and knowledge base",
+        "longDescription": "Andesine is a knowledge base, headless CMS, and docs platform. Connect a workspace to search and read your entries, draft new ones that follow your collection schemas, edit existing content as MDX, save and restore versions, and publish to your sites.\n\nWhen you connect, you pick the workspace and whether the app can only read or can also make changes. Every request uses your own Andesine permissions. Edits appear live for people working on the same entries, and a version is saved before the first edit of an entry, so changes can be undone.",
+        "developerName": "Andesine",
+        "category": "Productivity",
+        "capabilities": [
+          "Search workspace content by meaning and keywords",
+          "Read entries as MDX with their fields and linked entries",
+          "Create draft entries that follow collection schemas",
+          "Edit parts of entries or rewrite them",
+          "Move, rename, and delete entries and collections",
+          "Save versions and restore earlier ones",
+          "Publish and unpublish content on channels"
+        ],
+        "defaultPrompt": [
+          "Find what our docs say about authentication",
+          "Draft a new guide in /Guides about getting started",
+          "Summarize what changed since the last publish"
+        ],
+        "brandColor": "#FF3617",
+        "brandColorDark": "#FF3617",
+        "logo": "./assets/logo.png",
+        "composerIcon": "./assets/composer-icon.png",
+        "websiteURL": "https://andesine.app",
+        "supportURL": "https://andesine.app/support",
+        "privacyPolicyURL": "https://andesine.app/privacy",
+        "termsOfServiceURL": "https://andesine.app/terms"
+      },
+      "review": {
+        "demo_recording_url": "https://REPLACE-WITH-DEMO-VIDEO-URL",
+        "commerce": false,
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Answer a question from workspace content",
+              "prompt": "What does our Getting started guide say about installing the CLI?",
+              "tools_triggered": "search, fetch",
+              "expected_behavior": "Finds /Guides/Getting started, reads it, and answers from its installation section with a link to the entry."
+            },
+            {
+              "description": "Show the workspace structure",
+              "prompt": "List the collections and entries in my Andesine workspace.",
+              "tools_triggered": "get_tree",
+              "expected_behavior": "Lists the /Guides and /API collections with their entries."
+            },
+            {
+              "description": "Edit part of an existing entry",
+              "prompt": "Add a short Troubleshooting section to /Guides/Getting started that explains how to sign in again when a session expires.",
+              "tools_triggered": "fetch, edit_entry",
+              "expected_behavior": "Reads the entry, adds a Troubleshooting section at the end without changing the rest, and replies with a link to the entry."
+            },
+            {
+              "description": "Create a draft entry that follows the schema",
+              "prompt": "Create a draft FAQ entry in /Guides with three common questions about billing.",
+              "tools_triggered": "get_schema, create_entry",
+              "expected_behavior": "Creates an unpublished entry /Guides/FAQ with the required fields filled, and replies with its link."
+            },
+            {
+              "description": "Publish an entry",
+              "prompt": "Publish /Guides/Billing to the published channel.",
+              "tools_triggered": "list_channels, publish",
+              "expected_behavior": "Asks for confirmation, publishes the entry on the published channel, and confirms the result."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Unrelated question",
+              "prompt": "What's the weather in Paris today?"
+            },
+            {
+              "description": "General writing without the workspace",
+              "prompt": "Write a short poem about the ocean."
+            },
+            {
+              "description": "Unsupported action",
+              "prompt": "Book a flight from Berlin to Tokyo for next Monday."
+            }
+          ]
+        }
+      },
+      "publication": {
+        "release_notes": "First release: search, read, create, edit, version, and publish Andesine workspace content."
+      }
+    }
+  }
+}

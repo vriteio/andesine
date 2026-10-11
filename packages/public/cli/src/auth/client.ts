@@ -5,6 +5,9 @@ import { credentialStore } from "../storage/credentials";
 import { withStateLock } from "../storage/lock";
 import { refreshAccess } from "./oauth";
 
+const ACCESS_TOKEN_MIN_VALIDITY_MS = 60_000;
+const ACCESS_TOKEN_REUSE_MS = ACCESS_TOKEN_MIN_VALIDITY_MS / 2;
+
 /** The saved OAuth access token of the selected profile, refreshed when it expires soon. */
 const getAccessToken = async (context: CommandContext): Promise<string> => {
   const { config, signal } = context;
@@ -37,7 +40,9 @@ const getAccessToken = async (context: CommandContext): Promise<string> => {
       );
     }
 
-    if (credentials.expiresAt > Date.now() + 60_000) return credentials.accessToken;
+    if (credentials.expiresAt > Date.now() + ACCESS_TOKEN_MIN_VALIDITY_MS) {
+      return credentials.accessToken;
+    }
 
     assertOwned();
 
@@ -67,8 +72,11 @@ const getAccessToken = async (context: CommandContext): Promise<string> => {
     }
   });
 };
-/** Select one credential source explicitly; never fall back after an authentication error. */
-const authenticatedClient = async (context: CommandContext) => {
+/**
+ * Select one credential source explicitly; never fall back after an authentication error.
+ * With `refreshEachRequest`, each request uses a current OAuth token, for long-running commands.
+ */
+const authenticatedClient = async (context: CommandContext, refreshEachRequest = false) => {
   const { config, signal } = context;
   const apiKey = process.env.ANDESINE_API_KEY;
   const headers = config.workspaceID ? { "x-workspace-id": config.workspaceID } : undefined;
@@ -96,11 +104,30 @@ const authenticatedClient = async (context: CommandContext) => {
     };
   }
 
-  const accessToken = await getAccessToken(context);
   const reference = config.profile!.credentialRef!;
+  let accessToken = await getAccessToken(context);
+  let accessTokenReadAt = Date.now();
+  // A read token stays valid for at least a minute, so it is reused for half of that.
+  const refreshingFetcher: typeof fetch = async (input, init) => {
+    const request = new Request(input, init);
+
+    if (Date.now() - accessTokenReadAt > ACCESS_TOKEN_REUSE_MS) {
+      accessToken = await getAccessToken(context);
+      accessTokenReadAt = Date.now();
+    }
+
+    request.headers.set("Authorization", `Bearer ${accessToken}`);
+
+    return fetcher(request);
+  };
 
   return {
-    client: createClient({ baseURL: config.baseURL, accessToken, headers, fetch: fetcher }),
+    client: createClient({
+      baseURL: config.baseURL,
+      accessToken,
+      headers,
+      fetch: refreshEachRequest ? refreshingFetcher : fetcher
+    }),
     source: reference.startsWith("file:") ? ("file" as const) : ("keyring" as const)
   };
 };

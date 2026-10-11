@@ -1,3 +1,5 @@
+import { bulkMoveEntries } from "./bulk-move";
+import { bulkUpdateEntries } from "./bulk-update";
 import { createEntry } from "./create";
 import { deleteEntries } from "./delete";
 import { getEntry } from "./get";
@@ -11,7 +13,9 @@ const Entries = {
   list: listEntries,
   delete: deleteEntries,
   update: updateEntry,
-  move: moveEntry
+  bulkUpdate: bulkUpdateEntries,
+  move: moveEntry,
+  bulkMove: bulkMoveEntries
 };
 
 export { Entries };

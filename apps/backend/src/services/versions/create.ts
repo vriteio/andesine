@@ -8,9 +8,22 @@ import {
 } from "@andesine/server/database";
 import { storeVersionProperties } from "@andesine/server/versioning";
 import { retainVersionAssets } from "@andesine/server/assets";
-import { getContentTitle } from "@andesine/document";
+import { getContentTitle, type ContentNode } from "@andesine/document";
 import { getVersionDetails } from "#backend/lib/versioning/details";
-import { getCurrentDocumentContent, type ContentSnapshot } from "#backend/collaboration";
+import {
+  decodeEntryMDX,
+  getMDXImageURLs,
+  loadEntryReferences,
+  prepareEntryContent,
+  withEntryLinkPaths,
+  type ImageAssetIDs
+} from "#backend/lib/content";
+import { Asset } from "#backend/services/assets";
+import {
+  getCurrentDocumentContent,
+  getLoadedDocumentContent,
+  type ContentSnapshot
+} from "#backend/collaboration";
 import { type VersionDetails, type VersionReason } from "@andesine/contracts/versions";
 import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
@@ -28,8 +41,21 @@ interface CommitCreateVersionInput extends CreateVersionInput {
   schemaRevisionID?: string | null;
   snapshot: ContentSnapshot;
 }
+interface CommitContentVersionInput extends CreateVersionInput {
+  document?: ContentNode;
+  mdx?: string;
+  imageAssetIDs?: ImageAssetIDs;
+}
+interface CreateVersionFromInput extends CreateVersionInput {
+  document?: ContentNode;
+  mdx?: string;
+}
 interface ResolvedCreateVersion {
   collectionID: string | null;
+}
+interface ResolvedContentVersion extends ResolvedCreateVersion {
+  document: ContentNode | null;
+  schemaRevisionID: string | null;
 }
 
 const resolveCreateVersion = async (
@@ -79,7 +105,7 @@ const commitCreateVersion = withAuthorization<
           ? toUUID(input.schemaRevisionID)
           : null;
     const activityContributors =
-      input.reason === "revert"
+      input.reason === "revert" || input.reason === "import"
         ? []
         : await database
             .select({ membershipID: entryVersionActivityContributors.membershipID })
@@ -157,7 +183,80 @@ const commitCreateVersion = withAuthorization<
   }
 );
 
-const createVersion = withAuthorization<CreateVersionInput, ResolvedCreateVersion, VersionDetails>(
+const commitContentVersion = withAuthorization<
+  CommitContentVersionInput,
+  ResolvedContentVersion,
+  VersionDetails
+>(
+  {
+    actions: ({ resolved }) => ({
+      entries: [{ action: "version:create", collectionID: resolved.collectionID }]
+    }),
+    resolve: async ({ database, input, workspaceID }) => {
+      const [entry] = await database
+        .select({
+          collectionID: entries.collectionID,
+          document: contents.document,
+          schemaRevisionID: contents.schemaRevisionID
+        })
+        .from(entries)
+        .innerJoin(contents, eq(contents.entryID, entries.id))
+        .where(
+          and(
+            eq(entries.id, toUUID(input.entryID)),
+            eq(entries.workspaceID, workspaceID),
+            isNull(entries.deletedAt)
+          )
+        )
+        .for("update", { of: entries });
+
+      if (!entry) throw new ORPCError("NOT_FOUND", { message: "Entry not found" });
+
+      return entry;
+    },
+    transaction: "locked-workspace",
+    tree: true
+  },
+  async ({ auth, authorization, authorizationScope, database, input, resolved, workspaceID }) => {
+    const { document, mdx, imageAssetIDs, ...versionInput } = input;
+    // Not through a connection: closing one in this transaction would wait for its own save.
+    const storedBase = getLoadedDocumentContent(input.entryID)?.document ??
+      resolved.document ?? { type: "doc", content: [] };
+    const base = withEntryLinkPaths(
+      storedBase,
+      await loadEntryReferences(database, workspaceID, storedBase, authorization)
+    );
+    const { state: _state, ...snapshot } = await prepareEntryContent(database, workspaceID, {
+      authorization,
+      entryID: input.entryID,
+      schemaRevisionID: resolved.schemaRevisionID,
+      document: document ?? (await decodeEntryMDX(mdx!, base, imageAssetIDs))
+    });
+
+    await Asset.grantContent({
+      auth,
+      entryID: input.entryID,
+      document: snapshot.document,
+      previousDocument: storedBase,
+      skipAuthorization: authorizationScope
+    });
+
+    return commitCreateVersion({
+      ...versionInput,
+      auth,
+      schemaRevisionID: resolved.schemaRevisionID,
+      snapshot,
+      skipAuthorization: authorizationScope
+    });
+  }
+);
+
+/** Saves a version of the current content, or of the supplied document, which is validated. */
+const createVersion = withAuthorization<
+  CreateVersionFromInput,
+  ResolvedCreateVersion,
+  VersionDetails
+>(
   {
     actions: ({ resolved }) => ({
       entries: [{ action: "version:create", collectionID: resolved.collectionID }]
@@ -165,9 +264,20 @@ const createVersion = withAuthorization<CreateVersionInput, ResolvedCreateVersio
     resolve: resolveCreateVersion
   },
   async ({ auth, input, workspaceID }) => {
+    const { document, mdx, ...versionInput } = input;
+
+    if (document || mdx !== undefined) {
+      const imageURLs = await getMDXImageURLs(mdx === undefined ? [] : [mdx]);
+      const imageAssetIDs = imageURLs.length
+        ? await Asset.importContentImages({ auth, entryID: input.entryID, urls: imageURLs })
+        : undefined;
+
+      return commitContentVersion({ ...versionInput, auth, document, mdx, imageAssetIDs });
+    }
+
     const snapshot = await getCurrentDocumentContent(input.entryID, workspaceID);
 
-    return commitCreateVersion({ ...input, auth, snapshot });
+    return commitCreateVersion({ ...versionInput, auth, snapshot });
   }
 );
 

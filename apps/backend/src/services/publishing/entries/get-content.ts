@@ -10,6 +10,12 @@ import { loadPublishedContentPaths } from "@andesine/server/content";
 import { assertInCollectionScope, resolveCollectionScope } from "#backend/lib/publishing";
 import { loadPublishedEntryVersion } from "#backend/lib/publishing/entry-version";
 import { getVersionDetails } from "#backend/lib/versioning/details";
+import {
+  encodeEntryMDX,
+  loadPublishedEntryPaths,
+  resolvePublishedLinks
+} from "#backend/lib/content";
+import { createImageURLResolver } from "@andesine/converters";
 import { type ContentSchemaMetadata } from "@andesine/contracts/schema";
 
 interface PublishedEntryContent {
@@ -29,6 +35,7 @@ interface PublishedEntryContent {
     url: string;
   }>;
   content: ContentNode;
+  mdx?: string;
   expiresAt: Date | null;
   fragments: ContentBlocks["fragments"];
   name: string;
@@ -43,6 +50,7 @@ interface PublishedEntryContentInput extends PublishedEntrySelector {
   expectedSchemaHash?: string;
   channel?: string;
   snapshotID?: string;
+  format?: "json" | "mdx";
 }
 
 const getPublishedEntryContent = withPublicWorkspace<
@@ -60,11 +68,19 @@ const getPublishedEntryContent = withPublicWorkspace<
     );
   }
 
-  const { document, schema, ...version } = await getVersionDetails(
+  const {
+    document: versionDocument,
+    schema,
+    ...version
+  } = await getVersionDetails(
     database,
     source.version,
     source.contributorIDs,
     input.expectedSchemaHash
+  );
+  const document = resolvePublishedLinks(
+    versionDocument,
+    await loadPublishedEntryPaths(database, workspaceID, source.snapshot.id)
   );
   const { fragments, properties } = getContentBlocks(document);
   const entryID = toEntryID(source.version.entryID);
@@ -73,6 +89,7 @@ const getPublishedEntryContent = withPublicWorkspace<
   const assets = await loadPublishedAssets(database, workspaceID, source.snapshot.id, [
     source.version
   ]);
+  const versionAssets = assets.get(source.version.id) || [];
 
   return {
     id: entryID,
@@ -80,8 +97,11 @@ const getPublishedEntryContent = withPublicWorkspace<
     slugPath: source.slugPath,
     collectionID: source.collectionID ? toCollectionID(source.collectionID) : null,
     channel: source.snapshot.channelCode,
-    assets: assets.get(source.version.id) || [],
+    assets: versionAssets,
     content: document,
+    ...(input.format === "mdx" && {
+      mdx: await encodeEntryMDX(document, { imageURL: createImageURLResolver(versionAssets) })
+    }),
     schema,
     expiresAt: source.snapshot.expiresAt,
     fragments,

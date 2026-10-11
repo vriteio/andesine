@@ -67,6 +67,8 @@ const generateOpenAPI = async (contract: APIContract, baseURL: string) => {
 
       if (oauthOnly) operation.security = [{ oauth: [] }];
 
+      if (meta?.idempotent) Object.assign(operation, { "x-idempotent": true });
+
       if (extensionOnly) operation.security = [{ extensionToken: [] }];
 
       if (meta?.requireWorkspace !== false && operation.operationId !== "content.getAsset") {

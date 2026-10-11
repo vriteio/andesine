@@ -281,6 +281,27 @@
       "when": 1791412083323,
       "tag": "0039_add_extension_development_versions",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1791671296943,
+      "tag": "0040_add_import_version_reason",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1791747643106,
+      "tag": "0041_add_schema_migration_webhook_actor",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1791747648361,
+      "tag": "0042_drop_schema_migration_origin_extension",
+      "breakpoints": true
     }
   ]
 }

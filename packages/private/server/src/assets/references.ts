@@ -121,7 +121,7 @@ const retainVersionAssets = async ({
       message: "Version contains an unavailable or unauthorized image",
       data: {
         hints: [
-          "Check the images with assets.get and confirm that each image is ready and attached to the entry before creating or publishing a version."
+          "Check the images with assets.get and confirm that each image is ready. Content written through the API attaches the images it references."
         ]
       }
     });

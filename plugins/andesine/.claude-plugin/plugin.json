@@ -1,0 +1,12 @@
+{
+  "name": "andesine",
+  "version": "0.1.1",
+  "description": "Search, read, write, and publish Andesine workspace content from Claude Code",
+  "author": {
+    "name": "Andesine"
+  },
+  "repository": "https://github.com/vriteio/andesine",
+  "license": "MIT",
+  "keywords": ["andesine", "cms", "docs", "knowledge-base", "mcp"],
+  "homepage": "https://andesine.app"
+}

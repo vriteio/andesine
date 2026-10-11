@@ -1,0 +1,10 @@
+{
+  "name": "andesine",
+  "version": "0.1.1",
+  "description": "Search, read, write, and publish Andesine knowledge base, CMS, and docs content",
+  "mcpServers": {
+    "andesine": {
+      "httpUrl": "https://api.andesine.app/mcp"
+    }
+  }
+}

@@ -1,0 +1,49 @@
+name: Release Claude Desktop extension
+
+# Builds andesine.mcpb and attaches it to a GitHub release. Run it after bumping the version
+# in packages/private/mcpb/package.json; the release tag is mcpb-v<version>.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact version already committed in packages/private/mcpb/package.json
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      INPUT_VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - uses: pnpm/action-setup@v6
+      - name: Check the version
+        run: |
+          version="$(jq -r '.version' packages/private/mcpb/package.json)"
+          if [ "$version" != "$INPUT_VERSION" ]; then
+            echo "Expected $INPUT_VERSION, found $version. Commit the version change first."
+            exit 1
+          fi
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @andesine/mcpb build
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "mcpb-v$INPUT_VERSION" packages/private/mcpb/andesine.mcpb \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Andesine for Claude Desktop $INPUT_VERSION" \
+            --notes "Install: open andesine.mcpb in Claude Desktop, then enter a workspace API key. See packages/private/mcpb/README.md."

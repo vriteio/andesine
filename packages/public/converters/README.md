@@ -69,11 +69,11 @@ Factory names are `createMarkdownConverter`, `createMDXConverter`,
 Per-call options override saved options; handler maps and named fragment mappings
 merge by key.
 
-| Field      | Default             | Other mappings                                  |
-| ---------- | ------------------- | ----------------------------------------------- |
-| Title      | First-level heading | `"omit"`, `{ as: "frontmatter", key: "title" }` |
-| Properties | Omit                | `{ as: "frontmatter" }`                         |
-| Fragments  | `"unwrap"`          | `"omit"`, `{ as: "element", name: "Fragment" }` |
+| Field      | Default             | Other mappings                                                 |
+| ---------- | ------------------- | -------------------------------------------------------------- |
+| Title      | First-level heading | `"omit"`, `{ as: "frontmatter", key: "title" }`                |
+| Properties | Omit                | `{ as: "frontmatter" }`, `{ as: "element", name: "Property" }` |
+| Fragments  | `"unwrap"`          | `"omit"`, `{ as: "element", name: "Fragment" }`                |
 
 Unwrap removes the fragment boundary and retains its content in document order.
 Omit removes the content too. The number of fragments does not change the default.
@@ -86,11 +86,20 @@ On import, matching named wrappers become fragments. Unwrapped boundaries cannot
 be recovered. With heading mapping, only the first root heading, at level one,
 becomes the title. With frontmatter mapping, the selected field becomes the title.
 
-Property labels become frontmatter keys. Duplicate keys, including a collision
-with the title field, cause an error. Import infers text, number, checkbox, and
-multi-select properties from scalar values and string arrays. Date, URL, and
-select fields import as text; select options and schema metadata are not retained.
-Object-valued properties need custom handling. Unmapped frontmatter is ignored.
+With frontmatter mapping, property labels become frontmatter keys. Duplicate keys,
+including a collision with the title field, cause an error. Frontmatter has no
+position, so imported properties come first.
+
+With element mapping, each property becomes a self-closing element in its
+position, for example `<Property name="Status" type="select" value="Draft" />` in
+MDX. `type` is written only when the value doesn't show it. The format must
+support elements, as MDX, Markdoc, and HTML do.
+
+Imports with either mapping read both frontmatter and matching elements. Import
+infers text, number, checkbox, and multi-select properties from scalar values and
+string arrays; an element `type` sets date, URL, and select types. Select options
+and schema metadata are not retained. Object-valued properties need custom
+handling. Unmapped frontmatter is ignored.
 
 ## Heading anchors
 

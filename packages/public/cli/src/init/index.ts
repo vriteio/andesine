@@ -1,4 +1,4 @@
-import { confirm, select } from "@clack/prompts";
+import { confirm, multiselect, select } from "@clack/prompts";
 import { createCommandContext, type CommandContext } from "../context";
 import { authenticatedClient, identity } from "../auth/client";
 import { login } from "../auth/login";
@@ -9,11 +9,61 @@ import { canPrompt } from "../prompts";
 import { validateCollections } from "../content/collections";
 import { selectTypes } from "./choices";
 import { readProjectFile, writeProjectConfig } from "./write-config";
+import { setUpMCP } from "./mcp";
 import type { InitOptions } from "./options";
 import { validateTypeOptions } from "../types/options";
 import { executeTypes } from "../types/execute";
 import path from "node:path";
 
+interface InitSetup {
+  types: boolean;
+  mcp: boolean;
+}
+
+const TYPE_OPTION_KEYS = [
+  "source",
+  "channel",
+  "snapshot",
+  "collection",
+  "collectionSlugPath",
+  "allCollections",
+  "output",
+  "includeEntryIds",
+  "includeEntryPaths",
+  "includeTree"
+] as const;
+
+/** Types are set up unless only --mcp is given; an interactive init asks when neither is given. */
+const selectSetup = async (
+  context: CommandContext,
+  options: InitOptions,
+  interactive: boolean
+): Promise<InitSetup> => {
+  const hasTypeOptions = TYPE_OPTION_KEYS.some((key) => options[key] !== undefined);
+  const explicit = options.types !== undefined || options.mcp !== undefined || hasTypeOptions;
+
+  if (explicit || !interactive) {
+    return {
+      types: options.types ?? (!options.mcp || hasTypeOptions),
+      mcp: options.mcp ?? false
+    };
+  }
+
+  const selected = await context.prompt((prompt) =>
+    multiselect({
+      ...prompt,
+      message: "What do you want to set up?",
+      initialValues: ["types", "mcp"],
+      required: true,
+      options: [
+        { value: "types", label: "Type generation", hint: "TypeScript types for your content" },
+        { value: "mcp", label: "MCP server", hint: "Andesine tools for AI coding agents" }
+      ]
+    })
+  );
+
+  return { types: selected.includes("types"), mcp: selected.includes("mcp") };
+};
 const selectWorkspace = async (context: CommandContext, interactive: boolean): Promise<string> => {
   const { client } = await authenticatedClient(context);
   const account = await context.output.progress(
@@ -143,20 +193,25 @@ const init = async (options: InitOptions, signal: AbortSignal): Promise<void> =>
     context,
     interactive && options.workspace === undefined
   );
+  const setup = await selectSetup(context, options, interactive);
   const scopedContext = { ...context, config: { ...context.config, workspaceID } };
   const { client } = await authenticatedClient(scopedContext);
-  const types = await selectTypes(
-    scopedContext,
-    client,
-    options,
-    previous?.types ?? typesConfigSchema.parse({})
-  );
+  const types = setup.types
+    ? await selectTypes(
+        scopedContext,
+        client,
+        options,
+        previous?.types ?? typesConfigSchema.parse({})
+      )
+    : previous?.types;
 
-  await context.output.progress(
-    "Validating the selected content",
-    () => validateCollections(client, types.source, types.collections, signal),
-    "Content selection verified"
-  );
+  if (setup.types && types) {
+    await context.output.progress(
+      "Validating the selected content",
+      () => validateCollections(client, types.source, types.collections, signal),
+      "Content selection verified"
+    );
+  }
 
   const config: ProjectConfig = {
     ...previous,
@@ -170,7 +225,7 @@ const init = async (options: InitOptions, signal: AbortSignal): Promise<void> =>
     baseURL: context.config.baseURL,
     workspaceID,
     ...(explicitProfile !== undefined ? { profile: explicitProfile } : {}),
-    types
+    ...(types ? { types } : {})
   };
   const details = describeConfig(config);
   const previousDetails = previous ? describeConfig(previous) : undefined;
@@ -222,30 +277,36 @@ const init = async (options: InitOptions, signal: AbortSignal): Promise<void> =>
     unchanged ? "Project configuration is up to date." : "Project initialized."
   );
 
-  const generate =
-    options.generate ??
-    (interactive &&
-      (await context.prompt((prompt) =>
-        confirm({
-          ...prompt,
-          message: "Generate the configured types file now?",
-          initialValue: false
-        })
-      )));
-  const generation = generate
-    ? await executeTypes(
-        {
-          ...scopedContext,
-          config: {
-            ...scopedContext.config,
-            configPath: file,
-            types: { ...types, output: path.resolve(path.dirname(file), types.output) }
-          }
-        },
-        {},
-        false
-      )
+  const mcp = setup.mcp
+    ? await setUpMCP(context, path.dirname(file), workspaceID, interactive && !options.yes)
     : undefined;
+  const generate =
+    setup.types &&
+    types &&
+    (options.generate ??
+      (interactive &&
+        (await context.prompt((prompt) =>
+          confirm({
+            ...prompt,
+            message: "Generate the configured types file now?",
+            initialValue: false
+          })
+        ))));
+  const generation =
+    generate && types
+      ? await executeTypes(
+          {
+            ...scopedContext,
+            config: {
+              ...scopedContext.config,
+              configPath: file,
+              types: { ...types, output: path.resolve(path.dirname(file), types.output) }
+            }
+          },
+          {},
+          false
+        )
+      : undefined;
 
   await context.output.json({
     configured: true,
@@ -253,6 +314,7 @@ const init = async (options: InitOptions, signal: AbortSignal): Promise<void> =>
     configPath: file,
     baseURL: config.baseURL,
     workspaceID,
+    ...(mcp ? { mcp } : {}),
     ...(generation ? { generation } : {})
   });
 };

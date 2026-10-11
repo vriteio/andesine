@@ -2,6 +2,7 @@
   "name": "andesine",
   "version": "0.6.0",
   "description": "Command-line tools for Andesine",
+  "mcpName": "app.andesine/andesine",
   "type": "module",
   "license": "MIT",
   "bin": {
@@ -38,10 +39,12 @@
     "@iconify-json/lucide": "^1.2.140",
     "@iconify-json/tabler": "^1.2.41",
     "@iconify/utils": "^3.1.4",
+    "@modelcontextprotocol/sdk": "1.30.1",
     "@orpc/zod": "^1.14.14",
     "babel-preset-solid": "^1.9.12",
     "base-x": "^5.0.1",
     "commander": "15.0.0",
+    "lexorank": "^1.0.5",
     "open": "11.0.0",
     "proper-lockfile": "4.1.2",
     "rolldown": "^1.2.2",
@@ -50,6 +53,7 @@
   },
   "devDependencies": {
     "@andesine/contracts": "workspace:*",
+    "@andesine/mcp": "workspace:*",
     "@andesine/uno-preset": "workspace:*",
     "@types/babel__core": "^7.20.5",
     "@types/node": "^26.1.2",

@@ -26,6 +26,7 @@ import {
   type PublishingEntryStatus
 } from "#backend/lib/publishing";
 import { and, asc, eq, isNull, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { ORPCError } from "@orpc/server";
 import {
   filterAuthorizedEntryIDs,
@@ -34,12 +35,19 @@ import {
 } from "#backend/lib/policy";
 import { prepareSchemaMigrationConnections } from "#backend/collaboration";
 import { submitSchemaMigration } from "#backend/lib/queue";
+import { assertExpectedValue, resolveCollectionTarget } from "#backend/lib/content";
 
 interface MoveCollectionInput {
   confirmedDataLoss?: boolean;
   id: string;
   newParentID?: string | null;
+  newParentPath?: string;
+  newParentSlugPath?: string;
+  expectedParentID?: string | null;
   index?: number;
+}
+interface ResolvedMoveCollection {
+  newParentID: string | null;
 }
 interface MoveCollectionResult {
   index: number;
@@ -49,20 +57,50 @@ interface MoveCollectionResult {
   schemaMigration: EffectiveSchemaChangePlan;
 }
 
-const planCollectionMove = withAuthorization<MoveCollectionInput, undefined, MoveCollectionResult>(
+const parents = alias(collections, "parents");
+
+const planCollectionMove = withAuthorization<
+  MoveCollectionInput,
+  ResolvedMoveCollection,
+  MoveCollectionResult
+>(
   {
-    actions: ({ input }) => ({
+    actions: ({ input, resolved }) => ({
       collections: [
         { action: "collection:move", collectionID: input.id },
-        { action: "collection:create-child", collectionID: input.newParentID }
+        { action: "collection:create-child", collectionID: resolved.newParentID }
       ]
     }),
+    resolve: async ({ database, input, workspaceID }) => {
+      const target = await resolveCollectionTarget(database, workspaceID, {
+        collectionID: input.newParentID,
+        collectionPath: input.newParentPath,
+        collectionSlugPath: input.newParentSlugPath
+      });
+
+      if (target !== undefined) return { newParentID: target };
+
+      // Without a new parent, the collection stays in its parent; the root's children are top level.
+      const [collection] = await database
+        .select({ parentID: collections.parentID, grandparentID: parents.parentID })
+        .from(collections)
+        .innerJoin(parents, eq(parents.id, collections.parentID))
+        .where(
+          and(
+            eq(collections.id, toUUID(input.id)),
+            eq(collections.workspaceID, workspaceID),
+            isNull(collections.deletedAt)
+          )
+        );
+
+      return { newParentID: collection?.grandparentID ? collection.parentID : null };
+    },
     tree: true,
     transaction: "locked-workspace"
   },
-  async ({ auth, authorization, database, input, workspaceID }) => {
+  async ({ auth, authorization, database, input, resolved, workspaceID }) => {
     const collectionID = toUUID(input.id);
-    const requestedParentID = input.newParentID ? toUUID(input.newParentID) : null;
+    const requestedParentID = resolved.newParentID;
 
     const [collection] = await database
       .select()
@@ -92,6 +130,12 @@ const planCollectionMove = withAuthorization<MoveCollectionInput, undefined, Mov
         )
       );
     const parentID = requestedParentID || root?.id;
+
+    assertExpectedValue(
+      "parentID",
+      input.expectedParentID,
+      collection.parentID === root?.id ? null : toCollectionID(collection.parentID)
+    );
 
     if (!parentID || parentID === collectionID) {
       throw new ORPCError("BAD_REQUEST", { message: "Cannot move a collection into itself" });

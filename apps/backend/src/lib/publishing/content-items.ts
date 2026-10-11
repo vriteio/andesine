@@ -7,6 +7,7 @@ import {
 import { mapVersionSummary } from "@andesine/server/data";
 import { assertRecordedContentRevision, mapSchemaRevision } from "@andesine/server/schema";
 import { getContentBlocks } from "@andesine/document";
+import { loadPublishedEntryPaths, resolvePublishedLinks } from "#backend/lib/content";
 import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, inArray } from "drizzle-orm";
@@ -55,6 +56,7 @@ const loadPublishedContentItems = async (
         )
     : [];
   const assets = await loadPublishedAssets(database, workspaceID, snapshotID, versions);
+  const entryPaths = await loadPublishedEntryPaths(database, workspaceID, snapshotID);
   const versionsByID = new Map(versions.map((version) => [version.id, version]));
   const revisionsByID = new Map(
     revisions.map((revision) => [revision.id, mapSchemaRevision(revision)])
@@ -82,12 +84,13 @@ const loadPublishedContentItems = async (
       },
       version.schemaRevisionID ? revisionsByID.get(version.schemaRevisionID) || null : null
     );
-    const { fragments, properties } = getContentBlocks(version.document);
+    const content = resolvePublishedLinks(version.document, entryPaths);
+    const { fragments, properties } = getContentBlocks(content);
 
     return {
       ...item,
       version: mapVersionSummary(version, contributorsByVersion.get(version.id) || []),
-      content: version.document,
+      content,
       fragments,
       properties,
       schema,

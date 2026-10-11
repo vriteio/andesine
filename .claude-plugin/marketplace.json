@@ -1,0 +1,14 @@
+{
+  "name": "andesine",
+  "description": "Andesine plugins for Claude Code",
+  "owner": {
+    "name": "Andesine"
+  },
+  "plugins": [
+    {
+      "name": "andesine",
+      "source": "./plugins/andesine",
+      "description": "Andesine MCP server and a skill for working with workspace content"
+    }
+  ]
+}

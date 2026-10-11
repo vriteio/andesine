@@ -1,0 +1,63 @@
+{
+  "manifest_version": "0.3",
+  "name": "andesine",
+  "display_name": "Andesine",
+  "version": "0.0.0",
+  "description": "Search, read, write, and publish Andesine workspace content",
+  "long_description": "Connects Claude to an Andesine workspace with an API key: search and read entries, edit them as MDX, upload local images, save versions, and publish. The key's workspace and permissions limit what Claude can do.",
+  "author": {
+    "name": "Andesine"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vriteio/andesine"
+  },
+  "license": "MIT",
+  "homepage": "https://andesine.app",
+  "support": "https://github.com/vriteio/andesine/issues",
+  "privacy_policies": ["https://andesine.app/privacy"],
+  "icon": "icon.png",
+  "keywords": ["andesine", "cms", "docs", "knowledge base"],
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/server/index.js"],
+      "env": {
+        "ANDESINE_API_KEY": "${user_config.api_key}",
+        "ANDESINE_BASE_URL": "${user_config.api_url}",
+        "ANDESINE_READ_ONLY": "${user_config.read_only}"
+      }
+    }
+  },
+  "user_config": {
+    "api_key": {
+      "type": "string",
+      "title": "API key",
+      "description": "A secret API key from the workspace's API settings. Its permissions limit the tools.",
+      "sensitive": true,
+      "required": true
+    },
+    "api_url": {
+      "type": "string",
+      "title": "API URL",
+      "description": "The API URL of a self-hosted instance",
+      "default": "https://api.andesine.app",
+      "required": false
+    },
+    "read_only": {
+      "type": "boolean",
+      "title": "Read only",
+      "description": "List only the tools that read content",
+      "default": false,
+      "required": false
+    }
+  },
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "node": ">=20.0.0"
+    }
+  }
+}

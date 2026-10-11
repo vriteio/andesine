@@ -45,28 +45,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/assets/{assetID}/attachments": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Attach an asset
-     * @description Attaches a ready image to an entry. This does not insert an image node into the document.
-     *
-     *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
-     */
-    post: operations["assets.attach"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   "/assets/uploads": {
     parameters: {
       query?: never;
@@ -140,7 +118,7 @@ export interface paths {
     };
     /**
      * Get credential identity
-     * @description Returns the authenticated user for OAuth or browser credentials, or the key and workspace IDs for an API key. Does not require a workspace selection and does not count toward API usage.
+     * @description Returns the authenticated user for OAuth or browser credentials, or the key and workspace IDs and the permissions of an API key. Does not require a workspace selection and does not count toward API usage.
      */
     get: operations["auth.getIdentity"];
     put?: never;
@@ -182,7 +160,7 @@ export interface paths {
     put?: never;
     /**
      * Create an entry
-     * @description Creates an entry and its initial document. The name defaults to Untitled. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed and NFC-normalized. Derived URL slugs must be unique across sibling entries and collections, including case and punctuation variants. Names cannot contain a slash or equal a single dot or two dots. A collection schema can set the initial content.
+     * @description Creates an entry and its initial document, in the collection given by collectionID, collectionPath, or collectionSlugPath (the top level by default). The name defaults to Untitled, or comes from the title of the supplied document or mdx. fields sets property values and fragment MDX by field name or key. path places the entry at a full name path and creates missing parent collections; a name already used there is a conflict. A repeated request with the same Idempotency-Key header returns the first result for 24 hours. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed and NFC-normalized. Derived URL slugs must be unique across sibling entries and collections, including case and punctuation variants. Names cannot contain a slash or equal a single dot or two dots. A collection schema sets the initial content without a document; a document must match it.
      *
      *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
      */
@@ -224,8 +202,8 @@ export interface paths {
     };
     get?: never;
     /**
-     * Rename an entry
-     * @description Updates the entry name. Rejects names already used by a sibling entry or collection. An active schema migration can block this action.
+     * Update an entry
+     * @description Renames the entry, replaces its content with document or mdx, or edits it with operations (with name, also renames). document and mdx need expectedHash, the hash of the content they replace (from entries.get); a different current hash returns CONTENT_HASH_MISMATCH. Operations anchor on block IDs, unique text, and field keys from entries.get with contentFormat blocks; expectedHash is optional for them, and a missing or ambiguous anchor returns CONTENT_OPERATION_INVALID. Only the changed blocks change, so live edits elsewhere are kept. Current content without a version is first saved as an auto version. version also saves the new content as a named version. Rejects names already used by a sibling entry or collection. expectedName applies the update only when the entry still has that name. An active schema migration can block this action. A repeated request with the same Idempotency-Key header returns the first result for 24 hours.
      *
      *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
      */
@@ -238,6 +216,72 @@ export interface paths {
      *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
      */
     delete: operations["entries.delete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/entries/bulk/update": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Update entries
+     * @description Writes content of many entries in one workspace lock, with the items of entries.update; a name without content is written as the title. All items are checked before any content changes, and all or none apply. Error messages name the failing item by index. Each entry can appear once. A repeated request with the same Idempotency-Key header returns the first result for 24 hours.
+     *
+     *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     */
+    post: operations["entries.bulkUpdate"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/entries/{id}/move": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Move an entry
+     * @description Moves the entry to another collection or position. Without order, it keeps its position in the same collection and goes last in a new one. Rejects names already used in the new collection. A move that changes the schema can start a schema migration, which needs confirmedDataLoss when it can remove content.
+     *
+     *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     */
+    post: operations["entries.move"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/entries/bulk/move": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Move entries
+     * @description Moves many entries in one workspace lock, with the items of entries.move; all or none apply. Moves that need a schema migration aren't supported; move those entries with entries.move. Error messages name the failing item by index. Each entry can appear once.
+     *
+     *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     */
+    post: operations["entries.bulkMove"];
+    delete?: never;
     options?: never;
     head?: never;
     patch?: never;
@@ -502,6 +546,28 @@ export interface paths {
      *     Required API key permissions: collections. Write permissions also grant read access for the same resource.
      */
     delete: operations["collections.delete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/collections/{id}/move": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Move a collection
+     * @description Moves the collection to another parent or position. Without a new parent, it stays in its parent. Without index, it keeps its position in the same parent and goes last in a new one. Rejects names already used in the new parent. A move that changes the schema can start a schema migration, which needs confirmedDataLoss when it can remove content.
+     *
+     *     Required API key permissions: collections. Write permissions also grant read access for the same resource.
+     */
+    post: operations["collections.move"];
+    delete?: never;
     options?: never;
     head?: never;
     patch?: never;
@@ -1787,7 +1853,13 @@ export interface paths {
       cookie?: never;
     };
     get?: never;
-    put?: never;
+    /**
+     * Rename a publishing channel
+     * @description Changes the display name of a publishing channel. The channel code, which content reads and webhooks use, doesn't change.
+     *
+     *     Required API key permissions: publishing. Write permissions also grant read access for the same resource.
+     */
+    put: operations["publishing.updateChannel"];
     post?: never;
     /**
      * Delete a publishing channel
@@ -1838,7 +1910,7 @@ export interface paths {
     put?: never;
     /**
      * Create an entry version
-     * @description Saves a version of the current entry content. Optionally assigns a name.
+     * @description Saves a version of the current entry content, or of supplied document (ProseMirror JSON) or mdx, which must match the editor and the entry's collection schema. Never changes the current content. Optionally assigns a name. Publish the version with publishing.publishEntry. A repeated request with the same Idempotency-Key header returns the first result for 24 hours.
      *
      *     Required API key permissions: versions. Write permissions also grant read access for the same resource.
      */
@@ -1956,6 +2028,36 @@ export interface components {
           /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
+          /** @default null */
+          actor?:
+            | (
+                | {
+                    /** @constant */
+                    type: "member";
+                    memberID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "key";
+                    keyID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "extension";
+                    extensionID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "app";
+                    /** @description The member who authorized the app */
+                    memberID: string;
+                    /** @description OAuth client ID */
+                    clientID: string;
+                    /** @description Name that the app registered, such as an MCP client */
+                    name: string;
+                  }
+              )
+            | null;
           test: boolean;
           subject: {
             /** @constant */
@@ -1978,6 +2080,36 @@ export interface components {
           /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
+          /** @default null */
+          actor?:
+            | (
+                | {
+                    /** @constant */
+                    type: "member";
+                    memberID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "key";
+                    keyID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "extension";
+                    extensionID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "app";
+                    /** @description The member who authorized the app */
+                    memberID: string;
+                    /** @description OAuth client ID */
+                    clientID: string;
+                    /** @description Name that the app registered, such as an MCP client */
+                    name: string;
+                  }
+              )
+            | null;
           test: boolean;
           subject: {
             /** @constant */
@@ -1999,6 +2131,36 @@ export interface components {
           /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
+          /** @default null */
+          actor?:
+            | (
+                | {
+                    /** @constant */
+                    type: "member";
+                    memberID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "key";
+                    keyID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "extension";
+                    extensionID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "app";
+                    /** @description The member who authorized the app */
+                    memberID: string;
+                    /** @description OAuth client ID */
+                    clientID: string;
+                    /** @description Name that the app registered, such as an MCP client */
+                    name: string;
+                  }
+              )
+            | null;
           test: boolean;
           subject: {
             /** @constant */
@@ -2022,6 +2184,36 @@ export interface components {
           /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
+          /** @default null */
+          actor?:
+            | (
+                | {
+                    /** @constant */
+                    type: "member";
+                    memberID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "key";
+                    keyID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "extension";
+                    extensionID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "app";
+                    /** @description The member who authorized the app */
+                    memberID: string;
+                    /** @description OAuth client ID */
+                    clientID: string;
+                    /** @description Name that the app registered, such as an MCP client */
+                    name: string;
+                  }
+              )
+            | null;
           test: boolean;
           subject: {
             /** @constant */
@@ -2094,6 +2286,36 @@ export interface components {
           /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
+          /** @default null */
+          actor?:
+            | (
+                | {
+                    /** @constant */
+                    type: "member";
+                    memberID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "key";
+                    keyID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "extension";
+                    extensionID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "app";
+                    /** @description The member who authorized the app */
+                    memberID: string;
+                    /** @description OAuth client ID */
+                    clientID: string;
+                    /** @description Name that the app registered, such as an MCP client */
+                    name: string;
+                  }
+              )
+            | null;
           test: boolean;
           subject: {
             /** @constant */
@@ -2117,6 +2339,36 @@ export interface components {
           /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
+          /** @default null */
+          actor?:
+            | (
+                | {
+                    /** @constant */
+                    type: "member";
+                    memberID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "key";
+                    keyID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "extension";
+                    extensionID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "app";
+                    /** @description The member who authorized the app */
+                    memberID: string;
+                    /** @description OAuth client ID */
+                    clientID: string;
+                    /** @description Name that the app registered, such as an MCP client */
+                    name: string;
+                  }
+              )
+            | null;
           test: boolean;
           subject: {
             /** @constant */
@@ -2138,6 +2390,36 @@ export interface components {
           /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
+          /** @default null */
+          actor?:
+            | (
+                | {
+                    /** @constant */
+                    type: "member";
+                    memberID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "key";
+                    keyID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "extension";
+                    extensionID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "app";
+                    /** @description The member who authorized the app */
+                    memberID: string;
+                    /** @description OAuth client ID */
+                    clientID: string;
+                    /** @description Name that the app registered, such as an MCP client */
+                    name: string;
+                  }
+              )
+            | null;
           test: boolean;
           subject: {
             /** @constant */
@@ -2159,6 +2441,36 @@ export interface components {
           /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
+          /** @default null */
+          actor?:
+            | (
+                | {
+                    /** @constant */
+                    type: "member";
+                    memberID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "key";
+                    keyID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "extension";
+                    extensionID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "app";
+                    /** @description The member who authorized the app */
+                    memberID: string;
+                    /** @description OAuth client ID */
+                    clientID: string;
+                    /** @description Name that the app registered, such as an MCP client */
+                    name: string;
+                  }
+              )
+            | null;
           test: boolean;
           subject: {
             /** @constant */
@@ -2180,6 +2492,36 @@ export interface components {
           /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
+          /** @default null */
+          actor?:
+            | (
+                | {
+                    /** @constant */
+                    type: "member";
+                    memberID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "key";
+                    keyID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "extension";
+                    extensionID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "app";
+                    /** @description The member who authorized the app */
+                    memberID: string;
+                    /** @description OAuth client ID */
+                    clientID: string;
+                    /** @description Name that the app registered, such as an MCP client */
+                    name: string;
+                  }
+              )
+            | null;
           test: boolean;
           subject: {
             /** @constant */
@@ -2252,6 +2594,36 @@ export interface components {
           /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
+          /** @default null */
+          actor?:
+            | (
+                | {
+                    /** @constant */
+                    type: "member";
+                    memberID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "key";
+                    keyID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "extension";
+                    extensionID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "app";
+                    /** @description The member who authorized the app */
+                    memberID: string;
+                    /** @description OAuth client ID */
+                    clientID: string;
+                    /** @description Name that the app registered, such as an MCP client */
+                    name: string;
+                  }
+              )
+            | null;
           test: boolean;
           subject: {
             /** @constant */
@@ -2275,6 +2647,36 @@ export interface components {
           /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
+          /** @default null */
+          actor?:
+            | (
+                | {
+                    /** @constant */
+                    type: "member";
+                    memberID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "key";
+                    keyID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "extension";
+                    extensionID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "app";
+                    /** @description The member who authorized the app */
+                    memberID: string;
+                    /** @description OAuth client ID */
+                    clientID: string;
+                    /** @description Name that the app registered, such as an MCP client */
+                    name: string;
+                  }
+              )
+            | null;
           test: boolean;
           subject: {
             /** @constant */
@@ -2296,6 +2698,36 @@ export interface components {
           /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
+          /** @default null */
+          actor?:
+            | (
+                | {
+                    /** @constant */
+                    type: "member";
+                    memberID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "key";
+                    keyID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "extension";
+                    extensionID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "app";
+                    /** @description The member who authorized the app */
+                    memberID: string;
+                    /** @description OAuth client ID */
+                    clientID: string;
+                    /** @description Name that the app registered, such as an MCP client */
+                    name: string;
+                  }
+              )
+            | null;
           test: boolean;
           subject: {
             /** @constant */
@@ -2319,6 +2751,36 @@ export interface components {
           /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
+          /** @default null */
+          actor?:
+            | (
+                | {
+                    /** @constant */
+                    type: "member";
+                    memberID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "key";
+                    keyID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "extension";
+                    extensionID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "app";
+                    /** @description The member who authorized the app */
+                    memberID: string;
+                    /** @description OAuth client ID */
+                    clientID: string;
+                    /** @description Name that the app registered, such as an MCP client */
+                    name: string;
+                  }
+              )
+            | null;
           test: boolean;
           subject: {
             /** @constant */
@@ -2341,6 +2803,36 @@ export interface components {
           /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
+          /** @default null */
+          actor?:
+            | (
+                | {
+                    /** @constant */
+                    type: "member";
+                    memberID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "key";
+                    keyID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "extension";
+                    extensionID: string;
+                  }
+                | {
+                    /** @constant */
+                    type: "app";
+                    /** @description The member who authorized the app */
+                    memberID: string;
+                    /** @description OAuth client ID */
+                    clientID: string;
+                    /** @description Name that the app registered, such as an MCP client */
+                    name: string;
+                  }
+              )
+            | null;
           test: boolean;
           subject: {
             /** @constant */
@@ -2557,11 +3049,38 @@ export interface components {
           type: "key";
           keyID: string;
           workspaceID: string;
+          /** @description Permissions of the API key */
+          permissions: (
+            | "entries"
+            | "read:entries"
+            | "versions"
+            | "read:versions"
+            | "publishing"
+            | "read:publishing"
+            | "collections"
+            | "read:collections"
+            | "memberships"
+            | "read:memberships"
+            | "roles"
+            | "read:roles"
+            | "webhooks"
+            | "read:webhooks"
+            | "ai-answers"
+          )[];
         }
       | {
           /** @enum {string} */
           type: "oauth" | "session";
           user: components["schemas"]["UserProfile"];
+          /** @description Scopes of an MCP client's access token */
+          scopes?: string[];
+          /** @description Workspace that an MCP client's access token is for */
+          workspaceID?: string;
+          /** @description The OAuth client of the access token, with the name it registered */
+          client?: {
+            id: string;
+            name: string;
+          };
         };
     WorkspaceListItem: {
       /** @description ID of the workspace */
@@ -2739,6 +3258,8 @@ export interface components {
       version: components["schemas"]["EntryVersionSummary"];
       assets: components["schemas"]["PublishedAsset"][];
       content: components["schemas"]["ContentNode"];
+      /** @description Content as MDX: the title as H1, properties as <Property name value /> elements in place, fragments as <Fragment name> elements, and images as asset:<assetID>; frontmatter properties are also read, and entries.update and versions.create import image URLs */
+      mdx?: string;
       fragments: {
         [key: string]: components["schemas"]["EntryFragment"];
       };
@@ -2766,6 +3287,11 @@ export interface components {
     InstanceInfo: {
       /** @description API contract version, not the server build version */
       apiVersion: string;
+      /**
+       * Format: uri
+       * @description URL of the web app; entries open at {appURL}/{workspaceID}/{entryID}
+       */
+      appURL: string;
       /** @description Configured availability; does not imply permission or current service health */
       features: {
         imageStorage: boolean;
@@ -2995,7 +3521,7 @@ export interface components {
        * @description Reason why the version was created
        * @enum {string}
        */
-      reason: "auto" | "manual" | "revert" | "schema-migration";
+      reason: "auto" | "manual" | "revert" | "schema-migration" | "import";
       /** @description Source version used for a revert */
       sourceVersionID: string | null;
       /** @description Memberships that contributed to the version */
@@ -3037,7 +3563,7 @@ export interface components {
        * @description Reason why the version was created
        * @enum {string}
        */
-      reason: "auto" | "manual" | "revert" | "schema-migration";
+      reason: "auto" | "manual" | "revert" | "schema-migration" | "import";
       /** @description Source version used for a revert */
       sourceVersionID: string | null;
       /** @description Memberships that contributed to the version */
@@ -3054,7 +3580,7 @@ export interface components {
       updatedAt: string;
     };
     /** @enum {string} */
-    VersionReason: "auto" | "manual" | "revert" | "schema-migration";
+    VersionReason: "auto" | "manual" | "revert" | "schema-migration" | "import";
     CollectionSchema: {
       local: components["schemas"]["LocalCollectionSchema"] | null;
       effective: components["schemas"]["EffectiveCollectionSchema"] | null;
@@ -3135,7 +3661,7 @@ export interface components {
        * @description Reason why the schema version was created
        * @enum {string}
        */
-      reason: "auto" | "manual" | "revert" | "schema-migration";
+      reason: "auto" | "manual" | "revert" | "schema-migration" | "import";
       /** @description Source version used for a revert */
       sourceVersionID: string | null;
       /** @description Whether this is the active local schema version */
@@ -3188,7 +3714,7 @@ export interface components {
        * @description Reason why the schema version was created
        * @enum {string}
        */
-      reason: "auto" | "manual" | "revert" | "schema-migration";
+      reason: "auto" | "manual" | "revert" | "schema-migration" | "import";
       /** @description Source version used for a revert */
       sourceVersionID: string | null;
       /** @description Whether this is the active local schema version */
@@ -3324,6 +3850,8 @@ export interface components {
        * @description Time when the entry content was last updated
        */
       updatedAt: string;
+      /** @description Hash of the current content, comparable to version hashes */
+      hash: string;
       content: components["schemas"]["ContentNode"];
       fragments: {
         [key: string]: components["schemas"]["EntryFragment"];
@@ -3501,6 +4029,8 @@ export interface components {
       version: components["schemas"]["EntryVersionSummary"];
       assets: components["schemas"]["PublishedAsset"][];
       content: components["schemas"]["ContentNode"];
+      /** @description Content as MDX: the title as H1, properties as <Property name value /> elements in place, fragments as <Fragment name> elements, and images as asset:<assetID>; frontmatter properties are also read, and entries.update and versions.create import image URLs */
+      mdx?: string;
       fragments: {
         [key: string]: components["schemas"]["EntryFragment"];
       };
@@ -4200,288 +4730,6 @@ export interface operations {
                 duplicate: components["schemas"]["AssetSearchResult"];
               };
         };
-      };
-      /** @description 400 */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json":
-            | {
-                /** @constant */
-                defined: true;
-                /** @constant */
-                code: "BAD_REQUEST";
-                /** @constant */
-                status: 400;
-                /** @default Bad Request */
-                message: string;
-                data?: components["schemas"]["AssetValidationErrorData"];
-              }
-            | {
-                /** @constant */
-                defined: false;
-                code: string;
-                status: number;
-                message: string;
-                data?: unknown;
-              };
-        };
-      };
-      /** @description 401 */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json":
-            | {
-                /** @constant */
-                defined: true;
-                /** @constant */
-                code: "UNAUTHORIZED";
-                /** @constant */
-                status: 401;
-                /** @default Unauthorized */
-                message: string;
-                data?: components["schemas"]["ErrorData"];
-              }
-            | {
-                /** @constant */
-                defined: false;
-                code: string;
-                status: number;
-                message: string;
-                data?: unknown;
-              };
-        };
-      };
-      /** @description 403 */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json":
-            | {
-                /** @constant */
-                defined: true;
-                /** @constant */
-                code: "FORBIDDEN";
-                /** @constant */
-                status: 403;
-                /** @default Forbidden */
-                message: string;
-                data?: components["schemas"]["AssetStorageErrorData"];
-              }
-            | {
-                /** @constant */
-                defined: false;
-                code: string;
-                status: number;
-                message: string;
-                data?: unknown;
-              };
-        };
-      };
-      /** @description 404 */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json":
-            | {
-                /** @constant */
-                defined: true;
-                /** @constant */
-                code: "NOT_FOUND";
-                /** @constant */
-                status: 404;
-                /** @default Not Found */
-                message: string;
-                data?: components["schemas"]["ErrorData"];
-              }
-            | {
-                /** @constant */
-                defined: false;
-                code: string;
-                status: number;
-                message: string;
-                data?: unknown;
-              };
-        };
-      };
-      /** @description 409 */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json":
-            | {
-                /** @constant */
-                defined: true;
-                /** @constant */
-                code: "CONFLICT";
-                /** @constant */
-                status: 409;
-                /** @default Conflict */
-                message: string;
-                data?: components["schemas"]["AssetConflictErrorData"];
-              }
-            | {
-                /** @constant */
-                defined: true;
-                /** @constant */
-                code: "SCHEMA_FIELD_KEY_CONFLICT";
-                /** @constant */
-                status: 409;
-                /** @default SCHEMA_FIELD_KEY_CONFLICT */
-                message: string;
-                data: components["schemas"]["SchemaFieldKeyConflictErrorData"];
-              }
-            | {
-                /** @constant */
-                defined: true;
-                /** @constant */
-                code: "SCHEMA_MIGRATION_IN_PROGRESS";
-                /** @constant */
-                status: 409;
-                /** @default A schema migration is in progress for this collection */
-                message: string;
-                data: components["schemas"]["SchemaMigrationErrorData"];
-              }
-            | {
-                /** @constant */
-                defined: false;
-                code: string;
-                status: number;
-                message: string;
-                data?: unknown;
-              };
-        };
-      };
-      /** @description 429 */
-      429: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json":
-            | {
-                /** @constant */
-                defined: true;
-                /** @constant */
-                code: "TOO_MANY_REQUESTS";
-                /** @constant */
-                status: 429;
-                /** @default Too Many Requests */
-                message: string;
-                data?: components["schemas"]["RateLimitErrorData"];
-              }
-            | {
-                /** @constant */
-                defined: false;
-                code: string;
-                status: number;
-                message: string;
-                data?: unknown;
-              };
-        };
-      };
-      /** @description 500 */
-      500: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json":
-            | {
-                /** @constant */
-                defined: true;
-                /** @constant */
-                code: "INTERNAL_SERVER_ERROR";
-                /** @constant */
-                status: 500;
-                /** @default Internal Server Error */
-                message: string;
-                data?: components["schemas"]["ErrorData"];
-              }
-            | {
-                /** @constant */
-                defined: false;
-                code: string;
-                status: number;
-                message: string;
-                data?: unknown;
-              };
-        };
-      };
-      /** @description 503 */
-      503: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json":
-            | {
-                /** @constant */
-                defined: true;
-                /** @constant */
-                code: "SERVICE_UNAVAILABLE";
-                /** @constant */
-                status: 503;
-                /** @default Service Unavailable */
-                message: string;
-                data?: components["schemas"]["ErrorData"];
-              }
-            | {
-                /** @constant */
-                defined: false;
-                code: string;
-                status: number;
-                message: string;
-                data?: unknown;
-              };
-        };
-      };
-    };
-  };
-  "assets.attach": {
-    parameters: {
-      query?: never;
-      header?: {
-        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
-        "x-workspace-id"?: string;
-      };
-      path: {
-        /** @example ast_example */
-        assetID: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        /**
-         * @example {
-         *       "entryID": "ent_example"
-         *     }
-         */
-        "application/json": {
-          entryID: string;
-        };
-      };
-    };
-    responses: {
-      /** @description OK */
-      204: {
-        headers: {
-          "Cache-Control": "private, no-store";
-          [name: string]: unknown;
-        };
-        content?: never;
       };
       /** @description 400 */
       400: {
@@ -6081,6 +6329,28 @@ export interface operations {
           name?: string;
           /** @description ID of the collection this entry belongs to */
           collectionID?: string;
+          /** @description ProseMirror JSON of the entry document, which must match the editor and the collection schema */
+          document?: {
+            type: string;
+            attrs?: {
+              [key: string]: unknown;
+            };
+            content?: components["schemas"]["ContentNodeInput"][];
+            marks?: components["schemas"]["ContentMark"][];
+            text?: string;
+          };
+          /** @description Content as MDX: the title as H1, properties as <Property name value /> elements in place, fragments as <Fragment name> elements, and images as asset:<assetID>; frontmatter properties are also read, and entries.update and versions.create import image URLs */
+          mdx?: string;
+          /** @description Field values by name or key, set on the initial content */
+          fields?: {
+            [key: string]: string | number | boolean | string[] | null;
+          };
+          /** @description Full name path of the entry, for example /Guides/Setup */
+          path?: string;
+          /** @description Name path of an existing parent collection */
+          collectionPath?: string;
+          /** @description Slug path of an existing parent collection */
+          collectionSlugPath?: string;
         };
       };
     };
@@ -6111,6 +6381,24 @@ export interface operations {
                 /** @default Bad Request */
                 message: string;
                 data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_FORMAT_INVALID";
+                /** @constant */
+                status: 400;
+                /** @default CONTENT_FORMAT_INVALID */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Line of the error in the source */
+                  line?: number;
+                  /** @description Column of the error in the source */
+                  column?: number;
+                };
               }
             | {
                 /** @constant */
@@ -6239,6 +6527,64 @@ export interface operations {
                 /** @constant */
                 defined: true;
                 /** @constant */
+                code: "CONTENT_SCHEMA_INVALID";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_SCHEMA_INVALID */
+                message: string;
+                data: components["schemas"]["ContentSchemaInvalidErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_LINK_INVALID";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_LINK_INVALID */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Link that doesn't point to an entry */
+                  href: string;
+                };
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_IMAGE_UNAVAILABLE";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_IMAGE_UNAVAILABLE */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Image URL in the content */
+                  url: string;
+                  /** @description Imported image */
+                  assetID: string;
+                  /** @description Status of the image when the write stopped waiting */
+                  assetStatus: string;
+                };
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "IDEMPOTENCY_KEY_IN_PROGRESS";
+                /** @constant */
+                status: 409;
+                /** @default A request with this Idempotency-Key is in progress */
+                message: string;
+                data: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
                 code: "SCHEMA_FIELD_KEY_CONFLICT";
                 /** @constant */
                 status: 409;
@@ -6256,6 +6602,34 @@ export interface operations {
                 /** @default A schema migration is in progress for this collection */
                 message: string;
                 data: components["schemas"]["SchemaMigrationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 422 */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "IDEMPOTENCY_KEY_REUSED";
+                /** @constant */
+                status: 422;
+                /** @default This Idempotency-Key was used with a different request */
+                message: string;
+                data: components["schemas"]["ErrorData"];
               }
             | {
                 /** @constant */
@@ -6659,6 +7033,75 @@ export interface operations {
         "application/json": {
           /** @description New name of the entry */
           name?: string;
+          /** @description ProseMirror JSON of the entry document, which must match the editor and the collection schema */
+          document?: {
+            type: string;
+            attrs?: {
+              [key: string]: unknown;
+            };
+            content?: components["schemas"]["ContentNodeInput"][];
+            marks?: components["schemas"]["ContentMark"][];
+            text?: string;
+          };
+          /** @description Content as MDX: the title as H1, properties as <Property name value /> elements in place, fragments as <Fragment name> elements, and images as asset:<assetID>; frontmatter properties are also read, and entries.update and versions.create import image URLs */
+          mdx?: string;
+          /** @description Edit operations, applied in order; all or none apply */
+          operations?: (
+            | {
+                /** @constant */
+                type: "replaceText";
+                /** @description Text that occurs exactly once in the MDX of one block */
+                find: string;
+                /** @description Replacement text */
+                replace: string;
+              }
+            | {
+                /** @constant */
+                type: "replaceBlock";
+                id: string;
+                /** @description Blocks as MDX, without a title */
+                mdx: string;
+              }
+            | {
+                /** @constant */
+                type: "insertBlocks";
+                /** @description Blocks as MDX, without a title */
+                mdx: string;
+                /** @description ID of the block to insert before */
+                before?: string;
+                /** @description ID of the block to insert after */
+                after?: string;
+                /**
+                 * @description Insert at the start or the end
+                 * @enum {string}
+                 */
+                position?: "start" | "end";
+                /** @description Fragment key for position */
+                fragment?: string;
+              }
+            | {
+                /** @constant */
+                type: "deleteBlocks";
+                ids: string[];
+              }
+            | {
+                /** @constant */
+                type: "setField";
+                /** @description Field name or key */
+                key: string;
+                /** @description Property value, or MDX for a fragment */
+                value: string | number | boolean | string[] | null;
+              }
+          )[];
+          /** @description Hash of the content that the change is based on */
+          expectedHash?: string;
+          /** @description Name the entry must still have */
+          expectedName?: string;
+          /** @description Also save the new content as a version */
+          version?: {
+            /** @description Version name */
+            name?: string;
+          };
         };
       };
     };
@@ -6669,7 +7112,12 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": never;
+          "application/json": {
+            /** @description Hash of the current content after the update */
+            hash: string;
+            /** @description The version saved with version */
+            version?: components["schemas"]["EntryVersionSummary"];
+          };
         };
       };
       /** @description 400 */
@@ -6689,6 +7137,24 @@ export interface operations {
                 /** @default Bad Request */
                 message: string;
                 data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_FORMAT_INVALID";
+                /** @constant */
+                status: 400;
+                /** @default CONTENT_FORMAT_INVALID */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Line of the error in the source */
+                  line?: number;
+                  /** @description Column of the error in the source */
+                  column?: number;
+                };
               }
             | {
                 /** @constant */
@@ -6817,6 +7283,121 @@ export interface operations {
                 /** @constant */
                 defined: true;
                 /** @constant */
+                code: "CONTENT_SCHEMA_INVALID";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_SCHEMA_INVALID */
+                message: string;
+                data: components["schemas"]["ContentSchemaInvalidErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_HASH_MISMATCH";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_HASH_MISMATCH */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Hash of the current content */
+                  hash: string;
+                  /** @description Entries of a bulk call that kept the change, because they were edited meanwhile */
+                  changedIDs?: string[];
+                };
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_OPERATION_INVALID";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_OPERATION_INVALID */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Index of the operation that failed */
+                  index: number;
+                  /**
+                   * @description Why the operation's anchor didn't match
+                   * @enum {string}
+                   */
+                  reason: "not_found" | "ambiguous";
+                };
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_LINK_INVALID";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_LINK_INVALID */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Link that doesn't point to an entry */
+                  href: string;
+                };
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_IMAGE_UNAVAILABLE";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_IMAGE_UNAVAILABLE */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Image URL in the content */
+                  url: string;
+                  /** @description Imported image */
+                  assetID: string;
+                  /** @description Status of the image when the write stopped waiting */
+                  assetStatus: string;
+                };
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_PRECONDITION_FAILED";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_PRECONDITION_FAILED */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Expected field that didn't match */
+                  field: string;
+                  /** @description Current value of the field */
+                  current: string | null;
+                };
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "IDEMPOTENCY_KEY_IN_PROGRESS";
+                /** @constant */
+                status: 409;
+                /** @default A request with this Idempotency-Key is in progress */
+                message: string;
+                data: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
                 code: "SCHEMA_FIELD_KEY_CONFLICT";
                 /** @constant */
                 status: 409;
@@ -6834,6 +7415,34 @@ export interface operations {
                 /** @default A schema migration is in progress for this collection */
                 message: string;
                 data: components["schemas"]["SchemaMigrationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 422 */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "IDEMPOTENCY_KEY_REUSED";
+                /** @constant */
+                status: 422;
+                /** @default This Idempotency-Key was used with a different request */
+                message: string;
+                data: components["schemas"]["ErrorData"];
               }
             | {
                 /** @constant */
@@ -7203,6 +7812,1219 @@ export interface operations {
       };
     };
   };
+  "entries.bulkUpdate": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        /**
+         * @example {
+         *       "items": [
+         *         {
+         *           "id": "ent_example",
+         *           "operations": [
+         *             {
+         *               "type": "replaceText",
+         *               "find": "v1",
+         *               "replace": "v2"
+         *             }
+         *           ]
+         *         }
+         *       ]
+         *     }
+         */
+        "application/json": {
+          /** @description Entry updates */
+          items: {
+            /** @description ID of the entry to be updated */
+            id: string;
+            /** @description New name of the entry */
+            name?: string;
+            /** @description ProseMirror JSON of the entry document, which must match the editor and the collection schema */
+            document?: {
+              type: string;
+              attrs?: {
+                [key: string]: unknown;
+              };
+              content?: components["schemas"]["ContentNodeInput"][];
+              marks?: components["schemas"]["ContentMark"][];
+              text?: string;
+            };
+            /** @description Content as MDX: the title as H1, properties as <Property name value /> elements in place, fragments as <Fragment name> elements, and images as asset:<assetID>; frontmatter properties are also read, and entries.update and versions.create import image URLs */
+            mdx?: string;
+            /** @description Edit operations, applied in order; all or none apply */
+            operations?: (
+              | {
+                  /** @constant */
+                  type: "replaceText";
+                  /** @description Text that occurs exactly once in the MDX of one block */
+                  find: string;
+                  /** @description Replacement text */
+                  replace: string;
+                }
+              | {
+                  /** @constant */
+                  type: "replaceBlock";
+                  id: string;
+                  /** @description Blocks as MDX, without a title */
+                  mdx: string;
+                }
+              | {
+                  /** @constant */
+                  type: "insertBlocks";
+                  /** @description Blocks as MDX, without a title */
+                  mdx: string;
+                  /** @description ID of the block to insert before */
+                  before?: string;
+                  /** @description ID of the block to insert after */
+                  after?: string;
+                  /**
+                   * @description Insert at the start or the end
+                   * @enum {string}
+                   */
+                  position?: "start" | "end";
+                  /** @description Fragment key for position */
+                  fragment?: string;
+                }
+              | {
+                  /** @constant */
+                  type: "deleteBlocks";
+                  ids: string[];
+                }
+              | {
+                  /** @constant */
+                  type: "setField";
+                  /** @description Field name or key */
+                  key: string;
+                  /** @description Property value, or MDX for a fragment */
+                  value: string | number | boolean | string[] | null;
+                }
+            )[];
+            /** @description Hash of the content that the change is based on */
+            expectedHash?: string;
+            /** @description Name the entry must still have */
+            expectedName?: string;
+            /** @description Also save the new content as a version */
+            version?: {
+              /** @description Version name */
+              name?: string;
+            };
+          }[];
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @description Results in order */
+            items: {
+              /** @description Hash of the current content after the update */
+              hash: string;
+              /** @description The version saved with version */
+              version?: components["schemas"]["EntryVersionSummary"];
+              id: string;
+            }[];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_FORMAT_INVALID";
+                /** @constant */
+                status: 400;
+                /** @default CONTENT_FORMAT_INVALID */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Line of the error in the source */
+                  line?: number;
+                  /** @description Column of the error in the source */
+                  column?: number;
+                };
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_NAME_CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_NAME_CONFLICT */
+                message: string;
+                data: components["schemas"]["ContentNameConflictErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_SCHEMA_INVALID";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_SCHEMA_INVALID */
+                message: string;
+                data: components["schemas"]["ContentSchemaInvalidErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_HASH_MISMATCH";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_HASH_MISMATCH */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Hash of the current content */
+                  hash: string;
+                  /** @description Entries of a bulk call that kept the change, because they were edited meanwhile */
+                  changedIDs?: string[];
+                };
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_OPERATION_INVALID";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_OPERATION_INVALID */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Index of the operation that failed */
+                  index: number;
+                  /**
+                   * @description Why the operation's anchor didn't match
+                   * @enum {string}
+                   */
+                  reason: "not_found" | "ambiguous";
+                };
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_LINK_INVALID";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_LINK_INVALID */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Link that doesn't point to an entry */
+                  href: string;
+                };
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_IMAGE_UNAVAILABLE";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_IMAGE_UNAVAILABLE */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Image URL in the content */
+                  url: string;
+                  /** @description Imported image */
+                  assetID: string;
+                  /** @description Status of the image when the write stopped waiting */
+                  assetStatus: string;
+                };
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_PRECONDITION_FAILED";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_PRECONDITION_FAILED */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Expected field that didn't match */
+                  field: string;
+                  /** @description Current value of the field */
+                  current: string | null;
+                };
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "IDEMPOTENCY_KEY_IN_PROGRESS";
+                /** @constant */
+                status: 409;
+                /** @default A request with this Idempotency-Key is in progress */
+                message: string;
+                data: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SCHEMA_FIELD_KEY_CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default SCHEMA_FIELD_KEY_CONFLICT */
+                message: string;
+                data: components["schemas"]["SchemaFieldKeyConflictErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SCHEMA_MIGRATION_IN_PROGRESS";
+                /** @constant */
+                status: 409;
+                /** @default A schema migration is in progress for this collection */
+                message: string;
+                data: components["schemas"]["SchemaMigrationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 422 */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "IDEMPOTENCY_KEY_REUSED";
+                /** @constant */
+                status: 422;
+                /** @default This Idempotency-Key was used with a different request */
+                message: string;
+                data: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "entries.move": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path: {
+        /** @example ent_example */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        /**
+         * @example {
+         *       "collectionID": "coll_example"
+         *     }
+         */
+        "application/json": {
+          /** @description New LexoRank order of the entry */
+          order?: string;
+          /** @description ID of the new parent collection */
+          collectionID?: string | null;
+          /** @description Name path of the new parent collection; / is the top level */
+          collectionPath?: string;
+          /** @description Slug path of the new parent collection; / is the top level */
+          collectionSlugPath?: string;
+          /** @description ID of the collection that must still contain the entry, or null for the top level */
+          expectedCollectionID?: string | null;
+          /**
+           * @description Confirmation that a schema migration caused by the move can remove content
+           * @default false
+           */
+          confirmedDataLoss?: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            order: string;
+            migrationID: string | null;
+            totalEntries: number;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_NAME_CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_NAME_CONFLICT */
+                message: string;
+                data: components["schemas"]["ContentNameConflictErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SCHEMA_FIELD_KEY_CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default SCHEMA_FIELD_KEY_CONFLICT */
+                message: string;
+                data: components["schemas"]["SchemaFieldKeyConflictErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SCHEMA_MIGRATION_IN_PROGRESS";
+                /** @constant */
+                status: 409;
+                /** @default A schema migration is in progress for this collection */
+                message: string;
+                data: components["schemas"]["SchemaMigrationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_PRECONDITION_FAILED";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_PRECONDITION_FAILED */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Expected field that didn't match */
+                  field: string;
+                  /** @description Current value of the field */
+                  current: string | null;
+                };
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "entries.bulkMove": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        /**
+         * @example {
+         *       "items": [
+         *         {
+         *           "id": "ent_example",
+         *           "collectionPath": "/Guides"
+         *         }
+         *       ]
+         *     }
+         */
+        "application/json": {
+          /** @description Entry moves */
+          items: {
+            /** @description ID of the entry to be moved */
+            id: string;
+            /** @description New LexoRank order of the entry */
+            order?: string;
+            /** @description ID of the new parent collection */
+            collectionID?: string | null;
+            /** @description Name path of the new parent collection; / is the top level */
+            collectionPath?: string;
+            /** @description Slug path of the new parent collection; / is the top level */
+            collectionSlugPath?: string;
+            /** @description ID of the collection that must still contain the entry, or null for the top level */
+            expectedCollectionID?: string | null;
+          }[];
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @description Results in order */
+            items: {
+              id: string;
+              order: string;
+              /** @description Parent collection after the move */
+              collectionID: string | null;
+            }[];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_NAME_CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_NAME_CONFLICT */
+                message: string;
+                data: components["schemas"]["ContentNameConflictErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_PRECONDITION_FAILED";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_PRECONDITION_FAILED */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Expected field that didn't match */
+                  field: string;
+                  /** @description Current value of the field */
+                  current: string | null;
+                };
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SCHEMA_FIELD_KEY_CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default SCHEMA_FIELD_KEY_CONFLICT */
+                message: string;
+                data: components["schemas"]["SchemaFieldKeyConflictErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SCHEMA_MIGRATION_IN_PROGRESS";
+                /** @constant */
+                status: 409;
+                /** @default A schema migration is in progress for this collection */
+                message: string;
+                data: components["schemas"]["SchemaMigrationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
   "entries.get": {
     parameters: {
       query?: {
@@ -7211,6 +9033,7 @@ export interface operations {
         path?: string;
         slugPath?: string;
         expectedSchemaHash?: string;
+        contentFormat?: "json" | "mdx" | "blocks";
       };
       header?: {
         /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
@@ -7227,7 +9050,63 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["Entry"];
+          "application/json": {
+            /** @description ID of the entry */
+            id: string;
+            /** @description Name of the entry */
+            name: string;
+            /** @description LexoRank order of the entry */
+            order: string;
+            /** @description ID of the collection this entry belongs to */
+            collectionID?: string;
+            path: string;
+            slugPath: string;
+            schema: components["schemas"]["ContentSchemaMetadata"] | null;
+            /**
+             * Format: date-time
+             * @description Time when the entry content was last updated
+             */
+            updatedAt: string;
+            /** @description Hash of the current content, comparable to version hashes */
+            hash: string;
+            content: components["schemas"]["ContentNode"];
+            fragments: {
+              [key: string]: components["schemas"]["EntryFragment"];
+            };
+            properties: {
+              [key: string]: components["schemas"]["EntryProperty"];
+            };
+            /** @description Content as MDX: the title as H1, properties as <Property name value /> elements in place, fragments as <Fragment name> elements, and images as asset:<assetID>; frontmatter properties are also read, and entries.update and versions.create import image URLs */
+            mdx?: string;
+            blocks?: {
+              /** @description Block ID for replaceBlock, insertBlocks, and deleteBlocks */
+              id: string;
+              /** @description Node type of the block */
+              type: string;
+              /** @description Key of the fragment that contains the block */
+              fragment?: string;
+              /** @description Content as MDX: the title as H1, properties as <Property name value /> elements in place, fragments as <Fragment name> elements, and images as asset:<assetID>; frontmatter properties are also read, and entries.update and versions.create import image URLs */
+              mdx: string;
+            }[];
+            /** @description Entries linked with entry: links in the content, by entry ID */
+            references: {
+              [key: string]:
+                | {
+                    id: string;
+                    /** @constant */
+                    available: true;
+                    path: string;
+                    slugPath: string;
+                    title: string;
+                    collectionID: string | null;
+                  }
+                | {
+                    id: string;
+                    /** @constant */
+                    available: false;
+                  };
+            };
+          };
         };
       };
       /** @description 400 */
@@ -8551,6 +10430,36 @@ export interface operations {
                   /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
+                  /** @default null */
+                  actor?:
+                    | (
+                        | {
+                            /** @constant */
+                            type: "member";
+                            memberID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "key";
+                            keyID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "extension";
+                            extensionID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "app";
+                            /** @description The member who authorized the app */
+                            memberID: string;
+                            /** @description OAuth client ID */
+                            clientID: string;
+                            /** @description Name that the app registered, such as an MCP client */
+                            name: string;
+                          }
+                      )
+                    | null;
                   test: boolean;
                   subject: {
                     /** @constant */
@@ -8573,6 +10482,36 @@ export interface operations {
                   /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
+                  /** @default null */
+                  actor?:
+                    | (
+                        | {
+                            /** @constant */
+                            type: "member";
+                            memberID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "key";
+                            keyID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "extension";
+                            extensionID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "app";
+                            /** @description The member who authorized the app */
+                            memberID: string;
+                            /** @description OAuth client ID */
+                            clientID: string;
+                            /** @description Name that the app registered, such as an MCP client */
+                            name: string;
+                          }
+                      )
+                    | null;
                   test: boolean;
                   subject: {
                     /** @constant */
@@ -8594,6 +10533,36 @@ export interface operations {
                   /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
+                  /** @default null */
+                  actor?:
+                    | (
+                        | {
+                            /** @constant */
+                            type: "member";
+                            memberID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "key";
+                            keyID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "extension";
+                            extensionID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "app";
+                            /** @description The member who authorized the app */
+                            memberID: string;
+                            /** @description OAuth client ID */
+                            clientID: string;
+                            /** @description Name that the app registered, such as an MCP client */
+                            name: string;
+                          }
+                      )
+                    | null;
                   test: boolean;
                   subject: {
                     /** @constant */
@@ -8617,6 +10586,36 @@ export interface operations {
                   /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
+                  /** @default null */
+                  actor?:
+                    | (
+                        | {
+                            /** @constant */
+                            type: "member";
+                            memberID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "key";
+                            keyID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "extension";
+                            extensionID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "app";
+                            /** @description The member who authorized the app */
+                            memberID: string;
+                            /** @description OAuth client ID */
+                            clientID: string;
+                            /** @description Name that the app registered, such as an MCP client */
+                            name: string;
+                          }
+                      )
+                    | null;
                   test: boolean;
                   subject: {
                     /** @constant */
@@ -8689,6 +10688,36 @@ export interface operations {
                   /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
+                  /** @default null */
+                  actor?:
+                    | (
+                        | {
+                            /** @constant */
+                            type: "member";
+                            memberID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "key";
+                            keyID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "extension";
+                            extensionID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "app";
+                            /** @description The member who authorized the app */
+                            memberID: string;
+                            /** @description OAuth client ID */
+                            clientID: string;
+                            /** @description Name that the app registered, such as an MCP client */
+                            name: string;
+                          }
+                      )
+                    | null;
                   test: boolean;
                   subject: {
                     /** @constant */
@@ -8712,6 +10741,36 @@ export interface operations {
                   /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
+                  /** @default null */
+                  actor?:
+                    | (
+                        | {
+                            /** @constant */
+                            type: "member";
+                            memberID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "key";
+                            keyID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "extension";
+                            extensionID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "app";
+                            /** @description The member who authorized the app */
+                            memberID: string;
+                            /** @description OAuth client ID */
+                            clientID: string;
+                            /** @description Name that the app registered, such as an MCP client */
+                            name: string;
+                          }
+                      )
+                    | null;
                   test: boolean;
                   subject: {
                     /** @constant */
@@ -8733,6 +10792,36 @@ export interface operations {
                   /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
+                  /** @default null */
+                  actor?:
+                    | (
+                        | {
+                            /** @constant */
+                            type: "member";
+                            memberID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "key";
+                            keyID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "extension";
+                            extensionID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "app";
+                            /** @description The member who authorized the app */
+                            memberID: string;
+                            /** @description OAuth client ID */
+                            clientID: string;
+                            /** @description Name that the app registered, such as an MCP client */
+                            name: string;
+                          }
+                      )
+                    | null;
                   test: boolean;
                   subject: {
                     /** @constant */
@@ -8754,6 +10843,36 @@ export interface operations {
                   /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
+                  /** @default null */
+                  actor?:
+                    | (
+                        | {
+                            /** @constant */
+                            type: "member";
+                            memberID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "key";
+                            keyID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "extension";
+                            extensionID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "app";
+                            /** @description The member who authorized the app */
+                            memberID: string;
+                            /** @description OAuth client ID */
+                            clientID: string;
+                            /** @description Name that the app registered, such as an MCP client */
+                            name: string;
+                          }
+                      )
+                    | null;
                   test: boolean;
                   subject: {
                     /** @constant */
@@ -8775,6 +10894,36 @@ export interface operations {
                   /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
+                  /** @default null */
+                  actor?:
+                    | (
+                        | {
+                            /** @constant */
+                            type: "member";
+                            memberID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "key";
+                            keyID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "extension";
+                            extensionID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "app";
+                            /** @description The member who authorized the app */
+                            memberID: string;
+                            /** @description OAuth client ID */
+                            clientID: string;
+                            /** @description Name that the app registered, such as an MCP client */
+                            name: string;
+                          }
+                      )
+                    | null;
                   test: boolean;
                   subject: {
                     /** @constant */
@@ -8847,6 +10996,36 @@ export interface operations {
                   /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
+                  /** @default null */
+                  actor?:
+                    | (
+                        | {
+                            /** @constant */
+                            type: "member";
+                            memberID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "key";
+                            keyID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "extension";
+                            extensionID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "app";
+                            /** @description The member who authorized the app */
+                            memberID: string;
+                            /** @description OAuth client ID */
+                            clientID: string;
+                            /** @description Name that the app registered, such as an MCP client */
+                            name: string;
+                          }
+                      )
+                    | null;
                   test: boolean;
                   subject: {
                     /** @constant */
@@ -8870,6 +11049,36 @@ export interface operations {
                   /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
+                  /** @default null */
+                  actor?:
+                    | (
+                        | {
+                            /** @constant */
+                            type: "member";
+                            memberID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "key";
+                            keyID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "extension";
+                            extensionID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "app";
+                            /** @description The member who authorized the app */
+                            memberID: string;
+                            /** @description OAuth client ID */
+                            clientID: string;
+                            /** @description Name that the app registered, such as an MCP client */
+                            name: string;
+                          }
+                      )
+                    | null;
                   test: boolean;
                   subject: {
                     /** @constant */
@@ -8891,6 +11100,36 @@ export interface operations {
                   /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
+                  /** @default null */
+                  actor?:
+                    | (
+                        | {
+                            /** @constant */
+                            type: "member";
+                            memberID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "key";
+                            keyID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "extension";
+                            extensionID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "app";
+                            /** @description The member who authorized the app */
+                            memberID: string;
+                            /** @description OAuth client ID */
+                            clientID: string;
+                            /** @description Name that the app registered, such as an MCP client */
+                            name: string;
+                          }
+                      )
+                    | null;
                   test: boolean;
                   subject: {
                     /** @constant */
@@ -8914,6 +11153,36 @@ export interface operations {
                   /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
+                  /** @default null */
+                  actor?:
+                    | (
+                        | {
+                            /** @constant */
+                            type: "member";
+                            memberID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "key";
+                            keyID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "extension";
+                            extensionID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "app";
+                            /** @description The member who authorized the app */
+                            memberID: string;
+                            /** @description OAuth client ID */
+                            clientID: string;
+                            /** @description Name that the app registered, such as an MCP client */
+                            name: string;
+                          }
+                      )
+                    | null;
                   test: boolean;
                   subject: {
                     /** @constant */
@@ -8936,6 +11205,36 @@ export interface operations {
                   /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
+                  /** @default null */
+                  actor?:
+                    | (
+                        | {
+                            /** @constant */
+                            type: "member";
+                            memberID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "key";
+                            keyID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "extension";
+                            extensionID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "app";
+                            /** @description The member who authorized the app */
+                            memberID: string;
+                            /** @description OAuth client ID */
+                            clientID: string;
+                            /** @description Name that the app registered, such as an MCP client */
+                            name: string;
+                          }
+                      )
+                    | null;
                   test: boolean;
                   subject: {
                     /** @constant */
@@ -8957,6 +11256,36 @@ export interface operations {
                   /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
+                  /** @default null */
+                  actor?:
+                    | (
+                        | {
+                            /** @constant */
+                            type: "member";
+                            memberID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "key";
+                            keyID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "extension";
+                            extensionID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "app";
+                            /** @description The member who authorized the app */
+                            memberID: string;
+                            /** @description OAuth client ID */
+                            clientID: string;
+                            /** @description Name that the app registered, such as an MCP client */
+                            name: string;
+                          }
+                      )
+                    | null;
                   test: boolean;
                   subject: {
                     /** @constant */
@@ -8977,6 +11306,36 @@ export interface operations {
                   /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
+                  /** @default null */
+                  actor?:
+                    | (
+                        | {
+                            /** @constant */
+                            type: "member";
+                            memberID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "key";
+                            keyID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "extension";
+                            extensionID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "app";
+                            /** @description The member who authorized the app */
+                            memberID: string;
+                            /** @description OAuth client ID */
+                            clientID: string;
+                            /** @description Name that the app registered, such as an MCP client */
+                            name: string;
+                          }
+                      )
+                    | null;
                   test: boolean;
                   subject: {
                     /** @constant */
@@ -8997,6 +11356,36 @@ export interface operations {
                   /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
+                  /** @default null */
+                  actor?:
+                    | (
+                        | {
+                            /** @constant */
+                            type: "member";
+                            memberID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "key";
+                            keyID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "extension";
+                            extensionID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "app";
+                            /** @description The member who authorized the app */
+                            memberID: string;
+                            /** @description OAuth client ID */
+                            clientID: string;
+                            /** @description Name that the app registered, such as an MCP client */
+                            name: string;
+                          }
+                      )
+                    | null;
                   test: boolean;
                   subject: {
                     /** @constant */
@@ -9019,6 +11408,36 @@ export interface operations {
                   /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
+                  /** @default null */
+                  actor?:
+                    | (
+                        | {
+                            /** @constant */
+                            type: "member";
+                            memberID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "key";
+                            keyID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "extension";
+                            extensionID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "app";
+                            /** @description The member who authorized the app */
+                            memberID: string;
+                            /** @description OAuth client ID */
+                            clientID: string;
+                            /** @description Name that the app registered, such as an MCP client */
+                            name: string;
+                          }
+                      )
+                    | null;
                   test: boolean;
                   subject: {
                     /** @constant */
@@ -9040,6 +11459,36 @@ export interface operations {
                   /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
+                  /** @default null */
+                  actor?:
+                    | (
+                        | {
+                            /** @constant */
+                            type: "member";
+                            memberID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "key";
+                            keyID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "extension";
+                            extensionID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "app";
+                            /** @description The member who authorized the app */
+                            memberID: string;
+                            /** @description OAuth client ID */
+                            clientID: string;
+                            /** @description Name that the app registered, such as an MCP client */
+                            name: string;
+                          }
+                      )
+                    | null;
                   test: boolean;
                   subject: {
                     /** @constant */
@@ -9062,6 +11511,36 @@ export interface operations {
                   /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
+                  /** @default null */
+                  actor?:
+                    | (
+                        | {
+                            /** @constant */
+                            type: "member";
+                            memberID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "key";
+                            keyID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "extension";
+                            extensionID: string;
+                          }
+                        | {
+                            /** @constant */
+                            type: "app";
+                            /** @description The member who authorized the app */
+                            memberID: string;
+                            /** @description OAuth client ID */
+                            clientID: string;
+                            /** @description Name that the app registered, such as an MCP client */
+                            name: string;
+                          }
+                      )
+                    | null;
                   test: boolean;
                   subject: {
                     /** @constant */
@@ -10686,8 +13165,12 @@ export interface operations {
           id?: string;
           /** @description Name of the collection */
           name?: string;
-          /** @description ID of the parent collection, */
+          /** @description ID of the parent collection */
           parentID?: string;
+          /** @description Name path of the parent collection */
+          parentPath?: string;
+          /** @description Slug path of the parent collection */
+          parentSlugPath?: string;
           /** @description Whether to restrict access to the collection tree */
           restricted?: boolean;
         };
@@ -11268,6 +13751,8 @@ export interface operations {
         "application/json": {
           /** @description New name of the collection */
           name?: string;
+          /** @description Name the collection must still have */
+          expectedName?: string;
         };
       };
     };
@@ -11410,6 +13895,24 @@ export interface operations {
                 /** @default Conflict */
                 message: string;
                 data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_PRECONDITION_FAILED";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_PRECONDITION_FAILED */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Expected field that didn't match */
+                  field: string;
+                  /** @description Current value of the field */
+                  current: string | null;
+                };
               }
             | {
                 /** @constant */
@@ -11715,6 +14218,335 @@ export interface operations {
                 /** @default A schema migration is in progress for this collection */
                 message: string;
                 data: components["schemas"]["SchemaMigrationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "collections.move": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path: {
+        /** @example coll_example */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        /**
+         * @example {
+         *       "newParentID": "coll_parent"
+         *     }
+         */
+        "application/json": {
+          /** @description ID of the new parent collection, or null for the top level */
+          newParentID?: string | null;
+          /** @description Name path of the new parent collection; / is the top level */
+          newParentPath?: string;
+          /** @description Slug path of the new parent collection; / is the top level */
+          newParentSlugPath?: string;
+          /** @description ID of the parent that must still contain the collection, or null for the top level */
+          expectedParentID?: string | null;
+          /** @description New zero-based index in the parent collection's descendants array */
+          index?: number;
+          /**
+           * @description Confirmation that a schema migration caused by the move can remove content
+           * @default false
+           */
+          confirmedDataLoss?: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            migrationID: string | null;
+            totalEntries: number;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_NAME_CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_NAME_CONFLICT */
+                message: string;
+                data: components["schemas"]["ContentNameConflictErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SCHEMA_FIELD_KEY_CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default SCHEMA_FIELD_KEY_CONFLICT */
+                message: string;
+                data: components["schemas"]["SchemaFieldKeyConflictErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SCHEMA_MIGRATION_IN_PROGRESS";
+                /** @constant */
+                status: 409;
+                /** @default A schema migration is in progress for this collection */
+                message: string;
+                data: components["schemas"]["SchemaMigrationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_PRECONDITION_FAILED";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_PRECONDITION_FAILED */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Expected field that didn't match */
+                  field: string;
+                  /** @description Current value of the field */
+                  current: string | null;
+                };
               }
             | {
                 /** @constant */
@@ -13147,6 +15979,7 @@ export interface operations {
         /** @example published */
         channel?: string;
         snapshotID?: string;
+        contentFormat?: "json" | "mdx";
       };
       header?: {
         /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
@@ -29715,9 +32548,11 @@ export interface operations {
   };
   "publishing.getChannelContent": {
     parameters: {
-      query: {
+      query?: {
         /** @example coll_example */
-        collectionID: string;
+        collectionID?: string;
+        collectionPath?: string;
+        collectionSlugPath?: string;
       };
       header?: {
         /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
@@ -29738,6 +32573,268 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ChannelContent"];
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "publishing.updateChannel": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path: {
+        /** @example preview */
+        code: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        /**
+         * @example {
+         *       "name": "Staging"
+         *     }
+         */
+        "application/json": {
+          /** @description New publishing channel label */
+          name: string;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PublishingChannel"];
         };
       };
       /** @description 400 */
@@ -30770,6 +33867,10 @@ export interface operations {
         "application/json": {
           /** @description Optional version name */
           name?: string;
+          /** @description ProseMirror JSON of the version; the current content when omitted */
+          document?: components["schemas"]["ContentNodeInput"];
+          /** @description Content as MDX: the title as H1, properties as <Property name value /> elements in place, fragments as <Fragment name> elements, and images as asset:<assetID>; frontmatter properties are also read, and entries.update and versions.create import image URLs */
+          mdx?: string;
         };
       };
     };
@@ -30800,6 +33901,24 @@ export interface operations {
                 /** @default Bad Request */
                 message: string;
                 data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_FORMAT_INVALID";
+                /** @constant */
+                status: 400;
+                /** @default CONTENT_FORMAT_INVALID */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Line of the error in the source */
+                  line?: number;
+                  /** @description Column of the error in the source */
+                  column?: number;
+                };
               }
             | {
                 /** @constant */
@@ -30915,6 +34034,114 @@ export interface operations {
               }
             | {
                 /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_SCHEMA_INVALID";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_SCHEMA_INVALID */
+                message: string;
+                data: components["schemas"]["ContentSchemaInvalidErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_LINK_INVALID";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_LINK_INVALID */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Link that doesn't point to an entry */
+                  href: string;
+                };
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_IMAGE_UNAVAILABLE";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_IMAGE_UNAVAILABLE */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Image URL in the content */
+                  url: string;
+                  /** @description Imported image */
+                  assetID: string;
+                  /** @description Status of the image when the write stopped waiting */
+                  assetStatus: string;
+                };
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "IDEMPOTENCY_KEY_IN_PROGRESS";
+                /** @constant */
+                status: 409;
+                /** @default A request with this Idempotency-Key is in progress */
+                message: string;
+                data: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SCHEMA_FIELD_KEY_CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default SCHEMA_FIELD_KEY_CONFLICT */
+                message: string;
+                data: components["schemas"]["SchemaFieldKeyConflictErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SCHEMA_MIGRATION_IN_PROGRESS";
+                /** @constant */
+                status: 409;
+                /** @default A schema migration is in progress for this collection */
+                message: string;
+                data: components["schemas"]["SchemaMigrationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 422 */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "IDEMPOTENCY_KEY_REUSED";
+                /** @constant */
+                status: 422;
+                /** @default This Idempotency-Key was used with a different request */
+                message: string;
+                data: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
                 defined: false;
                 code: string;
                 status: number;
@@ -30971,17 +34198,6 @@ export interface operations {
               }
             | {
                 /** @constant */
-                defined: true;
-                /** @constant */
-                code: "CONTENT_SCHEMA_INVALID";
-                /** @constant */
-                status: 500;
-                /** @default CONTENT_SCHEMA_INVALID */
-                message: string;
-                data: components["schemas"]["ContentSchemaInvalidErrorData"];
-              }
-            | {
-                /** @constant */
                 defined: false;
                 code: string;
                 status: number;
@@ -31024,6 +34240,7 @@ export interface operations {
     parameters: {
       query?: {
         expectedSchemaHash?: string;
+        contentFormat?: "json" | "mdx";
       };
       header?: {
         /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
@@ -31043,7 +34260,68 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["EntryVersion"];
+          "application/json": {
+            /** @description ID of the version */
+            id: string;
+            /** @description ID of the versioned entry */
+            entryID: string;
+            /** @description Entry name stored in the version */
+            entryName: string;
+            /** @description Hash of the version content */
+            hash: string;
+            /** @description Optional name of the version */
+            name: string | null;
+            /**
+             * @description Reason why the version was created
+             * @enum {string}
+             */
+            reason: "auto" | "manual" | "revert" | "schema-migration" | "import";
+            /** @description Source version used for a revert */
+            sourceVersionID: string | null;
+            /** @description Memberships that contributed to the version */
+            contributorIDs: string[];
+            /**
+             * Format: date-time
+             * @description Time when the version was created
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description Time when the version name was last updated
+             */
+            updatedAt: string;
+            schema: components["schemas"]["ContentSchemaMetadata"] | null;
+            /** @description ProseMirror JSON stored in the version */
+            document: {
+              type: string;
+              attrs?: {
+                [key: string]: unknown;
+              };
+              content?: components["schemas"]["ContentNode"][];
+              marks?: components["schemas"]["ContentMark"][];
+              text?: string;
+            };
+            /** @description Content as MDX: the title as H1, properties as <Property name value /> elements in place, fragments as <Fragment name> elements, and images as asset:<assetID>; frontmatter properties are also read, and entries.update and versions.create import image URLs */
+            mdx?: string;
+            /** @description Entries linked with entry: links in the content, by entry ID */
+            references: {
+              [key: string]:
+                | {
+                    id: string;
+                    /** @constant */
+                    available: true;
+                    path: string;
+                    slugPath: string;
+                    title: string;
+                    collectionID: string | null;
+                  }
+                | {
+                    id: string;
+                    /** @constant */
+                    available: false;
+                  };
+            };
+          };
         };
       };
       /** @description 400 */

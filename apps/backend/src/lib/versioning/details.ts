@@ -4,7 +4,7 @@ import {
 } from "@andesine/server/database";
 import { mapVersion } from "@andesine/server/data";
 import { assertRecordedContent } from "@andesine/server/schema";
-import { type VersionDetails } from "@andesine/contracts/versions";
+import { type VersionDetails, type VersionSummary } from "@andesine/contracts/versions";
 
 type EntryVersionRow = typeof entryVersions.$inferSelect;
 
@@ -25,4 +25,12 @@ const getVersionDetails = async (
   return mapVersion(row, contributorIDs, schema);
 };
 
-export { getVersionDetails };
+const toVersionSummary = ({
+  document: _document,
+  schema: _schema,
+  ...version
+}: VersionDetails): VersionSummary => {
+  return version;
+};
+
+export { getVersionDetails, toVersionSummary };

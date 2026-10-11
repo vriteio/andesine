@@ -13,7 +13,12 @@ const templates = {
   extension: await readTemplate("extension")
 };
 // Private workspace packages are bundled; their dependencies are CLI dependencies.
-const bundledPackages = ["@andesine/contracts", "@andesine/document", "@andesine/uno-preset"];
+const bundledPackages = [
+  "@andesine/contracts",
+  "@andesine/document",
+  "@andesine/mcp",
+  "@andesine/uno-preset"
+];
 
 const isExternal = (id: string): boolean => {
   const isBundled = bundledPackages.some((name) => id === name || id.startsWith(`${name}/`));

@@ -1,9 +1,9 @@
-import { hashContentDocument, replaceContentDocument } from "@andesine/server/content";
+import { hashContentDocument } from "@andesine/server/content";
 import type { ContentNode } from "@andesine/document";
-import { getContentSnapshot } from "./document";
+import { getContentSnapshot, writeContentDocument } from "./document";
 import { setPersistedDocumentSchemaRevision, type ContentConnection } from "./operations";
 import type { ContentSnapshot } from "./types";
-import { getWebhookOrigin } from "@andesine/server/webhooks/recording";
+import { getWebhookActor } from "@andesine/server/webhooks/recording";
 
 interface DeferredDocumentReplacements {
   prepare: (
@@ -30,7 +30,7 @@ const createDeferredDocumentReplacements = (
 ): DeferredDocumentReplacements => {
   const replacements: DocumentReplacement[] = [];
   // Captured now: the replacements apply after the caller's transaction commits.
-  const webhookOriginExtensionID = getWebhookOrigin();
+  const webhookActor = getWebhookActor();
 
   let applied = false;
 
@@ -79,8 +79,8 @@ const createDeferredDocumentReplacements = (
 
           // Check and replace synchronously, after the current snapshot is durable.
           connection.context.webhookOperationID = webhookOperationID;
-          connection.context.webhookOriginExtensionID = webhookOriginExtensionID;
-          replaceContentDocument(document, content);
+          connection.context.webhookActor = webhookActor;
+          writeContentDocument(document, content);
         });
 
         if (!concurrentSnapshot) break;

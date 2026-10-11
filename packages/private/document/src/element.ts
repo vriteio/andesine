@@ -27,6 +27,10 @@ type ElementValue =
 
 const ELEMENT_NAME = /^[A-Za-z][A-Za-z0-9_-]*$/;
 const ELEMENT_TAG_NAME = /^[A-Za-z][A-Za-z0-9_-]*(?:\.[A-Za-z][A-Za-z0-9_-]*)*$/;
+// Formats like MDX write fields with these names, so elements can't use them.
+const FRAGMENT_ELEMENT_NAME = "Fragment";
+const PROPERTY_ELEMENT_NAME = "Property";
+const RESERVED_ELEMENT_NAMES = [FRAGMENT_ELEMENT_NAME, PROPERTY_ELEMENT_NAME];
 const getElementTagName = (source: string): string => {
   return /^\s*<([A-Za-z][A-Za-z0-9_.-]*)?/.exec(source)?.[1] || "";
 };
@@ -248,6 +252,8 @@ const parseElement = (source: string): ElementData => {
     fail();
   }
 
+  if (RESERVED_ELEMENT_NAMES.includes(name)) throw new Error(`${name} is a reserved Element name`);
+
   return getElementData({ name, props, selfClosing });
 };
 const canonicalElementValue = (value: unknown): string => {
@@ -443,6 +449,9 @@ const findDisallowedElementBlock = (
 export {
   ELEMENT_BLOCKS,
   ELEMENT_TAG_NAME,
+  FRAGMENT_ELEMENT_NAME,
+  PROPERTY_ELEMENT_NAME,
+  RESERVED_ELEMENT_NAMES,
   parseElement,
   getElementTagName,
   getElementData,

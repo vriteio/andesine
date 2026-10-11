@@ -10,20 +10,17 @@ import { schemaHashType } from "../schema/recorded";
 import { MAX_BULK_ITEMS } from "../limits";
 import { versionDetailsType } from "../versions/index";
 import { id, publicID } from "../primitives/id";
-import { publishingChannelCodeType, publishingChannelNameType } from "../publishing/channel";
 import * as z from "zod";
 import { authenticatedContract, baseContract } from "./base";
+import { publishingChannelsContract } from "./publishing-channels";
 import {
   publishedEntriesResultType,
   unpublishedEntriesResultType,
-  channelContentType,
   channelInput,
   publishingMutationInput,
   expectedSnapshotsType,
   entryPublicationType,
   publishEntryTargetType,
-  publishingChannelListItemType,
-  publishingChannelType,
   revertPublishingChangesInputType,
   revertPublishingChangesResultType
 } from "./schemas/publishing";
@@ -309,79 +306,7 @@ const publishingContract = baseContract.prefix("/publishing").router({
     .meta({ required: { session: true, key: ["read:publishing"] } })
     .input(z.object({ entryID: id().describe("Entry whose publications to list") }))
     .output(z.array(entryPublicationType)),
-  listChannels: authenticatedContract
-    .route({
-      summary: "List publishing channels",
-      description:
-        "Returns workspace publishing channels. Set includeAssignmentCount to include entry assignment counts.",
-      tags: ["publishing"],
-      method: "GET",
-      path: "/channels"
-    })
-    .meta({ example: { includeAssignmentCount: true } })
-    .meta({ required: { session: true, key: ["read:publishing"] } })
-    .input(
-      z.object({
-        includeAssignmentCount: z
-          .boolean()
-          .optional()
-          .describe("Whether to include the number of assigned entries")
-      })
-    )
-    .output(z.array(publishingChannelListItemType)),
-  getChannelContent: authenticatedContract
-    .route({
-      summary: "Get channel content and pending changes",
-      description:
-        "Returns publication state and pending changes for a publishing root, with the snapshot ID needed to review and revert changes.",
-      tags: ["publishing"],
-      method: "GET",
-      path: "/channels/{channel}/content"
-    })
-    .meta({ example: { channel: "published", collectionID: "coll_example" } })
-    .meta({ required: { session: true, key: ["read:publishing"] } })
-    .input(
-      z.object({
-        channel: publishingChannelCodeType,
-        collectionID: id().describe("Publishing root collection whose content to list")
-      })
-    )
-    .output(channelContentType),
-  createChannel: authenticatedContract
-    .errors(publishingSnapshotErrors)
-    .route({
-      summary: "Create a publishing channel",
-      description:
-        "Creates a publishing channel from its display name and returns the generated channel code.",
-      tags: ["publishing"],
-      method: "POST",
-      path: "/channels"
-    })
-    .meta({ example: { name: "Preview" } })
-    .meta({ required: { session: true, key: ["publishing"] } })
-    .input(z.object({ name: publishingChannelNameType.describe("Publishing channel label") }))
-    .output(publishingChannelType),
-  deleteChannel: authenticatedContract
-    .errors(publishingSnapshotErrors)
-    .route({
-      summary: "Delete a publishing channel",
-      description:
-        "Deletes a custom channel and its publication assignments. The default published channel cannot be deleted.",
-      tags: ["publishing"],
-      method: "DELETE",
-      path: "/channels/{code}"
-    })
-    .meta({ example: { code: "preview" } })
-    .meta({ required: { session: true, key: ["publishing"] } })
-    .input(
-      z.object({
-        code: publishingChannelCodeType.describe("Publishing channel identifier"),
-        expectedSnapshotID: publicID("snp")
-          .optional()
-          .describe("Reject deletion if the channel snapshot changed")
-      })
-    )
-    .output(z.void())
+  ...publishingChannelsContract
 });
 
 export { publishingContract };

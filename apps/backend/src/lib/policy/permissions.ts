@@ -6,6 +6,7 @@ import {
 import { type KeyPermission, type Permission } from "@andesine/contracts/entities";
 import { ORPCError } from "@orpc/server";
 import { getUserAuthorization, type SessionData } from "./session";
+import { MCP_WRITE_SCOPE } from "#backend/lib/auth/oauth";
 
 const isAdminAuthorization = (auth: SessionData): boolean => {
   return getUserAuthorization(auth)?.admin === true;
@@ -30,6 +31,18 @@ const getMissingAuthorizationPermissions = (
   }
 
   if (auth.type !== "oauth" && isAdminAuthorization(auth)) return [];
+
+  const mcpScopes = auth.type === "oauth" ? auth.oauth?.scopes : undefined;
+  const writeKeyPermissions = Array.isArray(required.key)
+    ? required.key.filter((permission) => !permission.startsWith("read:"))
+    : [];
+
+  // MCP clients (OAuth with scopes) call only public API operations, and write ones need write scope.
+  const missingWriteScope =
+    mcpScopes && !mcpScopes.includes(MCP_WRITE_SCOPE) && writeKeyPermissions.length > 0;
+
+  if (mcpScopes && !required.key) return null;
+  if (missingWriteScope) return writeKeyPermissions;
 
   const oauthPermissions = required.oauth ?? (required.key ? required.session : undefined);
   const mappedKeyPermissions = Array.isArray(required.key)

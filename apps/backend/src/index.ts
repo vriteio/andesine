@@ -5,6 +5,7 @@ import "./events";
 import { collab, shutdownCollaboration } from "#backend/collaboration";
 import { config } from "#backend/lib/config";
 import { authPlugin } from "#backend/lib/transport/auth";
+import { mcpPlugin } from "#backend/lib/transport/mcp";
 import Fastify, { type FastifyRequest } from "fastify";
 import corsPlugin from "@fastify/cors";
 import websocketPlugin from "@fastify/websocket";
@@ -20,6 +21,7 @@ const allowedHeaders = [
   "Content-Type",
   "Authorization",
   "If-None-Match",
+  "Idempotency-Key",
   "X-Workspace-ID",
   "X-Requested-With",
   "X-Session-Verification",
@@ -27,6 +29,7 @@ const allowedHeaders = [
 ];
 const exposedHeaders = [
   "ETag",
+  "Idempotent-Replayed",
   "Retry-After",
   "X-API-Usage",
   "X-API-Usage-Limit",
@@ -163,6 +166,11 @@ app.get(
 app.register(authPlugin, { baseURL: config.PUBLIC_API_URL, handler: auth.handler });
 app.register(webhooksPlugin);
 app.register(routerPlugin);
+app.register(mcpPlugin, {
+  publicURL: config.PUBLIC_API_URL,
+  openAIChallenge: config.OPENAI_APPS_CHALLENGE,
+  glamaClaim: config.GLAMA_CLAIM
+});
 
 await app.listen({
   host,

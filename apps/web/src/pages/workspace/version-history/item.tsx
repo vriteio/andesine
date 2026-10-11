@@ -45,7 +45,8 @@ const versionReasonLabels: Record<VersionReason, string> = {
   "auto": "Automatic",
   "manual": "Manual",
   "revert": "Revert",
-  "schema-migration": "Schema migration"
+  "schema-migration": "Schema migration",
+  "import": "Import"
 };
 
 const VersionHistoryItem: Component<VersionHistoryItemProps> = (props) => {
@@ -142,6 +143,7 @@ const VersionHistoryItem: Component<VersionHistoryItemProps> = (props) => {
                 props.version.reason === "manual" && "i-lucide:circle-dot",
                 props.version.reason === "revert" && "i-lucide:refresh-ccw-dot",
                 props.version.reason === "schema-migration" && "i-lucide:database-backup",
+                props.version.reason === "import" && "i-lucide:import",
                 props.active
                   ? "bg-gradient-to-tr"
                   : publishedToCurrentChannel()

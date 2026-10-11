@@ -4,69 +4,6 @@ import type { APICommand, JSONSchema } from "./types";
 
 const commands: APICommand[] = [
   {
-    id: "assets.attach",
-    group: "assets",
-    command: "attach",
-    method: "post",
-    path: "/assets/{assetID}/attachments",
-    summary: "Attach an asset",
-    description:
-      "Attaches a ready image to an entry. This does not insert an image node into the document.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
-    example: {
-      assetID: "ast_example",
-      entryID: "ent_example"
-    },
-    security: [
-      {
-        apiKey: []
-      },
-      {
-        oauth: []
-      }
-    ],
-    fields: [
-      {
-        name: "assetID",
-        location: "path",
-        required: true,
-        schema: {
-          type: "string",
-          pattern: "^ast_[A-Za-z\\d]{1,22}$"
-        },
-        flag: "asset-id",
-        kind: "string",
-        nullable: false
-      },
-      {
-        name: "x-workspace-id",
-        location: "header",
-        required: false,
-        schema: {
-          type: "string",
-          description:
-            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
-        },
-        flag: "x-workspace-id",
-        kind: "string",
-        nullable: false
-      },
-      {
-        name: "entryID",
-        location: "body",
-        required: true,
-        schema: {
-          type: "string",
-          pattern: "^ent_[A-Za-z\\d]{1,22}$"
-        },
-        flag: "entry-id",
-        kind: "string",
-        nullable: false
-      }
-    ],
-    conditional: false,
-    response: "empty"
-  },
-  {
     id: "assets.get",
     group: "assets",
     command: "get",
@@ -485,7 +422,7 @@ const commands: APICommand[] = [
     path: "/identity",
     summary: "Get credential identity",
     description:
-      "Returns the authenticated user for OAuth or browser credentials, or the key and workspace IDs for an API key. Does not require a workspace selection and does not count toward API usage.",
+      "Returns the authenticated user for OAuth or browser credentials, or the key and workspace IDs and the permissions of an API key. Does not require a workspace selection and does not count toward API usage.",
     security: [
       {
         apiKey: []
@@ -623,9 +560,33 @@ const commands: APICommand[] = [
         schema: {
           type: "string",
           pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
-          description: "ID of the parent collection,"
+          description: "ID of the parent collection"
         },
         flag: "parent-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "parentPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Name path of the parent collection"
+        },
+        flag: "parent-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "parentSlugPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Slug path of the parent collection"
+        },
+        flag: "parent-slug-path",
         kind: "string",
         nullable: false
       },
@@ -802,6 +763,150 @@ const commands: APICommand[] = [
     pagination: "cursor"
   },
   {
+    id: "collections.move",
+    group: "collections",
+    command: "move",
+    method: "post",
+    path: "/collections/{id}/move",
+    summary: "Move a collection",
+    description:
+      "Moves the collection to another parent or position. Without a new parent, it stays in its parent. Without index, it keeps its position in the same parent and goes last in a new one. Rejects names already used in the new parent. A move that changes the schema can start a schema migration, which needs confirmedDataLoss when it can remove content.\n\nRequired API key permissions: collections. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "coll_example",
+      newParentID: "coll_parent"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
+          description: "ID of the collection to be moved"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "newParentID",
+        location: "body",
+        required: false,
+        schema: {
+          anyOf: [
+            {
+              type: "string",
+              pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$"
+            },
+            {
+              type: "null"
+            }
+          ],
+          description: "ID of the new parent collection, or null for the top level"
+        },
+        flag: "new-parent-id",
+        kind: "string",
+        nullable: true
+      },
+      {
+        name: "newParentPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Name path of the new parent collection; / is the top level"
+        },
+        flag: "new-parent-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "newParentSlugPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Slug path of the new parent collection; / is the top level"
+        },
+        flag: "new-parent-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedParentID",
+        location: "body",
+        required: false,
+        schema: {
+          anyOf: [
+            {
+              type: "string",
+              pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$"
+            },
+            {
+              type: "null"
+            }
+          ],
+          description:
+            "ID of the parent that must still contain the collection, or null for the top level"
+        },
+        flag: "expected-parent-id",
+        kind: "string",
+        nullable: true
+      },
+      {
+        name: "index",
+        location: "body",
+        required: false,
+        schema: {
+          type: "integer",
+          minimum: 0,
+          maximum: 9007199254740991,
+          description: "New zero-based index in the parent collection's descendants array"
+        },
+        flag: "index",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "confirmedDataLoss",
+        location: "body",
+        required: false,
+        schema: {
+          type: "boolean",
+          default: false,
+          description: "Confirmation that a schema migration caused by the move can remove content"
+        },
+        flag: "confirmed-data-loss",
+        kind: "boolean",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
     id: "collections.update",
     group: "collections",
     command: "update",
@@ -860,6 +965,20 @@ const commands: APICommand[] = [
           description: "New name of the collection"
         },
         flag: "name",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedName",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          minLength: 1,
+          maxLength: 300,
+          description: "Name the collection must still have"
+        },
+        flag: "expected-name",
         kind: "string",
         nullable: false
       }
@@ -964,6 +1083,20 @@ const commands: APICommand[] = [
           description: "Historical publication snapshot to read"
         },
         flag: "snapshot-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "contentFormat",
+        location: "query",
+        required: false,
+        schema: {
+          enum: ["json", "mdx"],
+          type: "string",
+          default: "json",
+          description: "Content format of the response; mdx also returns the content as MDX in mdx"
+        },
+        flag: "content-format",
         kind: "string",
         nullable: false
       },
@@ -1629,6 +1762,383 @@ const commands: APICommand[] = [
     response: "empty"
   },
   {
+    id: "entries.bulkMove",
+    group: "entries",
+    command: "bulk-move",
+    method: "post",
+    path: "/entries/bulk/move",
+    summary: "Move entries",
+    description:
+      "Moves many entries in one workspace lock, with the items of entries.move; all or none apply. Moves that need a schema migration aren't supported; move those entries with entries.move. Error messages name the failing item by index. Each entry can appear once.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+    example: {
+      items: [
+        {
+          id: "ent_example",
+          collectionPath: "/Guides"
+        }
+      ]
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "items",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          minItems: 1,
+          maxItems: 100,
+          items: {
+            type: "object",
+            properties: {
+              id: {
+                type: "string",
+                pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
+                description: "ID of the entry to be moved"
+              },
+              order: {
+                type: "string",
+                maxLength: 255,
+                description: "New LexoRank order of the entry"
+              },
+              collectionID: {
+                anyOf: [
+                  {
+                    type: "string",
+                    pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$"
+                  },
+                  {
+                    type: "null"
+                  }
+                ],
+                description: "ID of the new parent collection"
+              },
+              collectionPath: {
+                type: "string",
+                description: "Name path of the new parent collection; / is the top level"
+              },
+              collectionSlugPath: {
+                type: "string",
+                description: "Slug path of the new parent collection; / is the top level"
+              },
+              expectedCollectionID: {
+                anyOf: [
+                  {
+                    type: "string",
+                    pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$"
+                  },
+                  {
+                    type: "null"
+                  }
+                ],
+                description:
+                  "ID of the collection that must still contain the entry, or null for the top level"
+              }
+            },
+            required: ["id"]
+          },
+          description: "Entry moves"
+        },
+        flag: "items",
+        kind: "json",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "entries.bulkUpdate",
+    group: "entries",
+    command: "bulk-update",
+    method: "post",
+    path: "/entries/bulk/update",
+    summary: "Update entries",
+    description:
+      "Writes content of many entries in one workspace lock, with the items of entries.update; a name without content is written as the title. All items are checked before any content changes, and all or none apply. Error messages name the failing item by index. Each entry can appear once. A repeated request with the same Idempotency-Key header returns the first result for 24 hours.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+    example: {
+      items: [
+        {
+          id: "ent_example",
+          operations: [
+            {
+              type: "replaceText",
+              find: "v1",
+              replace: "v2"
+            }
+          ]
+        }
+      ]
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "items",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          minItems: 1,
+          maxItems: 100,
+          items: {
+            type: "object",
+            properties: {
+              id: {
+                type: "string",
+                pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
+                description: "ID of the entry to be updated"
+              },
+              name: {
+                type: "string",
+                maxLength: 300,
+                description: "New name of the entry"
+              },
+              document: {
+                type: "object",
+                properties: {
+                  type: {
+                    type: "string"
+                  },
+                  attrs: {
+                    type: "object",
+                    propertyNames: {
+                      type: "string"
+                    },
+                    additionalProperties: {}
+                  },
+                  content: {
+                    type: "array",
+                    items: {
+                      $ref: "#/components/schemas/ContentNodeInput"
+                    }
+                  },
+                  marks: {
+                    type: "array",
+                    items: {
+                      $ref: "#/components/schemas/ContentMark"
+                    }
+                  },
+                  text: {
+                    type: "string"
+                  }
+                },
+                required: ["type"],
+                description:
+                  "ProseMirror JSON of the entry document, which must match the editor and the collection schema"
+              },
+              mdx: {
+                type: "string",
+                description:
+                  "Content as MDX: the title as H1, properties as <Property name value /> elements in place, fragments as <Fragment name> elements, and images as asset:<assetID>; frontmatter properties are also read, and entries.update and versions.create import image URLs"
+              },
+              operations: {
+                type: "array",
+                minItems: 1,
+                maxItems: 100,
+                items: {
+                  anyOf: [
+                    {
+                      type: "object",
+                      properties: {
+                        type: {
+                          const: "replaceText"
+                        },
+                        find: {
+                          type: "string",
+                          minLength: 1,
+                          description: "Text that occurs exactly once in the MDX of one block"
+                        },
+                        replace: {
+                          type: "string",
+                          description: "Replacement text"
+                        }
+                      },
+                      required: ["type", "find", "replace"],
+                      description: "Replace text in one block"
+                    },
+                    {
+                      type: "object",
+                      properties: {
+                        type: {
+                          const: "replaceBlock"
+                        },
+                        id: {
+                          type: "string"
+                        },
+                        mdx: {
+                          type: "string",
+                          description: "Blocks as MDX, without a title"
+                        }
+                      },
+                      required: ["type", "id", "mdx"],
+                      description: "Replace a block with zero or more blocks"
+                    },
+                    {
+                      type: "object",
+                      properties: {
+                        type: {
+                          const: "insertBlocks"
+                        },
+                        mdx: {
+                          type: "string",
+                          description: "Blocks as MDX, without a title"
+                        },
+                        before: {
+                          type: "string",
+                          description: "ID of the block to insert before"
+                        },
+                        after: {
+                          type: "string",
+                          description: "ID of the block to insert after"
+                        },
+                        position: {
+                          enum: ["start", "end"],
+                          type: "string",
+                          description: "Insert at the start or the end"
+                        },
+                        fragment: {
+                          type: "string",
+                          description: "Fragment key for position"
+                        }
+                      },
+                      required: ["type", "mdx"],
+                      description: "Insert blocks"
+                    },
+                    {
+                      type: "object",
+                      properties: {
+                        type: {
+                          const: "deleteBlocks"
+                        },
+                        ids: {
+                          type: "array",
+                          minItems: 1,
+                          items: {
+                            type: "string"
+                          }
+                        }
+                      },
+                      required: ["type", "ids"],
+                      description: "Delete blocks"
+                    },
+                    {
+                      type: "object",
+                      properties: {
+                        type: {
+                          const: "setField"
+                        },
+                        key: {
+                          type: "string",
+                          description: "Field name or key"
+                        },
+                        value: {
+                          anyOf: [
+                            {
+                              type: "string"
+                            },
+                            {
+                              type: "number"
+                            },
+                            {
+                              type: "boolean"
+                            },
+                            {
+                              type: "array",
+                              items: {
+                                type: "string"
+                              }
+                            },
+                            {
+                              type: "null"
+                            }
+                          ],
+                          description: "Property value, or MDX for a fragment"
+                        }
+                      },
+                      required: ["type", "key", "value"],
+                      description: "Set a property value or the content of a fragment"
+                    }
+                  ]
+                },
+                description: "Edit operations, applied in order; all or none apply"
+              },
+              expectedHash: {
+                type: "string",
+                minLength: 64,
+                maxLength: 64,
+                description: "Hash of the content that the change is based on"
+              },
+              expectedName: {
+                type: "string",
+                maxLength: 300,
+                description: "Name the entry must still have"
+              },
+              version: {
+                type: "object",
+                properties: {
+                  name: {
+                    type: "string",
+                    minLength: 1,
+                    maxLength: 100,
+                    description: "Version name"
+                  }
+                },
+                description: "Also save the new content as a version"
+              }
+            },
+            required: ["id"]
+          },
+          description: "Entry updates"
+        },
+        flag: "items",
+        kind: "json",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
     id: "entries.create",
     group: "entries",
     command: "create",
@@ -1636,7 +2146,7 @@ const commands: APICommand[] = [
     path: "/entries",
     summary: "Create an entry",
     description:
-      "Creates an entry and its initial document. The name defaults to Untitled. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed and NFC-normalized. Derived URL slugs must be unique across sibling entries and collections, including case and punctuation variants. Names cannot contain a slash or equal a single dot or two dots. A collection schema can set the initial content.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+      "Creates an entry and its initial document, in the collection given by collectionID, collectionPath, or collectionSlugPath (the top level by default). The name defaults to Untitled, or comes from the title of the supplied document or mdx. fields sets property values and fragment MDX by field name or key. path places the entry at a full name path and creates missing parent collections; a name already used there is a conflict. A repeated request with the same Idempotency-Key header returns the first result for 24 hours. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed and NFC-normalized. Derived URL slugs must be unique across sibling entries and collections, including case and punctuation variants. Names cannot contain a slash or equal a single dot or two dots. A collection schema sets the initial content without a document; a document must match it.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
     example: {
       name: "Getting started",
       collectionID: "coll_example"
@@ -1699,6 +2209,134 @@ const commands: APICommand[] = [
           description: "ID of the collection this entry belongs to"
         },
         flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "document",
+        location: "body",
+        required: false,
+        schema: {
+          type: "object",
+          properties: {
+            type: {
+              type: "string"
+            },
+            attrs: {
+              type: "object",
+              propertyNames: {
+                type: "string"
+              },
+              additionalProperties: {}
+            },
+            content: {
+              type: "array",
+              items: {
+                $ref: "#/components/schemas/ContentNodeInput"
+              }
+            },
+            marks: {
+              type: "array",
+              items: {
+                $ref: "#/components/schemas/ContentMark"
+              }
+            },
+            text: {
+              type: "string"
+            }
+          },
+          required: ["type"],
+          description:
+            "ProseMirror JSON of the entry document, which must match the editor and the collection schema"
+        },
+        flag: "document",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "mdx",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Content as MDX: the title as H1, properties as <Property name value /> elements in place, fragments as <Fragment name> elements, and images as asset:<assetID>; frontmatter properties are also read, and entries.update and versions.create import image URLs"
+        },
+        flag: "mdx",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "fields",
+        location: "body",
+        required: false,
+        schema: {
+          type: "object",
+          propertyNames: {
+            type: "string"
+          },
+          additionalProperties: {
+            anyOf: [
+              {
+                type: "string"
+              },
+              {
+                type: "number"
+              },
+              {
+                type: "boolean"
+              },
+              {
+                type: "array",
+                items: {
+                  type: "string"
+                }
+              },
+              {
+                type: "null"
+              }
+            ],
+            description: "Property value, or MDX for a fragment"
+          },
+          description: "Field values by name or key, set on the initial content"
+        },
+        flag: "fields",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "path",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Full name path of the entry, for example /Guides/Setup"
+        },
+        flag: "path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Name path of an existing parent collection"
+        },
+        flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Slug path of an existing parent collection"
+        },
+        flag: "collection-slug-path",
         kind: "string",
         nullable: false
       }
@@ -1830,6 +2468,21 @@ const commands: APICommand[] = [
         nullable: false
       },
       {
+        name: "contentFormat",
+        location: "query",
+        required: false,
+        schema: {
+          enum: ["json", "mdx", "blocks"],
+          type: "string",
+          default: "json",
+          description:
+            "Content format of the response; mdx also returns the content as MDX in mdx, and blocks returns the blocks that edit operations address in blocks"
+        },
+        flag: "content-format",
+        kind: "string",
+        nullable: false
+      },
+      {
         name: "x-workspace-id",
         location: "header",
         required: false,
@@ -1952,14 +2605,157 @@ const commands: APICommand[] = [
     pagination: "cursor"
   },
   {
+    id: "entries.move",
+    group: "entries",
+    command: "move",
+    method: "post",
+    path: "/entries/{id}/move",
+    summary: "Move an entry",
+    description:
+      "Moves the entry to another collection or position. Without order, it keeps its position in the same collection and goes last in a new one. Rejects names already used in the new collection. A move that changes the schema can start a schema migration, which needs confirmedDataLoss when it can remove content.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "ent_example",
+      collectionID: "coll_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
+          description: "ID of the entry to be moved"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "order",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          maxLength: 255,
+          description: "New LexoRank order of the entry"
+        },
+        flag: "order",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionID",
+        location: "body",
+        required: false,
+        schema: {
+          anyOf: [
+            {
+              type: "string",
+              pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$"
+            },
+            {
+              type: "null"
+            }
+          ],
+          description: "ID of the new parent collection"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: true
+      },
+      {
+        name: "collectionPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Name path of the new parent collection; / is the top level"
+        },
+        flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Slug path of the new parent collection; / is the top level"
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedCollectionID",
+        location: "body",
+        required: false,
+        schema: {
+          anyOf: [
+            {
+              type: "string",
+              pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$"
+            },
+            {
+              type: "null"
+            }
+          ],
+          description:
+            "ID of the collection that must still contain the entry, or null for the top level"
+        },
+        flag: "expected-collection-id",
+        kind: "string",
+        nullable: true
+      },
+      {
+        name: "confirmedDataLoss",
+        location: "body",
+        required: false,
+        schema: {
+          type: "boolean",
+          default: false,
+          description: "Confirmation that a schema migration caused by the move can remove content"
+        },
+        flag: "confirmed-data-loss",
+        kind: "boolean",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
     id: "entries.update",
     group: "entries",
     command: "update",
     method: "put",
     path: "/entries/{id}",
-    summary: "Rename an entry",
+    summary: "Update an entry",
     description:
-      "Updates the entry name. Rejects names already used by a sibling entry or collection. An active schema migration can block this action.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+      "Renames the entry, replaces its content with document or mdx, or edits it with operations (with name, also renames). document and mdx need expectedHash, the hash of the content they replace (from entries.get); a different current hash returns CONTENT_HASH_MISMATCH. Operations anchor on block IDs, unique text, and field keys from entries.get with contentFormat blocks; expectedHash is optional for them, and a missing or ambiguous anchor returns CONTENT_OPERATION_INVALID. Only the changed blocks change, so live edits elsewhere are kept. Current content without a version is first saved as an auto version. version also saves the new content as a named version. Rejects names already used by a sibling entry or collection. expectedName applies the update only when the entry still has that name. An active schema migration can block this action. A repeated request with the same Idempotency-Key header returns the first result for 24 hours.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
     example: {
       id: "ent_example",
       name: "Installation"
@@ -2011,10 +2807,250 @@ const commands: APICommand[] = [
         flag: "name",
         kind: "string",
         nullable: false
+      },
+      {
+        name: "document",
+        location: "body",
+        required: false,
+        schema: {
+          type: "object",
+          properties: {
+            type: {
+              type: "string"
+            },
+            attrs: {
+              type: "object",
+              propertyNames: {
+                type: "string"
+              },
+              additionalProperties: {}
+            },
+            content: {
+              type: "array",
+              items: {
+                $ref: "#/components/schemas/ContentNodeInput"
+              }
+            },
+            marks: {
+              type: "array",
+              items: {
+                $ref: "#/components/schemas/ContentMark"
+              }
+            },
+            text: {
+              type: "string"
+            }
+          },
+          required: ["type"],
+          description:
+            "ProseMirror JSON of the entry document, which must match the editor and the collection schema"
+        },
+        flag: "document",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "mdx",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Content as MDX: the title as H1, properties as <Property name value /> elements in place, fragments as <Fragment name> elements, and images as asset:<assetID>; frontmatter properties are also read, and entries.update and versions.create import image URLs"
+        },
+        flag: "mdx",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "operations",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          minItems: 1,
+          maxItems: 100,
+          items: {
+            anyOf: [
+              {
+                type: "object",
+                properties: {
+                  type: {
+                    const: "replaceText"
+                  },
+                  find: {
+                    type: "string",
+                    minLength: 1,
+                    description: "Text that occurs exactly once in the MDX of one block"
+                  },
+                  replace: {
+                    type: "string",
+                    description: "Replacement text"
+                  }
+                },
+                required: ["type", "find", "replace"],
+                description: "Replace text in one block"
+              },
+              {
+                type: "object",
+                properties: {
+                  type: {
+                    const: "replaceBlock"
+                  },
+                  id: {
+                    type: "string"
+                  },
+                  mdx: {
+                    type: "string",
+                    description: "Blocks as MDX, without a title"
+                  }
+                },
+                required: ["type", "id", "mdx"],
+                description: "Replace a block with zero or more blocks"
+              },
+              {
+                type: "object",
+                properties: {
+                  type: {
+                    const: "insertBlocks"
+                  },
+                  mdx: {
+                    type: "string",
+                    description: "Blocks as MDX, without a title"
+                  },
+                  before: {
+                    type: "string",
+                    description: "ID of the block to insert before"
+                  },
+                  after: {
+                    type: "string",
+                    description: "ID of the block to insert after"
+                  },
+                  position: {
+                    enum: ["start", "end"],
+                    type: "string",
+                    description: "Insert at the start or the end"
+                  },
+                  fragment: {
+                    type: "string",
+                    description: "Fragment key for position"
+                  }
+                },
+                required: ["type", "mdx"],
+                description: "Insert blocks"
+              },
+              {
+                type: "object",
+                properties: {
+                  type: {
+                    const: "deleteBlocks"
+                  },
+                  ids: {
+                    type: "array",
+                    minItems: 1,
+                    items: {
+                      type: "string"
+                    }
+                  }
+                },
+                required: ["type", "ids"],
+                description: "Delete blocks"
+              },
+              {
+                type: "object",
+                properties: {
+                  type: {
+                    const: "setField"
+                  },
+                  key: {
+                    type: "string",
+                    description: "Field name or key"
+                  },
+                  value: {
+                    anyOf: [
+                      {
+                        type: "string"
+                      },
+                      {
+                        type: "number"
+                      },
+                      {
+                        type: "boolean"
+                      },
+                      {
+                        type: "array",
+                        items: {
+                          type: "string"
+                        }
+                      },
+                      {
+                        type: "null"
+                      }
+                    ],
+                    description: "Property value, or MDX for a fragment"
+                  }
+                },
+                required: ["type", "key", "value"],
+                description: "Set a property value or the content of a fragment"
+              }
+            ]
+          },
+          description: "Edit operations, applied in order; all or none apply"
+        },
+        flag: "operations",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "expectedHash",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          minLength: 64,
+          maxLength: 64,
+          description: "Hash of the content that the change is based on"
+        },
+        flag: "expected-hash",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedName",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          maxLength: 300,
+          description: "Name the entry must still have"
+        },
+        flag: "expected-name",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "version",
+        location: "body",
+        required: false,
+        schema: {
+          type: "object",
+          properties: {
+            name: {
+              type: "string",
+              minLength: 1,
+              maxLength: 100,
+              description: "Version name"
+            }
+          },
+          description: "Also save the new content as a version"
+        },
+        flag: "version",
+        kind: "json",
+        nullable: false
       }
     ],
     conditional: false,
-    response: "empty"
+    response: "json"
   },
   {
     id: "instance.get",
@@ -3070,13 +4106,39 @@ const commands: APICommand[] = [
       {
         name: "collectionID",
         location: "query",
-        required: true,
+        required: false,
         schema: {
           type: "string",
           pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "Publishing root collection whose content to list"
         },
         flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+        },
+        flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
         kind: "string",
         nullable: false
       },
@@ -3869,6 +4931,73 @@ const commands: APICommand[] = [
     ],
     conditional: false,
     response: "empty"
+  },
+  {
+    id: "publishing.updateChannel",
+    group: "publishing",
+    command: "update-channel",
+    method: "put",
+    path: "/publishing/channels/{code}",
+    summary: "Rename a publishing channel",
+    description:
+      "Changes the display name of a publishing channel. The channel code, which content reads and webhooks use, doesn't change.\n\nRequired API key permissions: publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      code: "preview",
+      name: "Staging"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "code",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          minLength: 1,
+          maxLength: 50,
+          description: "Code of the channel to rename"
+        },
+        flag: "code",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "name",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string",
+          minLength: 1,
+          maxLength: 50,
+          description: "New publishing channel label"
+        },
+        flag: "name",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
   },
   {
     id: "roles.create",
@@ -5919,7 +7048,7 @@ const commands: APICommand[] = [
     path: "/entries/{entryID}/versions",
     summary: "Create an entry version",
     description:
-      "Saves a version of the current entry content. Optionally assigns a name.\n\nRequired API key permissions: versions. Write permissions also grant read access for the same resource.",
+      "Saves a version of the current entry content, or of supplied document (ProseMirror JSON) or mdx, which must match the editor and the entry's collection schema. Never changes the current content. Optionally assigns a name. Publish the version with publishing.publishEntry. A repeated request with the same Idempotency-Key header returns the first result for 24 hours.\n\nRequired API key permissions: versions. Write permissions also grant read access for the same resource.",
     example: {
       entryID: "ent_example",
       name: "Before release"
@@ -5972,6 +7101,31 @@ const commands: APICommand[] = [
         flag: "name",
         kind: "string",
         nullable: false
+      },
+      {
+        name: "document",
+        location: "body",
+        required: false,
+        schema: {
+          $ref: "#/components/schemas/ContentNodeInput",
+          description: "ProseMirror JSON of the version; the current content when omitted"
+        },
+        flag: "document",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "mdx",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Content as MDX: the title as H1, properties as <Property name value /> elements in place, fragments as <Fragment name> elements, and images as asset:<assetID>; frontmatter properties are also read, and entries.update and versions.create import image URLs"
+        },
+        flag: "mdx",
+        kind: "string",
+        nullable: false
       }
     ],
     conditional: false,
@@ -6021,6 +7175,20 @@ const commands: APICommand[] = [
           description: "Hash of the effective schema definition"
         },
         flag: "expected-schema-hash",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "contentFormat",
+        location: "query",
+        required: false,
+        schema: {
+          enum: ["json", "mdx"],
+          type: "string",
+          default: "json",
+          description: "Content format of the response; mdx also returns the content as MDX in mdx"
+        },
+        flag: "content-format",
         kind: "string",
         nullable: false
       },
@@ -7652,6 +8820,53 @@ const commands: APICommand[] = [
   }
 ];
 const schemas: Record<string, JSONSchema> = {
+  ContentNodeInput: {
+    type: "object",
+    properties: {
+      type: {
+        type: "string"
+      },
+      attrs: {
+        type: "object",
+        propertyNames: {
+          type: "string"
+        },
+        additionalProperties: {}
+      },
+      content: {
+        type: "array",
+        items: {
+          $ref: "#/components/schemas/ContentNodeInput"
+        }
+      },
+      marks: {
+        type: "array",
+        items: {
+          $ref: "#/components/schemas/ContentMark"
+        }
+      },
+      text: {
+        type: "string"
+      }
+    },
+    required: ["type"]
+  },
+  ContentMark: {
+    type: "object",
+    properties: {
+      type: {
+        type: "string"
+      },
+      attrs: {
+        type: "object",
+        propertyNames: {
+          type: "string"
+        },
+        additionalProperties: {}
+      }
+    },
+    required: ["type"]
+  },
   PropertyFilter: {
     anyOf: [
       {

@@ -50,6 +50,7 @@ catalog:
   "@tiptap/pm": "3.30.2"
   "@tiptap/suggestion": "3.30.2"
   "@tiptap/y-tiptap": "3.0.9"
+  "@modelcontextprotocol/sdk": "1.30.1"
 allowBuilds:
   "@parcel/watcher": false
   esbuild: true

@@ -30,6 +30,8 @@ interface NotModifiedResponse {
 }
 interface OperationDefinition {
   streaming?: boolean;
+  /** Repeated requests with the same Idempotency-Key header return the first result. */
+  idempotent?: boolean;
   method: string;
   path: string;
   pathParams: string[];

@@ -139,7 +139,8 @@ const collectionsRouter = handlers.router({
     await Collections.update({
       auth: context.auth,
       id: input.id,
-      name: input.name
+      name: input.name,
+      expectedName: input.expectedName
     });
 
     emitCollectionEvent(context.auth.workspaceID, {
@@ -183,6 +184,9 @@ const collectionsRouter = handlers.router({
       auth: context.auth,
       id: input.id,
       newParentID: input.newParentID,
+      newParentPath: input.newParentPath,
+      newParentSlugPath: input.newParentSlugPath,
+      expectedParentID: input.expectedParentID,
       index: input.index,
       confirmedDataLoss: input.confirmedDataLoss
     });
@@ -198,7 +202,11 @@ const collectionsRouter = handlers.router({
       memberID: getUserAuthorization(context.auth)?.memberID
     });
 
-    if (input.newParentID !== undefined) {
+    const targetsParent = [input.newParentID, input.newParentPath, input.newParentSlugPath].some(
+      (value) => value !== undefined
+    );
+
+    if (targetsParent) {
       await Promise.all([
         enqueueCurrentCollectionSync({
           workspaceID: context.auth.workspaceID,

@@ -17,8 +17,6 @@ const bindings: Record<
   >,
   SDKOperation
 > = {
-  "assets.attach": (client, input, options) =>
-    client.assets.attach(input as OperationInput<"assets.attach">, options),
   "assets.get": (client, input, options) =>
     client.assets.get(input as OperationInput<"assets.get">, options),
   "assets.importURL": (client, input, options) =>
@@ -39,6 +37,8 @@ const bindings: Record<
     client.collections.delete(input as OperationInput<"collections.delete">, options),
   "collections.list": (client, input, options) =>
     client.collections.list(input as OperationInput<"collections.list">, options),
+  "collections.move": (client, input, options) =>
+    client.collections.move(input as OperationInput<"collections.move">, options),
   "collections.update": (client, input, options) =>
     client.collections.update(input as OperationInput<"collections.update">, options),
   "content.get": (client, input, options) =>
@@ -55,6 +55,10 @@ const bindings: Record<
     client.content.listEntries(input as OperationInput<"content.listEntries">, options),
   "entries.bulkDelete": (client, input, options) =>
     client.entries.bulkDelete(input as OperationInput<"entries.bulkDelete">, options),
+  "entries.bulkMove": (client, input, options) =>
+    client.entries.bulkMove(input as OperationInput<"entries.bulkMove">, options),
+  "entries.bulkUpdate": (client, input, options) =>
+    client.entries.bulkUpdate(input as OperationInput<"entries.bulkUpdate">, options),
   "entries.create": (client, input, options) =>
     client.entries.create(input as OperationInput<"entries.create">, options),
   "entries.delete": (client, input, options) =>
@@ -63,6 +67,8 @@ const bindings: Record<
     client.entries.get(input as OperationInput<"entries.get">, options),
   "entries.list": (client, input, options) =>
     client.entries.list(input as OperationInput<"entries.list">, options),
+  "entries.move": (client, input, options) =>
+    client.entries.move(input as OperationInput<"entries.move">, options),
   "entries.update": (client, input, options) =>
     client.entries.update(input as OperationInput<"entries.update">, options),
   "instance.get": (client, input, options) =>
@@ -145,6 +151,8 @@ const bindings: Record<
     ),
   "publishing.unpublishEntry": (client, input, options) =>
     client.publishing.unpublishEntry(input as OperationInput<"publishing.unpublishEntry">, options),
+  "publishing.updateChannel": (client, input, options) =>
+    client.publishing.updateChannel(input as OperationInput<"publishing.updateChannel">, options),
   "roles.create": (client, input, options) =>
     client.roles.create(input as OperationInput<"roles.create">, options),
   "roles.delete": (client, input, options) =>

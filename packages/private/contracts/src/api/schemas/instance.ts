@@ -2,6 +2,7 @@ import * as z from "zod";
 
 const instanceInfoType = z.object({
   apiVersion: z.string().describe("API contract version, not the server build version"),
+  appURL: z.url().describe("URL of the web app; entries open at {appURL}/{workspaceID}/{entryID}"),
   features: z
     .object({
       imageStorage: z.boolean(),

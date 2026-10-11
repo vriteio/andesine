@@ -46,9 +46,10 @@ const createWebhookRecorder = async (
   const operation = createWebhookOperation(
     input.operation.workspaceID,
     input.operation.id,
-    input.operation.originExtensionID
+    input.operation.actor
   );
-  const originExtensionID = operation.originExtensionID && toUUID(operation.originExtensionID);
+  const originExtensionID =
+    operation.actor?.type === "extension" ? toUUID(operation.actor.extensionID) : null;
   const workspaceID = toUUID(operation.workspaceID);
 
   if (typeof database.rollback !== "function") {

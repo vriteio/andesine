@@ -1,7 +1,8 @@
 import { getUserAuthorization, type SessionData } from "#backend/lib/policy";
 import { emitPublishingEntryUpdates, emitVersionEvent } from "#backend/events";
-import { type VersionDetails, type VersionSummary } from "@andesine/contracts/versions";
 import { authorized } from "#backend/lib/transport/middleware/authorized";
+import { idempotent } from "#backend/lib/transport/middleware/idempotent";
+import { toVersionSummary } from "#backend/lib/versioning/details";
 import { Versions } from "#backend/services/versions";
 import { api } from "./implement";
 const getContributorIDs = (auth: SessionData): string[] => {
@@ -9,23 +10,18 @@ const getContributorIDs = (auth: SessionData): string[] => {
 
   return memberID ? [memberID] : [];
 };
-const toVersionSummary = ({
-  document: _document,
-  schema: _schema,
-  ...version
-}: VersionDetails): VersionSummary => {
-  return version;
-};
 const handlers = api.versions;
-const authorizedHandlers = handlers.use(authorized);
+const authorizedHandlers = handlers.use(authorized).use(idempotent);
 const versionsRouter = handlers.router({
   create: authorizedHandlers.create.handler(async ({ context, input }) => {
     const version = await Versions.create({
       auth: context.auth,
       entryID: input.entryID,
-      reason: "manual",
+      reason: input.document || input.mdx !== undefined ? "import" : "manual",
       contributorIDs: getContributorIDs(context.auth),
-      name: input.name
+      name: input.name,
+      document: input.document,
+      mdx: input.mdx
     });
 
     emitVersionEvent(context.auth.workspaceID, {
@@ -56,7 +52,8 @@ const versionsRouter = handlers.router({
     return Versions.get({
       auth: context.auth,
       versionID: input.id,
-      expectedSchemaHash: input.expectedSchemaHash
+      expectedSchemaHash: input.expectedSchemaHash,
+      format: input.contentFormat
     });
   }),
   update: authorizedHandlers.update.handler(async ({ context, input }) => {

@@ -16,6 +16,7 @@ import {
   cachedPublishedTreeType
 } from "./schemas/content";
 import { assetDeliveryVariants } from "../assets/variants";
+import { contentFormatType } from "./schemas/formats";
 import { id, publicID } from "../primitives/id";
 import { publishingChannelCodeType } from "../publishing/channel";
 import { PUBLISHED_CHANNEL_CODE } from "../publishing/constants";
@@ -184,7 +185,10 @@ const contentContract = baseContract.prefix("/content").router({
           channel: publishingChannelCodeType
             .optional()
             .describe(`Publishing channel, defaults to ${PUBLISHED_CHANNEL_CODE}`),
-          snapshotID: publicID("snp").optional().describe("Historical publication snapshot to read")
+          snapshotID: publicID("snp")
+            .optional()
+            .describe("Historical publication snapshot to read"),
+          contentFormat: contentFormatType
         })
         .refine(hasPublishedEntrySelector, {
           message: "Use exactly one ID, path, or slugPath selector"

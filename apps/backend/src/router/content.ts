@@ -41,7 +41,8 @@ const contentRouter = handlers.router({
       expectedSchemaHash: input.expectedSchemaHash,
       channel: input.channel,
       snapshotID: input.snapshotID,
-      collectionScope: context.auth.key?.publishable?.collectionIDs
+      collectionScope: context.auth.key?.publishable?.collectionIDs,
+      format: input.contentFormat
     });
     const entityTag = hashEntityTag(content);
     const headers = getCacheHeaders(entityTag);

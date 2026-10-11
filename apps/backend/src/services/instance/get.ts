@@ -17,6 +17,7 @@ const getInstance = withAuthorization<
   z.infer<typeof instanceInfoType>
 >({}, async ({ auth }) => ({
   apiVersion: API_VERSION,
+  appURL: config.PUBLIC_APP_URL,
   features: {
     imageStorage: Boolean(config.ASSET_S3_BUCKET),
     semanticSearch: Boolean(

@@ -28,6 +28,7 @@ import { pool } from "./database";
 import { startWebhookScheduler } from "./webhooks/scheduler";
 import { startWebhookConsumer } from "./webhooks/consumer";
 import { startWebhookMaintenance } from "./webhooks/maintenance";
+import { removeUnusedOAuthClients } from "./oauth/maintenance";
 import { createCurrentSearchJobHandlers } from "./search/current";
 import { createPublishedSearchJobHandlers } from "./search/published";
 import {
@@ -77,9 +78,10 @@ const jobHandlers = new Map([
   ...createSchemaMigrationJobHandlers(schemaMigrationDependencies)
 ]);
 const maintenanceHandlers = new Map([
-  ["schema-migration-recovery", () => recoverAbandonedSchemaMigrations(searchIndexingQueue)]
+  ["schema-migration-recovery", () => recoverAbandonedSchemaMigrations(searchIndexingQueue)],
+  ["oauth-client-cleanup", removeUnusedOAuthClients]
 ]);
-const maintenanceIntervals = new Map<string, number>();
+const maintenanceIntervals = new Map<string, number>([["oauth-client-cleanup", 60 * 60 * 1000]]);
 
 if (isExtensionRegistryEnabled()) {
   maintenanceHandlers.set(EXTENSION_REGISTRY_JOB_NAME, () => refreshExtensions(publishEvent));
