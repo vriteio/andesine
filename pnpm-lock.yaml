@@ -257,6 +257,9 @@ importers:
       '@orpc/server':
         specifier: 'catalog:'
         version: 1.14.14(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2)
+      '@orpc/standard-server':
+        specifier: 1.14.14
+        version: 1.14.14
       '@orpc/zod':
         specifier: 'catalog:'
         version: 1.14.14(@orpc/contract@1.14.14)(@orpc/server@1.14.14(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2))(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2)(zod@4.4.3)
@@ -266,9 +269,81 @@ importers:
       '@react-email/render':
         specifier: 2.1.0
         version: 2.1.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@tiptap/core':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/pm@3.30.2)
+      '@tiptap/extension-blockquote':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/extension-bold':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
+      '@tiptap/extension-bullet-list':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
+      '@tiptap/extension-code':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
+      '@tiptap/extension-code-block':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/extension-document':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
+      '@tiptap/extension-hard-break':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
+      '@tiptap/extension-highlight':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
+      '@tiptap/extension-horizontal-rule':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/extension-italic':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
+      '@tiptap/extension-link':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/extension-list-item':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
+      '@tiptap/extension-ordered-list':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
+      '@tiptap/extension-paragraph':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
+      '@tiptap/extension-strike':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
+      '@tiptap/extension-subscript':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/extension-superscript':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/extension-table':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/extension-task-item':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
+      '@tiptap/extension-task-list':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
+      '@tiptap/extension-text':
+        specifier: 'catalog:'
+        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
+      '@tiptap/pm':
+        specifier: 'catalog:'
+        version: 3.30.2
       '@tiptap/y-tiptap':
         specifier: 'catalog:'
         version: 3.0.9(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.2)(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32)
+      acorn:
+        specifier: 8.18.0
+        version: 8.18.0
       base-x:
         specifier: 'catalog:'
         version: 5.0.1
@@ -296,6 +371,9 @@ importers:
       nodemailer:
         specifier: ^9.0.4
         version: 9.0.4
+      openapi-fetch:
+        specifier: 0.17.0
+        version: 0.17.0
       pg:
         specifier: 'catalog:'
         version: 8.22.0
@@ -305,15 +383,36 @@ importers:
       redis:
         specifier: ^6.2.0
         version: 6.2.0
+      remark-gfm:
+        specifier: 4.0.1
+        version: 4.0.1
+      remark-mdx:
+        specifier: 3.1.1
+        version: 3.1.1
+      remark-parse:
+        specifier: 11.0.0
+        version: 11.0.0
+      remark-stringify:
+        specifier: 11.0.0
+        version: 11.0.0
       resend:
         specifier: ^6.18.1
         version: 6.18.1(@react-email/render@2.1.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))
       stripe:
         specifier: ^22.4.0
         version: 22.4.0(@types/node@26.1.2)
+      unified:
+        specifier: 11.0.5
+        version: 11.0.5
+      url-slug:
+        specifier: ^5.0.1
+        version: 5.0.1
       y-protocols:
         specifier: ^1.0.7
         version: 1.0.7(yjs@13.6.32)
+      yaml:
+        specifier: 2.9.0
+        version: 2.9.0
       yjs:
         specifier: 'catalog:'
         version: 13.6.32
