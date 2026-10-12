@@ -302,6 +302,13 @@
       "when": 1791747648361,
       "tag": "0042_drop_schema_migration_origin_extension",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1791823960683,
+      "tag": "0043_add_extension_publishable_keys",
+      "breakpoints": true
     }
   ]
 }

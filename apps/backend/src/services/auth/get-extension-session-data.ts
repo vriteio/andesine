@@ -5,6 +5,7 @@ import {
   extensions,
   workspaces
 } from "@andesine/server/database";
+import { PUBLISHABLE_KEYS_PERMISSION } from "@andesine/contracts/extensions";
 import { isExtensionActive } from "@andesine/server/extensions";
 import { db } from "#backend/lib/adapters";
 import { config } from "#backend/lib/config";
@@ -79,7 +80,10 @@ const getExtensionSessionData = async (token: string): Promise<SessionData> => {
       name: decoded.name,
       version: row.extension.version,
       generation: row.extension.generation,
-      permissions: row.extension.permissions,
+      permissions: row.extension.permissions.filter((permission) => {
+        return permission !== PUBLISHABLE_KEYS_PERMISSION;
+      }),
+      publishableKeys: row.extension.permissions.includes(PUBLISHABLE_KEYS_PERMISSION),
       active: isExtensionActive(row.extension),
       uninstalled: Boolean(row.extension.uninstalledAt)
     }

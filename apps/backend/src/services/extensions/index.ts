@@ -22,6 +22,7 @@ import { setConfiguration } from "./set-configuration";
 import { setEnabled } from "./set-enabled";
 import { setWebhookEnabled } from "./set-webhook-enabled";
 import { setElementViewEnabled } from "./set-element-view-enabled";
+import { publishableKeys } from "./publishable-keys";
 import { storage } from "./storage";
 import { uninstall } from "./uninstall";
 import { webhookHistory } from "./webhook-history";
@@ -50,6 +51,7 @@ const Extensions = {
   setElementViewEnabled,
   setEnabled,
   setWebhookEnabled,
+  publishableKeys,
   storage,
   uninstall,
   webhookHistory,

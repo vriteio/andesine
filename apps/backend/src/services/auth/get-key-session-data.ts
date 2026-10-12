@@ -1,5 +1,5 @@
 import { workspaces } from "@andesine/server/database";
-import { verifyAPIKey } from "#backend/lib/data";
+import { verifyAPIKey, type VerifiedAPIKey } from "#backend/lib/data";
 import { toCollectionID, toKeyID, toWorkspaceID } from "@andesine/contracts/primitives";
 import { db, redis } from "#backend/lib/adapters";
 import { parseSessionData, type SessionData } from "#backend/lib/policy";
@@ -7,18 +7,32 @@ import { eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
 const SESSION_TTL = 300;
+const assertManagerActive = ({ key, extension }: VerifiedAPIKey): void => {
+  const isStopped =
+    !extension?.enabled ||
+    extension.disabledReason === "revoked" ||
+    Boolean(extension.uninstalledAt);
+
+  if (key.extensionID && isStopped) throw new ORPCError("UNAUTHORIZED");
+};
 const getKeySessionData = async (token: string): Promise<SessionData> => {
-  const key = await verifyAPIKey(token);
+  const verified = await verifyAPIKey(token);
 
-  if (!key) throw new ORPCError("UNAUTHORIZED");
+  if (!verified) throw new ORPCError("UNAUTHORIZED");
 
+  assertManagerActive(verified);
+
+  const { key } = verified;
   const cacheKey = `session:key:${key.id}`;
   const cached = await redis.get(cacheKey);
 
   if (cached) {
     const cachedData = parseSessionData(cached);
 
-    if (cachedData) return cachedData;
+    // Grant changes update key rows without clearing the cache.
+    if (cachedData?.key) {
+      return { ...cachedData, key: { ...cachedData.key, permissions: key.permissions } };
+    }
 
     await redis.del(cacheKey);
   }

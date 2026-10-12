@@ -1,24 +1,47 @@
-import { type ExtensionSession } from "@andesine/contracts/extensions";
+import { type ExtensionSession, type ExtensionSessionCheck } from "@andesine/contracts/extensions";
+import {
+  collectionActionType,
+  type CollectionAction,
+  type EntryAction
+} from "@andesine/contracts/permissions";
 import { hasPermission } from "@andesine/contracts/permissions";
 import { toUUID } from "@andesine/contracts/primitives";
 import { getProfileImageURL } from "@andesine/server/assets";
 import { memberships, users } from "@andesine/server/database";
 import { db, redis } from "#backend/lib/adapters";
+import { getEffectivePlan } from "#backend/lib/billing";
 import { config } from "#backend/lib/config";
 import {
   getSessionTokenKey,
   type StoredExtensionSession
 } from "#backend/lib/extensions/session-tokens";
-import { withAuthorization } from "#backend/lib/policy";
+import { resolveUserAuthorization } from "#backend/lib/auth/user-authorization";
+import {
+  loadAuthorizedCollectionTree,
+  withAuthorization,
+  type AuthorizedCollectionTree
+} from "#backend/lib/policy";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
 
 interface VerifySessionInput {
   token: string;
+  checks?: ExtensionSessionCheck[];
 }
+
+const COLLECTION_ACTIONS = new Set<string>(collectionActionType.options);
 
 const invalid = (): ORPCError<"NOT_FOUND", unknown> => {
   return new ORPCError("NOT_FOUND", { message: "The session token is not valid" });
+};
+const canTake = (
+  tree: AuthorizedCollectionTree,
+  collectionID: string | null,
+  action: CollectionAction | EntryAction
+): boolean => {
+  return COLLECTION_ACTIONS.has(action)
+    ? tree.canCollection(collectionID, action as CollectionAction)
+    : tree.canEntry(collectionID, action as EntryAction);
 };
 /** The token must match this extension's current generation; email needs `read:memberships`. */
 const verifySession = withAuthorization<VerifySessionInput, undefined, ExtensionSession>(
@@ -60,8 +83,27 @@ const verifySession = withAuthorization<VerifySessionInput, undefined, Extension
       return hasPermission(permission, "read:memberships");
     });
 
+    const trees = input.checks?.length
+      ? await Promise.all([
+          resolveUserAuthorization({
+            userID: session.userID,
+            type: "session",
+            headers: new Headers({ "x-workspace-id": session.workspaceID })
+          }).then((memberAuth) => loadAuthorizedCollectionTree({ auth: memberAuth })),
+          loadAuthorizedCollectionTree({ auth })
+        ])
+      : [];
+    const checks = (input.checks ?? []).map(({ collectionID, actions }) => {
+      const denied = actions.filter((action) => {
+        return !trees.every((tree) => canTake(tree, collectionID, action));
+      });
+
+      return { collectionID, allowed: denied.length === 0, denied };
+    });
+
     return {
       workspaceID: session.workspaceID,
+      workspacePlan: getEffectivePlan(auth.subscriptionPlan),
       version: session.version,
       member: {
         id: session.membershipID,
@@ -72,7 +114,8 @@ const verifySession = withAuthorization<VerifySessionInput, undefined, Extension
           ...(image && { image }),
           ...(canReadEmail && { email: member.email })
         }
-      }
+      },
+      checks
     };
   }
 );

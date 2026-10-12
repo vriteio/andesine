@@ -2,7 +2,7 @@ import { createRef } from "@andesine/components";
 import type { ElementViewOption, EditorMode } from "#editor/client-types";
 import type { Editor } from "@tiptap/core";
 import type { ResolvedPos } from "@tiptap/pm/model";
-import { FRAGMENT_BLOCK_TYPES, type FragmentBlockType } from "@andesine/document";
+import { FRAGMENT_BLOCK_TYPES, type ElementData, type FragmentBlockType } from "@andesine/document";
 import type { SlashMenuItem } from "./component";
 
 const isInsideTableCell = ($pos: ResolvedPos): boolean => {
@@ -243,8 +243,25 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
   ];
 };
 
+/** Matches the nearest enclosing root, like element views. */
+const isInsideRoot = (editor: Editor, roots: Set<string>, name: string): boolean => {
+  const { $from } = editor.state.selection;
+
+  for (let depth = $from.depth; depth > 0; depth -= 1) {
+    const node = $from.node(depth);
+    const element = node.type.name === "element" && node.attrs.name?.toLowerCase();
+
+    if (element && roots.has(element)) return element === name.toLowerCase();
+  }
+
+  return false;
+};
 /** Elements with views, e.g. from extensions, inserted with their tags. */
 const createElementViewItems = (options: ElementViewOption[]): SlashMenuItem[] => {
+  const roots = new Set(
+    options.filter(({ parent }) => !parent).map(({ element }) => element.toLowerCase())
+  );
+
   return options.map((option) => ({
     label: option.label,
     description: option.description,
@@ -253,12 +270,19 @@ const createElementViewItems = (options: ElementViewOption[]): SlashMenuItem[] =
     schemaKind: "block",
     schemaBlockType: "element",
     ref: createRef<HTMLElement | null>(null),
+    isAvailable: option.parent
+      ? (editor) => isInsideRoot(editor, roots, option.parent!)
+      : undefined,
     command({ editor, range }) {
       return editor
         .chain()
         .focus()
         .deleteRange(range)
-        .insertElement({ name: option.element, selfClosing: option.selfClosing })
+        .insertElement({
+          name: option.element,
+          selfClosing: option.selfClosing,
+          props: option.props as ElementData["props"] | undefined
+        })
         .run();
     }
   }));
@@ -279,6 +303,7 @@ const getAvailableSlashMenuItems = (
 ): SlashMenuItem[] => {
   const { $from } = editor.state.selection;
   const availableItems = items.filter((item) => {
+    if (item.isAvailable && !item.isAvailable(editor)) return false;
     if (item.schemaBlockType === "element" && !editor.can().insertElement()) return false;
     if (item.schemaBlockType === "image") {
       const extension = editor.extensionManager.extensions.find(({ name }) => name === "images");

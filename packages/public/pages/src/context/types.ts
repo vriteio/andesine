@@ -18,6 +18,7 @@ interface AndesineAPIContext {
   key: string;
   /** ID of the published collection. */
   collection: string;
+  channel: string;
   /** Base-prefixed URL of the JSON map from entry IDs to page URLs. */
   pages: string;
 }

@@ -35,5 +35,5 @@ type CollectionAction = z.infer<typeof collectionActionType>;
 type EntryAction = z.infer<typeof entryActionType>;
 type CollectionAccess = z.infer<typeof collectionAccessType>;
 
-export { collectionAccessType };
+export { collectionAccessType, collectionActionType, entryActionType };
 export type { CollectionAccess, CollectionAction, EntryAction };

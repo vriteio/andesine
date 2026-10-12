@@ -6,7 +6,10 @@ import {
   type Permission
 } from "@andesine/contracts/entities";
 import { type WorkspaceEvent } from "@andesine/contracts/events";
-import { type ExtensionPermission } from "@andesine/contracts/extensions";
+import {
+  type ExtensionPermission,
+  type PUBLISHABLE_KEYS_PERMISSION
+} from "@andesine/contracts/extensions";
 import * as z from "zod";
 
 interface UserAuthorization {
@@ -29,7 +32,8 @@ interface ExtensionAuthorization {
   name: string;
   version: string;
   generation: number;
-  permissions: ExtensionPermission[];
+  permissions: Array<Exclude<ExtensionPermission, typeof PUBLISHABLE_KEYS_PERMISSION>>;
+  publishableKeys: boolean;
   /** Enabled, without a disabled reason, and installed. */
   active: boolean;
   uninstalled: boolean;

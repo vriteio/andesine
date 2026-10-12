@@ -28,7 +28,7 @@ Extensions are developed against a fully local Andesine stack; the hosted app ha
 
 - `npm run build` — validate the manifest and build the frontend, its CSS, and the artifact metadata into `dist/`.
 - `npm run backend` — start the backend with the variables from `.env` (see `.env.example`).
-- `npm run dev` — run the extension on a local Andesine instance for you, reloading it on each change; Ctrl+C stops it and keeps its state. It needs `andesine auth login` against the local instance, points the extension at the local backend (`--backend`, port 3000 as in `.env.example`), and writes a development key to `.env`.
+- `npm run dev` — run the extension on a local Andesine instance for you, reloading it on each change; Ctrl+C stops it and keeps its state. It needs `andesine auth login` against the local instance, points the extension at the local backend (`--backend`, port 8787 as in `.env.example`), and writes a development key to `.env`.
 - `npx andesine extensions test-event <webhook> <type>` — send a sample event to a webhook of the running development extension.
 - `npx andesine extensions keys generate` — create a key pair; the private key never leaves your machine.
 - `npx andesine extensions keys check` — compare the backend's private key with the manifest keys.

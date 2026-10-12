@@ -21,9 +21,12 @@ const MAX_EXTENSION_REQUEST_URLS = 10;
 const MAX_EXTENSION_BACKEND_KEYS = 3;
 /** Approving it requires workspace-wide restricted-content read authority. */
 const RESTRICTED_CONTENT_PERMISSION = "read:restricted_collections";
+/** Approving it requires managing API keys. */
+const PUBLISHABLE_KEYS_PERMISSION = "publishable-keys";
 const extensionPermissionType = z.enum([
   ...keyPermissionType.options,
-  RESTRICTED_CONTENT_PERMISSION
+  RESTRICTED_CONTENT_PERMISSION,
+  PUBLISHABLE_KEYS_PERMISSION
 ]);
 const extensionNameType = z
   .string()
@@ -140,6 +143,14 @@ const createManifestType = (protocols: string[]) => {
         });
       }
 
+      if (manifest.permissions.includes(PUBLISHABLE_KEYS_PERMISSION) && !manifest.backend) {
+        context.addIssue({
+          code: "custom",
+          path: ["permissions"],
+          message: "Publishable keys are managed by the backend, so they need a backend"
+        });
+      }
+
       for (const [id, webhook] of Object.entries(manifest.webhooks)) {
         if (!manifest.backend) {
           context.addIssue({
@@ -174,6 +185,7 @@ const developmentExtensionManifestType = createManifestType(["https:", "http:"])
 export {
   EXTENSION_API_VERSION,
   RESTRICTED_CONTENT_PERMISSION,
+  PUBLISHABLE_KEYS_PERMISSION,
   extensionPermissionType,
   extensionNameType,
   extensionVersionType,

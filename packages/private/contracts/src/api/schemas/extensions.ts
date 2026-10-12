@@ -13,6 +13,8 @@ import {
   extensionArtifactType,
   extensionDisabledReasonType
 } from "../../extensions/registry";
+import { keyOriginType, keyType } from "../../entities/keys";
+import { collectionActionType, entryActionType } from "../../permissions/actions";
 import { publicID } from "../../primitives/id";
 import { outboundEventNameType, outboundEventType } from "../../webhooks/outbound";
 import { paginationType } from "./pagination";
@@ -42,6 +44,8 @@ type ExtensionActiveView = z.infer<typeof extensionActiveViewType>;
 type ExtensionSelf = z.infer<typeof extensionSelfType>;
 type ExtensionStateResult = z.infer<typeof extensionStateResultType>;
 type ExtensionSession = z.infer<typeof extensionSessionType>;
+type ExtensionSessionCheck = z.infer<typeof extensionSessionCheckType>;
+type ExtensionPublishableKey = z.infer<typeof extensionPublishableKeyType>;
 type ExtensionInstallation = z.infer<typeof extensionInstallationType>;
 type ExtensionElementViewSetting = z.infer<typeof extensionElementViewSettingType>;
 type ExtensionDevelopmentUpload = z.infer<typeof extensionDevelopmentUploadType>;
@@ -134,18 +138,62 @@ const extensionElementViewSettingType = z.object({
 const extensionStateType = z
   .enum(["active", "disabled", "uninstalled"])
   .describe("Uninstalled extensions remain readable until their last lifecycle event expires");
+const workspacePlanType = z
+  .string()
+  .describe(
+    "The workspace's effective plan, e.g. free or pro; pro when the instance has no billing"
+  );
 const extensionSelfType = z.object({
   id: publicID("ext").describe("ID of the installed extension"),
   name: z.string().describe("Registry name"),
   version: z.string().describe("Active version"),
   workspaceID: publicID("ws"),
+  workspacePlan: workspacePlanType,
   state: extensionStateType,
   disabledReason: extensionDisabledReasonType
     .nullable()
     .describe("Why the extension is disabled; null when it is active or uninstalled")
 });
+const MAX_PUBLISHABLE_KEY_SCOPE = 20;
+const extensionPublishableKeyType = keyType
+  .pick({
+    id: true,
+    name: true,
+    permissions: true,
+    collectionIDs: true,
+    allowedOrigins: true,
+    createdAt: true,
+    updatedAt: true
+  })
+  .extend({ value: z.string().describe("The raw key, which is public") });
+const extensionPublishableKeyFieldsType = z.object({
+  name: z.string().trim().min(1).max(100).describe("A name shown in API settings"),
+  collectionIDs: z
+    .array(publicID("coll"))
+    .min(1)
+    .max(MAX_PUBLISHABLE_KEY_SCOPE)
+    .describe("Collections, with their descendants, that the key can read"),
+  allowedOrigins: z
+    .array(keyOriginType)
+    .min(1)
+    .max(MAX_PUBLISHABLE_KEY_SCOPE)
+    .describe("Browser origins that can use the key, besides localhost"),
+  answers: z
+    .boolean()
+    .describe("Whether the key can ask for AI answers; needs the extension's ai-answers permission")
+});
+const extensionSessionActionType = z.union([collectionActionType, entryActionType]);
+const extensionSessionCheckType = z.object({
+  collectionID: publicID("coll").nullable().describe("Collection to check; null for the top level"),
+  actions: z
+    .array(extensionSessionActionType)
+    .min(1)
+    .max(12)
+    .describe("Collection and entry actions that the member must be able to take")
+});
 const extensionSessionType = z.object({
   workspaceID: publicID("ws"),
+  workspacePlan: workspacePlanType,
   version: z.string().describe("The extension version the session was issued for"),
   member: z.object({
     id: z.string().describe("ID of the membership"),
@@ -156,7 +204,16 @@ const extensionSessionType = z.object({
       image: z.string().optional(),
       email: z.string().optional().describe("Only with the read:memberships permission")
     })
-  })
+  }),
+  checks: z
+    .array(
+      z.object({
+        collectionID: publicID("coll").nullable(),
+        allowed: z.boolean().describe("Whether the member and the extension can take every action"),
+        denied: z.array(extensionSessionActionType).describe("Actions that are not allowed")
+      })
+    )
+    .describe("Results of the requested checks, in their order")
 });
 const extensionStateResultType = z.object({
   id: publicID("ext"),
@@ -303,6 +360,9 @@ export {
   extensionElementViewSettingType,
   extensionStateType,
   extensionSelfType,
+  extensionPublishableKeyType,
+  extensionPublishableKeyFieldsType,
+  extensionSessionCheckType,
   extensionSessionType,
   extensionStateResultType,
   extensionDevelopmentUploadType,
@@ -342,6 +402,8 @@ export type {
   ExtensionSelf,
   ExtensionStateResult,
   ExtensionSession,
+  ExtensionSessionCheck,
+  ExtensionPublishableKey,
   ExtensionInstallation,
   ExtensionElementViewSetting,
   ExtensionDevelopmentUpload

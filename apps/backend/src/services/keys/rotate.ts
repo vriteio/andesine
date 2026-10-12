@@ -6,7 +6,7 @@ import { db } from "#backend/lib/adapters";
 import { type Key } from "@andesine/contracts/entities";
 import { withAuthorization } from "#backend/lib/policy";
 import { generateKeyValue, generateSalt, hashKey } from "#backend/lib/security";
-import { encryptKeyValue, mapAPIKey } from "#backend/lib/data";
+import { assertUnmanagedKey, encryptKeyValue, mapAPIKey } from "#backend/lib/data";
 import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
@@ -48,6 +48,8 @@ const rotateKeyOperation = async (
       .for("update");
 
     if (!oldKey) throw new ORPCError("NOT_FOUND", { message: "Key not found" });
+
+    assertUnmanagedKey(oldKey);
 
     assertKeyDelegation(input.auth, oldKey.permissions);
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- New permission `publishable-keys`: the backend can create, update, and delete publishable keys
+  for published content (see the SDK's extension API). It needs a backend, and members who
+  approve it must be able to manage API keys. Managed keys stop while the extension is disabled
+  or revoked; losing `publishable-keys` or `read:publishing`, or uninstalling, deletes them, and
+  losing `ai-answers` removes it from them.
+- Element views take `content` (insert the element with content, so its view can show a
+  `ContentSlot`; defaults to true with descendants) and `props` (props of an element inserted from
+  the slash menu, e.g. a required title).
+- Element view descendants take `name`, `description`, and `icon`; with a `name`, the slash menu
+  offers the descendant inside its root element's content (e.g. `Tab` inside `Tabs`). They also
+  take `content` (defaults to true) and `props`.
+
 ## 0.7.0
 
 - No changes; versioned with the other public Andesine packages.

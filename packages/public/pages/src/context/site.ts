@@ -14,6 +14,7 @@ const toAPIContext = (
     url: (source.apiURL ?? defaultAPIURL).replace(/\/$/, ""),
     key: source.publicKey,
     collection: source.collection,
+    channel: source.channel,
     pages: `${config.base}_andesine/pages/${source.id}.json`
   };
 };

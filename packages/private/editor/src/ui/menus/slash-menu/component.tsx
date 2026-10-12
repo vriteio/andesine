@@ -34,6 +34,7 @@ interface SlashMenuItem {
   schemaBlockType?: string;
   schemaKind?: "block" | "structure";
   ref: Ref<HTMLElement | null>;
+  isAvailable?(editor: Editor): boolean;
   command(params: { editor: Editor; range: Range }): boolean | Promise<boolean>;
 }
 interface SlashMenuState {

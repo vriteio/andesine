@@ -74,7 +74,7 @@ const registerExtensions = (program: Command, signal: AbortSignal): void => {
     .option("--env-file <file>", "The local backend's environment file", ".env")
     .option(
       "--backend <url>",
-      "Local backend URL in place of the manifest's, e.g. http://localhost:3000"
+      "Local backend URL in place of the manifest's, e.g. http://localhost:8787"
     )
     .option("--remove", "Uninstall the development extension and delete its development state")
     .addHelpText(

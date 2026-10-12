@@ -123,10 +123,12 @@ const KeySettingsPage: Component = () => {
     onCreated: (value, createdKind) => setRevealedKey({ value, kind: createdKind })
   });
   const publishable = () => kind() === "publishable";
+  const managed = () => Boolean(key()?.extensionID);
   const disabled = () => {
     return (
       !hasPermission("api_keys") ||
       (Boolean(keyID()) && !keyResult()) ||
+      managed() ||
       createKeyMutation.isPending ||
       updateKeyMutation.isPending
     );
@@ -221,7 +223,9 @@ const KeySettingsPage: Component = () => {
               placeholder={publishable() ? "Docs site" : "My API key"}
               value={keyName()}
               setValue={setKeyName}
-              disabled={!hasPermission("api_keys") || (Boolean(keyID()) && !keyResult())}
+              disabled={
+                !hasPermission("api_keys") || (Boolean(keyID()) && !keyResult()) || managed()
+              }
               class="w-full max-w-md"
             />
           </Setting>
@@ -343,7 +347,7 @@ const KeySettingsPage: Component = () => {
                   }
                 }}
                 class="flex items-center gap-1 w-full justify-center"
-                disabled={!hasPermission("api_keys") || Boolean(fillError())}
+                disabled={!hasPermission("api_keys") || managed() || Boolean(fillError())}
                 loading={createKeyMutation.isPending || updateKeyMutation.isPending}
               >
                 {Boolean(keyID()) ? "Save changes" : "Create key"}

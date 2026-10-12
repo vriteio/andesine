@@ -81,7 +81,7 @@ const createSearchClient = (context: SearchContext): SearchClient => {
       fetch(`${api.url}/search/published`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${api.key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ query, collectionID: api.collection, channel: "published", limit }),
+        body: JSON.stringify({ query, collectionID: api.collection, channel: api.channel, limit }),
         signal
       })
     ]);

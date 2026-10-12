@@ -1,6 +1,7 @@
 import { keyKindType, keyPermissionType } from "@andesine/contracts/entities";
 import { sql } from "drizzle-orm";
 import { index, pgEnum, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import { extensions } from "./extensions";
 import { workspaces } from "./workspaces";
 
 const keyPermissionEnum = pgEnum("key_permission", keyPermissionType.enum);
@@ -30,6 +31,7 @@ const apiKeys = pgTable(
       .default(sql`'{}'`),
     /** Publishable keys only: the raw key, encrypted, so the app can show it again. */
     encryptedValue: text("encrypted_value"),
+    extensionID: uuid("extension_id").references(() => extensions.id, { onDelete: "cascade" }),
     prefix: varchar("prefix", { length: 12 }).notNull(),
     hash: text("hash").notNull(),
     salt: text("salt").notNull(),
@@ -40,6 +42,7 @@ const apiKeys = pgTable(
   (table) => [
     index("api_keys_prefix_idx").on(table.prefix),
     index("api_keys_workspace_id_idx").on(table.workspaceID),
+    index("api_keys_extension_id_idx").on(table.extensionID),
     index("api_keys_expires_at_idx").on(table.expiresAt)
   ]
 );

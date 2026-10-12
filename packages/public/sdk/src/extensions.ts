@@ -12,6 +12,10 @@ interface ExtensionBackendOptions {
   /** Options for the API clients; the backend sets the base URL and the credential. */
   client?: Omit<ClientOptions, "baseURL" | "apiKey" | "accessToken">;
 }
+interface VerifySessionOptions {
+  /** Actions to check for the member and the extension; results are in `checks`, in order. */
+  checks?: SessionCheck[];
+}
 interface ExtensionSessionContext extends VerifiedSession {
   /** The installation's `ext_` ID. */
   extensionID: string;
@@ -39,7 +43,10 @@ interface ExtensionBackend {
    * @throws ExtensionSessionError for missing headers, an untrusted instance, or an invalid token.
    * @throws AndesineAPIError for other API failures.
    */
-  verifySession(headers: HeaderSource): Promise<ExtensionSessionContext>;
+  verifySession(
+    headers: HeaderSource,
+    options?: VerifySessionOptions
+  ): Promise<ExtensionSessionContext>;
   /**
    * Confirms a webhook body by fetching its delivery; respond with 2xx once handled, or it retries.
    * @throws ExtensionNotificationError for an invalid body, an untrusted instance, or no delivery.
@@ -49,6 +56,9 @@ interface ExtensionBackend {
 }
 
 type VerifiedSession = Awaited<ReturnType<AndesineClient["extensions"]["verifySession"]>>;
+type SessionCheck = NonNullable<
+  Parameters<AndesineClient["extensions"]["verifySession"]>[0]["checks"]
+>[number];
 type ReceivedDelivery = Awaited<ReturnType<AndesineClient["extensions"]["getSelfDelivery"]>>;
 type HeaderSource = Headers | Record<string, string | string[] | undefined>;
 type ExtensionSessionErrorCode = "MISSING_SESSION" | "UNTRUSTED_INSTANCE" | "INVALID_SESSION";
@@ -140,7 +150,7 @@ const createExtensionBackend = (options: ExtensionBackendOptions): ExtensionBack
 
   return {
     createClient: createBackendClient,
-    async verifySession(headers) {
+    async verifySession(headers, sessionOptions = {}) {
       const token = /^Bearer\s+(\S+)$/i.exec(getHeader(headers, "Authorization") ?? "")?.[1];
       const extensionID = getHeader(headers, "Andesine-Extension");
       const instance = getHeader(headers, "Andesine-Instance");
@@ -154,7 +164,10 @@ const createExtensionBackend = (options: ExtensionBackendOptions): ExtensionBack
       const client = createBackendClient(audience, extensionID);
 
       try {
-        const session = await client.extensions.verifySession({ token });
+        const session = await client.extensions.verifySession({
+          token,
+          checks: sessionOptions.checks
+        });
 
         return { ...session, extensionID, instance: audience, client };
       } catch (error) {
@@ -201,5 +214,6 @@ export type {
   ExtensionNotificationErrorCode,
   ExtensionPrivateKey,
   ExtensionSessionContext,
-  ExtensionSessionErrorCode
+  ExtensionSessionErrorCode,
+  VerifySessionOptions
 };

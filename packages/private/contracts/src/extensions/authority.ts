@@ -1,7 +1,11 @@
 import { type Permission } from "../entities/roles";
 import { keyPermissionRequirements } from "../permissions/key-requirements";
 import { hasPermission } from "../permissions/requirements";
-import { RESTRICTED_CONTENT_PERMISSION, type ExtensionPermission } from "./manifest";
+import {
+  PUBLISHABLE_KEYS_PERMISSION,
+  RESTRICTED_CONTENT_PERMISSION,
+  type ExtensionPermission
+} from "./manifest";
 
 interface ExtensionMemberAuthority {
   admin?: boolean;
@@ -19,6 +23,9 @@ const getEffectiveExtensionPermissions = (
   member: ExtensionMemberAuthority
 ): ExtensionPermission[] => {
   return grant.filter((permission) => {
+    // Only the backend manages publishable keys.
+    if (permission === PUBLISHABLE_KEYS_PERMISSION) return false;
+
     if (permission === RESTRICTED_CONTENT_PERMISSION) {
       return hasMemberPermission(member, RESTRICTED_CONTENT_PERMISSION);
     }

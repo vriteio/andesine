@@ -4,7 +4,7 @@ import { toCollectionID, toUUID } from "@andesine/contracts/primitives";
 import { db } from "#backend/lib/adapters";
 import { type KeyPermission } from "@andesine/contracts/entities";
 import { withAuthorization } from "#backend/lib/policy";
-import { resolveKeyScope } from "#backend/lib/data";
+import { assertUnmanagedKey, resolveKeyScope } from "#backend/lib/data";
 import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
@@ -26,6 +26,8 @@ const updateKeyOperation = async (
   const [key] = await db.select().from(apiKeys).where(where);
 
   if (!key) throw new ORPCError("NOT_FOUND", { message: "Key not found" });
+
+  assertUnmanagedKey(key);
 
   // The kind cannot change, so the changed values are checked with the stored ones.
   const scope = await resolveKeyScope(input.workspaceID, {

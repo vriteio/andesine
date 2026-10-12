@@ -209,6 +209,18 @@ export type EntriesMoveOutput = OperationOutput<"entries.move">;
 export type EntriesUpdateError = OperationError<"entries.update">;
 export type EntriesUpdateInput = OperationInput<"entries.update">;
 export type EntriesUpdateOutput = OperationOutput<"entries.update">;
+export type ExtensionsCreateSelfPublishableKeyError =
+  OperationError<"extensions.createSelfPublishableKey">;
+export type ExtensionsCreateSelfPublishableKeyInput =
+  OperationInput<"extensions.createSelfPublishableKey">;
+export type ExtensionsCreateSelfPublishableKeyOutput =
+  OperationOutput<"extensions.createSelfPublishableKey">;
+export type ExtensionsDeleteSelfPublishableKeyError =
+  OperationError<"extensions.deleteSelfPublishableKey">;
+export type ExtensionsDeleteSelfPublishableKeyInput =
+  OperationInput<"extensions.deleteSelfPublishableKey">;
+export type ExtensionsDeleteSelfPublishableKeyOutput =
+  OperationOutput<"extensions.deleteSelfPublishableKey">;
 export type ExtensionsDeleteSelfStorageEntryError =
   OperationError<"extensions.deleteSelfStorageEntry">;
 export type ExtensionsDeleteSelfStorageEntryInput =
@@ -231,6 +243,12 @@ export type ExtensionsGetSelfStorageEntryOutput = OperationOutput<"extensions.ge
 export type ExtensionsListInstallationsError = OperationError<"extensions.listInstallations">;
 export type ExtensionsListInstallationsInput = OperationInput<"extensions.listInstallations">;
 export type ExtensionsListInstallationsOutput = OperationOutput<"extensions.listInstallations">;
+export type ExtensionsListSelfPublishableKeysError =
+  OperationError<"extensions.listSelfPublishableKeys">;
+export type ExtensionsListSelfPublishableKeysInput =
+  OperationInput<"extensions.listSelfPublishableKeys">;
+export type ExtensionsListSelfPublishableKeysOutput =
+  OperationOutput<"extensions.listSelfPublishableKeys">;
 export type ExtensionsListSelfStorageEntriesError =
   OperationError<"extensions.listSelfStorageEntries">;
 export type ExtensionsListSelfStorageEntriesInput =
@@ -240,6 +258,12 @@ export type ExtensionsListSelfStorageEntriesOutput =
 export type ExtensionsSetSelfStorageEntryError = OperationError<"extensions.setSelfStorageEntry">;
 export type ExtensionsSetSelfStorageEntryInput = OperationInput<"extensions.setSelfStorageEntry">;
 export type ExtensionsSetSelfStorageEntryOutput = OperationOutput<"extensions.setSelfStorageEntry">;
+export type ExtensionsUpdateSelfPublishableKeyError =
+  OperationError<"extensions.updateSelfPublishableKey">;
+export type ExtensionsUpdateSelfPublishableKeyInput =
+  OperationInput<"extensions.updateSelfPublishableKey">;
+export type ExtensionsUpdateSelfPublishableKeyOutput =
+  OperationOutput<"extensions.updateSelfPublishableKey">;
 export type ExtensionsVerifySessionError = OperationError<"extensions.verifySession">;
 export type ExtensionsVerifySessionInput = OperationInput<"extensions.verifySession">;
 export type ExtensionsVerifySessionOutput = OperationOutput<"extensions.verifySession">;

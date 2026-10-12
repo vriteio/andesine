@@ -106,12 +106,15 @@ interface ElementViewOption {
   icon?: string | (() => JSX.Element);
   /** Inserts the element without content, e.g. `<Badge />`. */
   selfClosing: boolean;
+  props?: Record<string, unknown>;
+  /** Offered only inside this root element, e.g. `Tab` in `Tabs`. */
+  parent?: string;
 }
 /** Extension views for elements; the standard tag view renders when none applies. */
 interface ElementViews {
   /** Reactive. `ancestors` are the names of the enclosing elements, nearest first. */
   resolve(name: string, ancestors: string[]): ElementViewRenderer | null;
-  /** Reactive. The root element views that apply in the workspace. */
+  /** Reactive. The element views that apply in the workspace, with named descendants. */
   list(): ElementViewOption[];
 }
 interface EditorImages {

@@ -25,6 +25,7 @@ interface APIKeyItemProps {
   permissions: KeyPermission[];
   createdAt: Date | string;
   expiresAt: string | null;
+  managed: boolean;
   loading?: boolean;
   onEdit(): void;
   onRotate(): void;
@@ -58,7 +59,7 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
             ]
           ]
         : []),
-      ...(!isMulti && !props.expiresAt
+      ...(!isMulti && !props.expiresAt && !props.managed
         ? [
             [
               { label: "Edit", shortcut: "f2", icon: "i-lucide:pencil", onClick: props.onEdit },
@@ -122,7 +123,7 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
             </Tooltip>
           </Show>
         }
-        onClick={props.canManage ? props.onEdit : undefined}
+        onClick={props.canManage && !props.managed ? props.onEdit : undefined}
         renderLabel={(label) => (
           <div class="flex min-w-0 flex-1 items-center gap-1.5">
             <div class="flex min-w-0 flex-1 items-center gap-1.5" title={props.name}>
@@ -132,6 +133,9 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
                 {props.prefix}...
               </span>
               <div class="flex-1" />
+              <Show when={props.managed}>
+                <span class="shrink-0 text-xs text-gray-400">Managed by an extension</span>
+              </Show>
               <span class={clsx("text-xs text-gray-400 shrink-0")}>
                 {formatDate(props.createdAt)}
               </span>

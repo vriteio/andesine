@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "build": "andesine extensions build",
-    "dev": "andesine extensions dev --backend http://localhost:3000",
+    "dev": "andesine extensions dev --backend http://localhost:8787",
     "backend": "node --env-file-if-exists=.env --import tsx src/backend/server.ts",
     "check": "tsc --noEmit"
   },

@@ -1,4 +1,4 @@
-import { ELEMENT_BLOCKS, ELEMENT_TAG_NAME } from "@andesine/document";
+import { ELEMENT_BLOCKS, ELEMENT_NAME, ELEMENT_TAG_NAME } from "@andesine/document";
 import * as z from "zod";
 import { uniqueItems } from "../webhooks/events";
 
@@ -32,24 +32,53 @@ const elementNameType = z
   .string()
   .max(100)
   .regex(ELEMENT_TAG_NAME, "Use an element name, e.g. Accordion");
+const MAX_ELEMENT_PROPS_LENGTH = 2000;
+/** Props of an element inserted from the slash menu. */
+const elementPropsType = z
+  .record(z.string().regex(ELEMENT_NAME, "Use a prop name, e.g. title"), z.json())
+  .refine(
+    (props) => JSON.stringify(props).length <= MAX_ELEMENT_PROPS_LENGTH,
+    "Props are too large"
+  )
+  .optional();
 /** `descendants` override their elements' own root views inside this root (nearest root first). */
-const extensionElementViewType = z.strictObject({
-  id: extensionStableIDType,
-  name: labelType,
-  /** Shown in the editor's slash menu and the extension's settings. */
-  description: z.string().min(1).max(200).optional(),
-  icon: extensionIconType.optional(),
-  element: elementNameType,
-  entry: extensionEntryType,
-  descendants: z
-    .array(z.strictObject({ element: elementNameType, entry: extensionEntryType }))
-    .max(20)
-    .refine(
-      (descendants) => uniqueItems(descendants.map(({ element }) => element.toLowerCase())),
-      "Use one view per descendant element"
-    )
-    .default([])
-});
+const extensionElementViewType = z
+  .strictObject({
+    id: extensionStableIDType,
+    name: labelType,
+    /** Shown in the editor's slash menu and the extension's settings. */
+    description: z.string().min(1).max(200).optional(),
+    icon: extensionIconType.optional(),
+    element: elementNameType,
+    entry: extensionEntryType,
+    /** Defaults to true with descendants. */
+    content: z.boolean().optional(),
+    props: elementPropsType,
+    descendants: z
+      .array(
+        z.strictObject({
+          element: elementNameType,
+          entry: extensionEntryType,
+          /** Offers the element in the slash menu, inside its root. */
+          name: labelType.optional(),
+          description: z.string().min(1).max(200).optional(),
+          icon: extensionIconType.optional(),
+          /** Defaults to true. */
+          content: z.boolean().optional(),
+          props: elementPropsType
+        })
+      )
+      .max(20)
+      .refine(
+        (descendants) => uniqueItems(descendants.map(({ element }) => element.toLowerCase())),
+        "Use one view per descendant element"
+      )
+      .default([])
+  })
+  .refine((view) => view.content !== false || !view.descendants.some(({ name }) => name), {
+    message: "Named descendants are inserted in the content, so the view needs content",
+    path: ["content"]
+  });
 const extensionBlockActionType = z.strictObject({
   id: extensionStableIDType,
   label: labelType,

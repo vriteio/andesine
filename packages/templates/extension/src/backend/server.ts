@@ -75,6 +75,6 @@ const server = createServer(async (request, response) => {
   }
 });
 
-server.listen(Number(process.env.PORT ?? 3000), () => {
-  console.log(`Backend listening on port ${process.env.PORT ?? 3000}`);
+server.listen(Number(process.env.PORT ?? 8787), () => {
+  console.log(`Backend listening on port ${process.env.PORT ?? 8787}`);
 });

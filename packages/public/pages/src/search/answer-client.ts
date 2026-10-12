@@ -119,7 +119,7 @@ const readAPIEvents = async function* (
         question,
         history: toMessages(history),
         collectionID: api.collection,
-        channel: "published"
+        channel: api.channel
       }),
       signal
     })

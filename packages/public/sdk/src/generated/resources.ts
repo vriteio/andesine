@@ -249,7 +249,7 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
     /**
      * Verify a session token
      *
-     * Verifies a session token from the extension frontend and returns its member. Tokens of other extensions, expired tokens, and tokens of an earlier extension generation fail with NOT_FOUND.
+     * Verifies a session token from the extension frontend and returns its member. Tokens of other extensions, expired tokens, and tokens of an earlier extension generation fail with NOT_FOUND. checks evaluates collection and entry actions for the member limited to the extension's permissions (restricted collections included), so the backend can authorize the member's request.
      */
     verifySession: Operation<"extensions.verifySession", Workspace>;
     /**
@@ -270,6 +270,30 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
      * Returns the extension's configuration, including secret fields, and its revision. Unset fields use their defaults.
      */
     getSelfConfiguration: Operation<"extensions.getSelfConfiguration", Workspace>;
+    /**
+     * List managed publishable keys
+     *
+     * Lists the publishable keys that the extension manages. Requires the publishable-keys permission.
+     */
+    listSelfPublishableKeys: Operation<"extensions.listSelfPublishableKeys", Workspace>;
+    /**
+     * Create a managed publishable key
+     *
+     * Creates a publishable key that the extension manages: read:publishing, and ai-answers with answers. Its collections must be readable by the extension. Members see it in API settings and can only delete it. It stops working while the extension is disabled or revoked; losing the permission or read:publishing, or uninstalling, deletes it, and losing ai-answers removes that permission. Up to 10 keys per installation. Requires the publishable-keys permission.
+     */
+    createSelfPublishableKey: Operation<"extensions.createSelfPublishableKey", Workspace>;
+    /**
+     * Update a managed publishable key
+     *
+     * Changes the name, collections, origins, or AI answers of a key that the extension manages. Requires the publishable-keys permission.
+     */
+    updateSelfPublishableKey: Operation<"extensions.updateSelfPublishableKey", Workspace>;
+    /**
+     * Delete a managed publishable key
+     *
+     * Deletes a key that the extension manages, if it exists. Requires the publishable-keys permission.
+     */
+    deleteSelfPublishableKey: Operation<"extensions.deleteSelfPublishableKey", Workspace>;
     /**
      * Get a storage entry
      *
@@ -1574,6 +1598,46 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       method: "get",
       path: "/extensions/self/configuration",
       pathParams: [],
+      queryParams: [],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    listSelfPublishableKeys: operation<"extensions.listSelfPublishableKeys", Workspace>(request, {
+      method: "get",
+      path: "/extensions/self/publishable-keys",
+      pathParams: [],
+      queryParams: [],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    createSelfPublishableKey: operation<"extensions.createSelfPublishableKey", Workspace>(request, {
+      method: "post",
+      path: "/extensions/self/publishable-keys",
+      pathParams: [],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    updateSelfPublishableKey: operation<"extensions.updateSelfPublishableKey", Workspace>(request, {
+      method: "patch",
+      path: "/extensions/self/publishable-keys/{keyID}",
+      pathParams: ["keyID"],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    deleteSelfPublishableKey: operation<"extensions.deleteSelfPublishableKey", Workspace>(request, {
+      method: "delete",
+      path: "/extensions/self/publishable-keys/{keyID}",
+      pathParams: ["keyID"],
       queryParams: [],
       body: false,
       multipart: false,

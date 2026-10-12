@@ -131,6 +131,9 @@ sources: [{ id: "platform", type: "andesine", collection: "coll_...", mount: "/p
 The build reads the latest publication and copies its images into the site. To show
 a new publication, build the site again, e.g. from a publish webhook.
 
+Set `channel` to show another publishing channel, for example `channel: "preview"`. The
+default is `published`. Search and AI answers use the same channel.
+
 Set `publicKey` to a publishable key (`adn_pk_...`). The build reads the content with
 it, and search and AI answers call the Andesine API from browsers, so the site stays
 static. The build stops for any other key in `publicKey`. Without `publicKey`, set a

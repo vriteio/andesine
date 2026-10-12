@@ -11698,6 +11698,10 @@
                     "name": { "type": "string", "description": "Registry name" },
                     "version": { "type": "string", "description": "Active version" },
                     "workspaceID": { "type": "string", "pattern": "^ws_[A-Za-z\\d]{1,22}$" },
+                    "workspacePlan": {
+                      "type": "string",
+                      "description": "The workspace's effective plan, e.g. free or pro; pro when the instance has no billing"
+                    },
                     "state": {
                       "enum": ["active", "disabled", "uninstalled"],
                       "type": "string",
@@ -11719,7 +11723,15 @@
                       "description": "Why the extension is disabled; null when it is active or uninstalled"
                     }
                   },
-                  "required": ["id", "name", "version", "workspaceID", "state", "disabledReason"]
+                  "required": [
+                    "id",
+                    "name",
+                    "version",
+                    "workspaceID",
+                    "workspacePlan",
+                    "state",
+                    "disabledReason"
+                  ]
                 }
               }
             }
@@ -11996,7 +12008,7 @@
       "post": {
         "operationId": "extensions.verifySession",
         "summary": "Verify a session token",
-        "description": "Verifies a session token from the extension frontend and returns its member. Tokens of other extensions, expired tokens, and tokens of an earlier extension generation fail with NOT_FOUND.",
+        "description": "Verifies a session token from the extension frontend and returns its member. Tokens of other extensions, expired tokens, and tokens of an earlier extension generation fail with NOT_FOUND. checks evaluates collection and entry actions for the member limited to the extension's permissions (restricted collections included), so the backend can authorize the member's request.",
         "tags": ["extensions"],
         "requestBody": {
           "required": true,
@@ -12004,7 +12016,68 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "properties": { "token": { "type": "string", "minLength": 1, "maxLength": 200 } },
+                "properties": {
+                  "token": { "type": "string", "minLength": 1, "maxLength": 200 },
+                  "checks": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "collectionID": {
+                          "anyOf": [
+                            { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+                            { "type": "null" }
+                          ],
+                          "description": "Collection to check; null for the top level"
+                        },
+                        "actions": {
+                          "type": "array",
+                          "minItems": 1,
+                          "maxItems": 12,
+                          "items": {
+                            "anyOf": [
+                              {
+                                "enum": [
+                                  "collection:read",
+                                  "collection:create-child",
+                                  "collection:update",
+                                  "collection:move",
+                                  "collection:delete",
+                                  "collection:set-restricted",
+                                  "collection:manage-restricted-access",
+                                  "collection:set-publishing",
+                                  "publishing:publish-tree",
+                                  "publishing:unpublish-tree"
+                                ],
+                                "type": "string"
+                              },
+                              {
+                                "enum": [
+                                  "entry:create",
+                                  "entry:read",
+                                  "entry:update",
+                                  "entry:move",
+                                  "entry:delete",
+                                  "version:read",
+                                  "version:create",
+                                  "version:update",
+                                  "version:revert",
+                                  "publishing:read",
+                                  "publishing:publish",
+                                  "publishing:unpublish"
+                                ],
+                                "type": "string"
+                              }
+                            ]
+                          },
+                          "description": "Collection and entry actions that the member must be able to take"
+                        }
+                      },
+                      "required": ["collectionID", "actions"]
+                    }
+                  }
+                },
                 "required": ["token"]
               }
             }
@@ -12019,6 +12092,10 @@
                   "type": "object",
                   "properties": {
                     "workspaceID": { "type": "string", "pattern": "^ws_[A-Za-z\\d]{1,22}$" },
+                    "workspacePlan": {
+                      "type": "string",
+                      "description": "The workspace's effective plan, e.g. free or pro; pro when the instance has no billing"
+                    },
                     "version": {
                       "type": "string",
                       "description": "The extension version the session was issued for"
@@ -12043,9 +12120,69 @@
                         }
                       },
                       "required": ["id", "userID", "profile"]
+                    },
+                    "checks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "collectionID": {
+                            "anyOf": [
+                              { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+                              { "type": "null" }
+                            ]
+                          },
+                          "allowed": {
+                            "type": "boolean",
+                            "description": "Whether the member and the extension can take every action"
+                          },
+                          "denied": {
+                            "type": "array",
+                            "items": {
+                              "anyOf": [
+                                {
+                                  "enum": [
+                                    "collection:read",
+                                    "collection:create-child",
+                                    "collection:update",
+                                    "collection:move",
+                                    "collection:delete",
+                                    "collection:set-restricted",
+                                    "collection:manage-restricted-access",
+                                    "collection:set-publishing",
+                                    "publishing:publish-tree",
+                                    "publishing:unpublish-tree"
+                                  ],
+                                  "type": "string"
+                                },
+                                {
+                                  "enum": [
+                                    "entry:create",
+                                    "entry:read",
+                                    "entry:update",
+                                    "entry:move",
+                                    "entry:delete",
+                                    "version:read",
+                                    "version:create",
+                                    "version:update",
+                                    "version:revert",
+                                    "publishing:read",
+                                    "publishing:publish",
+                                    "publishing:unpublish"
+                                  ],
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "description": "Actions that are not allowed"
+                          }
+                        },
+                        "required": ["collectionID", "allowed", "denied"]
+                      },
+                      "description": "Results of the requested checks, in their order"
                     }
                   },
-                  "required": ["workspaceID", "version", "member"]
+                  "required": ["workspaceID", "workspacePlan", "version", "member", "checks"]
                 }
               }
             }
@@ -15757,6 +15894,1441 @@
                     }
                   },
                   "required": ["values", "revision"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "BAD_REQUEST" },
+                        "status": { "const": 400 },
+                        "message": { "type": "string", "default": "Bad Request" },
+                        "data": { "$ref": "#/components/schemas/ValidationErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "UNAUTHORIZED" },
+                        "status": { "const": 401 },
+                        "message": { "type": "string", "default": "Unauthorized" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "FORBIDDEN" },
+                        "status": { "const": 403 },
+                        "message": { "type": "string", "default": "Forbidden" },
+                        "data": { "$ref": "#/components/schemas/ForbiddenErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "NOT_FOUND" },
+                        "status": { "const": 404 },
+                        "message": { "type": "string", "default": "Not Found" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "CONFLICT" },
+                        "status": { "const": 409 },
+                        "message": { "type": "string", "default": "Conflict" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "TOO_MANY_REQUESTS" },
+                        "status": { "const": 429 },
+                        "message": { "type": "string", "default": "Too Many Requests" },
+                        "data": { "$ref": "#/components/schemas/RateLimitErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "INTERNAL_SERVER_ERROR" },
+                        "status": { "const": 500 },
+                        "message": { "type": "string", "default": "Internal Server Error" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "SERVICE_UNAVAILABLE" },
+                        "status": { "const": 503 },
+                        "message": { "type": "string", "default": "Service Unavailable" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "extensionToken": [] }]
+      }
+    },
+    "/extensions/self/publishable-keys": {
+      "get": {
+        "operationId": "extensions.listSelfPublishableKeys",
+        "summary": "List managed publishable keys",
+        "description": "Lists the publishable keys that the extension manages. Requires the publishable-keys permission.",
+        "tags": ["extensions"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
+                            "description": "The ID of the API key"
+                          },
+                          "name": { "type": "string", "description": "The name for the API key" },
+                          "permissions": {
+                            "type": "array",
+                            "items": {
+                              "enum": [
+                                "entries",
+                                "read:entries",
+                                "versions",
+                                "read:versions",
+                                "publishing",
+                                "read:publishing",
+                                "collections",
+                                "read:collections",
+                                "memberships",
+                                "read:memberships",
+                                "roles",
+                                "read:roles",
+                                "webhooks",
+                                "read:webhooks",
+                                "ai-answers"
+                              ],
+                              "type": "string"
+                            },
+                            "description": "The permissions of the API key"
+                          },
+                          "collectionIDs": {
+                            "type": "array",
+                            "items": { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+                            "description": "Publishable keys: the collections, with their descendants, that the key can read; none for all"
+                          },
+                          "allowedOrigins": {
+                            "type": "array",
+                            "items": { "type": "string" },
+                            "description": "Publishable keys: the browser origins that can use the key, with localhost"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "The creation date"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "The last update date"
+                          },
+                          "value": {
+                            "type": "string",
+                            "description": "The raw key, which is public"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "permissions",
+                          "collectionIDs",
+                          "allowedOrigins",
+                          "createdAt",
+                          "updatedAt",
+                          "value"
+                        ]
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "BAD_REQUEST" },
+                        "status": { "const": 400 },
+                        "message": { "type": "string", "default": "Bad Request" },
+                        "data": { "$ref": "#/components/schemas/ValidationErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "UNAUTHORIZED" },
+                        "status": { "const": 401 },
+                        "message": { "type": "string", "default": "Unauthorized" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "FORBIDDEN" },
+                        "status": { "const": 403 },
+                        "message": { "type": "string", "default": "Forbidden" },
+                        "data": { "$ref": "#/components/schemas/ForbiddenErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "NOT_FOUND" },
+                        "status": { "const": 404 },
+                        "message": { "type": "string", "default": "Not Found" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "CONFLICT" },
+                        "status": { "const": 409 },
+                        "message": { "type": "string", "default": "Conflict" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "TOO_MANY_REQUESTS" },
+                        "status": { "const": 429 },
+                        "message": { "type": "string", "default": "Too Many Requests" },
+                        "data": { "$ref": "#/components/schemas/RateLimitErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "INTERNAL_SERVER_ERROR" },
+                        "status": { "const": 500 },
+                        "message": { "type": "string", "default": "Internal Server Error" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "SERVICE_UNAVAILABLE" },
+                        "status": { "const": 503 },
+                        "message": { "type": "string", "default": "Service Unavailable" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "extensionToken": [] }]
+      },
+      "post": {
+        "operationId": "extensions.createSelfPublishableKey",
+        "summary": "Create a managed publishable key",
+        "description": "Creates a publishable key that the extension manages: read:publishing, and ai-answers with answers. Its collections must be readable by the extension. Members see it in API settings and can only delete it. It stops working while the extension is disabled or revoked; losing the permission or read:publishing, or uninstalling, deletes it, and losing ai-answers removes that permission. Up to 10 keys per installation. Requires the publishable-keys permission.",
+        "tags": ["extensions"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "description": "A name shown in API settings"
+                  },
+                  "collectionIDs": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 20,
+                    "items": { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+                    "description": "Collections, with their descendants, that the key can read"
+                  },
+                  "allowedOrigins": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 20,
+                    "items": {
+                      "type": "string",
+                      "pattern": "^https?:\\/\\/[a-z\\d.-]+(?::\\d{1,5})?$"
+                    },
+                    "description": "Browser origins that can use the key, besides localhost"
+                  },
+                  "answers": {
+                    "type": "boolean",
+                    "description": "Whether the key can ask for AI answers; needs the extension's ai-answers permission",
+                    "default": false
+                  }
+                },
+                "required": ["name", "collectionIDs", "allowedOrigins"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
+                      "description": "The ID of the API key"
+                    },
+                    "name": { "type": "string", "description": "The name for the API key" },
+                    "permissions": {
+                      "type": "array",
+                      "items": {
+                        "enum": [
+                          "entries",
+                          "read:entries",
+                          "versions",
+                          "read:versions",
+                          "publishing",
+                          "read:publishing",
+                          "collections",
+                          "read:collections",
+                          "memberships",
+                          "read:memberships",
+                          "roles",
+                          "read:roles",
+                          "webhooks",
+                          "read:webhooks",
+                          "ai-answers"
+                        ],
+                        "type": "string"
+                      },
+                      "description": "The permissions of the API key"
+                    },
+                    "collectionIDs": {
+                      "type": "array",
+                      "items": { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+                      "description": "Publishable keys: the collections, with their descendants, that the key can read; none for all"
+                    },
+                    "allowedOrigins": {
+                      "type": "array",
+                      "items": { "type": "string" },
+                      "description": "Publishable keys: the browser origins that can use the key, with localhost"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "The creation date"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "The last update date"
+                    },
+                    "value": { "type": "string", "description": "The raw key, which is public" }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "permissions",
+                    "collectionIDs",
+                    "allowedOrigins",
+                    "createdAt",
+                    "updatedAt",
+                    "value"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "BAD_REQUEST" },
+                        "status": { "const": 400 },
+                        "message": { "type": "string", "default": "Bad Request" },
+                        "data": { "$ref": "#/components/schemas/ValidationErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "UNAUTHORIZED" },
+                        "status": { "const": 401 },
+                        "message": { "type": "string", "default": "Unauthorized" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "FORBIDDEN" },
+                        "status": { "const": 403 },
+                        "message": { "type": "string", "default": "Forbidden" },
+                        "data": { "$ref": "#/components/schemas/ForbiddenErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "NOT_FOUND" },
+                        "status": { "const": 404 },
+                        "message": { "type": "string", "default": "Not Found" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "CONFLICT" },
+                        "status": { "const": 409 },
+                        "message": { "type": "string", "default": "Conflict" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "TOO_MANY_REQUESTS" },
+                        "status": { "const": 429 },
+                        "message": { "type": "string", "default": "Too Many Requests" },
+                        "data": { "$ref": "#/components/schemas/RateLimitErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "INTERNAL_SERVER_ERROR" },
+                        "status": { "const": 500 },
+                        "message": { "type": "string", "default": "Internal Server Error" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "SERVICE_UNAVAILABLE" },
+                        "status": { "const": 503 },
+                        "message": { "type": "string", "default": "Service Unavailable" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "extensionToken": [] }]
+      }
+    },
+    "/extensions/self/publishable-keys/{keyID}": {
+      "patch": {
+        "operationId": "extensions.updateSelfPublishableKey",
+        "summary": "Update a managed publishable key",
+        "description": "Changes the name, collections, origins, or AI answers of a key that the extension manages. Requires the publishable-keys permission.",
+        "tags": ["extensions"],
+        "parameters": [
+          {
+            "name": "keyID",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "pattern": "^adn_[A-Za-z\\d]{1,22}$" }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "description": "A name shown in API settings"
+                  },
+                  "collectionIDs": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 20,
+                    "items": { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+                    "description": "Collections, with their descendants, that the key can read"
+                  },
+                  "allowedOrigins": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 20,
+                    "items": {
+                      "type": "string",
+                      "pattern": "^https?:\\/\\/[a-z\\d.-]+(?::\\d{1,5})?$"
+                    },
+                    "description": "Browser origins that can use the key, besides localhost"
+                  },
+                  "answers": {
+                    "type": "boolean",
+                    "description": "Whether the key can ask for AI answers; needs the extension's ai-answers permission"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
+                      "description": "The ID of the API key"
+                    },
+                    "name": { "type": "string", "description": "The name for the API key" },
+                    "permissions": {
+                      "type": "array",
+                      "items": {
+                        "enum": [
+                          "entries",
+                          "read:entries",
+                          "versions",
+                          "read:versions",
+                          "publishing",
+                          "read:publishing",
+                          "collections",
+                          "read:collections",
+                          "memberships",
+                          "read:memberships",
+                          "roles",
+                          "read:roles",
+                          "webhooks",
+                          "read:webhooks",
+                          "ai-answers"
+                        ],
+                        "type": "string"
+                      },
+                      "description": "The permissions of the API key"
+                    },
+                    "collectionIDs": {
+                      "type": "array",
+                      "items": { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+                      "description": "Publishable keys: the collections, with their descendants, that the key can read; none for all"
+                    },
+                    "allowedOrigins": {
+                      "type": "array",
+                      "items": { "type": "string" },
+                      "description": "Publishable keys: the browser origins that can use the key, with localhost"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "The creation date"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "The last update date"
+                    },
+                    "value": { "type": "string", "description": "The raw key, which is public" }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "permissions",
+                    "collectionIDs",
+                    "allowedOrigins",
+                    "createdAt",
+                    "updatedAt",
+                    "value"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "BAD_REQUEST" },
+                        "status": { "const": 400 },
+                        "message": { "type": "string", "default": "Bad Request" },
+                        "data": { "$ref": "#/components/schemas/ValidationErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "UNAUTHORIZED" },
+                        "status": { "const": 401 },
+                        "message": { "type": "string", "default": "Unauthorized" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "FORBIDDEN" },
+                        "status": { "const": 403 },
+                        "message": { "type": "string", "default": "Forbidden" },
+                        "data": { "$ref": "#/components/schemas/ForbiddenErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "NOT_FOUND" },
+                        "status": { "const": 404 },
+                        "message": { "type": "string", "default": "Not Found" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "CONFLICT" },
+                        "status": { "const": 409 },
+                        "message": { "type": "string", "default": "Conflict" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "TOO_MANY_REQUESTS" },
+                        "status": { "const": 429 },
+                        "message": { "type": "string", "default": "Too Many Requests" },
+                        "data": { "$ref": "#/components/schemas/RateLimitErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "INTERNAL_SERVER_ERROR" },
+                        "status": { "const": 500 },
+                        "message": { "type": "string", "default": "Internal Server Error" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "SERVICE_UNAVAILABLE" },
+                        "status": { "const": 503 },
+                        "message": { "type": "string", "default": "Service Unavailable" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "extensionToken": [] }]
+      },
+      "delete": {
+        "operationId": "extensions.deleteSelfPublishableKey",
+        "summary": "Delete a managed publishable key",
+        "description": "Deletes a key that the extension manages, if it exists. Requires the publishable-keys permission.",
+        "tags": ["extensions"],
+        "parameters": [
+          {
+            "name": "keyID",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "pattern": "^adn_[A-Za-z\\d]{1,22}$" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "deleted": { "type": "boolean" } },
+                  "required": ["deleted"]
                 }
               }
             }

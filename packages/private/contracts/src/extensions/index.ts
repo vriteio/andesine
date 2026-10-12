@@ -33,6 +33,7 @@ export type {
 export {
   EXTENSION_API_VERSION,
   RESTRICTED_CONTENT_PERMISSION,
+  PUBLISHABLE_KEYS_PERMISSION,
   extensionPermissionType,
   extensionNameType,
   extensionVersionType,
@@ -130,6 +131,8 @@ export type {
   ExtensionSelf,
   ExtensionStateResult,
   ExtensionSession,
+  ExtensionSessionCheck,
+  ExtensionPublishableKey,
   ExtensionInstallation,
   ExtensionConfigurationState,
   ExtensionSelfConfiguration,

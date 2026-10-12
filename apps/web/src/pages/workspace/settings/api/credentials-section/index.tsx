@@ -211,6 +211,7 @@ const APIKeyList: Component<APIKeyListProps> = (props) => {
                 permissions={key().permissions as KeyPermission[]}
                 createdAt={key().createdAt}
                 expiresAt={key().expiresAt}
+                managed={Boolean(key().extensionID)}
                 canManage={props.canManage}
                 loading={isKeyPending(key().id)}
                 onEdit={() => {

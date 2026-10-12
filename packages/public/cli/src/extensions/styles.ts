@@ -58,7 +58,10 @@ const getManifestIcons = (manifest: ExtensionManifest): string[] => {
     manifest.icon,
     ...manifest.panels.map(({ icon }) => icon),
     ...manifest.blockActions.map(({ icon }) => icon),
-    ...manifest.elementViews.map(({ icon }) => icon)
+    ...manifest.elementViews.flatMap(({ icon, descendants }) => [
+      icon,
+      ...descendants.map((descendant) => descendant.icon)
+    ])
   ];
 
   return [...new Set(icons.filter((icon) => icon !== undefined))];

@@ -45,6 +45,9 @@ const keyType = z.object({
     .nullable()
     .describe("Publishable keys: the raw key, which is public; null for secret keys"),
   prefix: z.string().describe("The first characters of the raw key"),
+  extensionID: publicID("ext")
+    .nullable()
+    .describe("The extension that manages the key; members can only delete it"),
   createdAt: z.iso.datetime().describe("The creation date"),
   updatedAt: z.iso.datetime().describe("The last update date"),
   expiresAt: z.iso.datetime().nullable().describe("The expiration date")

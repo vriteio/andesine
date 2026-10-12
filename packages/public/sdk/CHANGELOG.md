@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+- `extensions.getSelf` and `extensions.verifySession` return `workspacePlan`, the workspace's
+  effective plan (`pro` on instances without billing), so extensions can offer plan features.
+- Extension-managed publishable keys: `extensions.listSelfPublishableKeys`,
+  `createSelfPublishableKey`, `updateSelfPublishableKey`, and `deleteSelfPublishableKey`, for
+  extensions with the `publishable-keys` permission. The keys read published content of their
+  collections (and ask for AI answers with `answers` and the extension's `ai-answers` permission),
+  in their origins. Members can only delete them. They stop while the extension is disabled or
+  revoked; losing `publishable-keys` or `read:publishing`, or uninstalling, deletes them, and
+  losing `ai-answers` removes it.
+- Keys have `extensionID`: the extension that manages the key, or `null`.
+- `extensions.verifySession` takes optional `checks` (`{ collectionID, actions }`, up to 10) and
+  returns `checks` with `allowed` and the `denied` actions. An action is allowed only when the
+  member and the extension can both take it, restricted collections included.
+- `createExtensionBackend().verifySession(headers, { checks })` passes the checks; the results
+  are in `session.checks`.
+
 ## 0.7.0
 
 - `auth.getIdentity` returns `client` (ID and registered name) for OAuth access tokens.

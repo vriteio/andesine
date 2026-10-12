@@ -61,7 +61,7 @@ const readPublication = async (source: AndesineSourceConfig): Promise<Publicatio
   try {
     const tree = await client.content.getTree({
       collectionID: source.collection,
-      channel: "published"
+      channel: source.channel
     });
     const snapshot = client.atSnapshot(tree.snapshotID);
 

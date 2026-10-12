@@ -16,7 +16,11 @@ declare module "@tiptap/core" {
   interface Commands<ReturnType> {
     element: {
       /** Without an element, inserts an empty tag and starts editing it. */
-      insertElement(element?: { name: string; selfClosing: boolean }): ReturnType;
+      insertElement(element?: {
+        name: string;
+        selfClosing: boolean;
+        props?: ElementData["props"];
+      }): ReturnType;
       wrapInElement(): ReturnType;
       editElement(position?: number, selectName?: boolean, edge?: "start" | "end"): ReturnType;
       formatElementTag(position?: number): ReturnType;
@@ -58,7 +62,7 @@ const Element = BaseElement.extend({
           const id = nanoid();
           const data = element && {
             name: element.name,
-            props: {},
+            props: element.props ?? {},
             selfClosing: element.selfClosing
           };
           const node = data

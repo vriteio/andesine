@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- The extension template's backend uses port 8787, so it doesn't clash with the Andesine web
+  app's dev server on port 3000.
+- Validate the new element view fields `content`, `props`, and the descendants' `name`,
+  `description`, and `icon`; `extensions build` generates the descendants' icons.
+
 ## 0.7.0
 
 - Add `andesine mcp`: an MCP server over stdio for AI agents, with `--read-only`. Its

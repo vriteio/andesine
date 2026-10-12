@@ -26,6 +26,7 @@ const describeExtensionPermission = (permission: ExtensionPermission): string =>
     : ["Manage", permission];
 
   if (permission === "ai-answers") return "Generate AI answers";
+  if (permission === "publishable-keys") return "Create publishable keys for published content";
 
   return `${action} ${RESOURCE_LABELS[resource] ?? resource}`;
 };

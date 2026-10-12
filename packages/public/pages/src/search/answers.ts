@@ -65,7 +65,7 @@ const handleAnswer = async (
           question: body.question,
           history: body.history,
           collectionID: source.collection,
-          channel: "published"
+          channel: source.channel
         },
         { signal }
       )

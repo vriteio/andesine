@@ -1,5 +1,6 @@
-import { emitExtensionEvent } from "#backend/events";
+import { emitExtensionEvent, emitKeyEvent } from "#backend/events";
 import { config } from "#backend/lib/config";
+import { toManagedKey } from "#backend/lib/extensions/publishable-keys";
 import { getUserAuthorization } from "#backend/lib/policy";
 import { enforceRateLimit } from "#backend/lib/security";
 import { authorized } from "#backend/lib/transport/middleware/authorized";
@@ -62,6 +63,58 @@ const extensionsRouter = handlers.router({
 
     return Extensions.getSelfConfiguration({ auth: context.auth });
   }),
+  listSelfPublishableKeys: authorizedHandlers.listSelfPublishableKeys.handler(
+    async ({ context }) => {
+      assertExtensionsEnabled();
+
+      return { data: await Extensions.publishableKeys.list({ auth: context.auth }) };
+    }
+  ),
+  createSelfPublishableKey: authorizedHandlers.createSelfPublishableKey.handler(
+    async ({ context, input }) => {
+      assertExtensionsEnabled();
+
+      const key = await Extensions.publishableKeys.create({ auth: context.auth, ...input });
+
+      emitKeyEvent(context.auth.workspaceID, { action: "key:create", data: key });
+
+      return toManagedKey(key);
+    }
+  ),
+  updateSelfPublishableKey: authorizedHandlers.updateSelfPublishableKey.handler(
+    async ({ context, input }) => {
+      assertExtensionsEnabled();
+
+      const key = await Extensions.publishableKeys.update({ auth: context.auth, ...input });
+
+      await Auth.invalidateSessionData({ keyID: input.keyID });
+
+      emitKeyEvent(context.auth.workspaceID, {
+        action: "key:update",
+        data: { id: key.id, name: key.name, permissions: key.permissions }
+      });
+
+      return toManagedKey(key);
+    }
+  ),
+  deleteSelfPublishableKey: authorizedHandlers.deleteSelfPublishableKey.handler(
+    async ({ context, input }) => {
+      assertExtensionsEnabled();
+
+      const result = await Extensions.publishableKeys.delete({ auth: context.auth, ...input });
+
+      if (result.deleted) {
+        await Auth.invalidateSessionData({ keyID: input.keyID });
+
+        emitKeyEvent(context.auth.workspaceID, {
+          action: "key:delete",
+          data: { ids: [input.keyID] }
+        });
+      }
+
+      return result;
+    }
+  ),
   getSelfStorageEntry: authorizedHandlers.getSelfStorageEntry.handler(({ context, input }) => {
     assertExtensionsEnabled();
 

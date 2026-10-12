@@ -1,4 +1,5 @@
 import {
+  apiKeys,
   extensionConfigurations,
   extensionDevelopmentVersions,
   extensionElementViews,
@@ -16,6 +17,7 @@ const uninstallExtension = async (
   extension: typeof extensions.$inferSelect
 ): Promise<typeof extensions.$inferSelect> => {
   await database.delete(extensionStorage).where(eq(extensionStorage.extensionID, extension.id));
+  await database.delete(apiKeys).where(eq(apiKeys.extensionID, extension.id));
   await database
     .delete(extensionConfigurations)
     .where(eq(extensionConfigurations.extensionID, extension.id));

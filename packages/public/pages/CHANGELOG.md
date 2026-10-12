@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Add `channel` to Andesine sources (default `published`). The build reads that channel's
+  publication, and search and AI answers use it too.
+
 ## 0.7.0
 
 - No changes; versioned with the other public Andesine packages.

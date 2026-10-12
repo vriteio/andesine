@@ -1,11 +1,11 @@
-import { apiKeys, collections } from "@andesine/server/database";
+import { apiKeys, collections, extensions } from "@andesine/server/database";
 import {
   publishableKeyPermissionType,
   type Key,
   type KeyKind,
   type KeyPermission
 } from "@andesine/contracts/entities";
-import { toCollectionID, toKeyID, toUUID } from "@andesine/contracts/primitives";
+import { toCollectionID, toExtensionID, toKeyID, toUUID } from "@andesine/contracts/primitives";
 import { db } from "#backend/lib/adapters";
 import { config } from "#backend/lib/config";
 import { decrypt, encrypt, hashKey } from "#backend/lib/security";
@@ -13,6 +13,10 @@ import { and, eq, inArray, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { timingSafeEqual } from "node:crypto";
 
+interface VerifiedAPIKey {
+  key: typeof apiKeys.$inferSelect;
+  extension: typeof extensions.$inferSelect | null;
+}
 interface KeyScopeInput {
   kind: KeyKind;
   permissions: KeyPermission[];
@@ -29,14 +33,18 @@ interface KeyScope {
 
 const publishablePermissions: readonly KeyPermission[] = publishableKeyPermissionType.options;
 
-const verifyAPIKey = async (rawKey: string): Promise<typeof apiKeys.$inferSelect | null> => {
+const verifyAPIKey = async (rawKey: string): Promise<VerifiedAPIKey | null> => {
   const prefix = rawKey.slice(0, 12);
-  const candidates = await db.select().from(apiKeys).where(eq(apiKeys.prefix, prefix));
+  const candidates = await db
+    .select({ key: apiKeys, extension: extensions })
+    .from(apiKeys)
+    .leftJoin(extensions, eq(extensions.id, apiKeys.extensionID))
+    .where(eq(apiKeys.prefix, prefix));
 
   for (const candidate of candidates) {
-    if (candidate.expiresAt && candidate.expiresAt <= new Date()) continue;
-    const actual = Buffer.from(hashKey(rawKey, candidate.salt), "hex");
-    const expected = Buffer.from(candidate.hash, "hex");
+    if (candidate.key.expiresAt && candidate.key.expiresAt <= new Date()) continue;
+    const actual = Buffer.from(hashKey(rawKey, candidate.key.salt), "hex");
+    const expected = Buffer.from(candidate.key.hash, "hex");
 
     if (actual.length === expected.length && timingSafeEqual(actual, expected)) return candidate;
   }
@@ -52,6 +60,7 @@ const mapAPIKey = (key: typeof apiKeys.$inferSelect): Key => ({
   allowedOrigins: key.allowedOrigins,
   value: key.encryptedValue && decrypt(key.encryptedValue, config.SECRET),
   prefix: key.prefix,
+  extensionID: key.extensionID && toExtensionID(key.extensionID),
   createdAt: key.createdAt.toISOString(),
   updatedAt: key.updatedAt.toISOString(),
   expiresAt: key.expiresAt?.toISOString() || null
@@ -62,6 +71,14 @@ const encryptKeyValue = (kind: KeyKind, raw: string): string | null => {
 };
 const badRequest = (message: string): ORPCError<"BAD_REQUEST", unknown> => {
   return new ORPCError("BAD_REQUEST", { message });
+};
+const assertUnmanagedKey = (key: typeof apiKeys.$inferSelect): void => {
+  if (!key.extensionID) return;
+
+  throw new ORPCError("FORBIDDEN", {
+    message: "An extension manages this key",
+    data: { hints: ["Delete the key to revoke it, or change it in the extension."] }
+  });
 };
 /**
  * Checks the rules of a key kind and returns the scope to store. Secret keys have no scope.
@@ -112,5 +129,5 @@ const resolveKeyScope = async (workspaceID: string, input: KeyScopeInput): Promi
   };
 };
 
-export { encryptKeyValue, mapAPIKey, verifyAPIKey, resolveKeyScope };
-export type { KeyScope, KeyScopeInput };
+export { assertUnmanagedKey, encryptKeyValue, mapAPIKey, verifyAPIKey, resolveKeyScope };
+export type { KeyScope, KeyScopeInput, VerifiedAPIKey };

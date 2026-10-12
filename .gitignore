@@ -40,12 +40,6 @@ yarn-error.log*
 *.pem
 .pnpm-store
 
-# Notes
-TODO.md
-NOTES.md
-/AGENTS.override.md
-/CLAUDE.local.md
-
 # Cloudflare
 .wrangler/
 .dev.vars
@@ -53,7 +47,12 @@ NOTES.md
 # Astro
 .astro/
 
-# Local agent configuration and working plans
+# Local notes, plans and agent overrides
+TODO.md
+NOTES.md
+/AGENTS.override.md
+/CLAUDE.local.md
 /.mcp.json
 *_PLAN.md
 *_ACCEPTANCE.md
+/notes/

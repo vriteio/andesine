@@ -4,6 +4,7 @@ import { webhookEventNameType } from "../webhooks/events";
 import { webhookRunType } from "./schemas/webhook-deliveries";
 import * as z from "zod";
 import { baseContract, cliContract, extensionContract, sessionContract } from "./base";
+import { extensionKeysContract } from "./extension-keys";
 import {
   extensionCatalogItemType,
   extensionCatalogDetailsType,
@@ -13,6 +14,7 @@ import {
   extensionActiveViewType,
   extensionElementViewSettingType,
   extensionSelfType,
+  extensionSessionCheckType,
   extensionSessionType,
   extensionStateResultType,
   extensionDevelopmentUploadType,
@@ -54,12 +56,17 @@ const extensionsContract = baseContract.prefix("/extensions").router({
     .route({
       summary: "Verify a session token",
       description:
-        "Verifies a session token from the extension frontend and returns its member. Tokens of other extensions, expired tokens, and tokens of an earlier extension generation fail with NOT_FOUND.",
+        "Verifies a session token from the extension frontend and returns its member. Tokens of other extensions, expired tokens, and tokens of an earlier extension generation fail with NOT_FOUND. checks evaluates collection and entry actions for the member limited to the extension's permissions (restricted collections included), so the backend can authorize the member's request.",
       tags: ["extensions"],
       method: "POST",
       path: "/self/sessions/verify"
     })
-    .input(z.object({ token: z.string().min(1).max(200) }))
+    .input(
+      z.object({
+        token: z.string().min(1).max(200),
+        checks: z.array(extensionSessionCheckType).max(10).optional()
+      })
+    )
     .output(extensionSessionType),
   listInstallations: extensionContract
     .route({
@@ -100,6 +107,7 @@ const extensionsContract = baseContract.prefix("/extensions").router({
       path: "/self/configuration"
     })
     .output(extensionSelfConfigurationType),
+  ...extensionKeysContract,
   getSelfStorageEntry: extensionContract
     .route({
       summary: "Get a storage entry",
@@ -354,6 +362,8 @@ export type {
   ExtensionSelf,
   ExtensionStateResult,
   ExtensionSession,
+  ExtensionSessionCheck,
+  ExtensionPublishableKey,
   ExtensionInstallation,
   ExtensionElementViewSetting,
   ExtensionDevelopmentUpload

@@ -1,9 +1,12 @@
 import {
+  PUBLISHABLE_KEYS_PERMISSION,
   type ExtensionDisabledReason,
   type ExtensionVersionManifest
 } from "@andesine/contracts/extensions";
+import { hasPermission } from "@andesine/contracts/permissions";
 import { toExtensionID, toWorkspaceID } from "@andesine/contracts/primitives";
 import {
+  apiKeys,
   extensionRegistryVersions,
   extensions,
   workspaces,
@@ -17,7 +20,7 @@ import {
   createWebhookRecorder,
   type WebhookEventData
 } from "@andesine/server/webhooks/recording";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, arrayContains, eq, isNull, sql } from "drizzle-orm";
 import { type WebhookRetentionPolicy } from "../webhooks/retention";
 import { isDeepStrictEqual } from "node:util";
 import { getMissingConfiguration } from "./configuration";
@@ -155,6 +158,31 @@ const getLifecycleEvents = (
 
   return events;
 };
+const syncManagedKeys = async (
+  database: DatabaseTransaction,
+  extension: ExtensionRow
+): Promise<void> => {
+  const isGranted = (required: string): boolean => {
+    return extension.permissions.some((permission) => hasPermission(permission, required));
+  };
+  const canKeepKeys =
+    extension.permissions.includes(PUBLISHABLE_KEYS_PERMISSION) && isGranted("read:publishing");
+
+  if (!canKeepKeys) {
+    await database.delete(apiKeys).where(eq(apiKeys.extensionID, extension.id));
+
+    return;
+  }
+
+  if (isGranted("ai-answers")) return;
+
+  await database
+    .update(apiKeys)
+    .set({ permissions: sql`array_remove(${apiKeys.permissions}, 'ai-answers')` })
+    .where(
+      and(eq(apiKeys.extensionID, extension.id), arrayContains(apiKeys.permissions, ["ai-answers"]))
+    );
+};
 /** Lifecycle operations, bound to the retention policy of the running app (backend or worker). */
 const createExtensionLifecycle = (options: ExtensionLifecycleOptions): ExtensionLifecycle => {
   /**
@@ -188,6 +216,10 @@ const createExtensionLifecycle = (options: ExtensionLifecycleOptions): Extension
         })
         .where(eq(extensions.id, extension.id))
         .returning();
+    }
+
+    if (!isDeepStrictEqual(extension.permissions, updated.permissions)) {
+      await syncManagedKeys(database, updated);
     }
 
     if (isVersionChanged) {

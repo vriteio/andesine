@@ -85,6 +85,8 @@ const andesineSourceSchema = z
     type: z.literal("andesine"),
     /** ID of the published collection. The build reads its latest publication. */
     collection: z.string().min(1),
+    /** The publishing channel, e.g. a preview channel. */
+    channel: z.string().trim().min(1).max(50).default("published"),
     mount: pathSchema.default("/"),
     apiURL: z.url({ protocol: /^https?$/ }).optional(),
     /**

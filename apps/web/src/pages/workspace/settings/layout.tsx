@@ -128,7 +128,11 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
       queryKeys.add("memberships");
     }
 
-    if (route === "api" && event.action.startsWith("key:")) {
+    // Extensions manage some keys.
+    if (
+      route === "api" &&
+      (event.action.startsWith("key:") || event.action.startsWith("extension:"))
+    ) {
       queryKeys.add("api-keys");
     }
 

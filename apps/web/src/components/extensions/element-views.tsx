@@ -106,16 +106,31 @@ const createElementViews = (): ElementViews => {
         if (!root) return [];
 
         const { extension, view } = root;
+        const getIcon = (icon?: string) => {
+          return icon && (() => <ScopedIcon extension={extension.name} icon={icon} />);
+        };
+        const descendants = view.descendants
+          .filter((descendant) => descendant.name)
+          .map((descendant) => ({
+            element: descendant.element,
+            label: descendant.name!,
+            description: descendant.description,
+            icon: getIcon(descendant.icon),
+            selfClosing: !(descendant.content ?? true),
+            props: descendant.props,
+            parent: view.element
+          }));
 
         return [
           {
             element: view.element,
             label: view.name,
             description: view.description,
-            icon: view.icon && (() => <ScopedIcon extension={extension.name} icon={view.icon!} />),
-            // Views with descendant views render content.
-            selfClosing: !view.descendants.length
-          }
+            icon: getIcon(view.icon),
+            selfClosing: !(view.content ?? view.descendants.length > 0),
+            props: view.props
+          },
+          ...descendants
         ];
       });
     }

@@ -2,6 +2,7 @@ import { type ExtensionSelf } from "@andesine/contracts/extensions";
 import { toUUID, toWorkspaceID } from "@andesine/contracts/primitives";
 import { extensions } from "@andesine/server/database";
 import { db } from "#backend/lib/adapters";
+import { getEffectivePlan } from "#backend/lib/billing";
 import { getExtensionState } from "#backend/lib/extensions/state";
 import { withAuthorization } from "#backend/lib/policy";
 import { ORPCError } from "@orpc/server";
@@ -26,6 +27,7 @@ const getSelf = withAuthorization<Record<never, never>, undefined, ExtensionSelf
       name: row.name,
       version: row.version,
       workspaceID: toWorkspaceID(row.workspaceID),
+      workspacePlan: getEffectivePlan(auth.subscriptionPlan),
       state,
       disabledReason: state === "disabled" ? (row.disabledReason ?? "manual") : null
     };

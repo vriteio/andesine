@@ -29,7 +29,7 @@ const handleSearch = async (request: Request, config: PagesConfig): Promise<Resp
         {
           query: body.query,
           collectionID: source.collection,
-          channel: "published",
+          channel: source.channel,
           limit: body.limit
         },
         { signal }

@@ -1,4 +1,4 @@
-export { collectionAccessType } from "./actions";
+export { collectionAccessType, collectionActionType, entryActionType } from "./actions";
 export type { CollectionAccess, CollectionAction, EntryAction } from "./actions";
 export { keyPermissionRequirements } from "./key-requirements";
 export { hasPermission } from "./requirements";

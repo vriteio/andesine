@@ -1,5 +1,6 @@
 import { keyPermissionRequirements } from "@andesine/contracts/permissions";
 import {
+  PUBLISHABLE_KEYS_PERMISSION,
   RESTRICTED_CONTENT_PERMISSION,
   type ExtensionPermission
 } from "@andesine/contracts/extensions";
@@ -30,6 +31,10 @@ const canGrantExtensionPermission = (
   auth: SessionData,
   permission: ExtensionPermission
 ): boolean => {
+  if (permission === PUBLISHABLE_KEYS_PERMISSION) {
+    return auth.type === "session" && hasAuthPermission(auth, "api_keys");
+  }
+
   if (permission !== RESTRICTED_CONTENT_PERMISSION) return canGrantKeyPermission(auth, permission);
 
   return auth.type === "session" && hasAuthPermission(auth, RESTRICTED_CONTENT_PERMISSION);
