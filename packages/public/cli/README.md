@@ -46,11 +46,11 @@ npx andesine extensions keys revoke key-2026-10-07
 empty directory (default `extension`), and generates its first backend key.
 
 `extensions build` loads `andesine.config.ts`, validates the manifest with the same rules
-as the extension registry, bundles the frontend into one script with a generated
-`startExtension` call for the manifest's view entries, and generates the CSS of the views
-and of the manifest icons. It writes `dist/frontend.js`, `dist/styles.css`,
-`dist/icons.css`, and `dist/extension.json` (the manifest and the SHA-256 digest and size
-of each file). Builds are deterministic.
+as the extension registry, bundles the frontend into one script that starts the views of
+the views module (`src/views.tsx` by default; its `defineViews` default export must have
+every view that the manifest names), and generates the CSS of the views and of the manifest icons. It writes
+`dist/frontend.js`, `dist/styles.css`, `dist/icons.css`, and `dist/extension.json` (the
+manifest and the SHA-256 digest and size of each file). Builds are deterministic.
 
 `extensions keys generate` creates an Ed25519 key pair. The public key goes to
 `andesine.keys.json`, which the manifest imports; the private key goes to

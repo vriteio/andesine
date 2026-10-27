@@ -1,11 +1,26 @@
 # Changelog
 
-## Unreleased
+## 0.8.0
 
+- `auth login` checks the profile's workspace against the account's workspaces. A saved workspace
+  that the account can't use, e.g. after a reset of the instance, gives way to the account's only
+  workspace, or is removed with a warning; one given for the login, e.g. with `--workspace`, must
+  be available. `auth status` warns about a selected workspace that the account can't use.
+- `extensions dev` watches the project with one recursive watch on macOS and Windows, starts
+  watching before the first build, so that changes during it rebuild, and, when the system
+  refuses file watches (`EMFILE`), retries and then checks the files for changes every second.
+- `extensions build` validates `accepts` on element views and their children.
+- `andesine mcp` has the resource `andesine://guide/elements`: the workspace's custom elements,
+  how to write them, their props, and the blocks their content accepts; the MDX guide and the
+  workspace overview link to it.
+- `extensions build` reads element views' `children` (their icons); children have no entries.
+- `extensions build` bundles the views and icons of `pages`.
 - The extension template's backend uses port 8787, so it doesn't clash with the Andesine web
   app's dev server on port 3000.
 - Validate the new element view fields `content`, `props`, and the descendants' `name`,
   `description`, and `icon`; `extensions build` generates the descendants' icons.
+- `extensions dev` doesn't watch `node_modules`, `dist`, or dot folders (such as `.wrangler`),
+  and stops with an error when it can't watch the project, in place of exiting silently.
 
 ## 0.7.0
 

@@ -12,6 +12,8 @@ interface AuthoringProps {
   Box: Props.BoxProps;
   Divider: Props.EmptyProps;
   ScrollArea: Props.ScrollAreaProps;
+  Section: Props.SectionProps;
+  SaveBar: Props.SaveBarProps;
   Text: Props.TextProps;
   Heading: Props.HeadingProps;
   Code: Props.ParentProps;
@@ -24,10 +26,14 @@ interface AuthoringProps {
   Textarea: Props.TextareaProps;
   Select: Props.ChoiceProps;
   Combobox: Props.ChoiceProps;
+  MultiSelect: Props.MultiSelectProps;
   Checkbox: Props.ToggleProps;
   Toggle: Props.ToggleProps;
   ToggleGroup: Props.ToggleGroupProps;
   ColorInput: Props.ColorInputProps;
+  ImageInput: Props.ImageInputProps;
+  IconPicker: Props.IconPickerProps;
+  LinkInput: Props.LinkInputProps;
   Tooltip: Props.TooltipProps;
   Dialog: Props.DialogProps;
   Menu: Props.MenuProps;
@@ -40,6 +46,10 @@ interface AuthoringProps {
   List: Props.ListProps;
   Card: Props.CardProps;
   Tree: Props.TreeProps;
+  Navigation: Props.NavigationProps;
+  Item: Props.ItemProps;
+  ItemGroup: Props.ItemGroupProps;
+  ItemDetails: Props.ItemDetailsProps;
   Tabs: Props.TabsProps;
   Tab: Props.TabProps;
   Disclosure: Props.DisclosureProps;
@@ -51,7 +61,9 @@ interface AuthoringProps {
   TimeAgo: Props.TimeAgoProps;
   Spinner: Props.SpinnerProps;
   Skeleton: Props.SkeletonProps;
-  ContentSlot: Props.EmptyProps;
+  ContentSlot: Props.ContentSlotProps;
+  BlockPresentation: Props.BlockPresentationProps;
+  BlockArea: Props.BlockAreaProps;
 }
 
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;

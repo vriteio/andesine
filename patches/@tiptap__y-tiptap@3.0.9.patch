@@ -1,0 +1,34 @@
+diff --git a/dist/y-tiptap.cjs b/dist/y-tiptap.cjs
+index 8b341de0dc9875e8840099b1309fff1ebb0c5db2..8f819a240508c39579f51c6058b2e5c474ed37b0 100644
+--- a/dist/y-tiptap.cjs
++++ b/dist/y-tiptap.cjs
+@@ -830,7 +830,11 @@ class ProsemirrorBinding {
+         this.prosemirrorView.state.doc.content.size,
+         new PModel__namespace.Slice(PModel__namespace.Fragment.from(fragmentContent), 0, 0)
+       );
+-      restoreRelativeSelection(tr, this.beforeTransactionSelection, this, oldDoc);
++      // Yjs already resolves selections correctly for text edits. Structural recovery
++      // matches blocks by content and would move the selection off its text.
++      // Patched from ueberdosis/y-tiptap#59 (ueberdosis/tiptap#8594).
++      const textOnlyChange = events.every((event) => event.target instanceof Y__namespace.XmlText);
++      restoreRelativeSelection(tr, this.beforeTransactionSelection, this, textOnlyChange ? undefined : oldDoc);
+       tr = tr.setMeta(ySyncPluginKey, { isChangeOrigin: true, isUndoRedoOperation: transaction.origin instanceof Y__namespace.UndoManager });
+       if (
+         this.beforeTransactionSelection !== null && this._isLocalCursorInView()
+diff --git a/dist/y-tiptap.js b/dist/y-tiptap.js
+index c6fdfa42dc346d31a3b4af91e0b3993ac3735a09..947a425c20dd0e036a275bdb5208e93d25520cb2 100644
+--- a/dist/y-tiptap.js
++++ b/dist/y-tiptap.js
+@@ -796,7 +796,11 @@ class ProsemirrorBinding {
+         this.prosemirrorView.state.doc.content.size,
+         new PModel.Slice(PModel.Fragment.from(fragmentContent), 0, 0)
+       );
+-      restoreRelativeSelection(tr, this.beforeTransactionSelection, this, oldDoc);
++      // Yjs already resolves selections correctly for text edits. Structural recovery
++      // matches blocks by content and would move the selection off its text.
++      // Patched from ueberdosis/y-tiptap#59 (ueberdosis/tiptap#8594).
++      const textOnlyChange = events.every((event) => event.target instanceof Y.XmlText);
++      restoreRelativeSelection(tr, this.beforeTransactionSelection, this, textOnlyChange ? undefined : oldDoc);
+       tr = tr.setMeta(ySyncPluginKey, { isChangeOrigin: true, isUndoRedoOperation: transaction.origin instanceof Y.UndoManager });
+       if (
+         this.beforeTransactionSelection !== null && this._isLocalCursorInView()

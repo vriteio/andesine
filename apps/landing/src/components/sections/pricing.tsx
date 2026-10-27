@@ -73,7 +73,7 @@ const Pricing: Component = () => {
           <PlanFeatures features={freeFeatures} />
         </Card>
         <div
-          class="relative isolate overflow-hidden rounded-2xl"
+          class="relative isolate overflow-hidden rounded-2xl shadow-md shadow-tertiary/25"
           data-entry="up"
           data-entry-delay="125"
         >

@@ -26,6 +26,9 @@ const normalizeContentElements = (node: ContentNode): ContentNode => {
     if (attrs?.language != null && typeof attrs.language !== "string") {
       throw new Error("Code block language must be a string");
     }
+    if (attrs?.title != null && typeof attrs.title !== "string") {
+      throw new Error("Code block title must be a string");
+    }
   }
 
   if (node.type === "element") {

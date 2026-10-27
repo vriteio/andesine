@@ -56,7 +56,7 @@ const AuthLayout: Component<RouteSectionProps> = (props) => {
         </div>
       </div>
       <div class="hidden lg:block flex-1 p-3 max-w-5/12">
-        <AnimatedGradientCard class="h-full w-full rounded-2xl">
+        <AnimatedGradientCard class="h-full w-full rounded-2xl shadow-md shadow-tertiary/25">
           <div class="flex flex-col items-center text-center max-w-xl relative p-4">
             <div class="rounded-md font-medium px-1.5 bg-gray-100 bg-opacity-30 backdrop-blur-md border-white absolute -top-8">
               Did you know?

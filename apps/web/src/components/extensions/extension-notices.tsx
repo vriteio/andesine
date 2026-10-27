@@ -2,6 +2,7 @@ import { type ExtensionSummary } from "@andesine/contracts/extensions";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
 import { extensionsQuery } from "#web/lib/data";
+import { isExtensionChange } from "#web/lib/extensions";
 import { createAsync, revalidate } from "@solidjs/router";
 import { type Component, createEffect, onCleanup } from "solid-js";
 
@@ -45,7 +46,7 @@ const ExtensionNotices: Component = () => {
     subscribeToUpdates((event) => {
       const id = workspaceID();
 
-      if (id && event.action.startsWith("extension:")) {
+      if (id && isExtensionChange(event.action)) {
         void revalidate(extensionsQuery.keyFor(id));
       }
     })

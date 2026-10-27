@@ -32,6 +32,8 @@ interface SlashMenuItem {
   markdown?: string;
   shortcut?: string;
   schemaBlockType?: string;
+  /** The element that the item inserts, e.g. `Tab`. */
+  element?: string;
   schemaKind?: "block" | "structure";
   ref: Ref<HTMLElement | null>;
   isAvailable?(editor: Editor): boolean;
@@ -166,7 +168,7 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
       data-menu
       shade
     >
-      <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
+      <ScrollShadow color="white" scrollableContainerRef={scrollableContainerRef} />
       <div
         class={clsx(
           "w-full h-full overflow-auto max-h-96 scrollbar-sm scrollbar-white",

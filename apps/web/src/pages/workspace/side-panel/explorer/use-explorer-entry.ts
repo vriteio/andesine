@@ -5,6 +5,7 @@ import { usePublishing } from "#web/context/publishing";
 import { type Entry } from "#web/lib/api";
 import { createSignal, onCleanup, onMount } from "solid-js";
 import { useNavigate, useParams, useSearchParams } from "@solidjs/router";
+import { useExtensionPageHighlight } from "#web/lib/navigation/extension-page-highlight";
 import {
   draggable,
   dropTargetForElements
@@ -46,7 +47,13 @@ const useExplorerEntry = (props: ExplorerEntryProps) => {
   });
   const [elementRef, setElementRef] = createRef<HTMLElement | null>(null);
   const [closestEdge, setClosestEdge] = createSignal<Edge | null>(null);
-  const opened = () => props.entry.id === params.slug && !searchParams.snapshotID;
+  const pageHighlight = useExtensionPageHighlight();
+  const opened = () => {
+    return (
+      (props.entry.id === params.slug && !searchParams.snapshotID) ||
+      props.entry.id === pageHighlight()
+    );
+  };
   const getCollectionParentID = (collectionID: string) => {
     const collection = content.collections.get({ collectionID });
 

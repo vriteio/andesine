@@ -83,10 +83,20 @@ const serializeMarkdoc = (tree: MarkdocNode): string => {
         ];
       case "item":
         return [{ type: "listItem", children: children as BlockContent[] }];
-      case "fence":
-        return [
-          { type: "code", lang: String(attrs.language || ""), value: String(attrs.content || "") }
-        ];
+      case "fence": {
+        const fence = new Markdoc.Ast.Node("fence", attrs);
+
+        if (!attrs.title) {
+          return [
+            { type: "code", lang: String(attrs.language || ""), value: String(attrs.content || "") }
+          ];
+        }
+
+        // Markdown escapes would break the title annotation's string, so Markdoc writes the fence.
+        fence.annotations = [{ type: "attribute", name: "title", value: String(attrs.title) }];
+
+        return [{ type: "html", value: Markdoc.format(fence).trim() }];
+      }
       case "hardbreak":
         return [{ type: "break" }];
       case "softbreak":

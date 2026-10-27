@@ -27,6 +27,7 @@ const Editor: Component<EditorProps> = (props) => {
 export { Editor };
 export type {
   EditorImages,
+  EditorLinks,
   EditorImageAsset,
   EditorDiff,
   EditorDiffChange,
@@ -40,6 +41,12 @@ export type {
   ElementViewRenderer,
   ElementViewOption,
   ElementViews,
+  ElementPropField,
+  ElementChild,
+  ChildPresentation,
+  ElementAccepts,
+  ElementViewDescription,
+  ElementPropsSchema,
   BlockAction,
   BlockActionOrigin,
   BlockMenuPlacement,

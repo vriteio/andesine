@@ -3,13 +3,19 @@ import { z } from "zod";
 const identifierSchema = z
   .string()
   .regex(/^[a-z][\w-]*$/, "Use lowercase letters, digits, - or _.");
-const iconSchema = z.string().regex(/^i-[\w-]+:[\w-]+$/, "Use an icon class, e.g. i-lucide:book.");
+/** Iconify sets that icon classes can use, in content and in the configuration. */
+const ICON_SETS = ["lucide", "tabler", "simple-icons"];
+const ICON_CLASS = new RegExp(`^i-(?:${ICON_SETS.join("|")}):[\\w-]+$`);
+const iconSchema = z
+  .string()
+  .regex(ICON_CLASS, "Use a Lucide, Tabler, or Simple Icons class, e.g. i-lucide:book.");
 const pathSchema = z.string().regex(/^\/(?:.*\/)?$/, "Use a path that starts and ends with /.");
 // Base-prefixed URLs join the base as is, so it cannot need encoding.
 const baseSchema = pathSchema.refine(
   (path) => path.split("/").every((segment) => encodeURIComponent(segment) === segment),
   "Use a base path with letters, digits, -, _, ., !, ~, *, ', ( and ) only."
 );
+/** `href`: a URL, a site path, or `entry:<entryID>` for the entry's page in an Andesine source. */
 const linkSchema = z
   .object({ label: z.string().min(1), href: z.string().min(1), icon: iconSchema.optional() })
   .strict();
@@ -144,7 +150,9 @@ const configSchema = z
     /** The page actions menu; `false` hides it. Markdown pages exist either way. */
     pageActions: z.union([z.literal(false), pageActionsSchema]).prefault({}),
     agents: agentsSchema.prefault({}),
-    social: socialSchema.prefault({})
+    social: socialSchema.prefault({}),
+    /** The "Powered by Andesine Pages" credit at the end of the navigation. */
+    poweredBy: z.boolean().default(true)
   })
   .strict()
   .superRefine((config, context) => {
@@ -212,7 +220,7 @@ type LinkConfig = z.output<typeof linkSchema>;
 type IconLinkConfig = PagesConfig["links"][number];
 type AIService = z.output<typeof pageActionsSchema>["openIn"][number];
 
-export { configSchema };
+export { ICON_SETS, configSchema };
 export type {
   PagesConfigInput,
   PagesConfig,

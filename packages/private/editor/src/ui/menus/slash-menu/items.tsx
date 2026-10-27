@@ -1,7 +1,10 @@
 import { createRef } from "@andesine/components";
 import type { ElementViewOption, EditorMode } from "#editor/client-types";
+import { acceptsType, getAccepts, getElementViews } from "#editor/lib/element-content";
+import { capitalize, normalizeCategory } from "#editor/lib/labels";
 import type { Editor } from "@tiptap/core";
 import type { ResolvedPos } from "@tiptap/pm/model";
+import type { EditorState } from "@tiptap/pm/state";
 import { FRAGMENT_BLOCK_TYPES, type ElementData, type FragmentBlockType } from "@andesine/document";
 import type { SlashMenuItem } from "./component";
 
@@ -256,19 +259,36 @@ const isInsideRoot = (editor: Editor, roots: Set<string>, name: string): boolean
 
   return false;
 };
-/** Elements with views, e.g. from extensions, inserted with their tags. */
+/**
+ * Elements with views, e.g. from extensions, inserted with their tags: in groups by their
+ * categories, the same across extensions, then the "Elements" group for the rest.
+ */
 const createElementViewItems = (options: ElementViewOption[]): SlashMenuItem[] => {
   const roots = new Set(
     options.filter(({ parent }) => !parent).map(({ element }) => element.toLowerCase())
   );
+  const getGroup = (option: ElementViewOption) => {
+    const category = normalizeCategory(option.category);
 
-  return options.map((option) => ({
+    return category ? capitalize(category) : "Elements";
+  };
+  const categories = new Set(options.map(getGroup));
+
+  categories.delete("Elements");
+
+  const groups = [...categories, "Elements"];
+  const sorted = [...options].sort((first, second) => {
+    return groups.indexOf(getGroup(first)) - groups.indexOf(getGroup(second));
+  });
+
+  return sorted.map((option) => ({
     label: option.label,
     description: option.description,
     icon: option.icon ?? "i-lucide:code-xml",
-    group: "Elements",
+    group: getGroup(option),
     schemaKind: "block",
     schemaBlockType: "element",
+    element: option.element,
     ref: createRef<HTMLElement | null>(null),
     isAvailable: option.parent
       ? (editor) => isInsideRoot(editor, roots, option.parent!)
@@ -299,9 +319,10 @@ const withElementItems = (
 const getAvailableSlashMenuItems = (
   items: SlashMenuItem[],
   editor: Editor,
-  mode: EditorMode
+  mode: EditorMode,
+  state: EditorState = editor.state
 ): SlashMenuItem[] => {
-  const { $from } = editor.state.selection;
+  const { $from } = state.selection;
   const availableItems = items.filter((item) => {
     if (item.isAvailable && !item.isAvailable(editor)) return false;
     if (item.schemaBlockType === "element" && !editor.can().insertElement()) return false;
@@ -313,9 +334,30 @@ const getAvailableSlashMenuItems = (
     return item.schemaBlockType !== "table" || canInsertTable(editor, $from.pos);
   });
 
+  const elementViews = getElementViews(editor);
+  // The block replaces the paragraph with the slash, so its parent's content rules apply.
+  const accepts =
+    elementViews && $from.depth > 1
+      ? getAccepts(state.doc, $from.before($from.depth - 1), elementViews)
+      : null;
+
   let fragmentDepth = -1;
 
   if (isInsideTableCell($from)) return [];
+
+  if (accepts) {
+    return availableItems.filter((item) => {
+      // Structure items, e.g. fragments and properties, are only for the top level.
+      const isBlock = item.schemaKind === "block";
+      // The "Element" item inserts any element, so only without an `accepts` list.
+      const isAnyElement = item.schemaBlockType === "element" && !item.element;
+
+      if (!isBlock) return false;
+      if (isAnyElement) return !accepts.accepts;
+
+      return acceptsType(accepts, item.schemaBlockType ?? "paragraph", item.element);
+    });
+  }
 
   for (let depth = $from.depth; depth > 0; depth -= 1) {
     if ($from.node(depth).type.name === "fragment") {

@@ -7,11 +7,11 @@ import { Element } from "./blocks/element";
 import { Heading } from "./blocks/heading";
 import { HorizontalRule } from "./blocks/horizontal-rule";
 import { Table, TableCell, TableHeader, TableRow } from "./blocks/table";
-import { CodeBlock } from "@tiptap/extension-code-block";
+import { CodeBlock } from "./blocks/code-block";
 import { ListItem } from "./blocks/lists/list-item";
 import { TaskItem } from "./blocks/lists/task-item";
 import { DocumentIDs, DOCUMENT_ID_NODE_TYPES } from "./ids";
-import { validateURL } from "./validate-url";
+import { toLinkHref, validateURL } from "./validate-url";
 import { entryDocumentSchema, normalizeEntryDocument } from "./entry-schema";
 import { Blockquote } from "@tiptap/extension-blockquote";
 import { Paragraph } from "@tiptap/extension-paragraph";
@@ -47,6 +47,7 @@ export {
   TaskItem,
   DocumentIDs,
   DOCUMENT_ID_NODE_TYPES,
+  toLinkHref,
   validateURL,
   entryDocumentSchema,
   normalizeEntryDocument,

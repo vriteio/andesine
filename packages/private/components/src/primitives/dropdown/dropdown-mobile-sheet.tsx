@@ -104,7 +104,7 @@ const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
             }}
             class={clsx(
               styles.sheet,
-              ":base-2: fixed bottom-0 left-0 z-50 flex !w-full min-w-0 max-w-full transform flex-col overflow-hidden select-none rounded-b-none !border-0 p-1 pb-[calc(0.25rem+env(safe-area-inset-bottom,0px))] pointer-events-auto shadow-black shadow-opacity-15 shadow-xl bg-white",
+              ":base-2: fixed bottom-0 left-0 z-50 flex !w-full min-w-0 max-w-full transform flex-col overflow-hidden select-none rounded-b-none !border-0 p-1 pb-[calc(0.25rem+env(safe-area-inset-bottom,0px))] pointer-events-auto shadow-gray-900/8 shadow-xl bg-white",
               mobileDropdownExpanded() ? ":base-2: rounded-t-none" : ":base-2: rounded-t-2xl",
               activeEntry()?.getClosing() && styles.closing,
               cardProps()?.class

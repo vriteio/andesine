@@ -19,6 +19,15 @@ interface StoragePage {
   data: StorageEntry[];
   hasMore: boolean;
 }
+/** A key that was set or deleted, by any view of the extension or by its backend. */
+interface StorageChange {
+  key: string;
+  exists: boolean;
+}
+
+type StorageListener = (change: StorageChange) => void;
+
+const listeners = new Set<StorageListener>();
 
 /**
  * JSON key-value storage shared with the backend; the last write wins.
@@ -44,8 +53,21 @@ const storage = {
   /** Entries in key order; a page can have fewer entries than `limit` when values are large. */
   async list(options: StorageListOptions = {}): Promise<StoragePage> {
     return (await request("storage.list", { ...options })) as unknown as StoragePage;
+  },
+  /**
+   * Calls the listener when a key is set or deleted, e.g. by the backend, so a view can load its
+   * data again instead of polling. Returns the removal, e.g. for `onCleanup`.
+   */
+  onChange(listener: StorageListener): () => void {
+    listeners.add(listener);
+
+    return () => listeners.delete(listener);
   }
 };
+/** Passes a change from the host to the listeners. */
+const emitStorageChange = (change: StorageChange): void => {
+  listeners.forEach((listener) => listener(change));
+};
 
-export { storage };
-export type { StorageEntry, StorageListOptions, StoragePage };
+export { emitStorageChange, storage };
+export type { StorageChange, StorageEntry, StorageListOptions, StoragePage };

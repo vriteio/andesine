@@ -1,3 +1,5 @@
+import { readCodeTitle } from "@andesine/converters";
+
 interface MdastNode {
   type: string;
   name?: string | null;
@@ -6,12 +8,6 @@ interface MdastNode {
   meta?: string | null;
   attributes?: MdxAttribute[];
   children?: MdastNode[];
-}
-
-interface FileTreeItem {
-  name: string;
-  type: "file" | "folder";
-  children: FileTreeItem[];
 }
 
 interface MdxAttribute {
@@ -37,12 +33,6 @@ const stringAttribute = (name: string, value: string): MdxAttribute => {
 };
 const getAttribute = (node: MdastNode, name: string): unknown => {
   return node.attributes?.find((attribute) => attribute.name === name)?.value;
-};
-/** Reads `title="..."` from a code fence meta string. */
-const getCodeTitle = (meta?: string | null): string | undefined => {
-  const match = meta?.match(/title=(?:"([^"]*)"|'([^']*)'|(\S+))/);
-
-  return match?.[1] ?? match?.[2] ?? match?.[3];
 };
 const withValues = (node: MdastNode, labels: string[], children: MdastNode[]): MdastNode => {
   if (new Set(labels).size !== labels.length) {
@@ -87,7 +77,7 @@ const prepareTabs: Handler = (node) => {
 /** `<CodeGroup>` code fences become tabs, labeled by their `title` or language. */
 const prepareCodeGroup: Handler = (node) => {
   const blocks = (node.children ?? []).filter((child) => child.type === "code");
-  const labels = blocks.map((block) => getCodeTitle(block.meta) ?? block.lang ?? "Code");
+  const labels = blocks.map((block) => readCodeTitle(block.meta) ?? block.lang ?? "Code");
   const children = blocks.map((block, index) => {
     return {
       type: "mdxJsxFlowElement",
@@ -98,39 +88,6 @@ const prepareCodeGroup: Handler = (node) => {
   });
 
   return withValues(node, labels, children);
-};
-/** Returns the text of a node, with inline code. */
-const getText = (node: MdastNode): string => {
-  return node.type === "text" || node.type === "inlineCode"
-    ? (node.value ?? "")
-    : (node.children ?? []).map(getText).join("");
-};
-const toFileTreeItems = (list: MdastNode): FileTreeItem[] => {
-  return (list.children ?? []).map((item) => {
-    const label = item.children?.find((child) => child.type !== "list");
-    const nested = item.children?.find((child) => child.type === "list");
-    const name = label ? getText(label).trim() : "";
-    const folder = name.endsWith("/") || Boolean(nested);
-
-    return {
-      name: name.replace(/\/$/, ""),
-      type: folder ? "folder" : "file",
-      children: nested ? toFileTreeItems(nested) : []
-    };
-  });
-};
-/** `<FileTree>` gets its nested list as JSON `items`. Items that end with `/`, or have nested items, are folders. */
-const prepareFileTree: Handler = (node) => {
-  const list = node.children?.find((child) => child.type === "list");
-
-  if (!list) throw new Error("<FileTree> needs a Markdown list of files and folders.");
-
-  return {
-    type: node.type,
-    name: node.name,
-    attributes: [stringAttribute("items", JSON.stringify(toFileTreeItems(list)))],
-    children: []
-  };
 };
 /** The web page shows only human content; agent content is in the Markdown outputs. */
 const applyVisibility = (node: MdastNode, context: VisitorContext): void => {
@@ -144,8 +101,7 @@ const applyVisibility = (node: MdastNode, context: VisitorContext): void => {
 };
 const handlers: Record<string, Handler> = {
   Tabs: prepareTabs,
-  CodeGroup: prepareCodeGroup,
-  FileTree: prepareFileTree
+  CodeGroup: prepareCodeGroup
 };
 
 /**
@@ -160,5 +116,4 @@ const mdxComponents = {
   }
 };
 
-export { mdxComponents, getCodeTitle };
-export type { FileTreeItem };
+export { mdxComponents };

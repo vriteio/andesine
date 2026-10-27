@@ -3,15 +3,17 @@
 An Andesine extension with a Solid frontend and a Node backend.
 
 - `andesine.config.ts` — the manifest: name, permissions, backend, webhooks, configuration, and views.
+- `AGENTS.md` — practices for building the extension and its element views, for coding agents and people.
 - `andesine.keys.json` — the backend's public keys; `andesine extensions keys` maintains it.
-- `src/frontend` — the views, rendered by Andesine in a sandbox; `index.tsx` exports every view that the manifest names.
+- `src/views.tsx` — the frontend entry: `defineViews` registers the views that the manifest names with `View.<name>`.
+- `src/frontend` — the views, rendered by Andesine in a sandbox.
 - `src/backend` — the backend; it receives webhooks and verifies frontend sessions.
 
 ## Samples
 
-Each frontend module shows one kind of contribution; remove the ones you do not need from the manifest and `index.tsx`.
+Each frontend module shows one kind of contribution; remove the ones you do not need from the manifest and `src/views.tsx`.
 
-- `note-view.tsx` — element views: `<Note>` with its editable content in `ContentSlot`, a tone switch that edits the element's props, and a `<NoteTitle>` descendant view.
+- `note-view.tsx` — element views: `<Note>` with its editable content in `ContentSlot`, an icon that drags the note and opens its menu, where its `props` edit the tone, content rules (no note in a note), and an `<Element>` template that draws the `<NoteTitle>` elements inside a note. `AGENTS.md` has the practices it follows.
 - Block actions for paragraphs and headings; each view decides its UI: `shout-action.tsx` runs without UI (the block menu shows a spinner until it closes), `count-words-action.tsx` shows a `Menu` in the block menu's place with the count and “Insert below”, and `wrap-in-note-action.tsx` asks for the tone in a `Dialog`, then wraps the blocks in a `<Note>`.
 - `hello-panel.tsx` — a right panel for the open entry: configuration, an API call with the member's granted permissions, a call to the backend, and a “More” `Menu` with a copy action and an “About” `Dialog`.
 - `src/backend/server.ts` — lifecycle and `entry.created` webhooks, session verification, and the secret `apiToken` field, read with the extension's credentials.

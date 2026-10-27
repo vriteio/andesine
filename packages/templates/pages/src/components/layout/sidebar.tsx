@@ -14,6 +14,7 @@ interface SidebarProps {
   sections: SectionContext[];
   links: IconLinkConfig[];
   storageKey: string;
+  poweredBy: boolean;
   class?: string;
 }
 
@@ -48,15 +49,17 @@ const Sidebar: Component<SidebarProps> = (props) => {
         />
         {/* After the navigation, and at the bottom while the navigation scrolls. It covers the
             bottom scroll shadow, so its fade stands in for it. */}
-        <div
-          class={clsx(
-            "sticky bottom-0 z-2 bg-gray-50 px-2 py-4",
-            "before:(pointer-events-none absolute inset-x-0 -top-12 h-12 bg-gradient-to-t from-gray-50 to-gray-50/0 opacity-0 transition-opacity duration-150 content-[''])",
-            "[[data-part=viewport][data-overflow-y]:not([data-at-bottom])_&]:before:opacity-100"
-          )}
-        >
-          <PoweredBy />
-        </div>
+        <Show when={props.poweredBy}>
+          <div
+            class={clsx(
+              "sticky bottom-0 z-2 bg-gray-50 px-2 py-4",
+              "before:(pointer-events-none absolute inset-x-0 -top-12 h-12 bg-gradient-to-t from-gray-50 to-gray-50/0 opacity-0 transition-opacity duration-150 content-[''])",
+              "[[data-part=viewport][data-overflow-y]:not([data-at-bottom])_&]:before:opacity-100"
+            )}
+          >
+            <PoweredBy />
+          </div>
+        </Show>
       </ScrollArea>
     </div>
   );

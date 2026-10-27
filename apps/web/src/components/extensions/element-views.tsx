@@ -1,3 +1,4 @@
+import { getElementPropDefaults } from "@andesine/contracts/extensions";
 import {
   type ElementViewMount,
   type ElementViewRenderer,
@@ -7,45 +8,225 @@ import { useWorkspace } from "#web/context/workspace";
 import { extensionActiveViewsQuery } from "#web/lib/data";
 import {
   createRootFinder,
+  getTemplateParents,
+  isExtensionChange,
   matchElementView,
   runningExtensions,
   type RunningExtension
 } from "#web/lib/extensions";
 import { createAsync, revalidate } from "@solidjs/router";
-import { createEffect, createRoot, getOwner, on, onCleanup } from "solid-js";
+import {
+  createEffect,
+  createMemo,
+  createRoot,
+  createSignal,
+  getOwner,
+  on,
+  onCleanup,
+  Show,
+  untrack
+} from "solid-js";
 import { insert } from "solid-js/web";
 import { ExtensionView } from "./extension-view";
 import { ScopedIcon } from "./scoped-icon";
 import { ContentSlotContext } from "./host-components";
 
-type ViewProps = NonNullable<Parameters<RunningExtension["host"]["createView"]>[1]>;
+interface ViewScopes {
+  /** The root view that draws the element: its own view, or the root of its template. */
+  get(key: string | null): string | undefined;
+  register(key: string, rootViewID: string): () => void;
+}
+interface MountedView {
+  id: string;
+  rootID: string;
+}
+interface ViewParking {
+  /** Keeps a removed view until the current task ends, then disposes it. */
+  park(key: string, view: MountedView, dispose: () => void): void;
+  /** A parked view with the key, e.g. of a moved element; a template's under the same root. */
+  claim(key: string, rootID?: string): MountedView | null;
+}
 
+type ViewProps = NonNullable<Parameters<RunningExtension["host"]["createView"]>[1]>;
+/** A view of its own entry, or a child element's view from its root view's template. */
+type ViewSource = { name: string } | { template: string };
+
+const createViewScopes = (): ViewScopes => {
+  const [scopes, setScopes] = createSignal(new Map<string, string>());
+
+  return {
+    get: (key) => (key ? scopes().get(key) : undefined),
+    register(key, rootViewID) {
+      setScopes((current) => new Map(current).set(key, rootViewID));
+
+      return () => {
+        setScopes((current) => {
+          const next = new Map(current);
+
+          next.delete(key);
+
+          return next;
+        });
+      };
+    }
+  };
+};
+/**
+ * Moving an element removes its node view and adds a new one in the same change; parked views let
+ * the new one take over the old view, with the extension's state, e.g. an open accordion.
+ */
+const createViewParking = (): ViewParking => {
+  const views = new Map<string, MountedView & { timer: ReturnType<typeof setTimeout> }>();
+
+  return {
+    park(key, view, dispose) {
+      const previous = views.get(key);
+
+      if (previous) clearTimeout(previous.timer);
+
+      views.set(key, {
+        ...view,
+        timer: setTimeout(() => {
+          views.delete(key);
+          dispose();
+        })
+      });
+    },
+    claim(key, rootID) {
+      const parked = views.get(key);
+
+      if (!parked || (rootID && parked.rootID !== rootID)) return null;
+
+      clearTimeout(parked.timer);
+      views.delete(key);
+
+      return { id: parked.id, rootID: parked.rootID };
+    }
+  };
+};
+const getSourceKey = (source: ViewSource): string => {
+  return "name" in source ? source.name : `template:${source.template}`;
+};
 const mountView = (
   extension: RunningExtension,
-  entry: string,
+  source: ViewSource,
   mount: ElementViewMount,
+  scopes: ViewScopes,
+  parking: ViewParking,
   owner: ReturnType<typeof getOwner>
 ): (() => void) => {
   return createRoot((dispose) => {
-    const viewProps = () => ({ element: mount.name(), props: mount.props() }) as ViewProps;
-    const viewID = extension.host.createView(entry, viewProps());
-    const slot = { contentDOM: mount.contentDOM, parking: mount.parking, owner: null };
-    const offViewError = extension.onViewError(viewID, mount.fallback);
+    const [view, setView] = createSignal<MountedView | null>(null);
+    const sourceKey = getSourceKey(source);
+    const getParkingKey = () => {
+      const key = untrack(mount.place).key;
 
-    extension.host.setViewTarget(viewID, { setElementProps: mount.setProps });
+      return key && `${extension.extensionID}:${sourceKey}:${key}`;
+    };
+    // The key is the element's node ID, as in a parent's `children`.
+    const viewProps = () => {
+      const { parentID: _parentID, ...place } = mount.place();
 
-    createEffect(
-      on(viewProps, (props) => extension.host.updateView(viewID, props), { defer: true })
-    );
-    insert(mount.container, () => (
-      <ContentSlotContext.Provider value={slot}>
-        <ExtensionView host={extension.host} viewID={viewID} />
-      </ContentSlotContext.Provider>
-    ));
-    onCleanup(() => {
-      offViewError();
-      extension.host.disposeView(viewID);
+      return { element: mount.name(), props: mount.props(), ...place } as unknown as ViewProps;
+    };
+    const slot = {
+      contentDOM: mount.contentDOM,
+      parking: mount.parking,
+      owner: null,
+      setBlockPresentation: mount.setChildPresentation
+    };
+
+    let disposed = false;
+    let starting = false;
+
+    // After the change that adds the node view, which can also remove the element's old one.
+    const start = (create: () => MountedView, rootID?: string) => {
+      if (starting) return;
+
+      starting = true;
+      queueMicrotask(() => {
+        const key = getParkingKey();
+
+        if (disposed) return;
+
+        const parked = key ? parking.claim(key, rootID) : null;
+
+        if (parked) extension.host.updateView(parked.id, untrack(viewProps));
+
+        setView(parked ?? create());
+      });
+    };
+
+    onCleanup(() => (disposed = true));
+
+    if ("name" in source) {
+      start(() => {
+        const id = extension.host.createView(source.name, untrack(viewProps));
+
+        return { id, rootID: id };
+      });
+    }
+
+    // A template view starts once its parent's root view is known.
+    createEffect(() => {
+      const rootID = scopes.get(mount.place().parentID);
+
+      if ("template" in source && rootID && !untrack(view)) {
+        start(() => {
+          const props = untrack(viewProps);
+
+          return { id: extension.host.createTemplateView(rootID, source.template, props), rootID };
+        }, rootID);
+      }
     });
+    // The view's lifetime depends only on its ID; the place, e.g. the selection, changes often.
+    createEffect(() => {
+      const current = view();
+
+      if (!current) return;
+
+      const offViewError = extension.onViewError(current.id, mount.fallback);
+
+      extension.host.setViewTarget(current.id, {
+        setElementProps: mount.setProps,
+        // The editor checks the block against its schema.
+        append: (block) => mount.append(block as Parameters<ElementViewMount["append"]>[0])
+      });
+      createEffect(
+        on(viewProps, (props) => extension.host.updateView(current.id, props), { defer: true })
+      );
+
+      onCleanup(() => {
+        const key = getParkingKey();
+
+        offViewError();
+
+        if (key) parking.park(key, current, () => extension.host.disposeView(current.id));
+        else extension.host.disposeView(current.id);
+      });
+    });
+    const key = createMemo(() => mount.place().key);
+
+    createEffect(() => {
+      const current = view();
+
+      if (current && key()) onCleanup(scopes.register(key()!, current.rootID));
+    });
+    insert(mount.container, () => (
+      <Show when={view()}>
+        {(current) => (
+          <ContentSlotContext.Provider value={slot}>
+            {/* Soft shadows, e.g. a card's, show outside the element's box. */}
+            <ExtensionView
+              host={extension.host}
+              viewID={current().id}
+              class="flex flex-1 flex-col"
+              bleed
+            />
+          </ContentSlotContext.Provider>
+        )}
+      </Show>
+    ));
 
     return dispose;
   }, owner);
@@ -59,21 +240,24 @@ const createElementViews = (): ElementViews => {
 
     return id ? extensionActiveViewsQuery(id) : [];
   });
+  const scopes = createViewScopes();
+  const parking = createViewParking();
   const renderers = new WeakMap<RunningExtension, Map<string, ElementViewRenderer>>();
-  const getRenderer = (extension: RunningExtension, entry: string): ElementViewRenderer => {
-    const byEntry = renderers.get(extension) ?? new Map<string, ElementViewRenderer>();
-    const renderer = byEntry.get(entry) ?? {
-      mount: (mount) => mountView(extension, entry, mount, owner)
+  const getRenderer = (extension: RunningExtension, source: ViewSource): ElementViewRenderer => {
+    const key = getSourceKey(source);
+    const bySource = renderers.get(extension) ?? new Map<string, ElementViewRenderer>();
+    const renderer = bySource.get(key) ?? {
+      mount: (mount) => mountView(extension, source, mount, scopes, parking, owner)
     };
 
-    byEntry.set(entry, renderer);
-    renderers.set(extension, byEntry);
+    bySource.set(key, renderer);
+    renderers.set(extension, bySource);
 
     return renderer;
   };
   onCleanup(
     subscribeToUpdates((event) => {
-      if (event.action.startsWith("extension:")) void revalidate(extensionActiveViewsQuery.key);
+      if (isExtensionChange(event.action)) void revalidate(extensionActiveViewsQuery.key);
     })
   );
 
@@ -87,21 +271,40 @@ const createElementViews = (): ElementViews => {
       }));
   };
 
+  const findRoot = createMemo(() => createRootFinder(getSources(), activeViews() ?? []));
+  const match = (name: string, ancestors: string[]) => {
+    return matchElementView(findRoot(), name, ancestors);
+  };
+
   return {
     resolve(name, ancestors) {
-      const match = matchElementView(
-        createRootFinder(getSources(), activeViews() ?? []),
-        name,
-        ancestors
-      );
+      const found = match(name, ancestors);
 
-      return match ? getRenderer(match.extension, match.entry) : null;
+      return found ? getRenderer(found.extension, found.view) : null;
+    },
+    schema(name, ancestors) {
+      return match(name, ancestors)?.props ?? null;
+    },
+    parents(name) {
+      const roots = (activeViews() ?? []).map(({ selector }) => selector);
+
+      return getTemplateParents(findRoot(), roots, name);
+    },
+    describe(name, ancestors) {
+      const found = match(name, ancestors);
+
+      return found
+        ? {
+            accepts: found.accepts,
+            rejects: found.rejects,
+            content: found.content,
+            props: getElementPropDefaults(found.props)
+          }
+        : null;
     },
     list() {
-      const findRoot = createRootFinder(getSources(), activeViews() ?? []);
-
       return (activeViews() ?? []).flatMap(({ selector }) => {
-        const root = findRoot(selector);
+        const root = findRoot()(selector);
 
         if (!root) return [];
 
@@ -109,16 +312,17 @@ const createElementViews = (): ElementViews => {
         const getIcon = (icon?: string) => {
           return icon && (() => <ScopedIcon extension={extension.name} icon={icon} />);
         };
-        const descendants = view.descendants
-          .filter((descendant) => descendant.name)
-          .map((descendant) => ({
-            element: descendant.element,
-            label: descendant.name!,
-            description: descendant.description,
-            icon: getIcon(descendant.icon),
-            selfClosing: !(descendant.content ?? true),
-            props: descendant.props,
-            parent: view.element
+        const children = view.children
+          .filter((child) => child.name)
+          .map((child) => ({
+            element: child.element,
+            label: child.name!,
+            description: child.description,
+            icon: getIcon(child.icon),
+            selfClosing: !(child.content ?? true),
+            props: getElementPropDefaults(child.props),
+            parent: view.element,
+            category: child.category ?? view.category
           }));
 
         return [
@@ -127,10 +331,11 @@ const createElementViews = (): ElementViews => {
             label: view.name,
             description: view.description,
             icon: getIcon(view.icon),
-            selfClosing: !(view.content ?? view.descendants.length > 0),
-            props: view.props
+            selfClosing: !(view.content ?? view.children.length > 0),
+            props: getElementPropDefaults(view.props),
+            category: view.category
           },
-          ...descendants
+          ...children
         ];
       });
     }

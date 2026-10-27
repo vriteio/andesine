@@ -8,7 +8,7 @@ import { type ExtensionKeySet, extensionKeySetType } from "@andesine/contracts/e
 import { access, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { build } from "rolldown";
+import { build, type Plugin } from "rolldown";
 import * as z from "zod";
 import { CLIError, exitCodes } from "../errors";
 
@@ -33,6 +33,8 @@ interface ValidationIssue {
 }
 
 const CONFIG_FILE = "andesine.config.ts";
+const SANDBOX_RUNTIME = "@andesine/extensions/solid";
+const JSX_MODULE_PATTERN = /\.[jt]sx$/;
 const KEYS_FILE = "andesine.keys.json";
 /** Build output and private keys; the template ignores it in Git. */
 const WORK_DIRECTORY = ".andesine";
@@ -57,6 +59,32 @@ const formatError = (subject: string, issues: ValidationIssue[]): CLIError => {
 
   return new CLIError(`${subject} is invalid:\n${lines.join("\n")}`, exitCodes.usage);
 };
+/**
+ * Views run only in the frontend's sandbox, so the config imports their types and never their
+ * code: a value import of a JSX module or of the sandbox runtime stops the build.
+ */
+const createViewImportGuard = (root: string): Plugin => {
+  const refuse = (module: string): never => {
+    throw new CLIError(
+      `${CONFIG_FILE} imports ${module} as a value; views run only in the frontend. Import their type instead: import type { Views } from "./src/views".`,
+      exitCodes.usage
+    );
+  };
+
+  return {
+    name: "andesine-view-import-guard",
+    resolveId: (source) => {
+      if (source.startsWith(SANDBOX_RUNTIME)) refuse(source);
+
+      return null;
+    },
+    load: (id) => {
+      if (JSX_MODULE_PATTERN.test(id)) refuse(path.relative(root, id));
+
+      return null;
+    }
+  };
+};
 /** Bundles the config into the work directory, so its imports resolve from the project. */
 const importConfig = async (root: string): Promise<Record<string, unknown>> => {
   const file = path.join(root, WORK_DIRECTORY, "config.mjs");
@@ -66,8 +94,14 @@ const importConfig = async (root: string): Promise<Record<string, unknown>> => {
     input: path.join(root, CONFIG_FILE),
     platform: "node",
     external: (id) => !id.startsWith(".") && !path.isAbsolute(id),
+    plugins: [createViewImportGuard(root)],
     logLevel: "silent",
     output: { file, format: "esm" }
+  }).catch((error: Error & { errors?: Error[] }) => {
+    // Rolldown wraps a plugin's error; the guard's own message says what to change.
+    const guard = [error, ...(error.errors ?? [])].find((item) => item instanceof CLIError);
+
+    throw guard ?? error;
   });
 
   return import(`${pathToFileURL(file).href}?t=${Date.now()}`);

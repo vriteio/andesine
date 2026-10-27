@@ -41,11 +41,16 @@ interface MenuItemsProps<O extends MenuItem> {
   portal?: boolean;
 }
 
+/** Custom content, e.g. a form; the pointer or the focus in it clears the items' highlight. */
 const CustomMenuContent: ParentComponent = (props) => {
   const menu = useMenuContext();
 
   return (
-    <div class="contents" onPointerEnter={() => menu().setHighlightedValue("")}>
+    <div
+      class="contents"
+      onPointerEnter={() => menu().setHighlightedValue("")}
+      onFocusIn={() => menu().setHighlightedValue("")}
+    >
       {props.children}
     </div>
   );
@@ -130,7 +135,7 @@ const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
                       {...(props.cardProps || {})}
                       shade={props.cardProps?.shade ?? true}
                       class={clsx(
-                        `:base-2: z-50 flex flex-col p-1 transform min-w-32 rounded-[0.625rem] pointer-events-auto transition duration-150 shadow-black shadow-opacity-15 min-w-48 bg-white`,
+                        `:base-2: z-50 flex flex-col p-1 transform min-w-32 rounded-[0.625rem] pointer-events-auto transition duration-150 shadow-gray-900/8 min-w-48 bg-white`,
                         props.cardProps?.class
                       )}
                       style={{

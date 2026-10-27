@@ -25,7 +25,7 @@ const Card: Component<CardProps> = (providedProps) => {
       {...passedProps}
       class={clsx(
         `:base: p-2 rounded-2xl outline-none`,
-        props.shade && ":base: shadow-[0_0_12px_0px] shadow-gray-200",
+        props.shade && ":base: shadow-[0_0_12px_0px] shadow-gray-900/8",
         props.color !== "primary" && ":base: border",
         cardColors[props.color],
         props.class

@@ -97,14 +97,16 @@ const createAndesinePages = async (
   const label = `Source "${source.id}"`;
   const toPageHref = createHrefResolver(source, options.base, tree.slugPath);
   const treeEntries = new Map(listTreeEntries(tree).map((item) => [item.entry.id, item]));
-  // Content links use the name or slug paths of published entries.
+  // Content links use the name or slug paths of published entries; element props, e.g. a card's
+  // `href`, can also be `entry:<entryID>` links.
   const links = new Map(
     [...treeEntries.values()].flatMap(({ entry }) => {
       const href = toPageHref(entry.slugPath);
 
       return [
         [entry.path, href],
-        [entry.slugPath, href]
+        [entry.slugPath, href],
+        [`entry:${entry.id}`, href]
       ];
     })
   );

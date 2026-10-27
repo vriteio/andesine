@@ -37,7 +37,7 @@ const getExtensionSettingsPath = (workspaceID: string, extensionID: string): str
   return `${getExtensionPath(workspaceID, extensionID)}/settings`;
 };
 const hasConfiguration = (extension: Pick<ExtensionDetails, "details">): boolean => {
-  return Object.keys(extension.details.configuration?.properties ?? {}).length > 0;
+  return Boolean(extension.details.configuration?.length);
 };
 const getInstallPath = (workspaceID: string, name: string): string => {
   return `/${workspaceID}/settings/extension-install/${name}`;

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.0
+
+- Code blocks keep an optional `title`: a fence's `title="..."` meta in Markdown and MDX, a
+  `{% title="..." %}` annotation in Markdoc, and `data-title` on the `<pre>` in HTML. A titled
+  Markdown block without a language is written as `text`. `readCodeTitle` and `formatCodeMeta`
+  read and write the meta.
+
 ## 0.7.0
 
 - Add the `properties: { as: "element", name }` mapping: each property becomes a self-closing

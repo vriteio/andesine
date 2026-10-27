@@ -10,7 +10,8 @@ import { and, eq, inArray, isNull } from "drizzle-orm";
 
 /** The member's own enabled development views replace the registry views of their elements. */
 const listActiveViews = withAuthorization<Record<never, never>, undefined, ExtensionActiveView[]>(
-  { permissions: { session: true } },
+  // Also for keys, e.g. through `listElements`; without a member, registry views only.
+  { permissions: { session: true, key: ["read:entries"] } },
   async ({ auth, workspaceID }) => {
     const isActive = and(
       eq(extensions.workspaceID, workspaceID),

@@ -14,7 +14,7 @@ const Card: ParentComponent<CardProps> = (props) => {
       {...rest}
       class={clsx(
         ":base: rounded-2xl border border-gray-200 bg-gray-50 p-2 outline-none",
-        local.shade && ":base: shadow-[0_0_12px_0px] shadow-gray-200",
+        local.shade && ":base: shadow-[0_0_12px_0px] shadow-gray-900/8",
         local.class
       )}
     />

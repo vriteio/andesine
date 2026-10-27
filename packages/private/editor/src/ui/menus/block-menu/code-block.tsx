@@ -4,6 +4,7 @@ import type { Editor } from "@tiptap/core";
 import { codeLanguageOptions, findCodeLanguage } from "../../../lib/code-languages";
 import { isPositionInInheritedField } from "../../block-utils";
 import { formatCodeBlock, getCodeFormatParser } from "../../../lib/code-format";
+import { MenuField } from "./menu-field";
 
 interface CodeBlockTarget {
   pos: number;
@@ -73,6 +74,25 @@ const createCodeBlockMenuItems = (
             }}
           />
         </div>
+      ),
+      () => (
+        <MenuField
+          label="Title"
+          placeholder="Add a title"
+          value={() => String(findCurrent()?.node.attrs.title || "")}
+          commit={(title) => {
+            const current = findCurrent();
+
+            if (!current || !editor.isEditable) return;
+
+            editor.view.dispatch(
+              editor.state.tr.setNodeMarkup(current.pos, undefined, {
+                ...current.node.attrs,
+                title: title.trim() || null
+              })
+            );
+          }}
+        />
       )
     ],
     [

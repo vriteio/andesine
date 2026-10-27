@@ -1,5 +1,5 @@
 import {
-  EXTENSION_SLOT_SELECTOR,
+  EXTENSION_SCOPE_LIMIT,
   ExtensionStyleError,
   type ExtensionStyleKind,
   getExtensionScope,
@@ -11,8 +11,14 @@ import {
 const fail = (message: string): never => {
   throw new ExtensionStyleError(message);
 };
-const isConditionRule = (rule: CSSRule): rule is CSSMediaRule | CSSSupportsRule => {
-  return rule instanceof CSSMediaRule || rule instanceof CSSSupportsRule;
+const isConditionRule = (
+  rule: CSSRule
+): rule is CSSMediaRule | CSSSupportsRule | CSSContainerRule => {
+  return (
+    rule instanceof CSSMediaRule ||
+    rule instanceof CSSSupportsRule ||
+    (typeof CSSContainerRule !== "undefined" && rule instanceof CSSContainerRule)
+  );
 };
 /** `prefix` is null at the top level of view CSS, where only its `@scope` rule is allowed. */
 const validateRules = (rules: CSSRuleList, prefix: string | null, name: string): void => {
@@ -22,7 +28,7 @@ const validateRules = (rules: CSSRuleList, prefix: string | null, name: string):
       typeof CSSScopeRule !== "undefined" &&
       rule instanceof CSSScopeRule &&
       rule.start === getExtensionScope(name) &&
-      rule.end === EXTENSION_SLOT_SELECTOR;
+      rule.end === EXTENSION_SCOPE_LIMIT;
 
     if (isViewScope) {
       validateRules((rule as CSSScopeRule).cssRules, ":scope", name);

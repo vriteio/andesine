@@ -1,4 +1,5 @@
 import {
+  type ExtensionElementView,
   type ExtensionGrant,
   type ExtensionSummary,
   type ExtensionVersionDetails,
@@ -13,6 +14,16 @@ type ExtensionPresentation = Omit<
   "id" | "state" | "disabledReason" | "revision" | "development"
 >;
 
+/** A stored manifest's element views; manifests stored before `children` had `descendants`. */
+const toElementViews = (manifest: ExtensionVersionManifest["manifest"]): ExtensionElementView[] => {
+  return manifest.elementViews.map((view) => {
+    const { descendants: _descendants, ...current } = view as typeof view & {
+      descendants?: unknown;
+    };
+
+    return { ...current, children: current.children ?? [] };
+  });
+};
 const toPresentation = (version: ExtensionVersionManifest): ExtensionPresentation => {
   const { manifest, artifacts } = version;
 
@@ -38,9 +49,11 @@ const toVersionDetails = (version: ExtensionVersionManifest): ExtensionVersionDe
       events: webhook.events,
       path: webhook.path
     })),
-    elementViews: manifest.elementViews,
+    elementViews: toElementViews(manifest),
     blockActions: manifest.blockActions,
     panels: manifest.panels,
+    // Manifests stored before pages existed have none.
+    pages: manifest.pages ?? [],
     configuration: manifest.configuration ?? null
   };
 };
@@ -65,4 +78,4 @@ const toExtensionSummary = (
   };
 };
 
-export { toPresentation, toVersionDetails, toGrant, toExtensionSummary };
+export { toPresentation, toVersionDetails, toGrant, toExtensionSummary, toElementViews };

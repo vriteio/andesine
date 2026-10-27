@@ -24,8 +24,9 @@ const isSecretField = (field: ExtensionConfigurationField): boolean => {
 const isNumericField = (field: ExtensionConfigurationField): boolean => {
   return field.type === "number" || field.type === "integer";
 };
+/** The fields in order, with their names. */
 const getFields = (schema: ExtensionConfiguration | null) => {
-  return Object.entries(schema?.properties ?? {});
+  return (schema ?? []).map((field) => [field.name, field] as const);
 };
 const toDraftValue = (field: ExtensionConfigurationField, value: unknown): DraftValue => {
   if (field.type === "boolean") return value === true;
@@ -70,10 +71,9 @@ const getConfigurationErrors = (
   setSecrets: string[]
 ): Record<string, string> => {
   const errors: Record<string, string> = {};
-  const required = schema?.required ?? [];
 
   for (const [key, field] of getFields(schema)) {
-    const isRequired = required.includes(key);
+    const isRequired = Boolean(field.required);
 
     if (isSecretField(field)) {
       const secret = draft.secrets[key];

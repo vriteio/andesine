@@ -24,7 +24,7 @@ export default defineConfig({
   ],
   cta: { label: "Andesine", href: "https://andesine.app", icon: "i-lucide:arrow-up-right" },
   socialLinks: [
-    { label: "GitHub", href: "https://github.com/vriteio/vrite", icon: "i-mdi:github" }
+    { label: "GitHub", href: "https://github.com/vriteio/vrite", icon: "i-simple-icons:github" }
   ],
   sections: [
     { id: "guides", label: "Guides", icon: "i-lucide:book-open", sources: ["docs"] },

@@ -4,6 +4,7 @@ import { isBlockSelection } from "../../../extensions/block-selection";
 import type { Editor, EditorEvents } from "@tiptap/core";
 import type { EditorView } from "@codemirror/view";
 import { Plugin, Selection, TextSelection } from "@tiptap/pm/state";
+import { findNextStop, selectStop } from "../../keyboard-stops";
 
 interface CodeBlockBridge {
   editor: Editor;
@@ -83,6 +84,15 @@ const createCodeBlockNavigation = (editor: Editor) =>
               ? bridge.code.moveVertically(cursor, forward)
               : bridge.code.moveByChar(cursor, forward);
           const boundary = forward ? selection.$head.after() : selection.$head.before();
+          const dir = forward ? 1 : -1;
+          const isLeaving = moved.head === offset && !event.shiftKey;
+          // As the arrow keys elsewhere: to the next stop, e.g. a code group's next tab.
+          const stop = isLeaving
+            ? findNextStop(editor, { pos: selection.$head.before(), block: false }, dir)
+            : null;
+
+          if (stop) return selectStop(editor, stop, dir);
+
           const head =
             moved.head !== offset
               ? selection.$head.start() + moved.head

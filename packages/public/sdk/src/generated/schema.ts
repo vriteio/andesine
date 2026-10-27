@@ -362,7 +362,7 @@ export interface paths {
     put?: never;
     /**
      * Verify a session token
-     * @description Verifies a session token from the extension frontend and returns its member. Tokens of other extensions, expired tokens, and tokens of an earlier extension generation fail with NOT_FOUND. checks evaluates collection and entry actions for the member limited to the extension's permissions (restricted collections included), so the backend can authorize the member's request.
+     * @description Verifies a session token from the extension frontend and returns its member. Tokens of other extensions, expired tokens, and tokens of an earlier extension generation fail with NOT_FOUND. checks evaluates collection and entry actions for the member, in collections the extension can read (restricted collections included), so the backend can authorize the member's request.
      */
     post: operations["extensions.verifySession"];
     delete?: never;
@@ -527,6 +527,28 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/extensions/elements": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List custom elements
+     * @description The custom elements that the workspace's active extensions draw in the editor, e.g. Tabs: their props, whether they have content, which child blocks their content accepts, and the elements that belong inside them. Write them in MDX as <Name prop="value">content</Name>. The editor guides edits by these rules and offers a clean-up; the API doesn't enforce them.
+     *
+     *     Required API key permissions: read:entries. Write permissions also grant read access for the same resource.
+     */
+    get: operations["extensions.listElements"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/collections": {
     parameters: {
       query?: never;
@@ -615,6 +637,28 @@ export interface paths {
      *     Required API key permissions: collections. Write permissions also grant read access for the same resource.
      */
     post: operations["collections.move"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/collections/get": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get a collection
+     * @description Returns one collection by collectionID, collectionPath, or collectionSlugPath, with its name, path, and ancestors.
+     *
+     *     Required API key permissions: read:collections. Write permissions also grant read access for the same resource.
+     */
+    get: operations["collections.get"];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -14392,6 +14436,359 @@ export interface operations {
       };
     };
   };
+  "extensions.listElements": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            element: string;
+            name: string;
+            description?: string;
+            /** @description False for an element without content, written as <Name /> */
+            content: boolean;
+            /** @description The direct child blocks that its content accepts; without it, any blocks */
+            accepts?: {
+              elements?: string[];
+              blocks?: string[];
+            };
+            /** @description The direct child blocks that its content doesn't accept, even if `accepts` lists them */
+            rejects?: {
+              elements?: string[];
+              blocks?: string[];
+            };
+            /** @description The props, with their defaults, which a new element gets */
+            props?: (
+              | {
+                  name: string;
+                  title?: string;
+                  description?: string;
+                  /** @constant */
+                  type: "string";
+                  enum?: string[];
+                  /** @enum {string} */
+                  control?: "input" | "textarea" | "icon" | "select" | "toggle";
+                  placeholder?: string;
+                  minLength?: number;
+                  maxLength?: number;
+                  default?: string;
+                }
+              | {
+                  name: string;
+                  title?: string;
+                  description?: string;
+                  /** @enum {string} */
+                  type: "number" | "integer";
+                  minimum?: number;
+                  maximum?: number;
+                  default?: number;
+                }
+              | {
+                  name: string;
+                  title?: string;
+                  description?: string;
+                  /** @constant */
+                  type: "boolean";
+                  default?: boolean;
+                }
+            )[];
+            /** @description The extension that renders it, e.g. andesine/pages */
+            extension: string;
+            /** @description Elements that belong inside this one, e.g. Tab in Tabs */
+            children: {
+              element: string;
+              name?: string;
+              description?: string;
+              /** @description False for an element without content, written as <Name /> */
+              content: boolean;
+              /** @description The direct child blocks that its content accepts; without it, any blocks */
+              accepts?: {
+                elements?: string[];
+                blocks?: string[];
+              };
+              /** @description The direct child blocks that its content doesn't accept, even if `accepts` lists them */
+              rejects?: {
+                elements?: string[];
+                blocks?: string[];
+              };
+              /** @description The props, with their defaults, which a new element gets */
+              props?: (
+                | {
+                    name: string;
+                    title?: string;
+                    description?: string;
+                    /** @constant */
+                    type: "string";
+                    enum?: string[];
+                    /** @enum {string} */
+                    control?: "input" | "textarea" | "icon" | "select" | "toggle";
+                    placeholder?: string;
+                    minLength?: number;
+                    maxLength?: number;
+                    default?: string;
+                  }
+                | {
+                    name: string;
+                    title?: string;
+                    description?: string;
+                    /** @enum {string} */
+                    type: "number" | "integer";
+                    minimum?: number;
+                    maximum?: number;
+                    default?: number;
+                  }
+                | {
+                    name: string;
+                    title?: string;
+                    description?: string;
+                    /** @constant */
+                    type: "boolean";
+                    default?: boolean;
+                  }
+              )[];
+            }[];
+          }[];
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
   "collections.create": {
     parameters: {
       query?: never;
@@ -15797,6 +16194,258 @@ export interface operations {
                   /** @description Current value of the field */
                   current: string | null;
                 };
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "collections.get": {
+    parameters: {
+      query?: {
+        /** @example coll_example */
+        collectionID?: string;
+        collectionPath?: string;
+        collectionSlugPath?: string;
+      };
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Collection"];
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
               }
             | {
                 /** @constant */

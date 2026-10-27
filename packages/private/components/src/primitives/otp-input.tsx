@@ -21,11 +21,11 @@ interface OTPInputProps extends Omit<JSX.InputHTMLAttributes<HTMLInputElement>, 
 }
 const OTPInputColors = {
   base: `:base: bg-gray-200 outline-gray-200`,
-  contrast: `:base: bg-white outline-gray-200 shadow-gray-200`
+  contrast: `:base: bg-white outline-gray-200 shadow-gray-900/8`
 };
 const OTPInputVariants = {
   solid: `:base: focus:outline-none focus:shadow-inner`,
-  outlined: `:base: outline outline-1 shadow-md focus:outline-1 focus:bg-gray-100`
+  outlined: `:base: outline outline-1 -outline-offset-1 shadow-md disabled:shadow-none focus:outline-1 focus:bg-gray-100`
 };
 
 const OTPInputSlot: Component<OTPInputSlotProps> = (props) => (

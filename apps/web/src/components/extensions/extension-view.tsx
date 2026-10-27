@@ -1,3 +1,5 @@
+import { FixedTooltips } from "@andesine/components";
+import clsx from "clsx";
 import {
   extensionComponentDefinitions,
   type ExtensionComponentDefinition,
@@ -15,6 +17,9 @@ interface ExtensionNodeViewProps {
 interface ExtensionViewProps {
   host: ExtensionHost;
   viewID: string;
+  class?: string;
+  /** Clips 12px outside the view's box, e.g. for soft shadows, in place of at its edge. */
+  bleed?: boolean;
 }
 
 const definitions: Record<string, ExtensionComponentDefinition> = extensionComponentDefinitions;
@@ -42,6 +47,7 @@ const ExtensionNodeView: Component<ExtensionNodeViewProps> = (props) => {
               id={props.id}
               props={node().props as never}
               emit={emit}
+              hasEvent={(event: string) => node().callbacks[event] !== undefined}
               childNodes={() => node().children.map((id) => props.host.tree.state.nodes[id])}
               renderNode={(id: number) => <ExtensionNodeView host={props.host} id={id} />}
               getNode={(id: number) => props.host.tree.state.nodes[id]}
@@ -62,19 +68,31 @@ const ExtensionNodeView: Component<ExtensionNodeViewProps> = (props) => {
     </Show>
   );
 };
-/** Layout and paint containment keep the view's content, even fixed positioned, inside it. */
+/**
+ * Layout containment keeps the view's content, even fixed positioned, inside it; paint
+ * containment, or a clip path for `bleed`, clips what it draws, so its tooltips are fixed.
+ */
 const ExtensionView: Component<ExtensionViewProps> = (props) => {
   const root = () => props.host.tree.state.nodes[props.host.tree.state.roots[props.viewID]];
 
   return (
-    <div data-extension={props.host.name} class="isolate min-w-0 [contain:layout_paint]">
-      <Show when={root()}>
-        {(root) => (
-          <For each={root().children}>
-            {(id) => <ExtensionNodeView host={props.host} id={id} />}
-          </For>
-        )}
-      </Show>
+    <div
+      data-extension={props.host.name}
+      class={clsx(
+        "isolate min-w-0",
+        props.bleed ? "[contain:layout] [clip-path:inset(-0.75rem)]" : "[contain:layout_paint]",
+        props.class
+      )}
+    >
+      <FixedTooltips>
+        <Show when={root()}>
+          {(root) => (
+            <For each={root().children}>
+              {(id) => <ExtensionNodeView host={props.host} id={id} />}
+            </For>
+          )}
+        </Show>
+      </FixedTooltips>
     </div>
   );
 };

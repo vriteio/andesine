@@ -1,7 +1,7 @@
 import {
+  Navigate,
   type Params,
   type SearchParams,
-  redirect,
   type RouteDefinition,
   useCurrentMatches,
   useLocation,
@@ -9,6 +9,7 @@ import {
 } from "@solidjs/router";
 import { type Accessor, createMemo, lazy } from "solid-js";
 import { type ExtensionIconSource } from "#web/components/extensions/extension-icon";
+import { findExtensionPage, getExtensionPagePath } from "#web/lib/extensions";
 import { useRouteExtension } from "./route-extension";
 
 import CollectionPage from "../../pages/workspace/collection/page";
@@ -42,6 +43,7 @@ const NewWorkspacePage = lazy(() => import("../../pages/new-workspace/page"));
 const WorkspaceLayout = lazy(() => import("../../pages/workspace/layout"));
 const EntryPage = lazy(() => import("../../pages/workspace/entry/page"));
 const SchemaPage = lazy(() => import("../../pages/workspace/schema/page"));
+const ExtensionPagePage = lazy(() => import("../../pages/workspace/extension/page"));
 
 interface RouteData {
   title: string;
@@ -145,6 +147,29 @@ const routesData: Record<
     title: "Extensions",
     breadcrumbs: [{ label: "Settings" }, { label: "Extensions", path: "/settings/extensions" }]
   }),
+  "/:workspaceID/extensions/:extensionID/:pageID": (params, query, { extension }) => {
+    const found = findExtensionPage(params.extensionID ?? "", params.pageID ?? "");
+    const page = found?.page;
+    const parent = page?.parent && found?.extension.pages.find(({ id }) => id === page.parent);
+    // Breadcrumb paths are relative to the workspace; the parent gets the same context.
+    const parentPath =
+      parent &&
+      getExtensionPagePath(params.workspaceID ?? "", params.extensionID ?? "", parent, {
+        collectionID: query.collectionID as string | undefined,
+        entryID: query.entryID as string | undefined
+      })?.slice(`/${params.workspaceID}`.length);
+
+    return {
+      title: page?.name ?? "Extension",
+      extensionIcon: extension ?? undefined,
+      loading: !extension,
+      breadcrumbs: [
+        { label: extension?.displayName ?? "Extension" },
+        ...(parent ? [{ label: parent.name, path: parentPath || undefined }] : []),
+        { label: page?.name ?? "Page" }
+      ]
+    };
+  },
   "/:workspaceID/settings/extension/:extensionID": (params, _query, { extension }) => ({
     title: extension?.displayName ?? "Extension",
     extensionIcon: extension ?? undefined,
@@ -235,9 +260,8 @@ const routes: RouteDefinition[] = [
         children: [
           {
             path: "/",
-            preload: ({ params }) => {
-              throw redirect(`/${params.workspaceID}/settings/personal`);
-            }
+            // A component, not a throwing `preload`: the server render fails on a thrown redirect.
+            component: () => Navigate({ href: `/${useParams().workspaceID}/settings/personal` })
           },
           {
             path: "/personal",
@@ -310,6 +334,7 @@ const routes: RouteDefinition[] = [
         ]
       },
       { path: "/", component: EntryPage },
+      { path: "/extensions/:extensionID/:pageID", component: ExtensionPagePage },
       {
         path: "/:slug",
         matchFilters: { slug: /^ent_/ },

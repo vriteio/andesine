@@ -75,7 +75,7 @@ const PlainTextInput: Component<PlainTextInputProps> = (props) => {
       data-placeholder={props.placeholder || "Enter text"}
       role="textbox"
       class={clsx(
-        "flex min-h-7 w-full min-w-0 flex-1 items-center justify-start break-words whitespace-pre-wrap rounded-lg bg-white p-1 px-2 text-[16px] leading-5 outline outline-1 outline-gray-200 shadow-md ring-offset-1 empty:before:text-gray-400 empty:before:content-[attr(data-placeholder)] focus:bg-gray-100 focus:outline-1 md:text-sm",
+        "flex min-h-7 w-full min-w-0 flex-1 items-center justify-start break-words whitespace-pre-wrap rounded-lg bg-white p-1 px-2 text-[16px] leading-5 outline outline-1 -outline-offset-1 outline-gray-200 shadow-md ring-offset-1 empty:before:text-gray-400 empty:before:content-[attr(data-placeholder)] focus:bg-gray-100 focus:outline-1 md:text-sm",
         props.class
       )}
       onBeforeInput={(event) => {

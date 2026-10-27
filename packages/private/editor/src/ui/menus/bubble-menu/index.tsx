@@ -19,9 +19,11 @@ import { isBlockSelection } from "#editor/extensions";
 import { EDITOR_MENU_Z_INDEX } from "#editor/ui/constants";
 import { useBlockMenuContext } from "#editor/ui/menus/block-menu";
 import { rangeContainsInheritedField } from "#editor/ui/block-utils";
+import type { EditorLinks } from "#editor/client-types";
 
 interface BubbleMenuProps {
   editor: Editor;
+  links?: EditorLinks;
   menuContainerRef: Accessor<HTMLElement | null>;
 }
 
@@ -107,7 +109,12 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
       <Portal mount={wrapper()!}>
         <Switch>
           <Match when={mode() === "link"}>
-            <LinkMenu editor={props.editor} opened={opened()} setMode={setMode} />
+            <LinkMenu
+              editor={props.editor}
+              links={props.links}
+              opened={opened()}
+              setMode={setMode}
+            />
           </Match>
           <Match when={mode() === "format"}>
             <FormatMenu editor={props.editor} opened={opened()} setMode={setMode} />

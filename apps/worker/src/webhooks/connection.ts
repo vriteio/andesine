@@ -40,7 +40,7 @@ const connectWebhookDestination = async (
   signal: AbortSignal,
   onConnect: () => void
 ): Promise<Socket> => {
-  const addresses = await resolveAddresses(destination.hostname, signal);
+  const addresses = destination.addresses ?? (await resolveAddresses(destination.hostname, signal));
 
   signal.throwIfAborted();
 

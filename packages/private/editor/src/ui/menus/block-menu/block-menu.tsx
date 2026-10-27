@@ -1,7 +1,7 @@
 import { createCodeBlockMenuItems } from "./code-block";
 import { createElementMenuItems } from "./element";
 import { createExtensionActionMenuItems } from "./extension-actions";
-import type { BlockActions } from "#editor/client-types";
+import type { BlockActions, EditorIcons, EditorLinks, ElementViews } from "#editor/client-types";
 import { createImageMenuItems } from "./image";
 import { isBlockSelection } from "#editor/extensions/block-selection";
 import { DropdownMenu, IconButton, type MenuItem } from "@andesine/components";
@@ -10,12 +10,14 @@ import { type Editor, type EditorEvents } from "@tiptap/core";
 import {
   createEffect,
   createSignal,
+  on,
   onCleanup,
   untrack,
   type JSX,
   type ParentComponent
 } from "solid-js";
 import { useBlockMenuContext } from "./context";
+import { sourceElements } from "#editor/ui/views/element-view/source-mode";
 import {
   getBlockControlAnchorRect,
   getBlockControlTargetAtY,
@@ -23,12 +25,14 @@ import {
   getCachedElementRect,
   getEditorScrollContainer,
   isPointInBlockControlArea,
+  keepsViewChildTarget,
   isTargetInBlockSelection,
   registerSelectionControlHiding
 } from "#editor/ui/block-control-targeting";
 import type { BlockControlTarget, BlockControlRange } from "#editor/ui/block-control-targeting";
 import {
   BLOCK_CONTROL_HIDE_DELAY,
+  BLOCK_CONTROL_MOVE_DELAY,
   BLOCK_CONTROL_SIZE,
   EDITOR_MENU_Z_INDEX
 } from "#editor/ui/constants";
@@ -42,6 +46,9 @@ interface BlockMenuProps {
   notify(type: "success" | "error", text: string): void;
   editor: Editor | null;
   blockActions?: BlockActions;
+  elementViews?: ElementViews;
+  links?: EditorLinks;
+  icons?: EditorIcons;
   textMenuSelectionRange: BlockControlRange | null;
   anchorPoint: { x: number; y: number } | null;
   /** The last context menu's point, which the dropdown keeps internally. */
@@ -112,13 +119,30 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
       items
     ];
   };
+  const hasElementForm = () => elementItems().some((item) => Array.isArray(item));
   const triggerPinned = () => props.menuOpened || triggerHolds() > 0;
   const handleOpenedChange = (opened: boolean) => {
+    const isClosing = !opened && props.menuOpened;
+
     props.setMenuOpened(opened);
 
     if (!opened && !triggerHolds()) {
       setTriggerAvailable(false);
     }
+
+    // The menu gives the focus back to its trigger, which a menu from the keyboard or a right
+    // click doesn't show; the editor takes it, e.g. after Escape, to go on with the arrow keys.
+    if (isClosing) requestAnimationFrame(refocusEditor);
+  };
+  const refocusEditor = () => {
+    const editor = props.editor;
+    const active = document.activeElement;
+    const isLost =
+      !active ||
+      active === document.body ||
+      Boolean(active.closest("[data-block-menu-trigger], [data-block-action-menu]"));
+
+    if (editor && !editor.isDestroyed && isLost) editor.view.focus();
   };
   // Keeps the trigger shown and in place until the returned release is called.
   const holdTrigger = () => {
@@ -181,6 +205,7 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
   createEffect(() => {
     const editor = props.editor;
     let codeMenuKey: string | undefined;
+    let elementMenuID: string | undefined;
 
     const updateMenuItems = (event?: EditorEvents["transaction"]) => {
       if (event && !event.transaction.docChanged && !event.transaction.selectionSet) return;
@@ -201,7 +226,18 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
         );
         codeMenuKey = nextCodeMenuKey;
       }
-      setElementItems(editor && !editor.isDestroyed ? createElementMenuItems(editor) : []);
+      const nextElementID = editor?.state.doc.nodeAt(editor.state.selection.from)?.attrs.id;
+
+      // Preserve the props form's drafts while the menu is open on the same element.
+      if (!untrack(() => props.menuOpened) || nextElementID !== elementMenuID) {
+        setElementItems(
+          editor && !editor.isDestroyed
+            ? createElementMenuItems(editor, props.elementViews, props)
+            : []
+        );
+        elementMenuID = nextElementID;
+      }
+
       setTableItems(editor && !editor.isDestroyed ? createTableMenuItems(editor) : []);
       setTurnIntoItems(editor && !editor.isDestroyed ? createTurnIntoMenuItem(editor) : []);
       setExtensionItems(
@@ -217,6 +253,20 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
     updateMenuItems();
     editor?.on("transaction", updateMenuItems);
     onCleanup(() => editor?.off("transaction", updateMenuItems));
+    // "Show tags" changes no transaction, but its label follows it.
+    createEffect(
+      on(
+        sourceElements,
+        () => {
+          setElementItems(
+            editor && !editor.isDestroyed
+              ? createElementMenuItems(editor, props.elementViews, props)
+              : []
+          );
+        },
+        { defer: true }
+      )
+    );
   });
 
   createEffect(() => {
@@ -260,12 +310,56 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
     const hideTrigger = debounce(() => {
       if (!triggerPinned()) setTriggerAvailable(false);
     }, BLOCK_CONTROL_HIDE_DELAY);
+    const showTrigger = (target: BlockControlTarget) => {
+      const scrollContainer = getEditorScrollContainer(editor);
+
+      if (!scrollContainer) {
+        hideTrigger();
+        return;
+      }
+
+      const blockRect = getCachedElementRect(editor, target.dom);
+      const referenceRect = getBlockControlAnchorRect(editor, target);
+      const scrollContainerRect = getCachedElementRect(editor, scrollContainer);
+      const menuLeft = referenceRect.right + 8;
+
+      currentTarget = target;
+      setCurrentNodePos(target.pos);
+      setCoords({
+        top:
+          referenceRect.top -
+          scrollContainerRect.top +
+          scrollContainer.scrollTop +
+          (referenceRect.height - BLOCK_CONTROL_SIZE) / 2,
+        left: menuLeft - scrollContainerRect.left + scrollContainer.scrollLeft
+      });
+      setHoverAreaHeight(blockRect.height);
+      hideTrigger.clear();
+      setTriggerAvailable(true);
+    };
+    const moveTrigger = debounce(showTrigger, BLOCK_CONTROL_MOVE_DELAY);
+
+    let currentTarget: BlockControlTarget | null = null;
+    let previousX = 0;
+
     const updatePosition = (event: PointerEvent) => {
+      const pointer = { x: event.clientX, y: event.clientY, previousX };
+
+      previousX = event.clientX;
+
       if (triggerPinned() && !contextMenuMode()) return;
+
+      // The current view child keeps the trigger while the pointer goes out to it.
+      if (triggerAvailable() && keepsViewChildTarget(editor, currentTarget, pointer, "right")) {
+        hideTrigger.clear();
+        moveTrigger.clear();
+        return;
+      }
 
       try {
         const pointerTarget = getBlockControlTargetAtY(editor, event.clientY, {
-          listItemSpecific: false
+          listItemSpecific: false,
+          x: event.clientX
         });
         const selectionTarget = getBlockSelectionTopTarget(editor);
         const target =
@@ -287,53 +381,38 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
             side: "right"
           })
         ) {
+          moveTrigger.clear();
           hideTrigger();
           return;
         }
 
-        const blockRect = getCachedElementRect(editor, target.dom);
-        const referenceRect = getBlockControlAnchorRect(editor, target);
-        const scrollContainer = getEditorScrollContainer(editor);
+        const isMove = triggerAvailable() && currentTarget?.pos !== target.pos;
 
-        if (!scrollContainer) {
-          hideTrigger();
-          return;
-        }
-
-        const scrollContainerRect = getCachedElementRect(editor, scrollContainer);
-        const menuLeft =
-          target.node.type.name === "codeBlock"
-            ? Math.min(
-                referenceRect.right + 8,
-                scrollContainerRect.left + scrollContainer.clientWidth - BLOCK_CONTROL_SIZE - 4
-              )
-            : blockRect.right + 8;
-
-        setCurrentNodePos(target.pos);
-        setCoords({
-          top:
-            referenceRect.top -
-            scrollContainerRect.top +
-            scrollContainer.scrollTop +
-            (referenceRect.height - BLOCK_CONTROL_SIZE) / 2,
-          left: menuLeft - scrollContainerRect.left + scrollContainer.scrollLeft
-        });
-        setHoverAreaHeight(blockRect.height);
         hideTrigger.clear();
-        setTriggerAvailable(true);
+
+        if (isMove) {
+          moveTrigger(target);
+          return;
+        }
+
+        moveTrigger.clear();
+        showTrigger(target);
       } catch {
+        moveTrigger.clear();
         hideTrigger();
       }
     };
     const handlePointerLeave = () => {
       // Opened dropdown forces the trigger to remain visible
       if (!triggerPinned()) {
+        moveTrigger.clear();
         hideTrigger();
       }
     };
     const scrollContainer = getEditorScrollContainer(editor);
     const unregisterSelectionHandler = registerSelectionControlHiding(editor, () => {
       hideTrigger.clear();
+      moveTrigger.clear();
       setTriggerAvailable(false);
     });
 
@@ -341,6 +420,7 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
     scrollContainer?.addEventListener("pointerleave", handlePointerLeave);
     onCleanup(() => {
       hideTrigger.clear();
+      moveTrigger.clear();
       scrollContainer?.removeEventListener("pointermove", updatePosition);
       scrollContainer?.removeEventListener("pointerleave", handlePointerLeave);
       unregisterSelectionHandler();
@@ -424,7 +504,7 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
       setOpened={handleOpenedChange}
       cardProps={{
         ...{ "data-block-action-menu": props.menuID },
-        class: imageItems().length || codeItems().length ? "w-64" : "w-48"
+        class: imageItems().length || codeItems().length || hasElementForm() ? "w-64" : "w-48"
       }}
       items={menuItems()}
     />

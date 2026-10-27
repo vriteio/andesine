@@ -1,9 +1,29 @@
 # Changelog
 
-## Unreleased
+## 0.8.0
 
+- **Breaking:** icon classes, in the configuration and in content, e.g. a card's `icon`, use only
+  Lucide, Tabler, or Simple Icons (`i-lucide:…`, `i-tabler:…`, `i-simple-icons:…`). The package
+  depends on their `@iconify-json/*` packages in place of all of `@iconify/json`.
+- A card's `href` can be an `entry:<entryID>` link, which the build links to the entry's page.
+- `poweredBy: false` hides the "Powered by Andesine Pages" credit at the end of the navigation.
+- Links in the configuration (`links`, `cta`, `socialLinks`, and a section's `links`) can point to
+  an entry with `entry:<entryID>`, with an optional `#anchor`: the build links the entry's page in
+  an Andesine source. A link to an entry without a page, e.g. an unpublished one, is left out.
+- **Breaking:** `<Disclosure>` is renamed to `<Accordion>`, with the same props; the template's
+  component is `accordion.astro`.
+- Andesine code blocks have titles: the code card shows the title in place of the language, and
+  a `<CodeGroup>` tab label is the title, then the language. A repeated label gets a number, as
+  in the editor.
+- **Breaking:** `<Steps>` contains `<Step title>` elements, and `<FileTree>` contains `<Folder name>`
+  (with more folders and files) and `<File name />` elements, in place of Markdown lists. The
+  `FileTreeItem` type and the list parsing are removed. The template has `step.astro`,
+  `folder.astro`, and `file.astro`.
+- **Breaking:** the template's `<Card>` has no `description` prop; its content is the card's text.
 - Add `channel` to Andesine sources (default `published`). The build reads that channel's
   publication, and search and AI answers use it too.
+- Redirects to the first page use status 307, so static builds redirect at once; with the
+  default 302, Astro's redirect page waited 2 seconds.
 
 ## 0.7.0
 

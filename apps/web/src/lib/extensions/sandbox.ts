@@ -140,6 +140,8 @@ const createExtensionSandbox = async (
       (message.type === "heartbeat" && message.id > heartbeatID);
 
     if (isInvalid) {
+      if (import.meta.env.DEV) console.warn("Extension protocol error", result?.error ?? message);
+
       fail("protocol_error");
 
       return;
@@ -159,7 +161,9 @@ const createExtensionSandbox = async (
     // Invalid content (for example a patch the view tree rejects) is a protocol error.
     try {
       options.onMessage?.(message);
-    } catch {
+    } catch (error) {
+      if (import.meta.env.DEV) console.warn("Extension protocol error", error);
+
       fail("protocol_error");
     }
   };

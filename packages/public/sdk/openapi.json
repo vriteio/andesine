@@ -12008,7 +12008,7 @@
       "post": {
         "operationId": "extensions.verifySession",
         "summary": "Verify a session token",
-        "description": "Verifies a session token from the extension frontend and returns its member. Tokens of other extensions, expired tokens, and tokens of an earlier extension generation fail with NOT_FOUND. checks evaluates collection and entry actions for the member limited to the extension's permissions (restricted collections included), so the backend can authorize the member's request.",
+        "description": "Verifies a session token from the extension frontend and returns its member. Tokens of other extensions, expired tokens, and tokens of an earlier extension generation fail with NOT_FOUND. checks evaluates collection and entry actions for the member, in collections the extension can read (restricted collections included), so the backend can authorize the member's request.",
         "tags": ["extensions"],
         "requestBody": {
           "required": true,
@@ -18977,6 +18977,617 @@
         "security": [{ "extensionToken": [] }]
       }
     },
+    "/extensions/elements": {
+      "get": {
+        "operationId": "extensions.listElements",
+        "summary": "List custom elements",
+        "description": "The custom elements that the workspace's active extensions draw in the editor, e.g. Tabs: their props, whether they have content, which child blocks their content accepts, and the elements that belong inside them. Write them in MDX as <Name prop=\"value\">content</Name>. The editor guides edits by these rules and offers a clean-up; the API doesn't enforce them.\n\nRequired API key permissions: read:entries. Write permissions also grant read access for the same resource.",
+        "tags": ["extensions"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "element": { "type": "string" },
+                      "name": { "type": "string" },
+                      "description": { "type": "string" },
+                      "content": {
+                        "type": "boolean",
+                        "description": "False for an element without content, written as <Name />"
+                      },
+                      "accepts": {
+                        "type": "object",
+                        "properties": {
+                          "elements": {
+                            "type": "array",
+                            "maxItems": 20,
+                            "items": {
+                              "type": "string",
+                              "maxLength": 100,
+                              "pattern": "^[A-Za-z][A-Za-z0-9_-]*(?:\\.[A-Za-z][A-Za-z0-9_-]*)*$"
+                            }
+                          },
+                          "blocks": {
+                            "type": "array",
+                            "maxItems": 11,
+                            "items": { "type": "string" }
+                          }
+                        },
+                        "additionalProperties": false,
+                        "description": "The direct child blocks that its content accepts; without it, any blocks"
+                      },
+                      "rejects": {
+                        "type": "object",
+                        "properties": {
+                          "elements": {
+                            "type": "array",
+                            "maxItems": 20,
+                            "items": {
+                              "type": "string",
+                              "maxLength": 100,
+                              "pattern": "^[A-Za-z][A-Za-z0-9_-]*(?:\\.[A-Za-z][A-Za-z0-9_-]*)*$"
+                            }
+                          },
+                          "blocks": {
+                            "type": "array",
+                            "maxItems": 11,
+                            "items": { "type": "string" }
+                          }
+                        },
+                        "additionalProperties": false,
+                        "description": "The direct child blocks that its content doesn't accept, even if `accepts` lists them"
+                      },
+                      "props": {
+                        "type": "array",
+                        "maxItems": 20,
+                        "items": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string",
+                                  "maxLength": 100,
+                                  "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                                },
+                                "title": { "type": "string", "minLength": 1, "maxLength": 60 },
+                                "description": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 200
+                                },
+                                "type": { "const": "string" },
+                                "enum": {
+                                  "type": "array",
+                                  "minItems": 1,
+                                  "maxItems": 20,
+                                  "items": { "type": "string", "minLength": 1, "maxLength": 100 }
+                                },
+                                "control": {
+                                  "enum": ["input", "textarea", "icon", "select", "toggle"],
+                                  "type": "string"
+                                },
+                                "placeholder": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 100
+                                },
+                                "minLength": { "type": "integer", "minimum": 0, "maximum": 10000 },
+                                "maxLength": { "type": "integer", "minimum": 1, "maximum": 10000 },
+                                "default": { "type": "string" }
+                              },
+                              "required": ["name", "type"],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string",
+                                  "maxLength": 100,
+                                  "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                                },
+                                "title": { "type": "string", "minLength": 1, "maxLength": 60 },
+                                "description": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 200
+                                },
+                                "type": { "enum": ["number", "integer"], "type": "string" },
+                                "minimum": { "type": "number" },
+                                "maximum": { "type": "number" },
+                                "default": { "type": "number" }
+                              },
+                              "required": ["name", "type"],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string",
+                                  "maxLength": 100,
+                                  "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                                },
+                                "title": { "type": "string", "minLength": 1, "maxLength": 60 },
+                                "description": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 200
+                                },
+                                "type": { "const": "boolean" },
+                                "default": { "type": "boolean" }
+                              },
+                              "required": ["name", "type"],
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        "description": "The props, with their defaults, which a new element gets"
+                      },
+                      "extension": {
+                        "type": "string",
+                        "description": "The extension that renders it, e.g. andesine/pages"
+                      },
+                      "children": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "element": { "type": "string" },
+                            "name": { "type": "string" },
+                            "description": { "type": "string" },
+                            "content": {
+                              "type": "boolean",
+                              "description": "False for an element without content, written as <Name />"
+                            },
+                            "accepts": {
+                              "type": "object",
+                              "properties": {
+                                "elements": {
+                                  "type": "array",
+                                  "maxItems": 20,
+                                  "items": {
+                                    "type": "string",
+                                    "maxLength": 100,
+                                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*(?:\\.[A-Za-z][A-Za-z0-9_-]*)*$"
+                                  }
+                                },
+                                "blocks": {
+                                  "type": "array",
+                                  "maxItems": 11,
+                                  "items": { "type": "string" }
+                                }
+                              },
+                              "additionalProperties": false,
+                              "description": "The direct child blocks that its content accepts; without it, any blocks"
+                            },
+                            "rejects": {
+                              "type": "object",
+                              "properties": {
+                                "elements": {
+                                  "type": "array",
+                                  "maxItems": 20,
+                                  "items": {
+                                    "type": "string",
+                                    "maxLength": 100,
+                                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*(?:\\.[A-Za-z][A-Za-z0-9_-]*)*$"
+                                  }
+                                },
+                                "blocks": {
+                                  "type": "array",
+                                  "maxItems": 11,
+                                  "items": { "type": "string" }
+                                }
+                              },
+                              "additionalProperties": false,
+                              "description": "The direct child blocks that its content doesn't accept, even if `accepts` lists them"
+                            },
+                            "props": {
+                              "type": "array",
+                              "maxItems": 20,
+                              "items": {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "name": {
+                                        "type": "string",
+                                        "maxLength": 100,
+                                        "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                                      },
+                                      "title": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 60
+                                      },
+                                      "description": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200
+                                      },
+                                      "type": { "const": "string" },
+                                      "enum": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "maxItems": 20,
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 100
+                                        }
+                                      },
+                                      "control": {
+                                        "enum": ["input", "textarea", "icon", "select", "toggle"],
+                                        "type": "string"
+                                      },
+                                      "placeholder": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 100
+                                      },
+                                      "minLength": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 10000
+                                      },
+                                      "maxLength": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 10000
+                                      },
+                                      "default": { "type": "string" }
+                                    },
+                                    "required": ["name", "type"],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "name": {
+                                        "type": "string",
+                                        "maxLength": 100,
+                                        "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                                      },
+                                      "title": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 60
+                                      },
+                                      "description": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200
+                                      },
+                                      "type": { "enum": ["number", "integer"], "type": "string" },
+                                      "minimum": { "type": "number" },
+                                      "maximum": { "type": "number" },
+                                      "default": { "type": "number" }
+                                    },
+                                    "required": ["name", "type"],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "name": {
+                                        "type": "string",
+                                        "maxLength": 100,
+                                        "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                                      },
+                                      "title": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 60
+                                      },
+                                      "description": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200
+                                      },
+                                      "type": { "const": "boolean" },
+                                      "default": { "type": "boolean" }
+                                    },
+                                    "required": ["name", "type"],
+                                    "additionalProperties": false
+                                  }
+                                ]
+                              },
+                              "description": "The props, with their defaults, which a new element gets"
+                            }
+                          },
+                          "required": ["element", "content"]
+                        },
+                        "description": "Elements that belong inside this one, e.g. Tab in Tabs"
+                      }
+                    },
+                    "required": ["element", "name", "content", "extension", "children"]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "BAD_REQUEST" },
+                        "status": { "const": 400 },
+                        "message": { "type": "string", "default": "Bad Request" },
+                        "data": { "$ref": "#/components/schemas/ValidationErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "UNAUTHORIZED" },
+                        "status": { "const": 401 },
+                        "message": { "type": "string", "default": "Unauthorized" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "FORBIDDEN" },
+                        "status": { "const": 403 },
+                        "message": { "type": "string", "default": "Forbidden" },
+                        "data": { "$ref": "#/components/schemas/ForbiddenErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "NOT_FOUND" },
+                        "status": { "const": 404 },
+                        "message": { "type": "string", "default": "Not Found" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "CONFLICT" },
+                        "status": { "const": 409 },
+                        "message": { "type": "string", "default": "Conflict" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "TOO_MANY_REQUESTS" },
+                        "status": { "const": 429 },
+                        "message": { "type": "string", "default": "Too Many Requests" },
+                        "data": { "$ref": "#/components/schemas/RateLimitErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "INTERNAL_SERVER_ERROR" },
+                        "status": { "const": 500 },
+                        "message": { "type": "string", "default": "Internal Server Error" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "SERVICE_UNAVAILABLE" },
+                        "status": { "const": 503 },
+                        "message": { "type": "string", "default": "Service Unavailable" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ]
+      }
+    },
     "/collections": {
       "post": {
         "operationId": "collections.create",
@@ -20819,6 +21430,324 @@
           }
         },
         "x-sdk-example": { "id": "coll_example", "newParentID": "coll_parent" }
+      }
+    },
+    "/collections/get": {
+      "get": {
+        "operationId": "collections.get",
+        "summary": "Get a collection",
+        "description": "Returns one collection by collectionID, collectionPath, or collectionSlugPath, with its name, path, and ancestors.\n\nRequired API key permissions: read:collections. Write permissions also grant read access for the same resource.",
+        "tags": ["collections"],
+        "parameters": [
+          {
+            "name": "collectionID",
+            "in": "query",
+            "schema": { "type": "string", "pattern": "^coll_[A-Za-z\\d]{1,22}$" },
+            "allowEmptyValue": true,
+            "allowReserved": true,
+            "example": "coll_example"
+          },
+          {
+            "name": "collectionPath",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+            },
+            "allowEmptyValue": true,
+            "allowReserved": true
+          },
+          {
+            "name": "collectionSlugPath",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+            },
+            "allowEmptyValue": true,
+            "allowReserved": true
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Collection" } }
+            }
+          },
+          "400": {
+            "description": "400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "BAD_REQUEST" },
+                        "status": { "const": 400 },
+                        "message": { "type": "string", "default": "Bad Request" },
+                        "data": { "$ref": "#/components/schemas/ValidationErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "UNAUTHORIZED" },
+                        "status": { "const": 401 },
+                        "message": { "type": "string", "default": "Unauthorized" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "FORBIDDEN" },
+                        "status": { "const": 403 },
+                        "message": { "type": "string", "default": "Forbidden" },
+                        "data": { "$ref": "#/components/schemas/ForbiddenErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "NOT_FOUND" },
+                        "status": { "const": 404 },
+                        "message": { "type": "string", "default": "Not Found" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "CONFLICT" },
+                        "status": { "const": 409 },
+                        "message": { "type": "string", "default": "Conflict" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "TOO_MANY_REQUESTS" },
+                        "status": { "const": 429 },
+                        "message": { "type": "string", "default": "Too Many Requests" },
+                        "data": { "$ref": "#/components/schemas/RateLimitErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "INTERNAL_SERVER_ERROR" },
+                        "status": { "const": 500 },
+                        "message": { "type": "string", "default": "Internal Server Error" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "SERVICE_UNAVAILABLE" },
+                        "status": { "const": 503 },
+                        "message": { "type": "string", "default": "Service Unavailable" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-sdk-example": { "collectionID": "coll_example" }
       }
     },
     "/collections/list": {

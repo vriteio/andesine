@@ -57,10 +57,11 @@ const getManifestIcons = (manifest: ExtensionManifest): string[] => {
   const icons = [
     manifest.icon,
     ...manifest.panels.map(({ icon }) => icon),
+    ...manifest.pages.map(({ icon }) => icon),
     ...manifest.blockActions.map(({ icon }) => icon),
-    ...manifest.elementViews.flatMap(({ icon, descendants }) => [
+    ...manifest.elementViews.flatMap(({ icon, children }) => [
       icon,
-      ...descendants.map((descendant) => descendant.icon)
+      ...children.map((child) => child.icon)
     ])
   ];
 

@@ -86,7 +86,7 @@ sources and returns results grouped by source.
 
 The component map module exports `components`. MDX pages can use these components
 without imports. The integration adds a plugin to the Sätteri Markdown processor
-that prepares `<Tabs>`, `<CodeGroup>`, and `<FileTree>` content, and a Shiki
+that prepares `<Tabs>` and `<CodeGroup>` content, and a Shiki
 transformer that reads `title="..."` from code fences.
 
 Relative `logo.src` and `favicon` paths in the config are relative to the config

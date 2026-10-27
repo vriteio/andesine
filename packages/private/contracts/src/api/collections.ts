@@ -3,6 +3,7 @@ import {
   collectionSelectorShape,
   contentPathType,
   contentSlugPathType,
+  hasCollectionSelector,
   hasOptionalCollectionSelector
 } from "./schemas/paths";
 import { contentNameErrors, contentPreconditionErrors, schemaMigrationErrors } from "./errors";
@@ -210,6 +211,23 @@ const collectionsContract = baseContract.prefix("/collections").router({
         totalEntries: z.number().int().nonnegative()
       })
     ),
+  get: authenticatedContract
+    .route({
+      summary: "Get a collection",
+      description:
+        "Returns one collection by collectionID, collectionPath, or collectionSlugPath, with its name, path, and ancestors.",
+      tags: ["collections"],
+      method: "GET",
+      path: "/get"
+    })
+    .meta({ example: { collectionID: "coll_example" } })
+    .meta({ required: { session: true, key: ["read:collections"] } })
+    .input(
+      z.object(collectionSelectorShape).refine(hasCollectionSelector, {
+        message: "Use one of collectionID, collectionPath, or collectionSlugPath"
+      })
+    )
+    .output(publicCollectionType),
   list: authenticatedContract
     .route({
       summary: "List collections",

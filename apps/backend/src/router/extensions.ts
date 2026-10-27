@@ -1,7 +1,7 @@
 import { emitExtensionEvent, emitKeyEvent } from "#backend/events";
 import { config } from "#backend/lib/config";
 import { toManagedKey } from "#backend/lib/extensions/publishable-keys";
-import { getUserAuthorization } from "#backend/lib/policy";
+import { getUserAuthorization, type SessionData } from "#backend/lib/policy";
 import { enforceRateLimit } from "#backend/lib/security";
 import { authorized } from "#backend/lib/transport/middleware/authorized";
 import { Auth } from "#backend/services/auth";
@@ -15,6 +15,19 @@ const handlers = api.extensions;
 const authorizedHandlers = handlers.use(authorized);
 const assertExtensionsEnabled = (): void => {
   if (!config.PUBLIC_EXTENSIONS_ENABLED) throw new ORPCError("NOT_FOUND");
+};
+/** Tells the workspace about a storage write, e.g. by the backend, so views and page conditions follow. */
+const emitStorageEvent = (
+  auth: SessionData,
+  extensionID: string,
+  key: string,
+  exists: boolean
+): void => {
+  emitExtensionEvent(auth.workspaceID, {
+    action: "extension:storage",
+    memberID: auth.session?.memberID,
+    data: { id: extensionID, key, exists }
+  });
 };
 // Hosted instances never enable development, so they expose no development endpoints.
 const assertDevelopmentEnabled = (): void => {
@@ -120,16 +133,26 @@ const extensionsRouter = handlers.router({
 
     return Extensions.storage.get({ auth: context.auth, ...input });
   }),
-  setSelfStorageEntry: authorizedHandlers.setSelfStorageEntry.handler(({ context, input }) => {
-    assertExtensionsEnabled();
-
-    return Extensions.storage.set({ auth: context.auth, ...input });
-  }),
-  deleteSelfStorageEntry: authorizedHandlers.deleteSelfStorageEntry.handler(
-    ({ context, input }) => {
+  setSelfStorageEntry: authorizedHandlers.setSelfStorageEntry.handler(
+    async ({ context, input }) => {
       assertExtensionsEnabled();
 
-      return Extensions.storage.delete({ auth: context.auth, ...input.query });
+      const result = await Extensions.storage.set({ auth: context.auth, ...input });
+
+      emitStorageEvent(context.auth, context.auth.extension!.extensionID, input.key, true);
+
+      return result;
+    }
+  ),
+  deleteSelfStorageEntry: authorizedHandlers.deleteSelfStorageEntry.handler(
+    async ({ context, input }) => {
+      assertExtensionsEnabled();
+
+      const result = await Extensions.storage.delete({ auth: context.auth, ...input.query });
+
+      emitStorageEvent(context.auth, context.auth.extension!.extensionID, input.query.key, false);
+
+      return result;
     }
   ),
   listSelfStorageEntries: authorizedHandlers.listSelfStorageEntries.handler(
@@ -144,15 +167,23 @@ const extensionsRouter = handlers.router({
 
     return Extensions.storage.get({ auth: context.auth, ...input });
   }),
-  setStorageEntry: authorizedHandlers.setStorageEntry.handler(({ context, input }) => {
+  setStorageEntry: authorizedHandlers.setStorageEntry.handler(async ({ context, input }) => {
     assertExtensionsEnabled();
 
-    return Extensions.storage.set({ auth: context.auth, ...input });
+    const result = await Extensions.storage.set({ auth: context.auth, ...input });
+
+    emitStorageEvent(context.auth, input.extensionID, input.key, true);
+
+    return result;
   }),
-  deleteStorageEntry: authorizedHandlers.deleteStorageEntry.handler(({ context, input }) => {
+  deleteStorageEntry: authorizedHandlers.deleteStorageEntry.handler(async ({ context, input }) => {
     assertExtensionsEnabled();
 
-    return Extensions.storage.delete({ auth: context.auth, ...input });
+    const result = await Extensions.storage.delete({ auth: context.auth, ...input });
+
+    emitStorageEvent(context.auth, input.extensionID, input.key, false);
+
+    return result;
   }),
   listStorageEntries: authorizedHandlers.listStorageEntries.handler(({ context, input }) => {
     assertExtensionsEnabled();
@@ -356,6 +387,12 @@ const extensionsRouter = handlers.router({
     assertExtensionsEnabled();
 
     return Extensions.listActiveViews({ auth: context.auth });
+  }),
+  // Without extensions there are no custom elements, e.g. for MCP clients on any instance.
+  listElements: authorizedHandlers.listElements.handler(({ context }) => {
+    if (!config.PUBLIC_EXTENSIONS_ENABLED) return [];
+
+    return Extensions.listElements({ auth: context.auth });
   }),
   listElementViews: authorizedHandlers.listElementViews.handler(({ context, input }) => {
     assertExtensionsEnabled();

@@ -28,6 +28,7 @@ import { type PublishingRevertTarget } from "./revert";
 import { PublishingPanelTree } from "./tree";
 import { PublishingPanelContentSkeleton, PublishingPanelFallback } from "./skeleton";
 import { usePublishingRevert } from "./use-publishing-revert";
+import { usePanelContext } from "../use-panel-context";
 
 interface PublishingPanelProps {
   opened?: boolean;
@@ -50,6 +51,7 @@ const PublishingPanel: Component<PublishingPanelProps> = (props) => {
   const { layout } = useLayout();
   const { content } = useWorkspace();
   const publishing = usePublishing();
+  const panelContext = usePanelContext();
   const notify = useNotify();
   const [menuOpened, setMenuOpened] = createSignal(false);
   const [actionMenuItems, setActionMenuItems] = createSignal<MenuItem[]>([]);
@@ -78,8 +80,12 @@ const PublishingPanel: Component<PublishingPanelProps> = (props) => {
         ? { id: publishedRoot.collectionID, name: publishedRoot.name }
         : null;
     const acceptedView = Boolean(searchParams.snapshotID && !searchParams.compare);
-    const collection = currentEntry?.collectionID
-      ? content.collections.get({ collectionID: currentEntry.collectionID })
+    // The entry's collection, or the open collection-bound page's, e.g. a collection's access.
+    const contextCollectionID = currentEntry
+      ? currentEntry.collectionID
+      : panelContext().collectionID;
+    const collection = contextCollectionID
+      ? content.collections.get({ collectionID: contextCollectionID })
       : null;
 
     if (acceptedView && acceptedCollection) return acceptedCollection;

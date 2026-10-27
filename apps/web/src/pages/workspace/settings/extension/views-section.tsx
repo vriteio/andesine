@@ -24,7 +24,7 @@ interface ViewsSectionProps {
   target: ExtensionQueryInput;
   revision: number;
   canManage: boolean;
-  /** The manifest's views, which list their descendant elements. */
+  /** The manifest's views, which list the child elements they draw. */
   elementViews: ExtensionDetails["details"]["elementViews"];
   onConflict(): void;
 }
@@ -96,9 +96,9 @@ const ViewsSection: Component<ViewsSectionProps> = (props) => {
   const getManifestView = (view: ExtensionElementViewSetting) => {
     return props.elementViews.find(({ id }) => id === view.viewID);
   };
-  // Views with descendant elements render content, so their tag isn't self-closing.
+  // Views with child elements render content, so their tag isn't self-closing.
   const getTag = (view: ExtensionElementViewSetting) => {
-    return getManifestView(view)?.descendants.length ? `<${view.element}>` : `<${view.element}/>`;
+    return getManifestView(view)?.children.length ? `<${view.element}>` : `<${view.element}/>`;
   };
   const change = (view: ExtensionElementViewSetting, enabled: boolean) => {
     if (enabled && view.provider) {

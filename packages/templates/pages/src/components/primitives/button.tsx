@@ -31,16 +31,16 @@ const sizeClasses: Record<ButtonSize, string> = {
   medium: ":base: px-2 py-1 text-base"
 };
 const outlinedClasses =
-  ":base: outline outline-1 -outline-offset-1 shadow-md focus-visible:outline-1";
+  ":base: outline outline-1 -outline-offset-1 shadow-md disabled:shadow-none focus-visible:outline-1";
 // Keyboard focus shows the hover style.
 const variantClasses: Record<ButtonVariant, string> = {
   primary: clsx(
     outlinedClasses,
-    ":base: bg-gradient-to-tr bg-[length:125%_auto] text-white outline-tertiary @hover:bg-right focus-visible:bg-right"
+    ":base: bg-gradient-to-tr bg-[length:125%_auto] text-white outline-tertiary shadow-tertiary/25 @hover:bg-right focus-visible:bg-right"
   ),
   secondary: clsx(
     outlinedClasses,
-    ":base: bg-white outline-gray-200 shadow-gray-200 @hover:bg-gray-100 focus-visible:bg-gray-100"
+    ":base: bg-white outline-gray-200 shadow-gray-900/8 @hover:bg-gray-100 focus-visible:bg-gray-100"
   ),
   ghost: ":base: bg-transparent focus:outline-none @hover:bg-gray-200 focus-visible:bg-gray-200"
 };

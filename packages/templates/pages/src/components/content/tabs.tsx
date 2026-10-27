@@ -14,7 +14,7 @@ interface TabsProps {
 
 const triggerClasses = {
   content:
-    "cursor-pointer rounded-md px-2 py-0.5 transition duration-200 ease-out @hover:text-gray-700 focus-visible:text-gray-700 data-[selected]:(bg-white text-gray-700 shadow-md outline outline-1 outline-gray-200)",
+    "cursor-pointer rounded-md px-2 py-0.5 transition duration-200 ease-out @hover:text-gray-700 focus-visible:text-gray-700 data-[selected]:(bg-white text-gray-700 shadow-md shadow-gray-900/8 outline outline-1 outline-gray-200)",
   // Matches the section tabs: gradient text for the current tab, a gray line on hover.
   code: clsx(
     "relative flex h-full cursor-pointer items-center px-1.5 font-mono transition duration-200 ease-out",
@@ -34,7 +34,7 @@ const ContentTabs: Component<TabsProps> = (props) => {
       values={props.values}
       syncKey={props.syncKey}
       data-code-group={variant() === "code" || undefined}
-      class="not-prose my-2 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_0_12px_0px] shadow-gray-200"
+      class="not-prose my-2 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_0_12px_0px] shadow-gray-900/8"
     >
       <div
         class={clsx(

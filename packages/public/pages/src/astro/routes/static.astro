@@ -9,7 +9,8 @@ export const getStaticPaths = () => getPaths(config);
 
 const { route } = Astro.props;
 
-if (route.type === "redirect") return Astro.redirect(route.target);
+// Temporary, as the first page can change; static builds wait 2 seconds only for 302.
+if (route.type === "redirect") return Astro.redirect(route.target, 307);
 
 const {
   Content: FileContent,

@@ -2,10 +2,13 @@ import { getSelectionRanges, NodeRangeSelection } from "@tiptap/extension-node-r
 import type { Editor } from "@tiptap/core";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { NodeSelection, type SelectionRange } from "@tiptap/pm/state";
+import { dropTargetPluginKey } from "#editor/extensions/drop-target";
 
 interface DragTarget {
   node: ProseMirrorNode;
   pos: number;
+  /** The browser's drag image of the pressed UI, e.g. a tab button, not one of the blocks. */
+  nativePreview?: boolean;
 }
 
 const getCSSText = (element: Element): string => {
@@ -129,10 +132,16 @@ const dragTarget = (event: DragEvent, editor: Editor, target: DragTarget): boole
   const nodeSelection = selection instanceof NodeSelection ? selection : undefined;
 
   event.dataTransfer.clearData();
-  const cleanupPreview = setDragPreview(event, editor, ranges);
+  // A move, not a copy, so the browser shows no "+" cursor.
+  event.dataTransfer.effectAllowed = "move";
+  const cleanupPreview = target.nativePreview
+    ? () => undefined
+    : setDragPreview(event, editor, ranges);
 
   view.dragging = { slice, move: true, node: nodeSelection } as typeof view.dragging;
-  view.dispatch(view.state.tr.setSelection(selection));
+  view.dispatch(
+    view.state.tr.setSelection(selection).setMeta(dropTargetPluginKey, { dragged: { from, to } })
+  );
   document.addEventListener("drop", cleanupPreview);
   document.addEventListener("dragend", cleanupPreview);
 

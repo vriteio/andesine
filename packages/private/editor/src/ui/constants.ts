@@ -5,6 +5,8 @@ const EDITOR_MENU_Z_INDEX = {
   bubbleMenu: 40
 } as const;
 const BLOCK_CONTROL_HIDE_DELAY = 50;
+/** The controls move to another block after it, so they don't jump while the pointer passes by. */
+const BLOCK_CONTROL_MOVE_DELAY = 50;
 const BLOCK_CONTROL_SIZE = 30;
 const BLOCK_CONTROL_VIRTUAL_MARGIN_REM = 10;
 const BLOCK_CONTROL_PROXIMITY_RATIO = 0.3;
@@ -20,11 +22,15 @@ const EMPTY_BOX_SELECTION = {
   y: 0
 };
 const MARQUEE_MARGIN = 16;
+/** A transaction meta with a block's position: its block menu opens, e.g. on Enter. */
+const OPEN_BLOCK_MENU_META = "openBlockMenu";
 const MARQUEE_ACTIVATION_THRESHOLD = 10;
 
 export {
   EDITOR_MENU_Z_INDEX,
+  OPEN_BLOCK_MENU_META,
   BLOCK_CONTROL_HIDE_DELAY,
+  BLOCK_CONTROL_MOVE_DELAY,
   BLOCK_CONTROL_SIZE,
   BLOCK_CONTROL_VIRTUAL_MARGIN_REM,
   BLOCK_CONTROL_PROXIMITY_RATIO,

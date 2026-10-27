@@ -1,5 +1,5 @@
 import type { CommandContext } from "../context";
-import { CLIError, CancelledError } from "../errors";
+import { CLIError, CancelledError, exitCodes } from "../errors";
 import { credentialStore, type CredentialStore } from "../storage/credentials";
 import { readConfigFile } from "../config/files";
 import { getUserConfigPath, normalizeBaseURL } from "../config/resolve";
@@ -65,6 +65,42 @@ const selectStore = async (
     if (!accepted) throw new CancelledError();
     return prepareStore(context, "file");
   }
+};
+
+/**
+ * The workspace the profile keeps after a login. A selected workspace that the account can't use
+ * is refused when it was given for this login, e.g. with --workspace; a saved one, e.g. from before
+ * the instance was reset, gives way to the account's only workspace, or to none.
+ */
+const getLoginWorkspace = async (
+  context: CommandContext,
+  client: ReturnType<typeof createClient>
+): Promise<string | undefined> => {
+  const { config, output, signal } = context;
+  const selected = config.workspaceID;
+  const isSaved = selected !== undefined && selected === config.profile?.workspaceID;
+  const workspaces = await client.workspaces.list(undefined, { signal });
+
+  if (!selected || workspaces.some(({ id }) => id === selected)) {
+    return selected ?? (workspaces.length === 1 ? workspaces[0]!.id : undefined);
+  }
+
+  if (!isSaved) {
+    throw new CLIError(
+      "The selected workspace is not available to this account. Use --workspace with an accessible workspace ID.",
+      exitCodes.usage
+    );
+  }
+
+  const replacement = workspaces.length === 1 ? workspaces[0]!.id : undefined;
+
+  await output.warning(
+    replacement
+      ? `The saved workspace ${selected} is not available to this account; using ${replacement}.`
+      : `The saved workspace ${selected} is not available to this account. Select one with --workspace.`
+  );
+
+  return replacement;
 };
 
 /** Grant approval stays in the browser; the CLI only polls the provider and saves its tokens. */
@@ -138,6 +174,8 @@ const login = async (
       throw new CLIError("The instance did not return an OAuth user identity.");
     }
 
+    const workspaceID = await getLoginWorkspace(context, client);
+
     const credentials: Credentials = {
       version: 1,
       baseURL: config.baseURL,
@@ -156,7 +194,7 @@ const login = async (
           baseURL: config.baseURL,
           accountID: account.user.id,
           credentialRef: storage.reference,
-          ...(config.workspaceID ? { workspaceID: config.workspaceID } : {})
+          ...(workspaceID ? { workspaceID } : {})
         },
         config.profile,
         signal
@@ -210,7 +248,7 @@ const login = async (
         profile: name,
         baseURL: config.baseURL,
         account: account.user,
-        workspaceID: config.workspaceID ?? null,
+        workspaceID: workspaceID ?? null,
         credentialSource: storage.reference.split(":")[0]
       });
     }

@@ -8,28 +8,38 @@ interface AssetFile {
   height: number;
 }
 
-// Database rows represent physical files. Delivery can expose the same file in both roles.
+type DeliveryVariant = (typeof assetDeliveryVariants)[number];
+
+const getAssetIDs = (files: AssetFile[], variant: string): Set<string> => {
+  return new Set(files.filter((file) => file.variant === variant).map((file) => file.assetID));
+};
+
+// Database rows represent physical files. Delivery can expose the same file in several roles: a
+// small display file is also the thumbnail, and the source of assets without one (WebP uploads).
 const getDeliveryFiles = <T extends AssetFile>(
   files: T[]
-): Array<Omit<T, "variant"> & { variant: (typeof assetDeliveryVariants)[number] }> => {
-  const thumbnails = new Set(
-    files.filter((file) => file.variant === "thumbnail").map((file) => file.assetID)
-  );
+): Array<Omit<T, "variant"> & { variant: DeliveryVariant }> => {
+  const thumbnails = getAssetIDs(files, "thumbnail");
+  const sources = getAssetIDs(files, "source");
 
   return files.flatMap((file) => {
-    if (file.variant !== "display" && file.variant !== "thumbnail") return [];
-    if (
-      file.variant === "display" &&
+    if (file.variant !== "display") {
+      const isDelivered = file.variant === "thumbnail" || file.variant === "source";
+
+      return isDelivered ? [{ ...file, variant: file.variant as DeliveryVariant }] : [];
+    }
+
+    const isThumbnail =
       !thumbnails.has(file.assetID) &&
       file.width <= ASSET_THUMBNAIL_SIZE &&
-      file.height <= ASSET_THUMBNAIL_SIZE
-    ) {
-      return [
-        { ...file, variant: "display" as const },
-        { ...file, variant: "thumbnail" as const }
-      ];
-    }
-    return [{ ...file, variant: file.variant }];
+      file.height <= ASSET_THUMBNAIL_SIZE;
+    const variants: DeliveryVariant[] = [
+      "display",
+      ...(isThumbnail ? (["thumbnail"] as const) : []),
+      ...(sources.has(file.assetID) ? [] : (["source"] as const))
+    ];
+
+    return variants.map((variant) => ({ ...file, variant }));
   });
 };
 

@@ -1,6 +1,7 @@
 import {
   type ExtensionBlockAction,
   type ExtensionElementView,
+  type ExtensionPage,
   type ExtensionPanel,
   type ExtensionPermission
 } from "@andesine/contracts/extensions";
@@ -8,6 +9,7 @@ import { getEffectivePermissions, getExtensionMember, startExtensionContext } fr
 import { config } from "#web/lib/api";
 import { type Accessor, createSignal } from "solid-js";
 import { createExtensionHost, type ExtensionHost, type ExtensionHostOptions } from "./host";
+import { setPageConditions, setPageStorageKey } from "./page-availability";
 import { type ExtensionHostActions } from "./requests";
 
 interface RunningExtensionOptions extends Omit<
@@ -17,16 +19,23 @@ interface RunningExtensionOptions extends Omit<
   elementViews: ExtensionElementView[];
   blockActions?: ExtensionBlockAction[];
   panels?: ExtensionPanel[];
+  pages?: ExtensionPage[];
   grant?: ExtensionPermission[];
   /** The manifest backend URL; the frontend can call it with a session token. */
   backend?: string;
+  displayName: string;
+  icon?: string | null;
 }
 interface RunningExtension {
   extensionID: string;
   name: string;
+  /** The manifest's name and icon, e.g. for the menu item of its pages. */
+  displayName: string;
+  icon: string | null;
   elementViews: ExtensionElementView[];
   blockActions: ExtensionBlockAction[];
   panels: ExtensionPanel[];
+  pages: ExtensionPage[];
   host: ExtensionHost;
   status: Accessor<RunningExtensionStatus>;
   dispose(): void;
@@ -40,10 +49,16 @@ interface RunningExtensionPanel {
   extension: RunningExtension;
   panel: ExtensionPanel;
 }
+interface RunningExtensionPage {
+  extension: RunningExtension;
+  page: ExtensionPage;
+}
 
 type RunningExtensionStatus = "starting" | "ready" | "failed";
 
 const [runningExtensions, setRunningExtensions] = createSignal<RunningExtension[]>([]);
+// Until the workspace's extensions are listed and started, e.g. so their panels aren't hidden.
+const [extensionsLoading, setExtensionsLoading] = createSignal(true);
 // The same item for each panel keeps its view mounted while the panel lists recompute.
 const panelItems = new WeakMap<RunningExtension, Map<string, RunningExtensionPanel>>();
 
@@ -64,6 +79,7 @@ const stopExtension = (extensionID: string): void => {
   if (!extension) return;
 
   extension.dispose();
+  setPageConditions(extensionID, null);
   setRunningExtensions((items) => items.filter((item) => item !== extension));
 };
 /** Starts an extension frontend; a failed sandbox makes its views fall back to the tag view. */
@@ -72,8 +88,11 @@ const startExtension = async (options: RunningExtensionOptions): Promise<void> =
     elementViews,
     blockActions = [],
     panels = [],
+    pages = [],
     grant = [],
     backend,
+    displayName,
+    icon = null,
     ...hostOptions
   } = options;
   const [status, setStatus] = createSignal<RunningExtensionStatus>("starting");
@@ -85,6 +104,7 @@ const startExtension = async (options: RunningExtensionOptions): Promise<void> =
 
   const host = await createExtensionHost({
     ...hostOptions,
+    displayName,
     connectSources: [...(backend ? [backend] : []), ...hostOptions.connectSources],
     getActions: getExtensionHostActions,
     getAPIContext: () => ({
@@ -108,9 +128,12 @@ const startExtension = async (options: RunningExtensionOptions): Promise<void> =
     {
       extensionID: options.extensionID,
       name: options.name,
+      displayName,
+      icon,
       elementViews,
       blockActions,
       panels,
+      pages,
       host,
       status,
       dispose() {
@@ -124,6 +147,7 @@ const startExtension = async (options: RunningExtensionOptions): Promise<void> =
       }
     }
   ]);
+  setPageConditions(options.extensionID, pages);
   host.ready.then(
     () => {
       setStatus("ready");
@@ -164,17 +188,56 @@ const getExtensionPanels = (side: ExtensionPanel["side"]): RunningExtensionPanel
     });
 };
 
+/** Pages for menus of extensions that started, optionally only those of one context. */
+const getExtensionPages = (context?: ExtensionPage["context"]): RunningExtensionPage[] => {
+  return runningExtensions()
+    .filter((extension) => extension.status() !== "starting")
+    .flatMap((extension) => {
+      return extension.pages
+        .filter((page) => !page.parent && (!context || page.context === context))
+        .map((page) => ({ extension, page }));
+    });
+};
+/** A page of a running extension, whether it started yet or not. */
+/**
+ * A storage key of an extension was set or deleted, e.g. by its backend: its pages' conditions and
+ * its views follow it.
+ */
+const notifyExtensionStorage = (extensionID: string, key: string, exists: boolean): void => {
+  setPageStorageKey(extensionID, key, exists);
+  runningExtensions()
+    .find((extension) => extension.extensionID === extensionID)
+    ?.host.notifyStorage(key, exists);
+};
+/** An event that changes extensions, e.g. an install; storage writes change only pages and views. */
+const isExtensionChange = (action: string): boolean => {
+  return action.startsWith("extension:") && action !== "extension:storage";
+};
+const findExtensionPage = (extensionID: string, pageID: string): RunningExtensionPage | null => {
+  const extension = runningExtensions().find((item) => item.extensionID === extensionID);
+  const page = extension?.pages.find((item) => item.id === pageID);
+
+  return extension && page ? { extension, page } : null;
+};
+
 export {
   runningExtensions,
+  extensionsLoading,
+  setExtensionsLoading,
   startExtension,
   stopExtension,
   setExtensionHostActions,
   getExtensionHostActions,
-  getExtensionPanels
+  getExtensionPanels,
+  getExtensionPages,
+  findExtensionPage,
+  isExtensionChange,
+  notifyExtensionStorage
 };
 export type {
   RunningExtension,
   RunningExtensionOptions,
   RunningExtensionPanel,
+  RunningExtensionPage,
   RunningExtensionStatus
 };

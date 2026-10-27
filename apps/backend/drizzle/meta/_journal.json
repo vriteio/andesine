@@ -309,6 +309,20 @@
       "when": 1791823960683,
       "tag": "0043_add_extension_publishable_keys",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1792870779135,
+      "tag": "0044_convert_extension_manifest_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1792928588129,
+      "tag": "0045_rename_extension_view_entries",
+      "breakpoints": true
     }
   ]
 }

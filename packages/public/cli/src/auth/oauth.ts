@@ -179,4 +179,4 @@ const revokeAccess = async (
   );
 };
 
-export { startDeviceLogin, pollDeviceLogin, refreshAccess, revokeAccess };
+export { OAuthError, startDeviceLogin, pollDeviceLogin, refreshAccess, revokeAccess };

@@ -1,9 +1,9 @@
 export {
   MAX_CONFIGURATION_FIELDS,
+  extensionConfigurationFieldsType,
   extensionConfigurationType,
   createConfigurationValueType,
-  createConfigurationValuesType,
-  toExtensionConfiguration
+  createConfigurationValuesType
 } from "./configuration";
 export type {
   ExtensionConfiguration,
@@ -16,9 +16,17 @@ export {
   extensionIconType,
   extensionElementViewType,
   extensionBlockActionType,
-  extensionPanelType
+  extensionPanelType,
+  extensionPageType,
+  extensionPageWhenType
 } from "./contributions";
-export type { ExtensionElementView, ExtensionBlockAction, ExtensionPanel } from "./contributions";
+export type {
+  ExtensionElementView,
+  ExtensionBlockAction,
+  ExtensionPanel,
+  ExtensionPage,
+  ExtensionPageWhen
+} from "./contributions";
 export {
   MAX_EXTENSION_WEBHOOKS,
   extensionLifecycleEventNames,
@@ -90,6 +98,7 @@ export type {
   ExtensionRequestParams
 } from "./protocol";
 export { extensionComponentDefinitions } from "./components";
+export { extensionImageFormats, MAX_EXTENSION_IMAGE_SIZE } from "./image-input";
 export type {
   ExtensionComponentDefinition,
   ExtensionComponentName,
@@ -97,7 +106,7 @@ export type {
 } from "./components";
 export {
   MAX_EXTENSION_CSS_SIZE,
-  EXTENSION_SLOT_SELECTOR,
+  EXTENSION_SCOPE_LIMIT,
   ExtensionStyleError,
   getExtensionScope,
   getViewScopePrelude,
@@ -123,6 +132,7 @@ export type {
   ExtensionSummary,
   ExtensionDetails,
   ExtensionRuntime,
+  ExtensionElement,
   ExtensionNotification,
   ExtensionDelivery,
   ExtensionWebhookState,
@@ -146,3 +156,11 @@ export {
   extensionStorageKeyType,
   extensionStorageListInputType
 } from "./storage";
+export {
+  extensionElementPropFieldsType,
+  extensionElementPropsType,
+  getElementPropDefaults,
+  isElementPropValue
+} from "./element-props";
+export type { ExtensionElementPropFields, ExtensionElementPropField } from "./element-props";
+export type { JSONSchemaObject, SchemaFieldsInput, StandardJSONSchema } from "./schema-fields";

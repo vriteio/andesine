@@ -8,19 +8,26 @@ export { loadExtensionArtifact } from "./artifact";
 export { isDeclaredURL } from "./urls";
 export {
   runningExtensions,
+  extensionsLoading,
+  setExtensionsLoading,
   startExtension,
   stopExtension,
   setExtensionHostActions,
   getExtensionHostActions,
-  getExtensionPanels
+  getExtensionPanels,
+  getExtensionPages,
+  findExtensionPage,
+  isExtensionChange,
+  notifyExtensionStorage
 } from "./registry";
 export type {
   RunningExtension,
   RunningExtensionOptions,
   RunningExtensionPanel,
+  RunningExtensionPage,
   RunningExtensionStatus
 } from "./registry";
-export { createRootFinder, matchElementView } from "./element-matching";
+export { createRootFinder, getTemplateParents, matchElementView } from "./element-matching";
 export type {
   ElementRoot,
   ElementViewMatch,
@@ -38,3 +45,14 @@ export type { ExtensionMember } from "./authority";
 export { describeExtensionPermission, getURLHost, getGrantChanges } from "./grant";
 export type { GrantChanges } from "./grant";
 export { loadExtensionIconStyles } from "./icons";
+export { getExtensionPagePath } from "./pages";
+export {
+  getAvailablePagePath,
+  isPageAvailable,
+  isPageAvailabilityKnown,
+  refreshPageAvailability,
+  resolvePageContext,
+  setPageContextResolver
+} from "./page-availability";
+export type { PageContextIDs } from "./page-availability";
+export type { ExtensionPageContext } from "./pages";

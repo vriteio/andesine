@@ -14,6 +14,7 @@ import { listWebhooks } from "./list-webhooks";
 import { verifySession } from "./verify-session";
 import { list } from "./list";
 import { listActiveViews } from "./list-active-views";
+import { listElements } from "./list-elements";
 import { listCatalog } from "./list-catalog";
 import { listElementViews } from "./list-element-views";
 import { redeliverWebhook } from "./redeliver-webhook";
@@ -41,6 +42,7 @@ const Extensions = {
   list,
   listActiveViews,
   listCatalog,
+  listElements,
   listElementViews,
   listInstallations,
   listRuntime,

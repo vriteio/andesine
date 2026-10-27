@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -71,7 +72,9 @@ const readTemplate = async (template: keyof typeof templateRoots): Promise<Templ
     encoding: "utf8"
   })
     .split("\n")
-    .filter((file) => file && !workspaceFiles.includes(file));
+    // Tracked files deleted in the working tree are still listed.
+    .filter((file) => file && !workspaceFiles.includes(file))
+    .filter((file) => existsSync(path.join(templateRoot, file)));
 
   return Promise.all(
     files.map(async (file): Promise<TemplateFile> => {

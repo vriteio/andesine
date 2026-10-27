@@ -55,7 +55,8 @@ const RESOURCE_PERMISSIONS: Record<ResourceName, string[]> = {
   entries: ["read:entries"],
   published: ["read:publishing"],
   schema: ["read:collections"],
-  guide: []
+  guide: [],
+  elements: ["read:entries"]
 };
 // Prompts that change content are listed only with write tools.
 const PROMPT_PERMISSIONS: Record<PromptName, { permissions: string[]; writes: boolean }> = {

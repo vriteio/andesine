@@ -16,4 +16,11 @@ const validateURL = (value: string): string | null => {
   }
 };
 
-export { validateURL };
+/** A link of typed text: a URL or an entry link, or with `paths` a site path, e.g. `/blog`. */
+const toLinkHref = (text: string, paths = false): string | null => {
+  const isPath = paths && text.startsWith("/") && !text.startsWith("//");
+
+  return isPath ? text : validateURL(text);
+};
+
+export { toLinkHref, validateURL };

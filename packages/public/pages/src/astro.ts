@@ -1,5 +1,3 @@
-import type { FileTreeItem } from "./content/mdx-components";
-
 interface Slots {
   has(name: string): boolean;
   render(name: string, args?: unknown[]): Promise<string>;
@@ -34,11 +32,7 @@ const renderTabs = async (
 
   return { values: labels, panels: await renderPanels(slots, labels.length) };
 };
-/** Reads the `items` prop of a file tree: JSON from the Andesine MDX plugin, or nested items. */
-const readFileTreeItems = (items: string | FileTreeItem[]): FileTreeItem[] => {
-  return typeof items === "string" ? JSON.parse(items) : items;
-};
 
-export { renderTabs, readFileTreeItems };
+export { renderTabs };
 export { getOperationView } from "./sources/openapi/embed";
 export type { OperationProps } from "./sources/openapi/embed";

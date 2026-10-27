@@ -1,5 +1,13 @@
 export { createConverter, createExportConverter, createImportConverter } from "./core";
-export { ConversionError, element, textContent, textNode, withMark } from "./utils";
+export {
+  ConversionError,
+  element,
+  formatCodeMeta,
+  readCodeTitle,
+  textContent,
+  textNode,
+  withMark
+} from "./utils";
 export type {
   Awaitable,
   ContentMark,

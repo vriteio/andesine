@@ -626,6 +626,25 @@ const createWorkspacePublishingOperations = (input: WorkspacePublishingOperation
       return publishing.enabledCollectionIDs.has(ancestorID);
     });
   };
+  /** The collection itself, or its nearest ancestor, with publishing turned on; null outside. */
+  const getPublishingCollectionID = (collectionID: string): string | null => {
+    const publishing = input.publishing();
+    const collection = input.collectionsCollection().findOne({ id: collectionID });
+
+    if (!publishing || !collection) return null;
+
+    const enabled = [collection.id, ...collection.ancestors]
+      .filter((id) => publishing.enabledCollectionIDs.has(id))
+      .map((id) => input.collectionsCollection().findOne({ id }))
+      .filter((item) => item !== undefined && item !== null);
+
+    // The deepest enabled collection is the nearest one.
+    return (
+      enabled.reduce((nearest, item) => {
+        return item.ancestors.length > nearest.ancestors.length ? item : nearest;
+      }, enabled[0]!)?.id ?? null
+    );
+  };
   const getCollectionUnpublishedCount = (collectionID: string) => {
     return collectionUnpublishedCounts().get(collectionID) ?? 0;
   };
@@ -643,6 +662,7 @@ const createWorkspacePublishingOperations = (input: WorkspacePublishingOperation
   return {
     getCollectionUnpublishedCount,
     getEntryPublishingStatus,
+    getPublishingCollectionID,
     isCollectionPublishingEnabled,
     isCollectionPublishingRoot
   };

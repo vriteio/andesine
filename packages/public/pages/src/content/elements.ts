@@ -19,6 +19,7 @@ const cardSchema = z
   .strict();
 /** Custom elements in Andesine content. Names and props match the MDX components. */
 const elementSchemas = {
+  Accordion: z.object({ title: z.string().min(1), open: z.boolean().optional() }).strict(),
   Callout: z
     .object({
       type: z.enum(["note", "tip", "warning", "danger"]).optional(),
@@ -28,9 +29,10 @@ const elementSchemas = {
   Card: cardSchema,
   CardGrid: noProps,
   CodeGroup: noProps,
-  Disclosure: z.object({ title: z.string().min(1), open: z.boolean().optional() }).strict(),
   Figure: z.object({ caption: z.string().min(1) }).strict(),
+  File: z.object({ name: z.string().min(1) }).strict(),
   FileTree: noProps,
+  Folder: z.object({ name: z.string().min(1) }).strict(),
   // An API operation from an OpenAPI source; `id` is its operation ID.
   Operation: z
     .object({
@@ -45,6 +47,7 @@ const elementSchemas = {
       examples: z.boolean().optional()
     })
     .strict(),
+  Step: z.object({ title: z.string().min(1) }).strict(),
   Steps: noProps,
   Tab: z.object({ label: z.string().min(1) }).strict(),
   Tabs: z.object({ syncKey: z.string().optional() }).strict(),
@@ -52,11 +55,12 @@ const elementSchemas = {
   Visibility: z.object({ for: z.enum(["agents", "humans"]) }).strict()
 };
 /** Allowed child tags or elements, when an element restricts its children. */
-const childRules: Partial<Record<ElementName, string>> = {
-  CodeGroup: "pre",
-  FileTree: "ul",
-  Steps: "ol",
-  Tabs: "Tab"
+const childRules: Partial<Record<ElementName, string[]>> = {
+  CodeGroup: ["pre"],
+  FileTree: ["Folder", "File"],
+  Folder: ["Folder", "File"],
+  Steps: ["Step"],
+  Tabs: ["Tab"]
 };
 
 const getElementName = (node: Element): string | undefined => {
@@ -84,9 +88,13 @@ const readElement = (node: Element): ContentElement | undefined => {
 
   const rule = childRules[name as ElementName];
   const children = node.children.filter((child) => child.type === "element");
-  const invalidChild = children.find((child) => (getElementName(child) ?? child.tagName) !== rule);
+  const invalidChild = children.find((child) => {
+    return !rule?.includes(getElementName(child) ?? child.tagName);
+  });
 
-  if (rule && invalidChild) throw new Error(`<${name}> can only contain ${rule} content.`);
+  if (rule && invalidChild) {
+    throw new Error(`<${name}> can only contain ${rule.join(" or ")} content.`);
+  }
 
   return { name: name as ElementName, props: result.data };
 };

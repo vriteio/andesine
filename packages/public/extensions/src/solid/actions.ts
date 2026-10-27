@@ -10,9 +10,22 @@ const copyText = async (text: string): Promise<void> => {
 const downloadFile = async (name: string, text: string, type?: string): Promise<void> => {
   await request("host.downloadFile", type ? { name, text, type } : { name, text });
 };
-/** Opens an `https:` URL in a new tab; URLs outside the declared URLs need confirmation. */
+/**
+ * Opens an `https:` URL, or an `http:` one of localhost, in a new tab; URLs outside the declared
+ * URLs need confirmation.
+ */
 const openURL = async (url: string): Promise<void> => {
   await request("host.openURL", { url });
+};
+/**
+ * Opens a page of the extension in the main area, e.g. `openPage("site", { collectionID })`;
+ * collection and entry pages need the ID of their context.
+ */
+const openPage = async (
+  pageID: string,
+  context: { collectionID?: string; entryID?: string } = {}
+): Promise<void> => {
+  await request("host.openPage", { pageID, ...context });
 };
 
 /** Shows a short notification, e.g. the result of a block action without UI; it needs no interaction. */
@@ -20,4 +33,4 @@ const notify = async (text: string, type?: "success" | "error"): Promise<void> =
   await request("host.notify", type ? { text, type } : { text });
 };
 
-export { copyText, downloadFile, openURL, notify };
+export { copyText, downloadFile, openURL, openPage, notify };

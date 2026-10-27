@@ -12,6 +12,7 @@ import {
   extensionDetailsType,
   extensionRuntimeType,
   extensionActiveViewType,
+  extensionElementType,
   extensionElementViewSettingType,
   extensionSelfType,
   extensionSessionCheckType,
@@ -56,7 +57,7 @@ const extensionsContract = baseContract.prefix("/extensions").router({
     .route({
       summary: "Verify a session token",
       description:
-        "Verifies a session token from the extension frontend and returns its member. Tokens of other extensions, expired tokens, and tokens of an earlier extension generation fail with NOT_FOUND. checks evaluates collection and entry actions for the member limited to the extension's permissions (restricted collections included), so the backend can authorize the member's request.",
+        "Verifies a session token from the extension frontend and returns its member. Tokens of other extensions, expired tokens, and tokens of an earlier extension generation fail with NOT_FOUND. checks evaluates collection and entry actions for the member, in collections the extension can read (restricted collections included), so the backend can authorize the member's request.",
       tags: ["extensions"],
       method: "POST",
       path: "/self/sessions/verify"
@@ -311,6 +312,17 @@ const extensionsContract = baseContract.prefix("/extensions").router({
   listActiveViews: sessionContract
     .route({ method: "GET", path: "/active-views" })
     .output(z.array(extensionActiveViewType)),
+  listElements: baseContract
+    .route({
+      method: "GET",
+      path: "/elements",
+      summary: "List custom elements",
+      description:
+        "The custom elements that the workspace's active extensions draw in the editor, e.g. Tabs: their props, whether they have content, which child blocks their content accepts, and the elements that belong inside them. Write them in MDX as <Name prop=\"value\">content</Name>. The editor guides edits by these rules and offers a clean-up; the API doesn't enforce them.",
+      tags: ["extensions"]
+    })
+    .meta({ required: { session: true, key: ["read:entries"] } })
+    .output(z.array(extensionElementType)),
   listElementViews: sessionContract
     .route({ method: "GET", path: "/{extensionID}/element-views" })
     .input(z.object({ extensionID: publicID("ext") }))
@@ -350,6 +362,7 @@ export type {
   ExtensionSummary,
   ExtensionDetails,
   ExtensionRuntime,
+  ExtensionElement,
   ExtensionNotification,
   ExtensionWebhookState,
   ExtensionDelivery,

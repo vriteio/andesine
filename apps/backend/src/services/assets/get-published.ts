@@ -5,14 +5,14 @@ import {
   publishingSnapshotEntries,
   workspaces
 } from "@andesine/server/database";
-import { ASSET_THUMBNAIL_SIZE } from "@andesine/server/assets";
+import { getDeliveryFiles } from "@andesine/server/assets";
 import { type assetDeliveryVariants } from "@andesine/contracts/assets";
 import { requireAssetStorage } from "#backend/lib/assets/client";
 import { resolvePublishingSnapshot } from "#backend/lib/publishing";
 import { withPublicWorkspace } from "#backend/lib/policy";
 import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
-import { and, eq, isNull, lte, or, desc } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 interface GetPublishedAssetInput {
   assetID: string;
@@ -28,7 +28,7 @@ const getPublishedAsset = withPublicWorkspace<GetPublishedAssetInput, File>(
     const snapshot = await resolvePublishingSnapshot(database, workspaceID, {
       snapshotID: input.snapshotID
     });
-    const [file] = await database
+    const files = await database
       .select({ file: assetFiles })
       .from(assetFiles)
       .innerJoin(assets, and(eq(assets.id, assetFiles.assetID), eq(assets.status, "ready")))
@@ -50,29 +50,21 @@ const getPublishedAsset = withPublicWorkspace<GetPublishedAssetInput, File>(
         and(
           eq(assets.workspaceID, workspaceID),
           eq(entryVersionAssets.workspaceID, workspaceID),
-          eq(assets.id, toUUID(input.assetID)),
-          or(
-            eq(assetFiles.variant, input.variant),
-            input.variant === "thumbnail"
-              ? and(
-                  eq(assetFiles.variant, "display"),
-                  lte(assetFiles.width, ASSET_THUMBNAIL_SIZE),
-                  lte(assetFiles.height, ASSET_THUMBNAIL_SIZE)
-                )
-              : undefined
-          )
+          eq(assets.id, toUUID(input.assetID))
         )
-      )
-      .orderBy(desc(eq(assetFiles.variant, input.variant)))
-      .limit(1);
+      );
+    // The delivery roles say which file serves the variant, e.g. a small display file as the thumbnail.
+    const file = getDeliveryFiles(files.map(({ file }) => file)).find(({ variant }) => {
+      return variant === input.variant;
+    });
 
     if (!file) throw new ORPCError("NOT_FOUND");
 
     const storage = requireAssetStorage();
-    const bytes = await storage.read(file.file.objectKey, file.file.byteSize);
+    const bytes = await storage.read(file.objectKey, file.byteSize);
 
-    return new File([new Uint8Array(bytes)], `${input.assetID}.${file.file.format}`, {
-      type: `image/${file.file.format}`
+    return new File([new Uint8Array(bytes)], `${input.assetID}.${file.format}`, {
+      type: `image/${file.format}`
     });
   }
 );

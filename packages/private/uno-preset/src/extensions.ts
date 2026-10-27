@@ -31,12 +31,13 @@ const createExtensionGenerator = (icons: IconCollections): Promise<UnoGenerator>
   return createGenerator({
     presets: [
       presetWind3({ preflight: false }),
-      // Host components size icons; scoped icon rules would otherwise override their classes.
+      // Host components size and color icons; scoped icon rules would otherwise override them.
       presetIcons({
         collections: icons,
         processor: (css) => {
           delete css.width;
           delete css.height;
+          delete css.color;
         }
       }),
       presetAndesine()

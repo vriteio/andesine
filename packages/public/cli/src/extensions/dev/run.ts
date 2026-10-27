@@ -77,6 +77,13 @@ const runDevelopment = async (
   const key = await getDevelopmentKey(root);
   const development = { keys: [key.publicKey], backendURL: options.backend };
 
+  // Before the first build, so that changes during it rebuild once it's done.
+  const changes = watchChanges(root, signal, (error) => {
+    void output.warning(
+      `The system refused file watches (${error.message}); checking files for changes every second.`
+    );
+  });
+
   let extensionID: string | null = null;
 
   await writeDevelopmentEnvironment(root, options.envFile, key, context.config.baseURL);
@@ -93,8 +100,6 @@ const runDevelopment = async (
 
     await output.error(getErrorMessage(error));
   }
-
-  const changes = watchChanges(root, signal);
 
   try {
     await output.diagnostic("Watching for changes. Press Ctrl+C to stop the extension.");

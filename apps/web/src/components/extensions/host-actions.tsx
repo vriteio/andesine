@@ -1,7 +1,16 @@
 import { ActionConfirmationDialog } from "#web/components/action-confirmation-dialog";
 import { useClipboard } from "#web/context/clipboard";
 import { useNotify } from "#web/context/notifications";
-import { setExtensionHostActions, type ExtensionHostActions } from "#web/lib/extensions";
+import {
+  findExtensionPage,
+  getAvailablePagePath,
+  refreshPageAvailability,
+  resolvePageContext,
+  setExtensionHostActions,
+  type ExtensionHostActions
+} from "#web/lib/extensions";
+import { useNavigate, useParams, useSearchParams } from "@solidjs/router";
+import { withWorkspacePanelParams } from "#web/pages/workspace/panel-navigation";
 import { type Component, createSignal, onCleanup, Show } from "solid-js";
 
 interface PendingURL {
@@ -17,6 +26,9 @@ const openInNewTab = (url: string): void => {
 const ExtensionHostActions: Component = () => {
   const { copyText } = useClipboard();
   const notify = useNotify();
+  const navigate = useNavigate();
+  const params = useParams<{ workspaceID?: string }>();
+  const [searchParams] = useSearchParams();
   const [pendingURL, setPendingURL] = createSignal<PendingURL | null>(null);
   const closeURL = () => {
     pendingURL()?.resolve();
@@ -51,6 +63,31 @@ const ExtensionHostActions: Component = () => {
     // Named, so an extension cannot pass its messages off as Andesine's.
     notify({ text, type = "success" }, extension) {
       notify({ type, text: `${extension}: ${text}` });
+    },
+    async openPage(extensionID, { pageID, ...context }) {
+      const found = findExtensionPage(extensionID, pageID);
+
+      if (!found || !params.workspaceID) return false;
+
+      const workspaceID = params.workspaceID;
+      const ids = resolvePageContext(context);
+      const getPath = () => getAvailablePagePath(workspaceID, extensionID, found.page, ids);
+
+      let path = getPath();
+
+      // The backend may have just changed what the conditions read, e.g. saved a mapping, and its
+      // storage event may not have arrived yet.
+      if (!path) {
+        await refreshPageAvailability(extensionID);
+        path = getPath();
+      }
+
+      if (!path) return false;
+
+      // The side panels stay as they are, e.g. the panel that opened the page.
+      navigate(withWorkspacePanelParams(path, searchParams));
+
+      return true;
     }
   };
 

@@ -3,11 +3,22 @@ import { type AssetConfig } from "@andesine/server/assets/config";
 import sharp from "sharp";
 
 interface ProcessedImageFile {
-  variant: "thumbnail" | "display";
+  variant: "thumbnail" | "display" | "source";
   format: "jpeg" | "png" | "webp";
   body: Buffer;
   width: number;
   height: number;
+}
+
+interface VariantSpec {
+  variant: ProcessedImageFile["variant"];
+  size: number;
+  format: ProcessedImageFile["format"];
+}
+interface ProcessImageOptions {
+  displaySize?: number;
+  /** A display-sized copy in the upload's format, e.g. for Git exports; WebP uploads skip it. */
+  withSource?: boolean;
 }
 
 class InvalidImageError extends Error {}
@@ -60,11 +71,18 @@ const processImage = async (
   body: Buffer,
   config: AssetConfig,
   maximumOutputBytes: number,
-  displaySize = ASSET_DISPLAY_SIZE
+  { displaySize = ASSET_DISPLAY_SIZE, withSource = false }: ProcessImageOptions = {}
 ): Promise<ProcessedImageFile[]> => {
   const format = getImageFormat(body);
   const options = { limitInputPixels: config.ASSET_MAX_INPUT_PIXELS, failOn: "warning" as const };
   const files: ProcessedImageFile[] = [];
+  const variants: VariantSpec[] = [
+    { variant: "display", size: displaySize, format: "webp" },
+    { variant: "thumbnail", size: ASSET_THUMBNAIL_SIZE, format: "webp" },
+    ...(withSource && format !== "webp"
+      ? [{ variant: "source" as const, size: displaySize, format }]
+      : [])
+  ];
   let outputBytes = 0;
 
   try {
@@ -82,24 +100,28 @@ const processImage = async (
       throw new InvalidImageError("Animated images are not supported");
     }
 
-    for (const variant of ["display", "thumbnail"] as const) {
+    for (const spec of variants) {
       // A small display file also serves as its thumbnail; store and count it only once.
       if (
-        variant === "thumbnail" &&
+        spec.variant === "thumbnail" &&
         files[0].width <= ASSET_THUMBNAIL_SIZE &&
         files[0].height <= ASSET_THUMBNAIL_SIZE
       )
         continue;
-      const size = variant === "thumbnail" ? ASSET_THUMBNAIL_SIZE : displaySize;
       const pipeline = sharp(body, options)
         .autoOrient()
         .toColourspace("srgb")
-        .timeout({ seconds: 20 });
-
-      pipeline.resize({ width: size, height: size, fit: "inside", withoutEnlargement: true });
-
+        .timeout({ seconds: 20 })
+        .resize({ width: spec.size, height: spec.size, fit: "inside", withoutEnlargement: true });
       // Sharp strips all metadata, including EXIF and GPS, by default. Never retain metadata here.
-      const result = await pipeline.webp({ quality: 85 }).toBuffer({ resolveWithObject: true });
+      const encoded =
+        spec.format === "webp"
+          ? pipeline.webp({ quality: 85 })
+          : spec.format === "png"
+            ? pipeline.png()
+            : pipeline.jpeg({ quality: 90 });
+      const result = await encoded.toBuffer({ resolveWithObject: true });
+
       outputBytes += result.data.length;
 
       if (outputBytes > maximumOutputBytes) {
@@ -107,8 +129,8 @@ const processImage = async (
       }
 
       files.push({
-        variant,
-        format: "webp",
+        variant: spec.variant,
+        format: spec.format,
         body: result.data,
         width: result.info.width,
         height: result.info.height

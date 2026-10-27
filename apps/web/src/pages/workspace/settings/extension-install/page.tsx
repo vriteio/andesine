@@ -36,6 +36,7 @@ interface CatalogLoadResult {
 const describeContributions = (item: ExtensionCatalogDetails): string => {
   const parts = [
     ...item.panels.map(({ name }) => `the ${name} panel`),
+    ...item.pages.filter(({ parent }) => !parent).map(({ name }) => `the ${name} page`),
     ...item.blockActions.map(({ label }) => `“${label}” in the block menu`),
     ...item.elementViews.map(({ element }) => `a view for ${element} content`)
   ];
@@ -115,7 +116,7 @@ const InstallReview: Component<InstallReviewProps> = (props) => {
       <SettingsSection label="What it can do">
         <AccessSummary grant={props.item.grant} canGrant={canGrant} />
       </SettingsSection>
-      <Show when={Object.keys(props.item.configuration?.properties ?? {}).length}>
+      <Show when={props.item.configuration?.length}>
         <SettingsSection label="Settings">
           <ConfigurationFields
             schema={props.item.configuration}

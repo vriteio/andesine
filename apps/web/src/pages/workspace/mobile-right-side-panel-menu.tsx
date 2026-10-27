@@ -2,6 +2,7 @@ import { Dropdown, IconButton } from "@andesine/components";
 import { type Component, createSignal, For, Show, Suspense } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import { usePublishing } from "#web/context/publishing";
+import { MenuSection } from "#web/components/menu-section";
 import { useWorkspace } from "#web/context/workspace";
 import { PublishingMenu } from "./publishing-menu";
 import { RightSidePanelIcon, useRightSidePanelOptions } from "./right-side-panel";
@@ -53,56 +54,50 @@ const MobileRightSidePanelMenu: Component<MobileRightSidePanelMenuProps> = (prop
             <div class="flex flex-col gap-3">
               <Show when={publishingAvailable() ? props.entryID : undefined} keyed>
                 {(entryID) => (
-                  <div class="flex min-w-0 flex-col">
-                    <span class="ml-1 text-xs leading-normal text-gray-400">Actions</span>
-                    <div class="flex flex-col gap-0.5">
-                      <PublishingMenu entryID={entryID} triggerVariant="menu" />
-                    </div>
-                  </div>
+                  <MenuSection label="Actions">
+                    <PublishingMenu entryID={entryID} triggerVariant="menu" />
+                  </MenuSection>
                 )}
               </Show>
               <Show when={options().length > 0}>
-                <div class="flex min-w-0 flex-col">
-                  <span class="ml-1 text-xs leading-normal text-gray-400">Activity</span>
-                  <div class="flex flex-col gap-0.5">
-                    <For each={options()}>
-                      {(option) => {
-                        const [panelOpened, setPanelOpened] = createSignal(false);
+                <MenuSection label="Activity">
+                  <For each={options()}>
+                    {(option) => {
+                      const [panelOpened, setPanelOpened] = createSignal(false);
 
-                        return (
-                          <Dropdown
-                            title={option.label}
-                            opened={panelOpened()}
-                            setOpened={setPanelOpened}
-                            mobileSheetDragFromContent={false}
-                            class="w-full"
-                            trigger={() => (
-                              <button
-                                type="button"
-                                class="group relative flex min-h-7 w-full flex-1 select-none items-center gap-1 overflow-hidden rounded-lg pl-0.5 text-left font-medium outline-none @hover:bg-gradient-to-r @hover:from-gray-500/10 @hover:to-transparent"
-                              >
-                                <div class="flex h-6 w-6 items-center justify-center">
-                                  <RightSidePanelIcon option={option}>
-                                    <div class={`${option.icon} h-5 w-5 text-gray-400`} />
-                                  </RightSidePanelIcon>
-                                </div>
-                                <span class="min-w-0 flex-1 truncate">{option.label}</span>
-                              </button>
-                            )}
-                          >
-                            <Show when={panelOpened()}>
-                              <div class="flex min-h-[50dvh] w-full min-w-0 flex-1 flex-col overflow-hidden px-1">
-                                <Suspense fallback={<Dynamic component={option.fallback} />}>
-                                  <Dynamic component={option.component} opened />
-                                </Suspense>
+                      return (
+                        <Dropdown
+                          title={option.label}
+                          opened={panelOpened()}
+                          setOpened={setPanelOpened}
+                          mobileSheetDragFromContent={false}
+                          class="w-full"
+                          trigger={() => (
+                            <button
+                              type="button"
+                              class="group relative flex min-h-7 w-full flex-1 select-none items-center gap-1 overflow-hidden rounded-lg pl-0.5 text-left font-medium outline-none @hover:bg-gradient-to-r @hover:from-gray-500/10 @hover:to-transparent"
+                            >
+                              <div class="flex h-6 w-6 items-center justify-center">
+                                <RightSidePanelIcon option={option}>
+                                  <div class={`${option.icon} h-5 w-5 text-gray-400`} />
+                                </RightSidePanelIcon>
                               </div>
-                            </Show>
-                          </Dropdown>
-                        );
-                      }}
-                    </For>
-                  </div>
-                </div>
+                              <span class="min-w-0 flex-1 truncate">{option.label}</span>
+                            </button>
+                          )}
+                        >
+                          <Show when={panelOpened()}>
+                            <div class="flex min-h-[50dvh] w-full min-w-0 flex-1 flex-col overflow-hidden px-1">
+                              <Suspense fallback={<Dynamic component={option.fallback} />}>
+                                <Dynamic component={option.component} opened />
+                              </Suspense>
+                            </div>
+                          </Show>
+                        </Dropdown>
+                      );
+                    }}
+                  </For>
+                </MenuSection>
               </Show>
             </div>
           </div>

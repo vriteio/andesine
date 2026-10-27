@@ -79,7 +79,7 @@ const createBlockActions = () => {
       return Promise.resolve();
     }
 
-    const viewID = extension.host.createView(action.entry, props);
+    const viewID = extension.host.createView(action.view, props);
 
     extension.host.tree.restrictRoot(viewID, PRESENTATIONS);
 

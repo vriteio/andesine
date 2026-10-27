@@ -2,6 +2,7 @@ import { useParams, useSearchParams } from "@solidjs/router";
 import { type Component, createMemo } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
 import { createEntryImages } from "../editor/images";
+import { useEditorLinks } from "../editor/links";
 import {
   createEntryDraftResponse,
   createPublishedVersionDetailsResponse,
@@ -20,6 +21,7 @@ const VersionPreviewPane: Component = () => {
     return typeof searchParams.snapshotID === "string" ? searchParams.snapshotID : "";
   };
   const comparing = () => searchParams.compare === "current";
+  const links = useEditorLinks(() => currentWorkspace()?.id ?? "");
   const images = createMemo(() => {
     const workspaceID = currentWorkspace()?.id;
     const userID = currentSession()?.user.id;
@@ -70,6 +72,7 @@ const VersionPreviewPane: Component = () => {
     <SharedVersionPreviewPane
       version={version}
       images={images()?.version}
+      links={links}
       currentImages={images()?.current}
       versionError={() => Boolean(selectedVersionResponse()?.error)}
       versionUnavailableDescription="This version could not be loaded or is no longer available."

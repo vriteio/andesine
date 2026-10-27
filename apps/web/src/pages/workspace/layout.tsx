@@ -38,7 +38,12 @@ import { ExtensionNotices } from "#web/components/extensions/extension-notices";
 import { isOffline } from "#web/lib/offline";
 import { createMediaQuery } from "@solid-primitives/media";
 import { useNotify } from "#web/context/notifications";
-import { RightSidePanel, useRightSidePanelOptions } from "./right-side-panel";
+import {
+  RightSidePanel,
+  useRightSidePanelHidden,
+  useRightSidePanelLoading,
+  useRightSidePanelOptions
+} from "./right-side-panel";
 import clsx from "clsx";
 import { LEFT_SIDE_PANEL_PARAM } from "./panel-navigation";
 
@@ -53,14 +58,15 @@ const WorkspaceRightSidePanel: Component<WorkspaceRightSidePanelProps> = (props)
   const params = useParams<{ slug?: string }>();
   const { layout, setLayout } = useLayout();
   const options = useRightSidePanelOptions();
+  const loading = useRightSidePanelLoading();
   const isDocumentRoute = () => {
     return Boolean(params.slug?.startsWith("ent_") || params.slug?.startsWith("sch_"));
   };
+  // An open panel stays while its panels load, e.g. an extension's after a reload.
   const available = () => {
-    return (
-      !props.hidden &&
-      (options().length > 0 || (isDocumentRoute() && layout.rightSidePanelWidth > 0))
-    );
+    const isKeptOpen = layout.rightSidePanelWidth > 0 && (isDocumentRoute() || loading());
+
+    return !props.hidden && (options().length > 0 || isKeptOpen);
   };
 
   return (
@@ -109,7 +115,7 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
   const [mobilePanelOpened, setMobilePanelOpened] = createSignal(false);
   const workspacePath = () => `/${params.workspaceID || ""}`;
   const isSettingsRoute = () => location.pathname.startsWith(`${workspacePath()}/settings`);
-  const isCollectionAccessRoute = () => Boolean(params.slug?.startsWith("coll_"));
+  const rightSidePanelHidden = useRightSidePanelHidden();
   const activePanel = () => (md() || !mobilePanelOpened() ? panel() : mobilePanel());
   const openPanel = (nextPanel: PrimaryPanel, currentEntryID?: string) => {
     if (nextPanel === "settings") {
@@ -266,7 +272,7 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
               <ProfileMenu class="h-full w-full p-0" compact />
             </nav>
           </div>
-          <WorkspaceRightSidePanel hidden={isSettingsRoute() || isCollectionAccessRoute()} />
+          <WorkspaceRightSidePanel hidden={rightSidePanelHidden()} />
         </div>
         <Dropdown
           title={

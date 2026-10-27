@@ -1,6 +1,30 @@
 import * as z from "zod";
-import { uniqueItems } from "../webhooks/events";
 import { extensionIconType } from "./contributions";
+import {
+  imageDataURLType,
+  imageFileType,
+  imageFormatType,
+  MAX_EXTENSION_IMAGE_SIZE
+} from "./image-input";
+import {
+  noArguments,
+  labelType,
+  sizeType,
+  gapType,
+  menuPlacementType,
+  menuItemParents,
+  toneType,
+  statusToneType,
+  classType,
+  httpsURLType,
+  optionsType,
+  buttonProps,
+  fieldProps,
+  choiceProps,
+  toggleProps,
+  treeItemsType,
+  iconSetType
+} from "./component-types";
 
 interface ExtensionComponentDefinition {
   props: z.ZodObject;
@@ -16,67 +40,6 @@ type ExtensionComponentProps<N extends ExtensionComponentName> = z.input<
   (typeof extensionComponentDefinitions)[N]["props"]
 >;
 
-const MAX_OPTIONS = 100;
-const MAX_TREE_ITEMS = 500;
-const noArguments = z.tuple([]);
-const labelType = z.string().max(200);
-const sizeType = z.enum(["small", "medium", "large"]);
-const gapType = z.enum(["none", "small", "medium", "large"]);
-const menuPlacementType = z.enum([
-  "bottom-start",
-  "bottom-end",
-  "top-start",
-  "top-end",
-  "right-start",
-  "left-start"
-]);
-const menuItemParents = ["Menu", "MenuItem", "MenuGroup"];
-const toneType = z.enum(["default", "muted", "danger", "success"]);
-/** Utility classes of the shared UnoCSS preset; the extension build generates their CSS. */
-const classType = z
-  .string()
-  .max(500)
-  .regex(/^[\w:./\-[\]%#! ]*$/, "Use utility classes")
-  .optional();
-const httpsURLType = z.url({ protocol: /^https$/ }).max(2048);
-const optionsType = z
-  .array(z.strictObject({ value: z.string().max(200), label: labelType }))
-  .max(MAX_OPTIONS)
-  .refine((options) => uniqueItems(options.map(({ value }) => value)), "Values must be unique");
-const buttonProps = {
-  variant: z.enum(["primary", "secondary", "ghost", "link", "danger"]).optional(),
-  size: z.enum(["small", "medium"]).optional(),
-  disabled: z.boolean().optional()
-};
-const fieldProps = {
-  value: z.string().max(10_000).optional(),
-  placeholder: z.string().max(200).optional(),
-  label: z.string().max(100).optional(),
-  disabled: z.boolean().optional()
-};
-const choiceProps = {
-  value: z.string().max(200).optional(),
-  options: optionsType,
-  placeholder: z.string().max(200).optional(),
-  disabled: z.boolean().optional()
-};
-const toggleProps = {
-  checked: z.boolean().optional(),
-  label: z.string().max(100).optional(),
-  disabled: z.boolean().optional()
-};
-/** A flat tree; `parent` refers to another item ID, and items without a parent are top level. */
-const treeItemsType = z
-  .array(
-    z.strictObject({
-      id: z.string().min(1).max(100),
-      label: labelType,
-      icon: extensionIconType.optional(),
-      parent: z.string().max(100).optional()
-    })
-  )
-  .max(MAX_TREE_ITEMS)
-  .refine((items) => uniqueItems(items.map(({ id }) => id)), "Item IDs must be unique");
 /** Host components that extension views can render; part of the extension API version. */
 const extensionComponentDefinitions = {
   // Layout
@@ -117,6 +80,23 @@ const extensionComponentDefinitions = {
     events: {},
     children: true
   },
+  /** Page layout, as in settings: sections of `Setting` rows. */
+  Section: {
+    props: z.strictObject({ title: labelType }),
+    events: {},
+    children: true
+  },
+  /** A form's footer, as in the app's settings, last on the page; `dirty` enables its buttons. */
+  SaveBar: {
+    props: z.strictObject({
+      dirty: z.boolean(),
+      saving: z.boolean().optional(),
+      message: z.string().max(200).optional(),
+      saveLabel: z.string().max(50).optional()
+    }),
+    events: { onSave: noArguments, onDiscard: noArguments },
+    children: false
+  },
   // Text
   Text: {
     props: z.strictObject({
@@ -138,8 +118,12 @@ const extensionComponentDefinitions = {
   },
   Code: { props: z.strictObject({}), events: {}, children: true },
   Link: { props: z.strictObject({ href: httpsURLType }), events: {}, children: true },
+  /** A white outlined status badge, as the app's webhook deliveries; the tone colors its icon. */
   Badge: {
-    props: z.strictObject({ color: z.enum(["base", "primary", "danger", "success"]).optional() }),
+    props: z.strictObject({
+      icon: extensionIconType.optional(),
+      tone: statusToneType.optional()
+    }),
     events: {},
     children: true
   },
@@ -147,14 +131,20 @@ const extensionComponentDefinitions = {
     props: z.strictObject({
       name: extensionIconType,
       size: sizeType.optional(),
-      tone: toneType.optional()
+      tone: toneType.optional(),
+      class: classType
     }),
     events: {},
     children: false
   },
   // Controls
   Button: {
-    props: z.strictObject({ ...buttonProps, loading: z.boolean().optional() }),
+    props: z.strictObject({
+      ...buttonProps,
+      loading: z.boolean().optional(),
+      /** After the label, e.g. `i-lucide:plus` on a setting's main action. */
+      icon: extensionIconType.optional()
+    }),
     events: { onClick: noArguments },
     children: true
   },
@@ -164,7 +154,12 @@ const extensionComponentDefinitions = {
     children: false
   },
   Input: {
-    props: z.strictObject({ ...fieldProps, type: z.enum(["text", "url", "number"]).optional() }),
+    props: z.strictObject({
+      ...fieldProps,
+      type: z.enum(["text", "url", "number"]).optional(),
+      /** Fixed text inside the field after the value, e.g. `.example.com` after a subdomain. */
+      suffix: z.string().max(50).optional()
+    }),
     events: { onInput: z.tuple([z.string()]), onEnter: noArguments },
     children: false
   },
@@ -181,6 +176,16 @@ const extensionComponentDefinitions = {
   Combobox: {
     props: z.strictObject(choiceProps),
     events: { onChange: z.tuple([z.string()]) },
+    children: false
+  },
+  MultiSelect: {
+    props: z.strictObject({
+      values: z.array(z.string().max(200)).max(100).optional(),
+      options: optionsType,
+      placeholder: z.string().max(200).optional(),
+      disabled: z.boolean().optional()
+    }),
+    events: { onChange: z.tuple([z.array(z.string().max(200)).max(100)]) },
     children: false
   },
   Checkbox: {
@@ -208,9 +213,54 @@ const extensionComponentDefinitions = {
         .string()
         .regex(/^#[\da-f]{6}$/i)
         .optional(),
+      presets: z
+        .array(z.string().regex(/^#[\da-f]{6}$/i))
+        .max(12)
+        .optional(),
       disabled: z.boolean().optional()
     }),
     events: { onInput: z.tuple([z.string()]) },
+    children: false
+  },
+  ImageInput: {
+    props: z.strictObject({
+      /** The current image for the preview: a declared HTTPS URL or an image data URL. */
+      value: z.union([httpsURLType, imageDataURLType]).optional(),
+      accept: z.array(imageFormatType).min(1).max(6).optional(),
+      maxSize: z.number().int().min(1).max(MAX_EXTENSION_IMAGE_SIZE).optional(),
+      disabled: z.boolean().optional()
+    }),
+    events: { onChange: z.tuple([imageFileType]), onRemove: noArguments },
+    children: false
+  },
+  IconPicker: {
+    props: z.strictObject({
+      /** An icon class, e.g. `i-lucide:link`, or empty for none. */
+      value: z.union([extensionIconType, z.literal("")]).optional(),
+      /** The sets listed together, in this order; Lucide by default. */
+      sets: z.array(iconSetType).min(1).max(4).optional(),
+      placeholder: z.string().max(200).optional(),
+      disabled: z.boolean().optional(),
+      /** A button that removes the icon, e.g. for an optional one. */
+      clearable: z.boolean().optional(),
+      /** A square button with only the icon, e.g. before a field in a row. */
+      compact: z.boolean().optional()
+    }),
+    events: { onChange: z.tuple([z.union([extensionIconType, z.literal("")])]) },
+    children: false
+  },
+  LinkInput: {
+    props: z.strictObject({
+      /** An `entry:<entryID>` link, a URL, or a path when `paths` is set. */
+      value: z.string().max(2000).optional(),
+      placeholder: z.string().max(200).optional(),
+      /** Also takes paths, e.g. `/blog` on a site. */
+      paths: z.boolean().optional(),
+      /** Lists only the entries in this collection, at any depth, e.g. a site's. */
+      collectionID: z.string().max(100).optional(),
+      disabled: z.boolean().optional()
+    }),
+    events: { onChange: z.tuple([z.string().max(2000)]) },
     children: false
   },
   Tooltip: {
@@ -291,12 +341,12 @@ const extensionComponentDefinitions = {
   /** Each child is one item; the host adds remove and reorder controls. */
   List: {
     props: z.strictObject({
-      addLabel: z.string().max(100).optional(),
       emptyLabel: z.string().max(200).optional(),
+      /** Shown with `emptyLabel` while the list is empty. */
+      emptyIcon: extensionIconType.optional(),
       disabled: z.boolean().optional()
     }),
     events: {
-      onAdd: noArguments,
       onRemove: z.tuple([z.int().min(0)]),
       onMove: z.tuple([z.int().min(0), z.int().min(0)])
     },
@@ -317,6 +367,65 @@ const extensionComponentDefinitions = {
     events: { onSelect: z.tuple([z.string()]) },
     children: false
   },
+  /** Links in sections, like the app's settings menu, e.g. a panel's links to the pages. */
+  Navigation: {
+    props: z.strictObject({
+      sections: z
+        .array(
+          z.strictObject({
+            label: labelType.optional(),
+            items: z
+              .array(
+                z.strictObject({
+                  id: z.string().min(1).max(100),
+                  label: labelType,
+                  icon: extensionIconType.optional()
+                })
+              )
+              .min(1)
+              .max(20)
+          })
+        )
+        .max(10),
+      selected: z.string().max(100).optional()
+    }),
+    events: { onSelect: z.tuple([z.string()]) },
+    children: false
+  },
+  /**
+   * A row of a panel, like the app's version rows: an icon whose tone shows a status, a label, a
+   * line of details, and actions (the children) shown on hover.
+   */
+  Item: {
+    props: z.strictObject({
+      label: labelType,
+      /** Parts of the line under the label, e.g. a commit and counts, with lines between them. */
+      details: z.array(z.string().max(200)).max(8).optional(),
+      /** Shown first in the details line, relative, with the date in a tooltip. */
+      date: z.iso.datetime().optional(),
+      icon: extensionIconType.optional(),
+      tone: statusToneType.optional(),
+      disabled: z.boolean().optional()
+    }),
+    events: { onClick: noArguments },
+    children: true
+  },
+  /**
+   * An `Item`'s details, shown under it when it's opened, as the app's webhook events; the `Item`
+   * opens and closes on a click.
+   */
+  ItemDetails: {
+    props: z.strictObject({ open: z.boolean().optional() }),
+    events: {},
+    children: true,
+    parents: ["Item"]
+  },
+  /** `Item` rows under a small header, as a `Navigation` section; what follows is 12px away. */
+  ItemGroup: {
+    props: z.strictObject({ label: labelType.optional() }),
+    events: {},
+    children: true
+  },
   Tabs: {
     props: z.strictObject({ value: z.string().max(200).optional() }),
     events: { onChange: z.tuple([z.string()]) },
@@ -333,6 +442,10 @@ const extensionComponentDefinitions = {
     events: {},
     children: true
   },
+  /**
+   * A notice as the app's: a status icon, the title and text, and `Button` or `IconButton` children
+   * as its actions on the right.
+   */
   Callout: {
     props: z.strictObject({
       tone: z.enum(["info", "warning", "danger", "success"]).optional(),
@@ -361,17 +474,60 @@ const extensionComponentDefinitions = {
   CodeBlock: {
     props: z.strictObject({
       code: z.string().max(50_000),
-      language: z.string().max(50).optional()
+      language: z.string().max(50).optional(),
+      /** Output such as a build log: plain monospace text without the box, scrolled when tall. */
+      log: z.boolean().optional()
     }),
     events: {},
     children: false
   },
   TimeAgo: { props: z.strictObject({ date: z.iso.datetime() }), events: {}, children: false },
-  Spinner: { props: z.strictObject({ size: sizeType.optional() }), events: {}, children: false },
-  /** The host-owned editable content of an element view; at most one renders per view. */
-  ContentSlot: { props: z.strictObject({}), events: {}, children: false },
+  Spinner: { props: z.strictObject({ class: classType }), events: {}, children: false },
+  /**
+   * The host-owned editable content of an element view; at most one renders per view. Its children
+   * are only content presentations, e.g. `BlockPresentation`, which render nothing.
+   */
+  ContentSlot: {
+    props: z.strictObject({
+      /** Shown while the content is empty. */
+      placeholder: z.string().max(200).optional(),
+      /** Utility classes on the slot, e.g. `contents` to lay the content out with the view's UI. */
+      class: classType,
+      /** Utility classes on the element's content itself, e.g. a grid of cards. */
+      contentClass: classType,
+      /** The content's blocks have the editor's drag handle and block menu, e.g. a tab's text. */
+      controls: z.boolean().optional()
+    }),
+    events: {},
+    children: true
+  },
+  /** The presentation of the slot's child blocks by node ID; the SDK's `<Block>` renders it. */
+  BlockPresentation: {
+    props: z.strictObject({
+      hidden: z.array(z.string().max(64)).max(500),
+      /** Without their own frame and background, e.g. code blocks in a code group. */
+      plain: z.array(z.string().max(64)).max(500)
+    }),
+    events: {},
+    children: false,
+    parents: ["ContentSlot"]
+  },
+  /** A view's UI that stands for a block, e.g. a tab; each option turns on one editor behavior. */
+  BlockArea: {
+    props: z.strictObject({
+      block: z.string().min(1).max(64),
+      menu: z.boolean().optional(),
+      draggable: z.boolean().optional(),
+      controls: z.boolean().optional(),
+      selectable: z.boolean().optional(),
+      marksSelection: z.boolean().optional(),
+      droppable: z.union([z.boolean(), z.literal("append")]).optional()
+    }),
+    events: { onActivate: noArguments },
+    children: true
+  },
   Skeleton: {
-    props: z.strictObject({ height: sizeType.optional() }),
+    props: z.strictObject({ class: classType }),
     events: {},
     children: false
   }

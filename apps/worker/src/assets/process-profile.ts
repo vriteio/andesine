@@ -41,12 +41,9 @@ const processProfileImage = async (
     if (body.length !== row.upload.byteSize || checksum !== row.upload.expectedChecksum) {
       throw new InvalidImageError("Image bytes do not match the upload");
     }
-    files = await processImage(
-      body,
-      config,
-      row.upload.reservedBytes - row.upload.byteSize,
-      ASSET_PROFILE_SIZE
-    );
+    files = await processImage(body, config, row.upload.reservedBytes - row.upload.byteSize, {
+      displaySize: ASSET_PROFILE_SIZE
+    });
   } catch (error) {
     if (!(error instanceof InvalidImageError)) throw error;
     failureReason = error.message;

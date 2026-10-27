@@ -1,21 +1,19 @@
 ---
 interface Props {
   title: string;
-  /** Card text; the slot content can be used instead. */
-  description?: string;
   icon?: string;
   /** Makes the whole card a link. */
   href?: string;
 }
 
-const { title, description, icon, href } = Astro.props;
+const { title, icon, href } = Astro.props;
 const Element = href ? "a" : "div";
 ---
 
 <Element
   href={href}
   class:list={[
-    "not-prose flex flex-col gap-2 rounded-xl border border-gray-200 bg-white p-4 shadow-[0_0_12px_0px] shadow-gray-200",
+    "not-prose flex flex-col gap-2 rounded-xl border border-gray-200 bg-white p-4 shadow-[0_0_12px_0px] shadow-gray-900/8",
     href && "transition duration-200 ease-out @hover:bg-gray-100 focus-visible:bg-gray-100"
   ]}
 >
@@ -25,7 +23,6 @@ const Element = href ? "a" : "div";
     {href && <span aria-hidden="true" class="i-lucide:arrow-right h-4 w-4 text-gray-400" />}
   </span>
   <div class="text-sm text-gray-500 [&>p]:m-0">
-    {description && <p>{description}</p>}
     <slot />
   </div>
 </Element>

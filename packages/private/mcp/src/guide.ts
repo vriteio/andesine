@@ -10,7 +10,7 @@ The first line is the title as a level 1 heading: \`# Entry title\`. Use level 2
 
 - Paragraphs, headings (\`##\` to \`######\`), **bold**, *italic*, ~~strikethrough~~, \`inline code\`, and links.
 - Bullet lists, numbered lists, and task lists (\`- [ ]\`, \`- [x]\`).
-- Block quotes, horizontal rules (\`---\`), fenced code blocks with a language, and GFM tables.
+- Block quotes, horizontal rules (\`---\`), fenced code blocks with a language and an optional title (\`\` \`\`\`bash title="Install" \`\`), and GFM tables.
 - A line break inside a paragraph: end the line with a backslash.
 
 ## Images
@@ -42,6 +42,8 @@ Text with **Markdown**.
 \`\`\`
 
 Self-closing elements, such as \`<Video src="https://example.com/a.mp4" />\`, also go on their own line. Attributes must be static JSON values (strings, numbers, booleans, arrays, or objects). Elements inside a paragraph aren't supported. Property and Fragment are reserved names.
+
+The workspace's extensions draw some elements in the editor, e.g. \`<Tabs>\` with \`<Tab>\` elements. Read \`andesine://guide/elements\` for them: their props and which blocks their content accepts.
 
 ## Escaping
 

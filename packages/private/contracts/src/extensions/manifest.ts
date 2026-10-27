@@ -122,7 +122,8 @@ const createManifestType = (protocols: string[]) => {
       const contributionIDs = [
         ...manifest.elementViews,
         ...manifest.blockActions,
-        ...manifest.panels
+        ...manifest.panels,
+        ...manifest.pages
       ].map(({ id }) => id);
       const isGranted = (required: string): boolean => {
         return manifest.permissions.some((permission) => hasPermission(permission, required));

@@ -234,6 +234,14 @@ const collectionsRouter = handlers.router({
       totalEntries: result.schemaMigration.totalEntries
     };
   }),
+  get: authorizedHandlers.get.handler(({ context, input }) => {
+    return Collections.get({
+      auth: context.auth,
+      collectionID: input.collectionID,
+      collectionSlugPath: input.collectionSlugPath,
+      collectionPath: input.collectionPath
+    });
+  }),
   list: authorizedHandlers.list.handler(async ({ context, input }) => {
     const { collections, nextCursor } = await Collections.list({
       auth: context.auth,

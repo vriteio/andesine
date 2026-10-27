@@ -1,0 +1,26 @@
+---
+interface Props {
+  name: string;
+}
+---
+
+<li class="flex flex-col">
+  <div class="flex min-h-7 items-center gap-1 pl-0.5">
+    <span class="flex h-6 w-6 shrink-0 items-center justify-center">
+      <span aria-hidden="true" class="i-lucide:folder-open h-6 w-6 text-gray-400"></span>
+    </span>
+    <span class="line-clamp-1 flex-1">{Astro.props.name}</span>
+  </div>
+  {
+    Astro.slots.has("default") && (
+      <div class="mt-0.5 flex">
+        <div class="flex min-w-3.5 justify-end pl-0.5">
+          <div class="h-full w-px rounded-full bg-gray-300" />
+        </div>
+        <ul class="flex min-w-0 flex-1 flex-col gap-0.5">
+          <slot />
+        </ul>
+      </div>
+    )
+  }
+</li>

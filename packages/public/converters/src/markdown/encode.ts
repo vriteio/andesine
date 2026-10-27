@@ -6,7 +6,7 @@ import type {
   TableContent,
   RowContent
 } from "mdast";
-import { ConversionError, textContent } from "../utils";
+import { ConversionError, formatCodeMeta, textContent } from "../utils";
 import type { ContentMark, ContentNode, EncodeContext } from "../types";
 
 const encodeMarkdown = async (
@@ -55,7 +55,14 @@ const encodeMarkdown = async (
     case "codeBlock":
       return {
         type: "code",
-        lang: typeof attrs.language === "string" ? attrs.language : null,
+        // Fence meta needs a language, so a titled block without one is plain text.
+        lang:
+          typeof attrs.language === "string" && attrs.language
+            ? attrs.language
+            : attrs.title
+              ? "text"
+              : null,
+        meta: formatCodeMeta(attrs.title),
         value: textContent(node)
       };
     case "image":

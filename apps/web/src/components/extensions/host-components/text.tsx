@@ -1,23 +1,41 @@
+import { getMaskStyle } from "@andesine/components";
 import { getExtensionHostActions, isDeclaredURL } from "#web/lib/extensions";
+import { loadIconMask } from "#web/lib/extensions/icon-masks";
 import clsx from "clsx";
+import { createEffect, createSignal, on, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
-import { type HostComponents, toneClasses } from "./types";
+import { type HostComponents, iconToneClasses, toneClasses } from "./types";
 
-const textSizeClasses = { xs: "text-xs", sm: "text-sm", base: "text-base", lg: "text-lg" };
+const textSizeClasses = {
+  xs: ":base: text-xs",
+  sm: ":base: text-sm",
+  base: ":base: text-base",
+  lg: ":base: text-lg"
+};
 const textWeightClasses = {
-  normal: "font-normal",
-  medium: "font-medium",
-  semibold: "font-semibold"
+  normal: ":base: font-normal",
+  medium: ":base: font-medium",
+  semibold: ":base: font-semibold"
 };
 const headingTags = { 1: "h2", 2: "h3", 3: "h4" };
-const headingClasses = { 1: "text-lg", 2: "text-base", 3: "text-sm" };
-const badgeClasses = {
-  base: "bg-gray-200 text-gray-600",
-  primary: "bg-gradient-to-tr text-white",
-  danger: "bg-red-500 text-white",
-  success: "bg-green-500 text-white"
+const headingClasses = { 1: ":base: text-lg", 2: ":base: text-base", 3: ":base: text-sm" };
+const iconSizeClasses = {
+  small: ":base: h-4 w-4",
+  medium: ":base: h-5 w-5",
+  large: ":base: h-6 w-6"
 };
-const iconSizeClasses = { small: "h-4 w-4", medium: "h-5 w-5", large: "h-6 w-6" };
+/** Whether CSS draws the element's icon, e.g. the extension's for its own icon classes. */
+const hasCSSIcon = (element: Element) => {
+  const style = getComputedStyle(element);
+  const images = [
+    style.getPropertyValue("mask-image"),
+    style.getPropertyValue("-webkit-mask-image"),
+    style.backgroundImage
+  ];
+
+  // `url(…)`, not a gradient, e.g. of a `bg-gradient-to-tr` class on a masked icon.
+  return images.some((image) => image.startsWith("url("));
+};
 const textComponents: Pick<
   HostComponents,
   "Text" | "Heading" | "Code" | "Link" | "Badge" | "Icon"
@@ -37,7 +55,11 @@ const textComponents: Pick<
   Heading: (props) => (
     <Dynamic
       component={headingTags[props.props.level ?? 2]}
-      class={clsx("font-semibold", headingClasses[props.props.level ?? 2], props.props.class)}
+      class={clsx(
+        ":base: font-semibold",
+        headingClasses[props.props.level ?? 2],
+        props.props.class
+      )}
     >
       {props.children}
     </Dynamic>
@@ -72,28 +94,56 @@ const textComponents: Pick<
       </a>
     );
   },
+  // As the app's webhook delivery badges: white and outlined; the tone is only the icon's.
   Badge: (props) => (
-    <span
-      class={clsx(
-        "inline-flex items-center rounded-md px-1.5 py-0.5 text-xs font-medium",
-        badgeClasses[props.props.color ?? "base"]
-      )}
-    >
-      {props.children}
+    <span class="inline-flex h-6 max-w-full items-center gap-1 rounded-lg bg-white px-1.5 text-sm text-gray-500 shadow-md shadow-gray-900/8 outline outline-1 -outline-offset-1 outline-gray-200">
+      <Show when={props.props.icon}>
+        {(icon) => (
+          <span
+            class={clsx("h-4 w-4 shrink-0", icon(), iconToneClasses[props.props.tone ?? "muted"])}
+          />
+        )}
+      </Show>
+      <span class="truncate">{props.children}</span>
     </span>
   ),
   // Icon classes come from the extension's generated CSS.
-  Icon: (props) => (
-    <div
-      aria-hidden="true"
-      class={clsx(
-        "shrink-0",
-        props.props.name,
-        iconSizeClasses[props.props.size ?? "medium"],
-        toneClasses[props.props.tone ?? "default"]
-      )}
-    />
-  )
+  Icon: (props) => {
+    const [mask, setMask] = createSignal<string | null>(null);
+
+    let element: HTMLDivElement | undefined;
+
+    // Icons from documents, e.g. a card's, aren't in the extension's CSS; a mask draws them. Its
+    // set loads only then, once the class's own icon is known to be missing.
+    createEffect(
+      on(
+        () => props.props.name,
+        (name) => {
+          setMask(null);
+          requestAnimationFrame(() => {
+            if (name !== props.props.name || !element || hasCSSIcon(element)) return;
+
+            void loadIconMask(name).then((value) => name === props.props.name && setMask(value));
+          });
+        }
+      )
+    );
+
+    return (
+      <div
+        ref={element}
+        aria-hidden="true"
+        class={clsx(
+          "shrink-0",
+          props.props.name,
+          iconSizeClasses[props.props.size ?? "medium"],
+          toneClasses[props.props.tone ?? "default"],
+          props.props.class
+        )}
+        style={mask() ? getMaskStyle(mask()!) : undefined}
+      />
+    );
+  }
 };
 
 export { textComponents };

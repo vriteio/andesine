@@ -67,6 +67,8 @@ interface SiteContext {
   links: IconLinkConfig[];
   cta?: LinkConfig;
   socialLinks: IconLinkConfig[];
+  /** Whether the navigation ends with the "Powered by Andesine Pages" credit. */
+  poweredBy: boolean;
   /** Undefined when no source is searchable. */
   search?: SearchContext;
 }

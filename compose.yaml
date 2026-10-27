@@ -51,7 +51,14 @@ services:
       TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-typesense-dev-key}
       TYPESENSE_DATA_DIR: /data
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8108/health"]
+      # The image has no curl; bash asks the health endpoint directly.
+      test:
+        [
+          "CMD",
+          "bash",
+          "-c",
+          'exec 3<>/dev/tcp/127.0.0.1/8108 && printf "GET /health HTTP/1.0\r\n\r\n" >&3 && grep -q "\"ok\":true" <&3'
+        ]
       interval: 5s
       timeout: 5s
       retries: 10

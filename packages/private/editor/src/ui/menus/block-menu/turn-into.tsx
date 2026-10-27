@@ -4,6 +4,7 @@ import type { Editor } from "@tiptap/core";
 import { Fragment, type Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { isBlockSelection } from "#editor/extensions/block-selection";
 import { isPositionInInheritedField } from "#editor/ui/block-utils";
+import { acceptsBlock, getAccepts, getElementViews } from "#editor/lib/element-content";
 
 interface ConversionOption {
   name: string;
@@ -111,6 +112,13 @@ const createTurnIntoMenuItem = (editor: Editor): NonNullable<MenuItem["items"]> 
       ? textOptions
       : [];
 
+  const elementViews = getElementViews(editor);
+  // The parent element's content rules, e.g. only `Tab` elements in `Tabs`.
+  const accepts =
+    elementViews && selection.$from.depth > 0
+      ? getAccepts(editor.state.doc, selection.$from.before(), elementViews)
+      : null;
+
   let allowedBlocks: readonly string[] | null = null;
 
   for (let depth = selection.$from.depth; depth > 0; depth -= 1) {
@@ -139,6 +147,10 @@ const createTurnIntoMenuItem = (editor: Editor): NonNullable<MenuItem["items"]> 
     if (allowedBlocks && findDisallowedElementBlock(content.toJSON() || [], allowedBlocks)) {
       return [];
     }
+
+    const fits = !accepts || content.content.every((converted) => acceptsBlock(accepts, converted));
+
+    if (!selected && !fits) return [];
 
     return [
       {

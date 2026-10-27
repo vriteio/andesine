@@ -1,5 +1,9 @@
 import { useWorkspace } from "#web/context/workspace";
-import { notifyExtensionUpdate, setExtensionMember } from "#web/lib/extensions";
+import {
+  notifyExtensionStorage,
+  notifyExtensionUpdate,
+  setExtensionMember
+} from "#web/lib/extensions";
 import { type Component, onCleanup } from "solid-js";
 
 /** Provides the current member's authority to running extensions. */
@@ -18,6 +22,10 @@ const ExtensionMember: Component = () => {
   onCleanup(
     subscribeToUpdates((event) => {
       if (event.action === "extension:update") notifyExtensionUpdate(event.data.id);
+
+      if (event.action === "extension:storage") {
+        notifyExtensionStorage(event.data.id, event.data.key, event.data.exists);
+      }
     })
   );
 

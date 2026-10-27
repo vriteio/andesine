@@ -15,6 +15,8 @@ import { createExtensionTree, type ExtensionTree } from "./view-tree";
 interface ExtensionHostOptions extends Omit<ExtensionSandboxOptions, "onMessage"> {
   /** The registry name; it scopes the extension CSS. */
   name: string;
+  /** The manifest's name, which names the extension in notifications and fallbacks. */
+  displayName: string;
   styles?: string;
   /** The verified manifest icon CSS of the version, for icons in host UI. */
   iconStyles?: string;
@@ -30,6 +32,8 @@ interface ExtensionHost {
   ready: Promise<void>;
   /** Starts a view of a manifest entry and returns its view ID. */
   createView(entry: string, props?: ViewProps): string;
+  /** Starts a child element's view from its root view's `<Element tag>` template. */
+  createTemplateView(rootViewID: string, tag: string, props?: ViewProps): string;
   updateView(viewID: string, props: ViewProps): void;
   disposeView(viewID: string): void;
   /** Sets what the view's edit requests act on; views without a target cannot edit. */
@@ -37,6 +41,8 @@ interface ExtensionHost {
   /** Sends the member's effective permissions and the backend URL to the frontend. */
   setContext(context: ExtensionContext): void;
   setSession(session: ExtensionSessionToken | null): void;
+  /** Tells the views that a storage key was set or deleted, e.g. by the backend. */
+  notifyStorage(key: string, exists: boolean): void;
   /** Calls an extension callback for a user interaction in one of its views. */
   invoke(callback: number, args: CallbackArguments): void;
   /** Records a user interaction outside the views, e.g. choosing a block action. */
@@ -53,13 +59,22 @@ type CallbackArguments = Extract<ExtensionHostMessageBody, { type: "callback" }>
 
 /** One running extension frontend: its sandbox and the host copy of its view tree. */
 const createExtensionHost = async (options: ExtensionHostOptions): Promise<ExtensionHost> => {
-  const { name, styles, iconStyles, getActions, getAPIContext, onError, ...sandboxOptions } =
-    options;
+  const {
+    name,
+    displayName,
+    styles,
+    iconStyles,
+    getActions,
+    getAPIContext,
+    onError,
+    ...sandboxOptions
+  } = options;
   const tree = createExtensionTree();
   const viewTargets = new Map<string, ExtensionViewTarget>();
   const requests = createRequestHandler({
     extensionID: options.extensionID,
     name,
+    displayName,
     sources: options.connectSources,
     getActions: () => getActions?.() ?? null,
     getViewTarget: (viewID) => viewTargets.get(viewID),
@@ -108,6 +123,13 @@ const createExtensionHost = async (options: ExtensionHostOptions): Promise<Exten
 
       return viewID;
     },
+    createTemplateView(rootViewID, tag, props = {}) {
+      const viewID = crypto.randomUUID();
+
+      sandbox.send({ type: "view.template", viewID, rootViewID, tag, props });
+
+      return viewID;
+    },
     updateView(viewID, props) {
       sandbox.send({ type: "view.update", viewID, props });
     },
@@ -129,6 +151,9 @@ const createExtensionHost = async (options: ExtensionHostOptions): Promise<Exten
         extensionID: options.extensionID,
         instance: getAPIContext?.().apiURL ?? ""
       });
+    },
+    notifyStorage(key, exists) {
+      sandbox.send({ type: "storage", key, exists });
     },
     invoke(callback, args) {
       requests.recordInteraction();

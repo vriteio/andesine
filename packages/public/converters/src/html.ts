@@ -90,11 +90,15 @@ const htmlAdapter: FormatAdapter<HTMLNode> = {
       case "horizontalRule":
         return tag("hr");
       case "codeBlock":
-        return tag("pre", [
-          tag("code", [{ type: "text", value: textContent(node) }], {
-            dataLanguage: String(attrs.language || "")
-          })
-        ]);
+        return tag(
+          "pre",
+          [
+            tag("code", [{ type: "text", value: textContent(node) }], {
+              dataLanguage: String(attrs.language || "")
+            })
+          ],
+          attrs.title ? { dataTitle: String(attrs.title) } : {}
+        );
       case "image": {
         const image = tag("img", [], {
           src: safeURL(await context.imageURL(node), true),
@@ -158,7 +162,10 @@ const htmlAdapter: FormatAdapter<HTMLNode> = {
 
       return {
         type: "codeBlock",
-        attrs: { language: language || null },
+        attrs: {
+          language: language || null,
+          title: props.dataTitle ? String(props.dataTitle) : null
+        },
         content: textNode(htmlText(node))
       };
     }

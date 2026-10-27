@@ -89,4 +89,28 @@ const element = (
   };
 };
 
-export { ConversionError, lookup, array, element, isJSONValue, textContent, textNode, withMark };
+/** A code fence's title from its meta, e.g. `title="install.sh"`. */
+const readCodeTitle = (meta?: string | null): string | undefined => {
+  const match = meta?.match(/title=(?:"([^"]*)"|'([^']*)'|(\S+))/);
+
+  return match?.[1] ?? match?.[2] ?? match?.[3];
+};
+/** A code fence's meta for its title, quoted to keep spaces. */
+const formatCodeMeta = (title: unknown): string | null => {
+  if (typeof title !== "string" || !title) return null;
+
+  return title.includes('"') ? `title='${title}'` : `title="${title}"`;
+};
+
+export {
+  ConversionError,
+  lookup,
+  array,
+  element,
+  formatCodeMeta,
+  isJSONValue,
+  readCodeTitle,
+  textContent,
+  textNode,
+  withMark
+};

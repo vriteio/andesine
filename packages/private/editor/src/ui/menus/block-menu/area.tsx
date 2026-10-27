@@ -1,7 +1,7 @@
 import { isBlockSelection, setBlockSelectionAtCoords } from "#editor/extensions";
-import type { BlockActions } from "#editor/client-types";
+import type { BlockActions, EditorIcons, EditorLinks, ElementViews } from "#editor/client-types";
 import { DropdownArea, useShortcuts } from "@andesine/components";
-import { type Editor, isTextSelection } from "@tiptap/core";
+import { type Editor, type EditorEvents, isTextSelection } from "@tiptap/core";
 import {
   type Accessor,
   createEffect,
@@ -16,10 +16,15 @@ import { BlockMenu } from "./block-menu";
 import { BlockMenuContextProvider } from "./context";
 import type { BlockControlRange } from "#editor/ui/block-control-targeting";
 import { rangeContainsInheritedField } from "#editor/ui/block-utils";
+import { OPEN_BLOCK_MENU_META } from "#editor/ui/constants";
+import { isShown } from "#editor/ui/keyboard-stops";
 
 interface BlockMenuAreaProps {
   editor: Editor | null;
   blockActions?: BlockActions;
+  elementViews?: ElementViews;
+  links?: EditorLinks;
+  icons?: EditorIcons;
   menuContainerRef: Accessor<HTMLElement | null>;
   notify(type: "success" | "error", text: string): void;
 }
@@ -137,6 +142,31 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
 
     onCleanup(unregister);
   });
+  // A menu that the keyboard opens, e.g. Enter on a selected file row, by the block's own UI.
+  createEffect(() => {
+    const editor = props.editor;
+
+    if (!editor || editor.isDestroyed) return;
+
+    const openForBlock = ({ transaction }: EditorEvents["transaction"]) => {
+      const pos = transaction.getMeta(OPEN_BLOCK_MENU_META) as number | undefined;
+      const node = typeof pos === "number" ? editor.state.doc.nodeAt(pos) : null;
+
+      if (!node) return;
+
+      const id = CSS.escape(node.attrs.id ?? "");
+      const areas = editor.view.dom.querySelectorAll<HTMLElement>(
+        `[data-block-area="${id}"][data-block-selectable] > *`
+      );
+      const area = Array.from(areas).find(isShown);
+      const dom = editor.view.nodeDOM(pos!);
+
+      openMenu(area ?? (dom instanceof HTMLElement ? dom : undefined));
+    };
+
+    editor.on("transaction", openForBlock);
+    onCleanup(() => editor.off("transaction", openForBlock));
+  });
 
   return (
     <BlockMenuContextProvider
@@ -144,6 +174,7 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
         handleCopy,
         handleDelete,
         openMenu,
+        menuOpened,
         setTextMenuSelectionRange
       }}
     >
@@ -220,6 +251,9 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
                 contextMenuPoint={contextMenuPoint()}
                 editor={props.editor}
                 blockActions={props.blockActions}
+                elementViews={props.elementViews}
+                links={props.links}
+                icons={props.icons}
                 menuOpened={menuOpened()}
                 setMenuOpened={handleMenuOpenedChange}
                 textMenuSelectionRange={textMenuSelectionRange()}

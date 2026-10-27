@@ -1,6 +1,6 @@
 {
   "name": "@andesine/pages",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Astro documentation framework for Andesine and local content",
   "type": "module",
   "license": "MIT",
@@ -55,7 +55,9 @@
   "dependencies": {
     "@andesine/converters": "workspace:*",
     "@andesine/sdk": "workspace:*",
-    "@iconify/json": "^2.2.509",
+    "@iconify-json/lucide": "^1.2.140",
+    "@iconify-json/simple-icons": "^1.2.100",
+    "@iconify-json/tabler": "^1.2.41",
     "@iconify/utils": "^3.1.4",
     "@scalar/json-magic": "0.15.2",
     "@scalar/openapi-parser": "0.29.7",

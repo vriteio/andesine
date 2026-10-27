@@ -1,4 +1,4 @@
-import { IconButton } from "@andesine/components";
+import { IconButton, Tooltip } from "@andesine/components";
 import { debounce } from "@solid-primitives/scheduled";
 import { type Editor } from "@tiptap/core";
 import { type Accessor, type Component, createSignal, onCleanup, onMount, Show } from "solid-js";
@@ -11,16 +11,19 @@ import {
   isPointInBlockSelectionControlArea,
   isPointInBlockControlArea,
   isTargetInBlockSelection,
+  keepsViewChildTarget,
   registerSelectionControlHiding
 } from "#editor/ui/block-control-targeting";
 import type { BlockControlTarget } from "#editor/ui/block-control-targeting";
 import { createVerticalAutoScroll } from "#editor/ui/auto-scroll";
-import { BLOCK_CONTROL_HIDE_DELAY } from "#editor/ui/constants";
+import { BLOCK_CONTROL_HIDE_DELAY, BLOCK_CONTROL_MOVE_DELAY } from "#editor/ui/constants";
 import { createDragHandlePlugin, dragHandlePluginKey } from "./drag-handle-plugin";
 import { createListItemTargetResolver } from "./list-item-target";
 import { DragHandleTargetPlugin, dragHandleTargetPluginKey } from "./drag-handle-target-plugin";
 import { isPositionInInheritedField } from "#editor/ui/block-utils";
 import { isTableAtScrollStart } from "#editor/ui/views/table-view/scroll";
+import { getElementIssue, getElementViews } from "#editor/lib/element-content";
+import { useBlockMenuContext } from "#editor/ui/menus/block-menu/context";
 
 interface DragHandleMenuProps {
   editor: Editor;
@@ -42,6 +45,8 @@ const shouldShowDragHandle = (
   );
 
 const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
+  const { openMenu, menuOpened } = useBlockMenuContext();
+
   let wrapperRef: HTMLDivElement | undefined;
   let hoverAreaRef: HTMLDivElement | undefined;
   let pointer = { x: 0, y: 0 };
@@ -50,6 +55,31 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
   let currentControlTarget: BlockControlTarget | null = null;
   let decoratedHeadingTargetPos: number | null = null;
   const [isEmptyParagraph, setIsEmptyParagraph] = createSignal(false);
+  /** Why the target element's content doesn't fit its rules, e.g. a paragraph in a code group. */
+  const [warning, setWarning] = createSignal<string | null>(null);
+  // A click, not a drag, opens the block's menu at the handle; a block selection keeps its blocks.
+  const openBlockMenu = (event: MouseEvent & { currentTarget: HTMLElement }) => {
+    const target = currentControlTarget;
+
+    if (!target) return;
+
+    const isSelected = isTargetInBlockSelection(props.editor, target);
+    const chain = props.editor.chain();
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!isSelected) {
+      chain.setBlockSelection({
+        from: target.pos,
+        to: target.pos + target.node.nodeSize,
+        depth: props.editor.state.doc.resolve(target.pos).depth
+      });
+    }
+
+    chain.focus().run();
+    openMenu(event.currentTarget);
+  };
 
   onMount(() => {
     const menuContainer = props.menuContainerRef();
@@ -67,9 +97,11 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       if (isDragging()) autoScroll.update(event);
     };
     const stopAutoScroll = () => autoScroll.stop();
+    // The handle's target: headings and elements hide their gutter markers, e.g. `H2` or a warning,
+    // which the handle covers, and element views see it in `children`, e.g. to mark a card.
     const updateHeadingIndicator = (visible: boolean) => {
       const target = currentControlTarget;
-      const nextTargetPos = visible && target?.node.type.name === "heading" ? target.pos : null;
+      const nextTargetPos = visible && target ? target.pos : null;
 
       if (nextTargetPos === decoratedHeadingTargetPos) return;
 
@@ -77,6 +109,17 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       props.editor.view.dispatch(
         props.editor.state.tr.setMeta(dragHandleTargetPluginKey, { pos: nextTargetPos })
       );
+    };
+    const updateWarning = () => {
+      const target = currentControlTarget;
+      const elementViews = getElementViews(props.editor);
+      const issue =
+        target?.node.type.name === "element" && elementViews
+          ? getElementIssue(props.editor.state.doc, target.pos, elementViews)
+          : null;
+      const hint = issue?.cleanable ? " Open this menu to clean up." : "";
+
+      setWarning(issue ? `${issue.message}${hint}` : null);
     };
     const updateDragHandleVisibility = () => {
       const visible = shouldShowDragHandle(dragHandleAvailable, isDragging(), currentControlTarget);
@@ -86,6 +129,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       wrapperRef.style.opacity = visible ? "1" : "0";
       wrapperRef.style.pointerEvents = visible && !tableTarget ? "auto" : "none";
       updateHeadingIndicator(visible);
+      updateWarning();
     };
     const setDragHandleAvailable = (available: boolean) => {
       dragHandleAvailable = available;
@@ -144,6 +188,30 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
         (referenceRect.height - wrapperRef.offsetHeight) / 2
       }px`;
     };
+    const showDragHandle = (
+      target: BlockControlTarget,
+      source: BlockControlTarget | null,
+      selection: BlockControlTarget | null
+    ) => {
+      const nodeRect =
+        target.node.type.name === "fragment"
+          ? getBlockControlAnchorRect(props.editor, target)
+          : getCachedElementRect(props.editor, target.dom);
+
+      setCurrentTarget(source, selection);
+      positionDragHandle(target);
+
+      if (hoverAreaRef) {
+        hoverAreaRef.style.top = `${wrapperRef.offsetHeight}px`;
+        hoverAreaRef.style.height = `${Math.max(0, nodeRect.height - wrapperRef.offsetHeight)}px`;
+        hoverAreaRef.style.pointerEvents = target.node.type.name === "table" ? "none" : "auto";
+      }
+
+      hideDragHandle.clear();
+      setDragHandleAvailable(true);
+    };
+    const moveDragHandle = debounce(showDragHandle, BLOCK_CONTROL_MOVE_DELAY);
+
     let pointerFrame: number | null = null;
     let pendingPointer: { x: number; y: number } | null = null;
     const handlePointerMove = (event: PointerEvent) => {
@@ -158,16 +226,34 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
         pendingPointer = null;
         if (!nextPointer) return;
 
+        const previousX = pointer.x;
+
         pointer = nextPointer;
 
         if (!props.editor.isEditable) {
           hideDragHandle.clear();
+          moveDragHandle.clear();
           setDragHandleAvailable(false);
           return;
         }
 
+        // The current view child keeps the handle while the pointer goes out to it.
+        if (
+          dragHandleAvailable &&
+          keepsViewChildTarget(
+            props.editor,
+            currentControlTarget,
+            { ...pointer, previousX },
+            "left"
+          )
+        ) {
+          hideDragHandle.clear();
+          moveDragHandle.clear();
+          return;
+        }
+
         const pointerTarget = listItemTargetResolver.resolve(
-          getBlockControlTargetAtY(props.editor, pointer.y)
+          getBlockControlTargetAtY(props.editor, pointer.y, { x: pointer.x })
         );
         const selectionTarget = getBlockSelectionTopTarget(props.editor);
         const pointerInSelectionArea = Boolean(selectionTarget && isPointerInBlockSelectionArea());
@@ -185,31 +271,29 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
           isPositionInInheritedField(props.editor.state.doc, target.pos) ||
           (!pointerInSelectionArea && !isPointerTargetAvailable(effectivePointerTarget))
         ) {
+          moveDragHandle.clear();
           hideDragHandle();
           return;
         }
 
-        setCurrentTarget(effectivePointerTarget, selectionTarget);
-        const nodeRect =
-          target.node.type.name === "fragment"
-            ? getBlockControlAnchorRect(props.editor, target)
-            : getCachedElementRect(props.editor, target.dom);
-        positionDragHandle(target);
-
-        if (hoverAreaRef) {
-          hoverAreaRef.style.top = `${wrapperRef.offsetHeight}px`;
-          hoverAreaRef.style.height = `${Math.max(0, nodeRect.height - wrapperRef.offsetHeight)}px`;
-          hoverAreaRef.style.pointerEvents = target.node.type.name === "table" ? "none" : "auto";
-        }
+        const isMove = dragHandleAvailable && currentControlTarget?.pos !== target.pos;
 
         hideDragHandle.clear();
-        setDragHandleAvailable(true);
+
+        if (isMove) {
+          moveDragHandle(target, effectivePointerTarget, selectionTarget);
+          return;
+        }
+
+        moveDragHandle.clear();
+        showDragHandle(target, effectivePointerTarget, selectionTarget);
       });
     };
     const handlePointerLeave = () => {
       // Active drags retain the handle after the pointer leaves the editor.
       if (isDragging()) return;
 
+      moveDragHandle.clear();
       hideDragHandle();
     };
 
@@ -227,11 +311,13 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       getDragTarget: () => currentControlTarget,
       onDragStart: () => {
         hideDragHandle.clear();
+        moveDragHandle.clear();
         dragStarting = true;
         updateDragHandleVisibility();
       },
       onDragEnd: () => {
         hideDragHandle.clear();
+        moveDragHandle.clear();
         dragStarting = false;
         autoScroll.stop();
         setDragHandleAvailable(false);
@@ -244,6 +330,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       if (isDragging()) return;
 
       hideDragHandle.clear();
+      moveDragHandle.clear();
       setCurrentTarget(null, null);
       setDragHandleAvailable(false);
       listItemTargetResolver.reset();
@@ -253,6 +340,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
     onCleanup(() => {
       if (pointerFrame !== null) cancelAnimationFrame(pointerFrame);
       hideDragHandle.clear();
+      moveDragHandle.clear();
       scrollContainer?.removeEventListener("pointermove", handlePointerMove);
       scrollContainer?.removeEventListener("pointerleave", handlePointerLeave);
       props.editor.view.dom.removeEventListener("scroll", updateDragHandleVisibility, true);
@@ -302,12 +390,33 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
           }}
         />
       </Show>
-      <IconButton
-        icon="i-lucide:grip-vertical"
-        class="pointer-events-auto cursor-grab active:cursor-grabbing"
-        variant="ghost"
-        badge
-      />
+      <Tooltip
+        content={
+          <div class="flex flex-col items-start gap-px whitespace-normal max-w-52">
+            <span class="font-mono text-[80%] opacity-50 mb-0.5">Warning</span>
+            <span class="text-xs">{warning()}</span>
+          </div>
+        }
+        enabled={Boolean(warning()) && !menuOpened()}
+        placement="right"
+        fixed
+      >
+        <IconButton
+          icon="i-lucide:grip-vertical"
+          class="pointer-events-auto cursor-grab active:cursor-grabbing"
+          variant="ghost"
+          badge
+          onClick={openBlockMenu}
+        />
+        {/* The element's gutter warning, which the handle covers, smaller in its corner. */}
+        <Show when={warning()}>
+          <div class="pointer-events-none absolute -bottom-1 -right-1 flex rounded bg-white">
+            <div class="flex rounded bg-amber-500/10 p-0.5 text-amber-500">
+              <div class="i-lucide:triangle-alert h-3 w-3" />
+            </div>
+          </div>
+        </Show>
+      </Tooltip>
     </div>
   );
 };

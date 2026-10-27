@@ -37,11 +37,16 @@ const createSlashMenuPlugin = (options: {
         return false;
       }
 
-      return (
+      const isSlashCommand =
         (selectedNode?.textContent.startsWith("/") &&
           !selectedNode?.textContent.startsWith("/ ")) ||
-        !selectedNode?.textContent
-      );
+        !selectedNode?.textContent;
+      // Not opened where no block can be inserted, e.g. in a callout that takes only paragraphs.
+      const hasItems =
+        getAvailableSlashMenuItems(options.menuItems(), options.editor, options.mode, state)
+          .length > 0;
+
+      return isSlashCommand && hasItems;
     },
     command({ editor, range, props }) {
       return props.command({

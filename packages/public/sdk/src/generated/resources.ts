@@ -249,7 +249,7 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
     /**
      * Verify a session token
      *
-     * Verifies a session token from the extension frontend and returns its member. Tokens of other extensions, expired tokens, and tokens of an earlier extension generation fail with NOT_FOUND. checks evaluates collection and entry actions for the member limited to the extension's permissions (restricted collections included), so the backend can authorize the member's request.
+     * Verifies a session token from the extension frontend and returns its member. Tokens of other extensions, expired tokens, and tokens of an earlier extension generation fail with NOT_FOUND. checks evaluates collection and entry actions for the member, in collections the extension can read (restricted collections included), so the backend can authorize the member's request.
      */
     verifySession: Operation<"extensions.verifySession", Workspace>;
     /**
@@ -318,6 +318,14 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
      * Lists the extension's storage entries in key order, optionally with a key prefix. A page ends early when its values reach 192 KiB.
      */
     listSelfStorageEntries: Operation<"extensions.listSelfStorageEntries", Workspace>;
+    /**
+     * List custom elements
+     *
+     * The custom elements that the workspace's active extensions draw in the editor, e.g. Tabs: their props, whether they have content, which child blocks their content accepts, and the elements that belong inside them. Write them in MDX as <Name prop="value">content</Name>. The editor guides edits by these rules and offers a clean-up; the API doesn't enforce them.
+     *
+     * Required API key permissions: read:entries. Write permissions also grant read access for the same resource.
+     */
+    listElements: Operation<"extensions.listElements", Workspace>;
   };
   collections: {
     /**
@@ -390,6 +398,19 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
      * });
      */
     move: Operation<"collections.move", Workspace>;
+    /**
+     * Get a collection
+     *
+     * Returns one collection by collectionID, collectionPath, or collectionSlugPath, with its name, path, and ancestors.
+     *
+     * Required API key permissions: read:collections. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.collections.get({
+     *   "collectionID": "coll_example"
+     * });
+     */
+    get: Operation<"collections.get", Workspace>;
     /**
      * List collections
      *
@@ -1683,6 +1704,16 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       multipart: false,
       binary: false,
       anonymous: false
+    }),
+    listElements: operation<"extensions.listElements", Workspace>(request, {
+      method: "get",
+      path: "/extensions/elements",
+      pathParams: [],
+      queryParams: [],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
     })
   },
   collections: {
@@ -1732,6 +1763,16 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       pathParams: ["id"],
       queryParams: [],
       body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    get: operation<"collections.get", Workspace>(request, {
+      method: "get",
+      path: "/collections/get",
+      pathParams: [],
+      queryParams: ["collectionID", "collectionPath", "collectionSlugPath"],
+      body: false,
       multipart: false,
       binary: false,
       anonymous: false

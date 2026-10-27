@@ -1,4 +1,4 @@
-import { getCodeTitle } from "./mdx-components";
+import { readCodeTitle } from "@andesine/converters";
 
 interface TransformerContext {
   /** Sätteri passes the fence meta as a string; other processors pass `{ __raw }`. */
@@ -14,7 +14,7 @@ const shikiCodeTitle = {
   name: "andesine-code-title",
   pre(this: TransformerContext, node: HastElement): void {
     const meta = this.options.meta;
-    const title = getCodeTitle(typeof meta === "string" ? meta : meta?.__raw);
+    const title = readCodeTitle(typeof meta === "string" ? meta : meta?.__raw);
 
     if (title) node.properties["data-title"] = title;
   }

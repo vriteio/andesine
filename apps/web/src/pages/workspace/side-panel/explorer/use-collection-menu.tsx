@@ -6,6 +6,7 @@ import { useNotify } from "#web/context/notifications";
 import { usePublishing } from "#web/context/publishing";
 import { useWorkspace } from "#web/context/workspace";
 import { useTree } from "#web/components/tree";
+import { useExtensionPageItems } from "#web/components/extensions/page-menu-items";
 import { usePublishingActions } from "./publishing-actions";
 import { useSchemaActions } from "./schema-actions";
 import { ExplorerSchemaMigrationMenu } from "./explorer-schema-migration";
@@ -20,6 +21,7 @@ const useCollectionMenu = (collectionID: string) => {
   const params = useParams<{ workspaceID?: string }>();
   const publishingActions = usePublishingActions();
   const schemaActions = useSchemaActions();
+  const extensionPageItems = useExtensionPageItems("collection");
   const [{ selection }, { setExpanded, setRenaming, setSelection }] = useTree();
   const [menuOpened, setMenuOpened] = createSignal(false);
   const startRenaming = (id: string) => {
@@ -384,6 +386,12 @@ const useCollectionMenu = (collectionID: string) => {
 
         return content.canEntry(entry?.collectionID || null, "entry:delete");
       });
+
+    if (!isMulti && !content.offline()) {
+      const pageItems = extensionPageItems.getItems(collectionID);
+
+      if (pageItems.length) opts.push(pageItems);
+    }
 
     if (canDelete) {
       opts.push([

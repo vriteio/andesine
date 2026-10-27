@@ -1,21 +1,53 @@
 import clsx from "clsx";
 import { type Component, createSignal, onMount, Show } from "solid-js";
-import { Card, IconButton, Input, Shortcut, Tooltip, createRef } from "@andesine/components";
-import { type Editor } from "@tiptap/core";
+import {
+  Card,
+  IconButton,
+  LinkInput,
+  Shortcut,
+  Tooltip,
+  createRef,
+  getLinkedEntryID
+} from "@andesine/components";
+import { type ChainedCommands, type Editor } from "@tiptap/core";
 import { validateURL } from "@andesine/document/tiptap";
+import type { EditorLinks } from "#editor/client-types";
 
-const LinkMenu: Component<{
+interface LinkMenuProps {
   editor: Editor;
+  links?: EditorLinks;
   class?: string;
   opened?: boolean;
+  /** Changes the whole link around the cursor, not the selection, e.g. from the link's menu. */
+  cursorLink?: boolean;
   setMode(mode: string): void;
-}> = (props) => {
-  const [url, setUrl] = createSignal("");
-  const [hasLink, setHasLink] = createSignal(false);
+}
+
+const LinkMenu: Component<LinkMenuProps> = (props) => {
+  const initialHref: string = props.editor.getAttributes("link").href || "";
+  const [url, setUrl] = createSignal(initialHref);
   const [invalid, setInvalid] = createSignal(false);
   const [inputRef, setInputRef] = createRef<HTMLInputElement | null>(null);
-  const saveLink = (): void => {
-    const href = validateURL(url());
+  const [cardRef, setCardRef] = createRef<HTMLElement | null>(null);
+  const hasLink = Boolean(initialHref);
+  const entries = () => props.links?.entries() ?? [];
+  // The field shows an entry link as the entry's title.
+  const shownText = () => {
+    const entryID = getLinkedEntryID(url());
+
+    return (entryID && entries().find(({ id }) => id === entryID)?.title) || url();
+  };
+  // A link around the cursor is changed as a whole, and the cursor stays where it was.
+  const cursor = props.editor.state.selection.from;
+  const changeLink = (change: (chain: ChainedCommands) => ChainedCommands) => {
+    const chain = props.editor.chain();
+    const changed = change(props.cursorLink ? chain.extendMarkRange("link") : chain);
+
+    (props.cursorLink ? changed.setTextSelection(cursor) : changed).focus().run();
+  };
+  const saveLink = (chosenHref?: string): void => {
+    const text = inputRef()?.value.trim() ?? "";
+    const href = chosenHref ?? validateURL(text === shownText() ? url() : text);
 
     if (!href) {
       setInvalid(true);
@@ -24,27 +56,24 @@ const LinkMenu: Component<{
       return;
     }
 
-    props.editor.chain().unsetCode().setLink({ href }).focus().run();
+    changeLink((chain) => chain.unsetCode().setLink({ href }));
     props.setMode("format");
   };
   const removeLink = (): void => {
-    props.editor.chain().unsetLink().focus().run();
+    changeLink((chain) => chain.unsetLink());
     props.setMode("format");
   };
 
   onMount(() => {
-    const href = props.editor.getAttributes("link").href || "";
-
-    setUrl(href);
-    setHasLink(Boolean(href));
     setTimeout(() => inputRef()?.focus(), 50);
   });
 
   return (
     <Card
+      ref={setCardRef}
       data-menu="link"
       class={clsx(
-        "relative flex w-full max-w-full p-1 gap-1 rounded-none overflow-x-auto scrollbar-hidden items-center not-prose bg-gray-50 md:w-auto md:max-w-none md:rounded-xl md:overflow-visible",
+        "relative flex w-full max-w-full p-1 gap-1 rounded-none overflow-x-auto scrollbar-hidden items-center not-prose bg-white md:w-auto md:max-w-none md:rounded-xl md:overflow-visible",
         props.class
       )}
       shade
@@ -71,27 +100,26 @@ const LinkMenu: Component<{
           }}
         />
       </Tooltip>
-      <Input
+      <LinkInput
         ref={setInputRef}
         value={url()}
-        setValue={(value) => {
-          setUrl(value);
+        entries={entries()}
+        toHref={validateURL}
+        placeholder="Search entries or enter a URL..."
+        error={
+          invalid()
+            ? "Choose an entry, or enter a URL. Links can use HTTP, HTTPS, or mailto."
+            : undefined
+        }
+        anchor={cardRef}
+        defaultOpen={Boolean(getLinkedEntryID(initialHref))}
+        class="w-56 flex-1"
+        setValue={(href) => {
+          setUrl(href);
           setInvalid(false);
+          saveLink(href);
         }}
-        slot={() => (
-          <Show when={invalid()}>
-            <div class="absolute right-2">
-              <Tooltip content="Invalid URL. Only HTTP, HTTPS, and mailto links are allowed.">
-                <div class="i-lucide:triangle-alert h-4 w-4 text-red-500" />
-              </Tooltip>
-            </div>
-          </Show>
-        )}
-        placeholder="Enter URL..."
-        onEnter={saveLink}
-        class="py-0 my-0 flex-1 w-40"
-        aria-invalid={invalid()}
-        size="xs"
+        onInvalid={() => saveLink()}
       />
       <Tooltip
         content={
@@ -115,7 +143,7 @@ const LinkMenu: Component<{
           }}
         />
       </Tooltip>
-      <Show when={hasLink()}>
+      <Show when={hasLink}>
         <Tooltip
           content={
             <div class="flex flex-col items-center justify-center gap-0.5">

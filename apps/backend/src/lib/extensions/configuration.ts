@@ -58,13 +58,11 @@ const getInvalidFields = (
   schema: ExtensionConfiguration | undefined,
   input: ConfigurationInput
 ): string[] => {
-  const fields = Object.entries(schema?.properties ?? {});
-  const secretFields = new Map(fields.filter(([, field]) => isSecretField(field)));
-  const valuesType = createConfigurationValuesType({
-    type: "object",
-    properties: Object.fromEntries(fields.filter(([, field]) => !isSecretField(field))),
-    additionalProperties: false
-  });
+  const fields = schema ?? [];
+  const secretFields = new Map(
+    fields.filter(isSecretField).map((field) => [field.name, field] as const)
+  );
+  const valuesType = createConfigurationValuesType(fields.filter((field) => !isSecretField(field)));
   const result = valuesType.safeParse(input.values);
   const invalidValues = (result.error?.issues ?? []).flatMap((issue) => {
     return issue.code === "unrecognized_keys" ? issue.keys : [String(issue.path[0])];

@@ -1,7 +1,7 @@
 ---
 import type { Element, RootContent } from "hast";
 import { toHtml } from "hast-util-to-html";
-import { isElement, readElement, toFileTreeItems } from "../runtime.js";
+import { isElement, readElement } from "../runtime.js";
 
 interface Props {
   nodes: RootContent[];
@@ -29,17 +29,17 @@ const getLabels = (items: Element[], label: (item: Element) => string): string[]
 
   return labels;
 };
-// Andesine code blocks have no titles, so a repeated language gets a number, e.g. `bash 2`.
+// Labels like the editor's: the title or language, with a number when repeated, e.g. `bash 2`.
 const getCodeLabels = (items: Element[]): string[] => {
   const counts = new Map<string, number>();
 
   return items.map((pre) => {
-    const language = String(pre.properties.dataLanguage || "Code");
-    const count = (counts.get(language) ?? 0) + 1;
+    const label = String(pre.properties.dataTitle || pre.properties.dataLanguage || "Code");
+    const count = (counts.get(label) ?? 0) + 1;
 
-    counts.set(language, count);
+    counts.set(label, count);
 
-    return count > 1 ? `${language} ${count}` : language;
+    return count > 1 ? `${label} ${count}` : label;
   });
 };
 ---
@@ -76,12 +76,6 @@ const getCodeLabels = (items: Element[]): string[] => {
       );
     }
 
-    if (custom?.name === "FileTree") {
-      const Component = getComponent("FileTree");
-
-      return <Component items={JSON.stringify(toFileTreeItems(children[0]!))} />;
-    }
-
     if (custom) {
       const Component = getComponent(custom.name);
 
@@ -96,7 +90,10 @@ const getCodeLabels = (items: Element[]): string[] => {
       const Code = getComponent("pre");
 
       return (
-        <Code data-language={element.properties.dataLanguage}>
+        <Code
+          data-language={element.properties.dataLanguage}
+          data-title={element.properties.dataTitle}
+        >
           <Fragment set:html={toHtml(element.children)} />
         </Code>
       );

@@ -1,6 +1,6 @@
 import { invalidateBlockControlLayout } from "#editor/ui/block-control-sizing";
 import { type Ref } from "@andesine/components";
-import { type Editor } from "@tiptap/core";
+import { type Editor, type EditorEvents } from "@tiptap/core";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { TextSelection } from "@tiptap/pm/state";
 import { createSignal, createEffect, onCleanup, Show, type ParentComponent } from "solid-js";
@@ -13,6 +13,9 @@ import {
 } from "#editor/extensions/block-selection";
 import { createVerticalAutoScroll } from "#editor/ui/auto-scroll";
 import { forEachSelectedBlock, isEditorBlock } from "#editor/ui/block-utils";
+import { getSelectableRects, getViewChildren } from "#editor/ui/element-view-target";
+import { isShown } from "#editor/ui/keyboard-stops";
+import { showsView } from "#editor/extensions/elements";
 import { createBlockSelectionShade } from "./shade";
 import {
   EMPTY_BOX_SELECTION,
@@ -32,10 +35,13 @@ interface RectBounds {
 }
 interface MarqueeNode {
   closingRect?: RectBounds;
+  /** Shown by a view: covering all its children selects only them, its own selectable UI it. */
+  view?: boolean;
   fragmentPos?: number;
   fragmentRoot?: boolean;
   pos: number;
-  rect: RectBounds;
+  /** None for a view whose opted-in children select it, as for fragments. */
+  rects: RectBounds[];
   size: number;
 }
 
@@ -95,7 +101,7 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
       );
     };
     const intersectsNode = (node: MarqueeNode) =>
-      intersects(node.rect) || Boolean(node.closingRect && intersects(node.closingRect));
+      node.rects.some(intersects) || Boolean(node.closingRect && intersects(node.closingRect));
     const fullySelectedFragments = new Set<number>();
     const intersectedNodes = marqueeNodes.filter(intersectsNode);
     const directSelection = new Set(intersectedNodes.map((node) => node.pos));
@@ -118,7 +124,8 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
       const selectedChildren = children.filter(
         (child) => directSelection.has(child.pos) || fullySelectedFragments.has(child.pos)
       ).length;
-      const allChildrenSelected = children.length > 0 && selectedChildren === children.length;
+      const allChildrenSelected =
+        !node.view && children.length > 0 && selectedChildren === children.length;
       const crossesSelectionContext =
         selectedChildren > 0 && (firstHit < node.pos || lastHit >= node.pos + node.size);
       if (directSelection.has(node.pos) || allChildrenSelected || crossesSelectionContext)
@@ -244,9 +251,33 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
     const addNode = (
       node: ProseMirrorNode,
       pos: number,
-      options: Pick<MarqueeNode, "fragmentPos"> = {}
+      options: Pick<MarqueeNode, "fragmentPos"> & { areas?: DOMRect[] } = {}
     ): MarqueeNode | null => {
       const dom = editor.view.nodeDOM(pos);
+      if (dom instanceof HTMLElement && showsView(editor.view, pos)) {
+        const children = getViewChildren(editor, node, pos);
+        // Its own selectable UI where children select themselves, e.g. an "Add step" button; else
+        // its box, e.g. a card's with its text.
+        const areas = children.length
+          ? (options.areas ?? getSelectableRects(editor, node))
+          : [dom.getBoundingClientRect()];
+        const marqueeNode: MarqueeNode = {
+          view: true,
+          fragmentPos: options.fragmentPos,
+          fragmentRoot: Boolean(children.length),
+          size: node.nodeSize,
+          rects: areas.map(toLocalRect),
+          pos
+        };
+
+        boundingBoxes.push(marqueeNode);
+        children.forEach(({ child, pos: childPos, areas: childAreas }) => {
+          if (isEditorBlock(child))
+            addNode(child, childPos, { fragmentPos: pos, areas: childAreas });
+        });
+
+        return marqueeNode;
+      }
 
       if (dom instanceof HTMLElement) {
         const container =
@@ -264,10 +295,10 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
             ? dom.querySelector<HTMLElement>(':scope > [data-element-tag="closing"]')
             : null;
         const marqueeNode: MarqueeNode = {
-          ...options,
+          fragmentPos: options.fragmentPos,
           fragmentRoot: container,
           size: node.nodeSize,
-          rect: toLocalRect((header || dom).getBoundingClientRect()),
+          rects: (options.areas ?? [(header || dom).getBoundingClientRect()]).map(toLocalRect),
           closingRect: closing ? toLocalRect(closing.getBoundingClientRect()) : undefined,
           pos
         };
@@ -332,15 +363,23 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
       }
 
       const selectedBlocks: HTMLElement[] = [];
+      const marked = new Set(
+        Array.from(
+          editor.view.dom.querySelectorAll<HTMLElement>(
+            "[data-block-area][data-block-marks-selection]"
+          ),
+          (area) => area.dataset.blockArea
+        )
+      );
 
       forEachSelectedBlock(
         doc,
         selection.from,
         selection.to,
-        (_node, pos) => {
+        (node, pos) => {
           const dom = editor.view.nodeDOM(pos);
 
-          if (dom instanceof HTMLElement) selectedBlocks.push(dom);
+          if (isShown(dom) && !marked.has(node.attrs.id)) selectedBlocks.push(dom);
         },
         { includeCoveredFragments: !isFragmentChildBlockSelection(selection) }
       );
@@ -357,6 +396,10 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
 
       frame = requestAnimationFrame(update);
     };
+    // Not for transactions with only plugin state, e.g. the hovered block on each pointer move.
+    const onTransaction = ({ transaction }: EditorEvents["transaction"]) => {
+      if (transaction.docChanged || transaction.selectionSet) scheduleUpdate();
+    };
     const refreshShade = () => {
       invalidateBlockControlLayout(editor);
       shade.refresh();
@@ -367,7 +410,7 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
     observer?.observe(editor.view.dom);
     observer?.observe(container);
     window.addEventListener("resize", refreshShade);
-    editor.on("transaction", scheduleUpdate);
+    editor.on("transaction", onTransaction);
     scheduleUpdate();
 
     onCleanup(() => {
@@ -375,7 +418,7 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
       shade.remove();
       observer?.disconnect();
       window.removeEventListener("resize", refreshShade);
-      editor.off("transaction", scheduleUpdate);
+      editor.off("transaction", onTransaction);
     });
   });
 

@@ -39,6 +39,44 @@ header[data-type="title"] {
   }
 }
 
+// Links
+// Light gray underlines and icons, a step darker on hover, as the link menu's icon. An icon widget
+// at the link's start: a file (i-lucide:file) for an entry link, a globe (i-lucide:globe) for
+// other links; the caret is drawn before or after it (see the boundary cursor). A link to a
+// deleted or unreadable entry is gray.
+// The underline is thicker than the icon's lines, so a shade lighter looks the same.
+.prose-editor a {
+  @apply decoration-gray-300;
+
+  &:hover {
+    @apply decoration-gray-400;
+  }
+}
+
+.prose-editor .link-icon {
+  --link-icon: url("data:image/svg+xml,%3csvg viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='12' cy='12' r='10'/%3e%3cpath d='M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20'/%3e%3cpath d='M2 12h20'/%3e%3c/svg%3e");
+  display: inline-block;
+  width: 0.875em;
+  height: 0.875em;
+  margin-right: 0.125em;
+  vertical-align: -0.0625em;
+  background-color: currentColor;
+  mask: var(--link-icon) no-repeat center / contain;
+  @apply text-gray-400;
+
+  &[data-kind="entry"] {
+    --link-icon: url("data:image/svg+xml,%3csvg viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z'/%3e%3cpath d='M14 2v4a2 2 0 0 0 2 2h4'/%3e%3c/svg%3e");
+  }
+}
+
+.prose-editor a:hover > .link-icon {
+  @apply text-gray-500;
+}
+
+.prose-editor a:has([data-unavailable]) {
+  @apply text-gray-400 decoration-gray-300;
+}
+
 [data-marquee-selecting] [data-property-value] {
   &,
   * {
@@ -297,6 +335,8 @@ header[data-type="title"] {
 
 .ProseMirror-gapcursor::after {
   @apply w-full! border-0!;
+  // The cursor sits at the next block's top: centered in the blocks' 0.5rem margin, less its 2px.
+  top: calc(-0.25rem - 1px) !important;
 }
 
 // Collaboration
@@ -593,8 +633,10 @@ header:only-of-type.is-empty:first-child::before,
   }
 }
 
-// Inline-code cursor
-@keyframes code-mark-cursor-blink {
+// Boundary cursor
+// The caret drawn at a position with two sides, e.g. a code box's edge or an entry link's icon;
+// the browser's caret is hidden meanwhile.
+@keyframes boundary-cursor-blink {
   0%,
   49% {
     opacity: 1;
@@ -604,19 +646,19 @@ header:only-of-type.is-empty:first-child::before,
     opacity: 0;
   }
 }
-.code-mark-cursor-active,
-.code-mark-cursor-active code {
+.boundary-cursor-active,
+.boundary-cursor-active code {
   @apply caret-transparent!;
 }
 
-.code-mark-cursor {
+.boundary-cursor {
   @apply relative z-1 inline-block w-px -translate-y-px -mr-px align-middle bg-gray-700 pointer-events-none;
   height: 1.34375rem;
-  animation: code-mark-cursor-blink 1s steps(1, end) infinite;
+  animation: boundary-cursor-blink 1s steps(1, end) infinite;
 }
 
-.code-mark-cursor--inside {
-  // Use the same inherited gradient stops and direction as the code text.
+// Inside a box, e.g. a code's: the same inherited gradient stops and direction as the code text.
+.boundary-cursor--inside {
   @apply bg-tertiary;
   height: 1.15625rem;
 }
@@ -642,6 +684,20 @@ header:only-of-type.is-empty:first-child::before,
 /* Element tags */
 .prose-editor .element-node {
   @apply relative my-2;
+}
+/*
+ * A warning on an element with blocks that its content rules don't accept: in the gutter, like
+ * heading levels, and like them hidden while the block's drag handle shows there.
+ */
+.prose-editor .element-content-badge {
+  @apply absolute -left-10 top-0 flex h-8 w-8 items-center justify-center text-amber-500;
+}
+.prose-editor .element-content-badge-frame {
+  @apply flex rounded-md bg-amber-500/10 p-1;
+}
+.prose-editor .element-content-badge[hidden],
+.prose-editor .element-node[data-drag-handle-target] > .element-content-badge {
+  @apply hidden;
 }
 .prose-editor .element-node:has(+ .element-node) {
   @apply mb-0;
@@ -671,6 +727,39 @@ header:only-of-type.is-empty:first-child::before,
 .prose-editor .element-content {
   @apply pl-4;
   min-height: 1.5rem;
+}
+/* A view fills its element, e.g. a card in a grid cell. */
+.prose-editor .element-node:has(> [data-element-view]:not([hidden])) {
+  display: flex;
+  flex-direction: column;
+}
+.prose-editor [data-element-view]:not([hidden]) {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+/*
+ * The element spaces blocks, as sites do with collapsing margins; a view's outer margins, e.g. its
+ * card's `my-2`, would add to it, since they can't collapse through the view's root. Important:
+ * extension CSS isn't in a cascade layer, so it'd win over these styles otherwise.
+ */
+.prose-editor [data-element-view] > * > * {
+  margin-block: 0 !important;
+}
+/* A view lays out its own content; the indent and height are for the tag view. */
+.prose-editor [data-content-slot] > .element-content {
+  padding-left: 0;
+}
+.prose-editor [data-content-slot] > .element-content:not(:empty) {
+  min-height: 0;
+}
+/* Without blocks, the slot's placeholder paragraph holds the line; a click on it starts one. */
+.prose-editor [data-content-placeholder] + [data-content-slot] > .element-content {
+  @apply absolute inset-0;
+}
+/* Child blocks that an element view hides, e.g. the tabs that aren't selected; over e.g. flex. */
+.prose-editor [data-element-hidden] {
+  display: none !important;
 }
 .prose-editor .element-content[hidden],
 .prose-editor .element-tag[hidden] {
@@ -757,6 +846,17 @@ header:only-of-type.is-empty:first-child::before,
 .prose-editor .code-block-node.version-diff-added::after,
 .prose-editor .code-block-node.version-diff-removed::after {
   @apply z-1;
+}
+
+/* A plain code block, e.g. in a code group, has no margins or background; its view frames it. */
+.prose-editor [data-element-plain].code-block-node {
+  @apply my-0;
+}
+.prose-editor [data-element-plain].code-block-node .cm-editor::before {
+  @apply hidden;
+}
+.prose-editor [data-element-plain].code-block-node .cm-gutters {
+  @apply bg-transparent;
 }
 
 /* Code block panel-wide scroll viewport */

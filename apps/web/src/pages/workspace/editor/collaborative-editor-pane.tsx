@@ -1,4 +1,6 @@
 import { createEntryImages } from "./images";
+import { useEditorLinks } from "./links";
+import { ICON_PICKER_SETS, loadIconSet } from "#web/lib/extensions/icon-masks";
 import { pruneCachedImages } from "#web/context/workspace/image-cache";
 import { getWorkspaceDatabaseName } from "#web/context/workspace/indexeddb";
 import { Editor, type EditorInstance, type EditorMode } from "@andesine/editor";
@@ -40,6 +42,8 @@ interface CollaborativeEditorPaneProps {
   onTitleChange?(title: string, documentID: string): void;
 }
 
+// The icon sets of element props with the `icon` control, e.g. a card's.
+const EDITOR_ICONS = { sets: ICON_PICKER_SETS, loadSet: loadIconSet };
 const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props) => {
   const notify = useNotify();
   const elementViews = config.PUBLIC_EXTENSIONS_ENABLED ? createElementViews() : undefined;
@@ -79,6 +83,7 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
       !state.resettingSchemaContent
     );
   };
+  const links = useEditorLinks(() => props.workspaceID);
   const images = createMemo(() => {
     const entryID = props.documentID;
     const userID = props.user?.id;
@@ -192,6 +197,8 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
               >
                 <Editor
                   images={images()}
+                  links={props.mode === "schema" ? undefined : links}
+                  icons={EDITOR_ICONS}
                   class={EDITOR_CONTENT_PADDING}
                   doc={documentID}
                   url={`${config.PUBLIC_WS_API_URL}/collab`}

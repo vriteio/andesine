@@ -17,6 +17,14 @@ interface ViewEditor {
   insertAfter(content: ContentNode[]): Promise<void>;
   /** Element views: updates the element's props; call it from a user interaction. */
   setElementProps(props: Record<string, JSONValue>): Promise<void>;
+  /**
+   * Element views: adds a block at the end of the element's content and moves the cursor into
+   * its text, e.g. `{ type: "element", attrs: { name: "Card", props: { title: "Card" } } }` or
+   * `{ type: "codeBlock" }`. An element without `content` gets an empty paragraph, unless
+   * `attrs.selfClosing`; a block without text keeps the cursor where it was. The element's
+   * content rules apply. Call it from a user interaction.
+   */
+  append(block: ContentNode): Promise<void>;
   /** Block action views: closes the view. */
   close(): Promise<void>;
 }
@@ -41,6 +49,9 @@ const useEditor = (): ViewEditor => {
         viewID,
         props: asJSON(props) as Record<string, JSONValue>
       });
+    },
+    append: async (block) => {
+      await request("editor.append", { viewID, block: asJSON(block) });
     },
     close: async () => {
       await request("view.close", { viewID });

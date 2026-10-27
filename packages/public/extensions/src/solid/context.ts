@@ -20,9 +20,11 @@ interface APIFetchResult {
 
 /** The origin `apiFetch` accepts; use it as the SDK `baseURL`. */
 const EXTENSION_API_URL = "https://api.andesine.invalid";
-const SESSION_WAIT = 10_000;
+const HOST_WAIT = 10_000;
 const [permissions, setPermissions] = createSignal<string[]>([]);
 const [backendURL, setBackendURL] = createSignal<string | null>(null);
+// Views can start before the host sends the context, e.g. a panel restored on page load.
+const [hasContext, setHasContext] = createSignal(false);
 const [session, setSession] = createSignal<string | null>(null);
 const [configuration, setConfiguration] = createSignal<Record<string, JSONValue>>({});
 
@@ -32,6 +34,7 @@ const updateContext = (context: ExtensionContext): void => {
   setPermissions(context.permissions);
   setBackendURL(context.backend);
   setConfiguration(context.configuration);
+  setHasContext(true);
 };
 const updateSession = (message: SessionMessage): void => {
   identity = { extensionID: message.extensionID, instance: message.instance };
@@ -82,16 +85,17 @@ const apiFetch: typeof fetch = async (input, init) => {
     );
   }
 };
-const waitForSession = (): Promise<string> => {
+/** Resolves with the first value that the host sends, or fails after `HOST_WAIT`. */
+const waitForHost = <T>(get: () => T | null | false, message: string): Promise<T> => {
   return new Promise((resolve, reject) => {
     const started = Date.now();
     const check = () => {
-      const token = session();
+      const value = get();
 
-      if (token) {
-        resolve(token);
-      } else if (Date.now() - started > SESSION_WAIT) {
-        reject(new ExtensionRequestError("unavailable", "No backend session is available"));
+      if (value) {
+        resolve(value);
+      } else if (Date.now() - started > HOST_WAIT) {
+        reject(new ExtensionRequestError("unavailable", message));
       } else {
         setTimeout(check, 100);
       }
@@ -107,6 +111,8 @@ const backend = {
    * headers (CORS must allow them); verify them with `verifySession` of `@andesine/sdk/extensions`.
    */
   async fetch(path: string, init?: RequestInit): Promise<Response> {
+    await waitForHost(hasContext, "The extension context is not available");
+
     const base = backendURL();
 
     if (!base) throw new ExtensionRequestError("unavailable", "The extension has no backend");
@@ -118,7 +124,10 @@ const backend = {
 
     const headers = new Headers(init?.headers);
 
-    headers.set("Authorization", `Bearer ${await waitForSession()}`);
+    headers.set(
+      "Authorization",
+      `Bearer ${await waitForHost(session, "No backend session is available")}`
+    );
     headers.set("Andesine-Extension", identity.extensionID);
     headers.set("Andesine-Instance", identity.instance);
 

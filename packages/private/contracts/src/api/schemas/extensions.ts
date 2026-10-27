@@ -1,7 +1,10 @@
-import { extensionConfigurationType } from "../../extensions/configuration";
+import { extensionConfigurationFieldsType } from "../../extensions/configuration";
+import { extensionElementPropFieldsType } from "../../extensions/element-props";
 import {
   extensionBlockActionType,
+  extensionElementAcceptsType,
   extensionElementViewType,
+  extensionPageType,
   extensionPanelType
 } from "../../extensions/contributions";
 import {
@@ -30,6 +33,7 @@ type ExtensionCatalogDetails = z.infer<typeof extensionCatalogDetailsType>;
 type ExtensionSummary = z.infer<typeof extensionSummaryType>;
 type ExtensionDetails = z.infer<typeof extensionDetailsType>;
 type ExtensionRuntime = z.infer<typeof extensionRuntimeType>;
+type ExtensionElement = z.infer<typeof extensionElementType>;
 type ExtensionNotification = z.infer<typeof extensionNotificationType>;
 type ExtensionWebhook = z.infer<typeof extensionWebhookType>;
 type ExtensionDelivery = z.infer<typeof extensionDeliveryType>;
@@ -77,7 +81,8 @@ const extensionVersionDetailsType = extensionPresentationType.extend({
   elementViews: z.array(extensionElementViewType),
   blockActions: z.array(extensionBlockActionType),
   panels: z.array(extensionPanelType),
-  configuration: extensionConfigurationType.nullable()
+  pages: z.array(extensionPageType),
+  configuration: extensionConfigurationFieldsType.nullable()
 });
 const extensionCatalogItemType = extensionPresentationType.extend({
   installed: z
@@ -105,6 +110,9 @@ const extensionDetailsType = extensionSummaryType.extend({
 const extensionRuntimeType = z.object({
   id: publicID("ext"),
   name: z.string(),
+  /** For menus that group the extension's pages, with its icon. */
+  displayName: z.string(),
+  icon: z.string().nullable(),
   version: z.string(),
   generation: z.int().positive(),
   grant: extensionGrantType,
@@ -115,12 +123,35 @@ const extensionRuntimeType = z.object({
   }),
   elementViews: z.array(extensionElementViewType),
   blockActions: z.array(extensionBlockActionType),
-  panels: z.array(extensionPanelType)
+  panels: z.array(extensionPanelType),
+  pages: z.array(extensionPageType)
 });
 const extensionActiveViewType = z.object({
   selector: z.string().describe("The lowercase root element name"),
   extensionID: publicID("ext"),
   viewID: z.string()
+});
+const extensionElementChildType = z.object({
+  element: z.string(),
+  name: z.string().optional(),
+  description: z.string().optional(),
+  content: z.boolean().describe("False for an element without content, written as <Name />"),
+  accepts: extensionElementAcceptsType.describe(
+    "The direct child blocks that its content accepts; without it, any blocks"
+  ),
+  rejects: extensionElementAcceptsType.describe(
+    "The direct child blocks that its content doesn't accept, even if `accepts` lists them"
+  ),
+  props: extensionElementPropFieldsType
+    .optional()
+    .describe("The props, with their defaults, which a new element gets")
+});
+const extensionElementType = extensionElementChildType.extend({
+  name: z.string(),
+  extension: z.string().describe("The extension that renders it, e.g. andesine/pages"),
+  children: z
+    .array(extensionElementChildType)
+    .describe("Elements that belong inside this one, e.g. Tab in Tabs")
 });
 const extensionElementViewSettingType = z.object({
   viewID: z.string(),
@@ -357,6 +388,7 @@ export {
   extensionDetailsType,
   extensionRuntimeType,
   extensionActiveViewType,
+  extensionElementType,
   extensionElementViewSettingType,
   extensionStateType,
   extensionSelfType,
@@ -380,6 +412,7 @@ export {
   extensionSessionTokenType
 };
 export type {
+  ExtensionElement,
   ExtensionWebhookDelivery,
   ExtensionWebhookDeliveryDetails,
   ExtensionSessionToken,

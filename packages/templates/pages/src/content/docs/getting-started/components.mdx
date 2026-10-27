@@ -75,34 +75,26 @@ Tabs with the same `syncKey` share their selection:
 ## Steps
 
 <Steps>
-
-1. Install the dependencies
-
-   Run `npm install` in the project directory.
-
-2. Set the site name
-
-   Change `name` in `andesine.config.ts`.
-
-3. Build the site
-
-   Run `npm run build`.
-
+  <Step title="Install the dependencies">Run `npm install` in the project directory.</Step>
+  <Step title="Set the site name">Change `name` in `andesine.config.ts`.</Step>
+  <Step title="Build the site">Run `npm run build`.</Step>
 </Steps>
 
 ## File tree
 
 <FileTree>
-
-- src/
-  - content/
-    - docs/
-      - index.mdx
-  - layouts/
-    - page.astro
-- andesine.config.ts
-- uno.config.ts
-
+  <Folder name="src">
+    <Folder name="content">
+      <Folder name="docs">
+        <File name="index.mdx" />
+      </Folder>
+    </Folder>
+    <Folder name="layouts">
+      <File name="page.astro" />
+    </Folder>
+  </Folder>
+  <File name="andesine.config.ts" />
+  <File name="uno.config.ts" />
 </FileTree>
 
 ## Cards
@@ -116,11 +108,11 @@ Tabs with the same `syncKey` share their selection:
   </Card>
 </CardGrid>
 
-## Disclosure
+## Accordion
 
-<Disclosure title="Why MDX?">
+<Accordion title="Why MDX?">
   MDX lets pages use components. Plain Markdown pages get the same text styles, but no components.
-</Disclosure>
+</Accordion>
 
 ## Visibility
 

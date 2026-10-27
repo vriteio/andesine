@@ -24,7 +24,7 @@ interface ExtensionBuildMetadata {
 type ArtifactName = "frontend" | "styles" | "icons";
 
 const OUTPUT_DIRECTORY = "dist";
-const DEFAULT_FRONTEND = "src/frontend/index.tsx";
+const DEFAULT_FRONTEND = "src/views.tsx";
 const artifactFiles: Record<ArtifactName, string> = {
   frontend: "frontend.js",
   styles: "styles.css",

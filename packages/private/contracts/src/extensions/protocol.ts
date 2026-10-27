@@ -76,6 +76,20 @@ const contentType = z.array(z.json()).min(1).max(100);
 const textMediaType = z
   .string()
   .regex(/^(?:text\/[\w.+-]+|application\/(?:json|xml|typescript|javascript))$/, "Use a text type");
+/** HTTPS URLs, and HTTP ones of the member's own machine, e.g. a local development server. */
+const openURLType = z
+  .url({ protocol: /^https?$/ })
+  .max(2048)
+  .refine((value) => {
+    const { protocol, hostname } = new URL(value);
+    const isLocal =
+      hostname === "localhost" ||
+      hostname.endsWith(".localhost") ||
+      hostname === "127.0.0.1" ||
+      hostname === "[::1]";
+
+    return protocol === "https:" || isLocal;
+  }, "Use an https:// URL");
 /** Parameters of the worker's requests to the host, by method. */
 const extensionRequestParams = {
   "host.copyText": z.strictObject({ text: z.string().max(100_000) }),
@@ -84,7 +98,13 @@ const extensionRequestParams = {
     text: z.string().max(200_000),
     type: textMediaType.optional()
   }),
-  "host.openURL": z.strictObject({ url: z.url({ protocol: /^https$/ }).max(2048) }),
+  "host.openURL": z.strictObject({ url: openURLType }),
+  /** Opens a page of the extension; collection and entry pages need their ID. */
+  "host.openPage": z.strictObject({
+    pageID: z.string().min(1).max(64),
+    collectionID: z.string().min(1).max(64).optional(),
+    entryID: z.string().min(1).max(64).optional()
+  }),
   /** Shows a short notification, e.g. the result of a block action without UI. */
   "host.notify": z.strictObject({
     text: z.string().min(1).max(200),
@@ -99,6 +119,8 @@ const extensionRequestParams = {
     viewID: viewIDType,
     props: z.record(z.string().max(100), z.json())
   }),
+  /** Element views: adds a block at the end of the element's content, e.g. a card. */
+  "editor.append": z.strictObject({ viewID: viewIDType, block: z.json() }),
   /** Closes a block action view. */
   "view.close": z.strictObject({ viewID: viewIDType }),
   /** Storage entry or null. */
@@ -143,6 +165,14 @@ const hostBodyType = z.discriminatedUnion("type", [
     entry: z.string().max(64),
     props: propsType
   }),
+  /** A child element's view from its root view's `<Element tag>` template. */
+  z.strictObject({
+    type: z.literal("view.template"),
+    viewID: viewIDType,
+    rootViewID: viewIDType,
+    tag: z.string().max(100),
+    props: propsType
+  }),
   z.strictObject({ type: z.literal("view.update"), viewID: viewIDType, props: propsType }),
   z.strictObject({ type: z.literal("view.dispose"), viewID: viewIDType }),
   z.strictObject({
@@ -156,6 +186,12 @@ const hostBodyType = z.discriminatedUnion("type", [
     permissions: z.array(z.string().max(100)).max(50),
     backend: z.string().max(2048).nullable(),
     configuration: z.record(z.string(), z.json())
+  }),
+  /** A storage key of the extension was set or deleted, e.g. by its backend. */
+  z.strictObject({
+    type: z.literal("storage"),
+    key: extensionStorageKeyType,
+    exists: z.boolean()
   }),
   /** Backend session token, renewed before expiry; null if unavailable. Verified via `instance`. */
   z.strictObject({

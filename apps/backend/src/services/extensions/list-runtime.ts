@@ -1,7 +1,7 @@
 import { type ExtensionRuntime } from "@andesine/contracts/extensions";
 import { toExtensionID } from "@andesine/contracts/primitives";
 import { extensions } from "@andesine/server/database";
-import { toGrant } from "#backend/lib/extensions/catalog";
+import { toElementViews, toGrant } from "#backend/lib/extensions/catalog";
 import { isVisibleExtension, listInstalledExtensions } from "#backend/lib/extensions/installed";
 import { withAuthorization } from "#backend/lib/policy";
 import { and, eq, isNull } from "drizzle-orm";
@@ -27,6 +27,8 @@ const listRuntime = withAuthorization<Record<never, never>, undefined, Extension
       return {
         id: toExtensionID(extension.id),
         name: extension.name,
+        displayName: manifest.displayName,
+        icon: manifest.icon ?? null,
         version: extension.version,
         generation: extension.generation,
         grant: toGrant(extension),
@@ -35,9 +37,10 @@ const listRuntime = withAuthorization<Record<never, never>, undefined, Extension
           styles: artifacts.styles ?? null,
           icons: artifacts.icons ?? null
         },
-        elementViews: manifest.elementViews,
+        elementViews: toElementViews(manifest),
         blockActions: manifest.blockActions,
-        panels: manifest.panels
+        panels: manifest.panels,
+        pages: manifest.pages ?? []
       };
     });
   }

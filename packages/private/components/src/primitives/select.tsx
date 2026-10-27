@@ -57,7 +57,7 @@ const Select = <O extends Option>(props: SelectProps<O>): JSX.Element => {
               disabled={props.disabled}
             >
               <ArkSelect.ValueText
-                class="min-w-0 flex-1 truncate text-start group-data-[placeholder-shown]/select-trigger:text-gray-400"
+                class="min-w-0 flex-1 truncate pr-1 text-start group-data-[placeholder-shown]/select-trigger:text-gray-400"
                 placeholder={props.placeholder || "Select"}
               />
               <ArkSelect.Indicator class="i-lucide:chevrons-up-down ml-auto shrink-0 text-gray-400" />
@@ -73,7 +73,7 @@ const Select = <O extends Option>(props: SelectProps<O>): JSX.Element => {
                 {...contentProps()}
                 shade
                 class={clsx(
-                  ":base-2: z-50 flex w-[var(--reference-width)] min-w-32 transform flex-col select-none rounded-[0.625rem] bg-white p-1 pointer-events-auto shadow-black shadow-opacity-15 transition duration-200",
+                  ":base-2: z-50 flex w-max min-w-[max(var(--reference-width),8rem)] max-w-[var(--available-width)] transform flex-col select-none rounded-[0.625rem] bg-white p-1 pointer-events-auto shadow-gray-900/8 transition duration-200",
                   "data-[state=open]:visible data-[state=open]:translate-y-0 data-[state=open]:opacity-100",
                   "data-[state=closed]:invisible data-[state=closed]:opacity-0 data-[state=closed]:!shadow-none"
                 )}

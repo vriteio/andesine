@@ -1,3 +1,4 @@
+import { tokenizeElement } from "@andesine/document";
 import type { ElementEditorPresence } from "../../../lib/element-awareness";
 import { createCaret, getCollaborationColor } from "../../../extensions/collaboration-caret";
 
@@ -48,4 +49,18 @@ const renderElementTag = (source: string, remote: ElementEditorPresence | null):
   });
 };
 
-export { renderElementTag };
+/** The closing tag, with its tokens colored while the tag is edited. */
+const renderClosingTag = (text: string, editing: boolean): Array<HTMLElement | string> => {
+  if (!editing) return [text];
+
+  return tokenizeElement(text).map((token) => {
+    const span = document.createElement("span");
+
+    span.className = `element-token-${token.kind}`;
+    span.textContent = text.slice(token.from, token.to);
+
+    return span;
+  });
+};
+
+export { renderClosingTag, renderElementTag };

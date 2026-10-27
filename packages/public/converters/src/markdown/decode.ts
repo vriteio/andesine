@@ -1,5 +1,5 @@
 import type { Root, RootContent } from "mdast";
-import { ConversionError, textNode, withMark } from "../utils";
+import { ConversionError, readCodeTitle, textNode, withMark } from "../utils";
 import type { ContentNode, DecodeContext } from "../types";
 
 type MarkdownNode = Root | RootContent;
@@ -69,7 +69,7 @@ const decodeMarkdown = async (
     case "code":
       return {
         type: "codeBlock",
-        attrs: { language: node.lang || null },
+        attrs: { language: node.lang || null, title: readCodeTitle(node.meta) ?? null },
         content: textNode(node.value)
       };
     case "inlineCode":

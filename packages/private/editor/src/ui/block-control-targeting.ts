@@ -11,12 +11,14 @@ import {
   getBlockControlLayoutVersion,
   getCachedElementRect,
   getEditorScrollContainer,
+  isElementViewChild,
   isPointInBlockControlArea,
   type BlockControlSide,
   type BlockControlTarget
 } from "./block-control-sizing";
 import { BLOCK_CONTROL_PROXIMITY_RATIO, LIST_ITEM_TYPES } from "./constants";
 import { createElementChildTargetResolver } from "./element-child-target";
+import { getContentAtPoint, getViewTargetAtPoint } from "./element-view-target";
 
 interface BlockControlRange {
   from: number;
@@ -25,6 +27,8 @@ interface BlockControlRange {
 interface BlockControlHit {
   insideFragment: boolean;
   target: BlockControlTarget | null;
+  /** The target is from an element view's DOM, so it isn't guessed from the line. */
+  inView?: boolean;
 }
 interface BlockSelectionBounds {
   blockLeft: number;
@@ -272,11 +276,17 @@ const registerSelectionControlHiding = (editor: Editor, hideControls: () => void
 const getBlockControlHitAtY = (
   editor: Editor,
   y: number,
-  { listItemSpecific = true }: { listItemSpecific?: boolean } = {}
+  { listItemSpecific = true, x: pointerX }: { listItemSpecific?: boolean; x?: number } = {}
 ): BlockControlHit => {
   const { state, view } = editor;
   const editorRect = getCachedElementRect(editor, view.dom);
   const x = editorRect.x + editorRect.width / 2;
+  // At the pointer, or on the line's center while the pointer is in the gutter.
+  const isInContent = pointerX !== undefined && Boolean(getContentAtPoint(editor, pointerX, y));
+  const viewTarget = getViewTargetAtPoint(editor, isInContent ? pointerX! : x, y, listItemSpecific);
+
+  if (viewTarget !== undefined) return { insideFragment: false, target: viewTarget, inView: true };
+
   const structureHit = getStructureHitAtPoint(editor, x, y);
 
   if (structureHit.target) return structureHit;
@@ -332,7 +342,7 @@ const getBlockControlHitAtY = (
 const getBlockControlTargetAtY = (
   editor: Editor,
   y: number,
-  options?: { listItemSpecific?: boolean }
+  options?: { listItemSpecific?: boolean; x?: number }
 ): BlockControlTarget | null => {
   const listItemSpecific = options?.listItemSpecific ?? true;
   const resolvers =
@@ -342,7 +352,33 @@ const getBlockControlTargetAtY = (
 
   resolvers.set(listItemSpecific, resolve);
   elementChildTargetResolvers.set(editor, resolvers);
-  return resolve(getBlockControlHitAtY(editor, y, options).target, y);
+  const hit = getBlockControlHitAtY(editor, y, options);
+
+  return hit.inView ? hit.target : resolve(hit.target, y);
+};
+/**
+ * Whether a view child keeps the controls while the pointer goes out to them, e.g. from the second
+ * card in a row over the first one to the gutter: beside the target, moving away from it, or out of
+ * the content.
+ */
+const keepsViewChildTarget = (
+  editor: Editor,
+  target: BlockControlTarget | null,
+  pointer: { x: number; y: number; previousX: number },
+  side: BlockControlSide
+): boolean => {
+  if (!target?.dom.isConnected || !isElementViewChild(target)) return false;
+
+  const rect = getCachedElementRect(editor, target.dom);
+  // The top-level block's edges, where the controls are.
+  const content = getBlockControlAnchorRect(editor, target);
+  const isBeside = pointer.y >= rect.top && pointer.y <= rect.bottom;
+  const isOutward =
+    side === "left"
+      ? pointer.x < rect.left && (pointer.x < pointer.previousX || pointer.x < content.left)
+      : pointer.x > rect.right && (pointer.x > pointer.previousX || pointer.x > content.right);
+
+  return isBeside && isOutward;
 };
 
 export {
@@ -355,6 +391,7 @@ export {
   isPointInBlockSelectionControlArea,
   isPointInBlockControlArea,
   isTargetInBlockSelection,
+  keepsViewChildTarget,
   registerSelectionControlHiding
 };
 export type { BlockControlSide, BlockControlTarget, BlockControlRange };

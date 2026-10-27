@@ -20,12 +20,15 @@ interface ExtensionHostActions {
   /** `declared` URLs open directly; others need the member's confirmation. */
   openURL(url: string, declared: boolean, extension: string): Promise<void>;
   notify(notification: ExtensionRequestParams<"host.notify">, extension: string): void;
+  /** False when the extension has no such page, or the context doesn't fit it or its conditions. */
+  openPage(extensionID: string, target: ExtensionRequestParams<"host.openPage">): Promise<boolean>;
 }
 /** What a view's edit requests act on: its block action selection or its element. */
 interface ExtensionViewTarget {
   replace?(content: unknown[]): boolean;
   insertAfter?(content: unknown[]): boolean;
   setElementProps?(props: Record<string, unknown>): boolean;
+  append?(block: unknown): boolean;
   close?(): void;
 }
 interface RequestError {
@@ -34,7 +37,9 @@ interface RequestError {
 }
 interface ExtensionRequestHandlerOptions {
   extensionID: string;
+  /** The registry name, which security prompts show, e.g. before an undeclared URL opens. */
   name: string;
+  displayName: string;
   sources: string[];
   getActions(): ExtensionHostActions | null;
   getViewTarget(viewID: string): ExtensionViewTarget | undefined;
@@ -59,11 +64,15 @@ type RequestPerformers = {
 
 // Browsers keep user activation for about five seconds.
 const INTERACTION_WINDOW = 5_000;
+// Opening a page is in-app navigation, often after a slow save, so its interaction can be older.
+const PAGE_INTERACTION_WINDOW = 60_000;
 const INTERACTIVE_METHODS = new Set<ExtensionRequestMethod>([
   "host.copyText",
   "host.downloadFile",
   "host.openURL",
-  "editor.setElementProps"
+  "host.openPage",
+  "editor.setElementProps",
+  "editor.append"
 ]);
 
 /** A plain file name: no paths, control characters, reserved characters, or leading dots. */
@@ -100,12 +109,14 @@ const createRequestHandler = (options: ExtensionRequestHandlerOptions): Extensio
     const limits = { host: actionLimit, api: apiLimit, storage: apiLimit };
     const limit = limits[method.split(".")[0] as keyof typeof limits] ?? editLimit;
     const isInteractive = INTERACTIVE_METHODS.has(method);
+    const interactionWindow =
+      method === "host.openPage" ? PAGE_INTERACTION_WINDOW : INTERACTION_WINDOW;
 
     if (pending >= extensionProtocolLimits.pendingRequests || !consume(limit, now)) {
       return { code: "too_many_requests", message: "Too many requests" };
     }
 
-    if (isInteractive && now - lastInteraction > INTERACTION_WINDOW) {
+    if (isInteractive && now - lastInteraction > interactionWindow) {
       return {
         code: "user_interaction_required",
         message: "This request needs a user interaction"
@@ -118,7 +129,7 @@ const createRequestHandler = (options: ExtensionRequestHandlerOptions): Extensio
     const requireActions = () => actions ?? rejectEdit();
 
     return {
-      "host.copyText": ({ text }) => requireActions().copyText(text, options.name),
+      "host.copyText": ({ text }) => requireActions().copyText(text, options.displayName),
       "host.downloadFile": (file) => {
         const name = sanitizeFileName(file.name);
         const type = file.type ?? "text/plain";
@@ -128,7 +139,12 @@ const createRequestHandler = (options: ExtensionRequestHandlerOptions): Extensio
       "host.openURL": ({ url }) => {
         return requireActions().openURL(url, isDeclaredURL(url, options.sources), options.name);
       },
-      "host.notify": (notification) => requireActions().notify(notification, options.name),
+      "host.notify": (notification) => {
+        return requireActions().notify(notification, options.displayName);
+      },
+      "host.openPage": async (target) => {
+        if (!(await requireActions().openPage(options.extensionID, target))) rejectEdit();
+      },
       "editor.replace": ({ viewID, content }) => {
         if (!options.getViewTarget(viewID)?.replace?.(content)) rejectEdit();
       },
@@ -137,6 +153,9 @@ const createRequestHandler = (options: ExtensionRequestHandlerOptions): Extensio
       },
       "editor.setElementProps": ({ viewID, props }) => {
         if (!options.getViewTarget(viewID)?.setElementProps?.(props)) rejectEdit();
+      },
+      "editor.append": ({ viewID, block }) => {
+        if (!options.getViewTarget(viewID)?.append?.(block)) rejectEdit();
       },
       "view.close": ({ viewID }) => (options.getViewTarget(viewID)?.close ?? rejectEdit)(),
       "api.fetch": (params) => fetchExtensionAPI(params, options.getAPIContext()),

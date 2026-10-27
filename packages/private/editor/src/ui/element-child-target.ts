@@ -12,25 +12,26 @@ interface ElementChildTarget {
   target: BlockControlTarget;
 }
 
+/** The block that a node's DOM shows, e.g. a paragraph's `<p>`. */
+const getTargetForDOM = (editor: Editor, dom: HTMLElement): BlockControlTarget | null => {
+  const position = editor.view.posAtDOM(dom, 0);
+  const $position = editor.state.doc.resolve(position);
+
+  for (const pos of [
+    position,
+    ...Array.from({ length: $position.depth }, (_, index) =>
+      $position.before($position.depth - index)
+    )
+  ]) {
+    const node = editor.state.doc.nodeAt(pos);
+
+    if (node && editor.view.nodeDOM(pos) === dom) return { dom, node, pos };
+  }
+  return null;
+};
 const createElementChildTargetResolver = (editor: Editor) => {
   let lastTarget: ElementChildTarget | null = null;
 
-  const getTarget = (dom: HTMLElement): BlockControlTarget | null => {
-    const position = editor.view.posAtDOM(dom, 0);
-    const $position = editor.state.doc.resolve(position);
-
-    for (const pos of [
-      position,
-      ...Array.from({ length: $position.depth }, (_, index) =>
-        $position.before($position.depth - index)
-      )
-    ]) {
-      const node = editor.state.doc.nodeAt(pos);
-
-      if (node && editor.view.nodeDOM(pos) === dom) return { dom, node, pos };
-    }
-    return null;
-  };
   const resolve = (candidate: BlockControlTarget | null, y: number): BlockControlTarget | null => {
     const { doc } = editor.state;
     const contents = Array.from(
@@ -71,7 +72,7 @@ const createElementChildTargetResolver = (editor: Editor) => {
     };
     const nearest = Array.from(content.children)
       .filter((dom): dom is HTMLElement => dom instanceof HTMLElement)
-      .map(getTarget)
+      .map((dom) => getTargetForDOM(editor, dom))
       .filter((target): target is BlockControlTarget => Boolean(target))
       .reduce<BlockControlTarget | null>((previous, target) => {
         return !previous || distance(target.dom) < distance(previous.dom) ? target : previous;
@@ -84,4 +85,4 @@ const createElementChildTargetResolver = (editor: Editor) => {
   return resolve;
 };
 
-export { createElementChildTargetResolver };
+export { createElementChildTargetResolver, getTargetForDOM };

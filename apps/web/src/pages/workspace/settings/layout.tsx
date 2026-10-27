@@ -11,6 +11,7 @@ import { type Component, createEffect, onCleanup, Show, Suspense } from "solid-j
 import { ExtensionIcon } from "#web/components/extensions/extension-icon";
 import { useWorkspace } from "#web/context/workspace";
 import { config } from "#web/lib/api";
+import { isExtensionChange } from "#web/lib/extensions";
 import { useRouteData } from "#web/lib/navigation";
 import { SettingsProvider } from "./settings-context";
 import { VerificationDialog } from "./verification-dialog";
@@ -129,10 +130,7 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
     }
 
     // Extensions manage some keys.
-    if (
-      route === "api" &&
-      (event.action.startsWith("key:") || event.action.startsWith("extension:"))
-    ) {
+    if (route === "api" && (event.action.startsWith("key:") || isExtensionChange(event.action))) {
       queryKeys.add("api-keys");
     }
 
@@ -148,7 +146,7 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
       queryKeys.add("webhook-event-timeline");
     }
 
-    if (route?.startsWith("extension") && event.action.startsWith("extension:")) {
+    if (route?.startsWith("extension") && isExtensionChange(event.action)) {
       queryKeys.add("extensions");
       queryKeys.add("extension");
       queryKeys.add("extension-configuration");

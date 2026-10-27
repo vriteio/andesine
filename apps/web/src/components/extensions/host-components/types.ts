@@ -11,6 +11,8 @@ interface HostComponentProps<N extends ExtensionComponentName> {
   props: ExtensionComponentProps<N>;
   /** Calls the extension callback of an event with plain values. */
   emit(event: string, ...args: unknown[]): void;
+  /** Whether the extension handles an event, e.g. to show a row as clickable. */
+  hasEvent(event: string): boolean;
   children?: JSX.Element;
   /** Child nodes, for components that wrap or select their children (lists, tabs, steps). */
   childNodes(): ExtensionTreeNode[];
@@ -28,13 +30,28 @@ interface HostComponentProps<N extends ExtensionComponentName> {
 
 type HostComponents = { [N in ExtensionComponentName]: Component<HostComponentProps<N>> };
 
-const gapClasses = { none: "gap-0", small: "gap-1", medium: "gap-2", large: "gap-4" };
+// Host defaults are `:base:`, a low layer, so that a view's classes always win, e.g. `gap-1.5`.
+const gapClasses = {
+  none: ":base: gap-0",
+  small: ":base: gap-1",
+  medium: ":base: gap-2",
+  large: ":base: gap-4"
+};
 const toneClasses = {
   default: "",
-  muted: "text-gray-500",
-  danger: "text-red-500",
-  success: "text-green-500"
+  muted: ":base: text-gray-500",
+  danger: ":base: text-red-500",
+  success: ":base: text-green-500"
 };
 
-export { gapClasses, toneClasses };
+// Icon colors of statuses, e.g. on `Item` rows and badges; the text stays neutral.
+const iconToneClasses = {
+  muted: "text-gray-400",
+  primary: "bg-gradient-to-tr",
+  success: "text-green-500",
+  warning: "text-amber-500",
+  danger: "text-red-500"
+};
+
+export { gapClasses, iconToneClasses, toneClasses };
 export type { HostComponentProps, HostComponents };

@@ -17,9 +17,7 @@ const isSecretField = (field: ExtensionConfigurationField): boolean => {
   return "secret" in field && field.secret === true;
 };
 const getSecretKeys = (schema: ExtensionConfiguration | undefined): string[] => {
-  return Object.entries(schema?.properties ?? {})
-    .filter(([, field]) => isSecretField(field))
-    .map(([key]) => key);
+  return (schema ?? []).filter(isSecretField).map(({ name }) => name);
 };
 /** Non-secret values: stored values that still match their field, otherwise the defaults. */
 const resolveConfigurationValues = (
@@ -28,15 +26,15 @@ const resolveConfigurationValues = (
 ): ConfigurationValues => {
   const values: ConfigurationValues = {};
 
-  for (const [key, field] of Object.entries(schema?.properties ?? {})) {
+  for (const field of schema ?? []) {
     if (isSecretField(field)) continue;
 
-    const result = createConfigurationValueType(field).safeParse(stored[key]);
+    const result = createConfigurationValueType(field).safeParse(stored[field.name]);
 
     if (result.success) {
-      values[key] = result.data;
+      values[field.name] = result.data;
     } else if (field.default !== undefined) {
-      values[key] = field.default;
+      values[field.name] = field.default;
     }
   }
 
@@ -48,7 +46,7 @@ const getMissingConfiguration = async (
   extensionID: string,
   schema: ExtensionConfiguration | undefined
 ): Promise<string[]> => {
-  const required = schema?.required ?? [];
+  const required = (schema ?? []).filter((field) => field.required);
 
   if (!schema || !required.length) return [];
 
@@ -62,11 +60,13 @@ const getMissingConfiguration = async (
     .where(eq(extensionSecrets.extensionID, extensionID));
   const values = resolveConfigurationValues(schema, stored?.values ?? {});
 
-  return required.filter((key) => {
-    return isSecretField(schema.properties[key])
-      ? !secrets.some((secret) => secret.key === key)
-      : values[key] === undefined;
-  });
+  return required
+    .filter((field) => {
+      return isSecretField(field)
+        ? !secrets.some((secret) => secret.key === field.name)
+        : values[field.name] === undefined;
+    })
+    .map(({ name }) => name);
 };
 
 export { isSecretField, getSecretKeys, resolveConfigurationValues, getMissingConfiguration };

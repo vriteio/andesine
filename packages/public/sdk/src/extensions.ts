@@ -13,7 +13,7 @@ interface ExtensionBackendOptions {
   client?: Omit<ClientOptions, "baseURL" | "apiKey" | "accessToken">;
 }
 interface VerifySessionOptions {
-  /** Actions to check for the member and the extension; results are in `checks`, in order. */
+  /** Member actions to check in collections the extension can read; results are in `checks`. */
   checks?: SessionCheck[];
 }
 interface ExtensionSessionContext extends VerifiedSession {

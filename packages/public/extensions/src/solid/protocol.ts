@@ -13,10 +13,12 @@ type RequestMethod =
   | "host.copyText"
   | "host.downloadFile"
   | "host.openURL"
+  | "host.openPage"
   | "host.notify"
   | "editor.replace"
   | "editor.insertAfter"
   | "editor.setElementProps"
+  | "editor.append"
   | "view.close"
   | "storage.get"
   | "storage.set"
@@ -45,6 +47,13 @@ type HostMessageBody =
   | { type: "heartbeat"; id: number }
   | { type: "dispose" }
   | { type: "view.create"; viewID: string; entry: string; props: Record<string, JSONValue> }
+  | {
+      type: "view.template";
+      viewID: string;
+      rootViewID: string;
+      tag: string;
+      props: Record<string, JSONValue>;
+    }
   | { type: "view.update"; viewID: string; props: Record<string, JSONValue> }
   | { type: "view.dispose"; viewID: string }
   | { type: "callback"; callback: number; args: JSONValue[] }
@@ -54,6 +63,7 @@ type HostMessageBody =
       backend: string | null;
       configuration: Record<string, JSONValue>;
     }
+  | { type: "storage"; key: string; exists: boolean }
   | {
       type: "session";
       token: string | null;

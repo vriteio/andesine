@@ -52,13 +52,13 @@ const buttonElements = {
 
 const baseClasses =
   ":base: transition-[background-position,opacity] relative ease-out duration-200 font-medium !ring-0 !focus:ring-0 disabled:opacity-70";
-const outlinedClasses = ":base: outline outline-1 -outline-offset-1 shadow-md";
+const outlinedClasses = ":base: outline outline-1 -outline-offset-1 shadow-md disabled:shadow-none";
 const flatClasses = ":base: bg-transparent !focus:outline-none !focus-visible:outline-none";
 const gradientClasses = ":base: bg-gradient-to-tr from-secondary via-primary to-secondary";
 const sizeClasses: Record<ButtonSize, string> = {
-  xs: ":base: px-1 py-0.5 text-xs",
-  small: ":base: px-1.5 py-1 text-sm",
-  medium: ":base: px-2 py-1 text-base"
+  xs: ":base: px-1 py-0.5 text-xs rounded-lg",
+  small: ":base: px-1.5 py-1 text-sm rounded-lg",
+  medium: ":base: px-2 py-1 text-base rounded-lg"
 };
 const iconButtonSizes = {
   xs: { button: ":base-2: p-1", icon: ":base: w-4.5 h-4.5", label: ":base: pl-1" },
@@ -69,9 +69,9 @@ const variantClasses: Record<ButtonVariant, string> = {
   primary: clsx(
     outlinedClasses,
     gradientClasses,
-    ":base: bg-[length:125%_auto] text-white outline-tertiary"
+    ":base: bg-[length:125%_auto] text-white outline-tertiary shadow-tertiary/25"
   ),
-  secondary: clsx(outlinedClasses, ":base: bg-white outline-gray-200 shadow-gray-200"),
+  secondary: clsx(outlinedClasses, ":base: bg-white outline-gray-200 shadow-gray-900/8"),
   ghost: flatClasses,
   link: clsx(flatClasses, gradientClasses, ":base: text-transparent bg-clip-text"),
   danger: clsx(outlinedClasses, ":base: bg-red-500 outline-red-600 text-white")
@@ -82,7 +82,7 @@ const hoverClasses: Record<ButtonVariant, string> = {
     ":base: @hover:bg-right focus-visible:bg-right @hover:outline-tertiary focus-visible:outline-tertiary",
   secondary:
     ":base: @hover:bg-gray-50 focus-visible:bg-gray-50 @hover:outline-gray-200 focus-visible:outline-gray-200",
-  ghost: ":base: @hover:bg-gray-200 focus-visible:bg-gray-200",
+  ghost: ":base: @hover:bg-gray-100 focus-visible:bg-gray-200",
   link: "",
   danger:
     ":base: @hover:bg-red-600 focus-visible:bg-red-600 @hover:outline-red-700 focus-visible:outline-red-700"
@@ -143,7 +143,6 @@ const Button: Component<ButtonProps> = (providedProps) => {
         props.text && isGray(props.variant) && textClasses[props.text],
         hovers() && hoverClasses[props.variant],
         disabledLink() && ":base: opacity-70 pointer-events-none",
-        props.variant !== "link" && ":base: rounded-lg",
         props.class
       )}
       disabled={component() === "button" ? disabled() : undefined}

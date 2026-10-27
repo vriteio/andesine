@@ -15,6 +15,7 @@ import { useExplorerCollection, type ExplorerCollectionProps } from "./use-explo
 import { EXPLORER_GESTURE_PROPS } from "./explorer-dnd";
 import { usePublishing } from "#web/context/publishing";
 import { useParams } from "@solidjs/router";
+import { useExtensionPageHighlight } from "#web/lib/navigation/extension-page-highlight";
 import { ExplorerSchemaMigrationIndicator } from "./explorer-schema-migration";
 import { OverlayCollection } from "./overlay-collection";
 import { OverlayEntry } from "./overlay-entry";
@@ -22,6 +23,7 @@ import { OverlayEntry } from "./overlay-entry";
 const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
   const publishing = usePublishing();
   const params = useParams<{ slug?: string }>();
+  const pageHighlight = useExtensionPageHighlight();
   const {
     BoundaryDropTarget,
     closestEdge,
@@ -45,8 +47,10 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
   const reverting = () => publishing.isCollectionReverting(props.collection.id);
   const publishingEnabledRoot = () => content.isCollectionPublishingRoot(props.collection.id);
   const schema = () => content.schemas.get(props.collection.id);
-  const schemaOpened = () => params.slug === schema()?.id;
-  const collectionEditorOpened = () => props.collection.id === params.slug || schemaOpened();
+  // Without a slug, e.g. on extension pages, nothing is open; collections may have no schema.
+  const schemaOpened = () => Boolean(params.slug) && params.slug === schema()?.id;
+  const highlighted = () => schemaOpened() || props.collection.id === pageHighlight();
+  const collectionEditorOpened = () => props.collection.id === params.slug || highlighted();
   const schemaMigration = () => content.getSchemaMigration(props.collection.id);
   const restricted = () => {
     return content.collections.isRestricted({ collectionID: props.collection.id });
@@ -131,7 +135,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
               id={props.collection.id}
               label={props.collection.name}
               topLevel={props.topLevel}
-              highlighted={(isDraggedOver() && !isExpandedEmpty()) || schemaOpened()}
+              highlighted={(isDraggedOver() && !isExpandedEmpty()) || highlighted()}
               selectable
               ref={setElementRef}
               dataAttributes={{ collection: props.collection.id }}
@@ -165,7 +169,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                     data-element="collection-icon"
                     class={clsx(
                       "h-6 w-6 text-gray-400 transition-transform",
-                      (isSelected(props.collection.id) || isDraggedOver() || schemaOpened()) &&
+                      (isSelected(props.collection.id) || isDraggedOver() || highlighted()) &&
                         "bg-gradient-to-tr",
                       isExpanded(props.collection.id)
                         ? "i-material-symbols:folder-open-rounded"

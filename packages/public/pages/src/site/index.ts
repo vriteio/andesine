@@ -80,7 +80,7 @@ const toParam = (href: string, base: string): string | undefined => {
 /** Creates the routes of loaded sources, with the page context of each page. */
 const createSiteRoutes = (config: PagesConfig, sources: SourceData[]): SiteRoute[] => {
   const sections = createSections(config, sources);
-  const site = createSiteContext(config);
+  const site = createSiteContext(config, sources);
   const shownSections = config.sections.length ? sections : [];
 
   return createRoutes(config.base, sections).map((route: Route) => {
@@ -150,9 +150,9 @@ const getSocialPaths = async (config: PagesConfig): Promise<SocialPath[]> => {
 };
 /** The context of the not-found page, with the navigation of the first section. */
 const getNotFoundContext = async (config: PagesConfig): Promise<PageContext> => {
-  const sections = createSections(config, await loadStaticSources(config));
-
-  const site = createSiteContext(config);
+  const sources = await loadStaticSources(config);
+  const sections = createSections(config, sources);
+  const site = createSiteContext(config, sources);
   const title = "Page not found";
 
   return {

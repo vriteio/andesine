@@ -67,7 +67,8 @@ const markdocAdapter: FormatAdapter<MarkdocNode> = {
       case "codeBlock":
         return new Markdoc.Ast.Node("fence", {
           language: attrs.language || "",
-          content: textContent(node)
+          content: textContent(node),
+          ...(attrs.title ? { title: attrs.title } : {})
         });
       case "hardBreak":
         return new Markdoc.Ast.Node("hardbreak");
@@ -194,7 +195,7 @@ const markdocAdapter: FormatAdapter<MarkdocNode> = {
       case "fence":
         return {
           type: "codeBlock",
-          attrs: { language: attrs.language || null },
+          attrs: { language: attrs.language || null, title: attrs.title || null },
           content: textNode(String(attrs.content || "").replace(/\n$/, ""))
         };
       case "hardbreak":

@@ -1,5 +1,6 @@
 import type { ContentNode } from "@andesine/converters";
 import { toMDX } from "@andesine/converters/mdx";
+import { isEntryLink } from "../navigation/links";
 import { filterVisibility } from "./visibility";
 
 interface MarkdownOptions {
@@ -8,19 +9,23 @@ interface MarkdownOptions {
   linkURL(href: string): string;
 }
 
+/** Rewrites links; links to entries without a page on the site are left out, as on the pages. */
 const rewriteLinks = (node: ContentNode, linkURL: (href: string) => string): ContentNode => {
-  const props = node.attrs?.props as Record<string, unknown> | undefined;
-  const href = props?.href;
+  const { href, ...props } = (node.attrs?.props ?? {}) as Record<string, unknown>;
   const isLinkedCard =
     node.type === "element" && node.attrs?.name === "Card" && typeof href === "string";
+  const cardURL = isLinkedCard ? linkURL(href) : null;
+  const cardProps = cardURL && !isEntryLink(cardURL) ? { ...props, href: cardURL } : props;
 
   return {
     ...node,
-    attrs: isLinkedCard ? { ...node.attrs, props: { ...props, href: linkURL(href) } } : node.attrs,
-    marks: node.marks?.map((mark) => {
-      return mark.type === "link" && typeof mark.attrs?.href === "string"
-        ? { ...mark, attrs: { ...mark.attrs, href: linkURL(mark.attrs.href) } }
-        : mark;
+    attrs: isLinkedCard ? { ...node.attrs, props: cardProps } : node.attrs,
+    marks: node.marks?.flatMap((mark) => {
+      if (mark.type !== "link" || typeof mark.attrs?.href !== "string") return [mark];
+
+      const url = linkURL(mark.attrs.href);
+
+      return isEntryLink(url) ? [] : [{ ...mark, attrs: { ...mark.attrs, href: url } }];
     }),
     content: node.content?.map((child) => rewriteLinks(child, linkURL))
   };

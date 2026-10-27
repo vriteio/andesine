@@ -6,7 +6,9 @@
     "start": "dotenv -- turbo start",
     "build": "dotenv -- turbo build",
     "check": "pnpm lint && pnpm format:check",
-    "dev": "dotenv -- turbo dev",
+    "dev": "dotenv -- turbo dev --filter=@andesine/backend --filter=@andesine/web --filter=@andesine/worker",
+    "services": "docker compose -f compose.dev.yaml up -d --wait",
+    "services:stop": "docker compose -f compose.dev.yaml stop",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
@@ -18,6 +20,8 @@
     "db:migrate": "turbo run db:migrate --filter=@andesine/backend",
     "db:studio": "turbo run db:studio --filter=@andesine/backend",
     "dev:email": "dotenv -- turbo run dev:email --filter=@andesine/templates",
+    "dev:edge": "dotenv -- turbo dev --filter=@andesine/edge",
+    "dev:landing": "dotenv -- turbo dev --filter=@andesine/landing",
     "deploy:edge": "dotenv -- turbo run deploy --filter=@andesine/edge"
   },
   "devDependencies": {

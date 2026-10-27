@@ -26,8 +26,8 @@ const NavigationLink: Component<NavigationLinkProps> = (props) => (
       class={clsx(
         "flex shrink-0 items-center justify-center rounded-lg p-1 shadow-md outline outline-1 -outline-offset-1 transition-[background-position,background-color] duration-200 ease-out text-gray-500",
         props.current
-          ? "bg-gradient-to-tr bg-[length:125%_auto] text-white outline-tertiary group-hover:bg-right group-focus-visible:bg-right"
-          : "bg-white shadow-gray-200 outline-gray-200 group-hover:bg-gray-100 group-focus-visible:bg-gray-100"
+          ? "bg-gradient-to-tr bg-[length:125%_auto] text-white outline-tertiary shadow-tertiary/25 group-hover:bg-right group-focus-visible:bg-right"
+          : "bg-white shadow-gray-900/8 outline-gray-200 group-hover:bg-gray-100 group-focus-visible:bg-gray-100"
       )}
     >
       <span aria-hidden="true" class={clsx("h-5 w-5", props.icon)} />

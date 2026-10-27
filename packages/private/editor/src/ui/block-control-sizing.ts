@@ -5,6 +5,7 @@ import {
   BLOCK_CONTROL_VIRTUAL_MARGIN_REM,
   LIST_ITEM_TYPES
 } from "./constants";
+import { getElementAncestors } from "#editor/lib/element-content";
 
 interface BlockControlTarget {
   dom: HTMLElement;
@@ -126,6 +127,25 @@ const getTargetList = (target: BlockControlTarget): HTMLElement | null => {
   return parent?.matches("ul, ol") ? parent : null;
 };
 
+/** A block in an element view's content or UI, e.g. a card in a grid; its controls are in the gutter. */
+const isElementViewChild = (target: BlockControlTarget): boolean => {
+  return Boolean(target.dom.parentElement?.closest("[data-element-view]"));
+};
+/** A block inside an element, in its view or between its tags; its controls are in the gutter. */
+const isInElement = (editor: Editor, target: BlockControlTarget): boolean => {
+  return getElementAncestors(editor.state.doc, target.pos).length > 0;
+};
+/** A block's UI in a view, e.g. a tab in a tab bar, from a `BlockArea`. */
+const isBlockArea = (target: BlockControlTarget): boolean => {
+  return Boolean(target.dom.parentElement?.dataset.blockArea);
+};
+/** The top-level block around the target, e.g. the card grid around a card. */
+const getTopLevelRect = (editor: Editor, target: BlockControlTarget): DOMRect => {
+  const $pos = editor.state.doc.resolve(target.pos);
+  const dom = editor.view.nodeDOM($pos.depth ? $pos.before(1) : target.pos);
+
+  return getCachedElementRect(editor, dom instanceof HTMLElement ? dom : target.dom);
+};
 const getFirstLineRect = (editor: Editor, element: HTMLElement): DOMRect => {
   const elementRect = getCachedElementRect(editor, element);
   const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
@@ -193,20 +213,23 @@ const getBlockContentRect = (editor: Editor, target: BlockControlTarget): DOMRec
 
 const getBlockControlAnchorRect = (editor: Editor, target: BlockControlTarget): DOMRect => {
   return getCachedTargetRect(editor, target, "anchor", () => {
-    const tag =
-      target.node.type.name === "element"
-        ? target.dom.querySelector<HTMLElement>(':scope > [data-element-tag="opening"]')
-        : null;
-    const content = tag ? getCachedElementRect(editor, tag) : getBlockContentRect(editor, target);
-    const horizontal = getCachedElementRect(editor, getTargetList(target) || target.dom);
-
-    if (target.node.type.name === "codeBlock") {
-      const left = parseFloat(target.dom.style.getPropertyValue("--code-visible-left")) || 0;
-      const width =
-        parseFloat(target.dom.style.getPropertyValue("--code-visible-width")) || horizontal.width;
-
-      return new DOMRect(horizontal.x + left, content.y, width, Math.max(1, content.height));
-    }
+    const isElement = target.node.type.name === "element";
+    const tag = isElement
+      ? target.dom.querySelector<HTMLElement>(':scope > [data-element-tag="opening"]')
+      : null;
+    const block = getCachedElementRect(editor, target.dom);
+    // While a view hides the tag: the element's top line, where its gutter markers are.
+    const topLine = new DOMRect(block.x, block.y, block.width, Math.min(block.height, 32));
+    // An area's top line too, e.g. a step's, which spans the step.
+    const content = isBlockArea(target)
+      ? topLine
+      : tag && !tag.hidden
+        ? getCachedElementRect(editor, tag)
+        : isElement
+          ? topLine
+          : getBlockContentRect(editor, target);
+    // The editor's content box: the controls are in its gutters, at the same X for every block.
+    const horizontal = getCachedElementRect(editor, editor.view.dom);
 
     return new DOMRect(horizontal.x, content.y, horizontal.width, Math.max(1, content.height));
   });
@@ -238,13 +261,23 @@ const getBlockControlHoverRect = (editor: Editor, target: BlockControlTarget): D
     let horizontal =
       target.node.type.name === "codeBlock" ? getBlockControlAnchorRect(editor, target) : block;
 
-    if ($position.parent.type.name === "element") {
-      const content = target.dom.parentElement;
+    const content = target.dom.parentElement;
+    const isViewChild = isElementViewChild(target);
+    // In a view, its slot's box, with its padding, e.g. an accordion's; a slot with `contents`,
+    // e.g. a grid's, has none.
+    const isContentBlock = Boolean(content?.matches("[data-element-content]"));
+    const slotBox = isViewChild && isContentBlock ? content!.parentElement?.parentElement : null;
+    const slotRect = slotBox ? getCachedElementRect(editor, slotBox) : null;
+    const hasContentBox = isContentBlock && (!isViewChild || Boolean(slotRect?.height));
+
+    if (isInElement(editor, target)) horizontal = getTopLevelRect(editor, target);
+
+    if ($position.parent.type.name === "element" && hasContentBox) {
       const previous = $position.nodeBefore;
       const nextPosition = target.pos + target.node.nodeSize;
       const previousDOM = previous ? editor.view.nodeDOM(target.pos - previous.nodeSize) : null;
       const nextDOM = nextPosition < $position.end() ? editor.view.nodeDOM(nextPosition) : null;
-      const contentRect = content ? getElementContentRect(editor, content) : block;
+      const contentRect = slotRect ?? getElementContentRect(editor, content!);
       const top =
         previousDOM instanceof HTMLElement
           ? getCachedElementRect(editor, previousDOM).bottom
@@ -306,10 +339,26 @@ const isPointInBlockControlArea = (
   if (x < hover.left || x > hover.right || y < hover.top || y > hover.bottom) return false;
   if (!side) return true;
 
-  const block = getBlockControlAnchorRect(editor, target);
+  const nodeDOM = editor.view.nodeDOM(target.pos);
+  // An area in its block's own box, e.g. a step's badge, by that box, as the block's other parts.
+  const isAreaInBlock =
+    isBlockArea(target) && nodeDOM instanceof HTMLElement && nodeDOM.contains(target.dom);
+  // A view child's own box, not the gutter-aligned anchor, e.g. the left part of a card.
+  const block = isAreaInBlock
+    ? getCachedElementRect(editor, nodeDOM)
+    : isElementViewChild(target)
+      ? getCachedElementRect(editor, target.dom)
+      : getBlockControlAnchorRect(editor, target);
   const threshold = block.width * BLOCK_CONTROL_PROXIMITY_RATIO;
 
   return side === "left" ? x <= block.left + threshold : x >= block.right - threshold;
+};
+/** The distance from the point to the rect; zero inside it. */
+const getRectDistance = (rect: DOMRect, x: number, y: number): number => {
+  return Math.hypot(
+    Math.max(rect.left - x, x - rect.right, 0),
+    Math.max(rect.top - y, y - rect.bottom, 0)
+  );
 };
 
 export {
@@ -320,7 +369,9 @@ export {
   getCachedElementRect,
   getElementContentRect,
   getEditorScrollContainer,
+  getRectDistance,
   invalidateBlockControlLayout,
+  isElementViewChild,
   isPointInBlockControlArea
 };
 export type { BlockControlSide, BlockControlTarget };

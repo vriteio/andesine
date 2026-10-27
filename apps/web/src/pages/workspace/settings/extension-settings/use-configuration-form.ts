@@ -33,7 +33,7 @@ const useConfigurationForm = (options: ConfigurationFormOptions) => {
   const input = () => ({ extensionID: options.extensionID, workspaceID: options.workspaceID });
   // Extensions without fields have no configuration to load.
   const state = createAsync(() => {
-    if (!Object.keys(options.schema?.properties ?? {}).length) return Promise.resolve(null);
+    if (!options.schema?.length) return Promise.resolve(null);
 
     return extensionConfigurationQuery(input());
   });

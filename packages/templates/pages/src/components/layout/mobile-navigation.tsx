@@ -43,7 +43,9 @@ const MobileNavigation: Component<MobileNavigationProps> = (props) => (
         storageKey={props.storageKey}
         defaultDepth={2}
       />
-      <PoweredBy class="mt-auto h-8 shrink-0" />
+      <Show when={props.page.site.poweredBy}>
+        <PoweredBy class="mt-auto h-8 shrink-0" />
+      </Show>
     </Menu.Content>
   </Menu.Root>
 );

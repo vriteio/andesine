@@ -22,13 +22,16 @@
  */
 import type { MarkType, Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { Plugin, PluginKey, TextSelection, type EditorState } from "@tiptap/pm/state";
-import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
+import { DecorationSet, type EditorView } from "@tiptap/pm/view";
+import {
+  BOUNDARY_CURSOR_ACTIVE_CLASS,
+  createBoundaryCursor,
+  createClickedSide,
+  isRemoteChange
+} from "#editor/extensions/boundary-cursor";
 
 interface CodeMarkCursorPluginOptions {
   markType: MarkType;
-  activeClass?: string;
-  cursorClass?: string;
-  insideCursorClass?: string;
   maxSelectedTextLength?: number;
 }
 
@@ -40,7 +43,7 @@ type CodeCursorState = {
 } | null;
 
 type CodeCursorMeta = {
-  action: "click" | "next";
+  action: "next";
 };
 
 const codeCursorPluginKey = new PluginKey<CodeCursorState>("codeMarkCursor");
@@ -55,11 +58,10 @@ const codeCursorState = (state: EditorState) => codeCursorPluginKey.getState(sta
  * Mark the next transaction as one which should leave the code mark. The browser
  * still performs the actual cursor movement for keys such as Home and ArrowUp.
  */
-const leaveCodeAfterNextTransaction = (
-  view: EditorView,
-  action: CodeCursorMeta["action"] = "next"
-) => {
-  view.dispatch(view.state.tr.setMeta(codeCursorPluginKey, { action } satisfies CodeCursorMeta));
+const leaveCodeAfterNextTransaction = (view: EditorView) => {
+  view.dispatch(
+    view.state.tr.setMeta(codeCursorPluginKey, { action: "next" } satisfies CodeCursorMeta)
+  );
 
   return false;
 };
@@ -83,6 +85,24 @@ const removeCodeStoredMarkAtBoundary = (state: EditorState, markType: MarkType) 
   }
 
   return null;
+};
+
+/** Whether the caret is at a code's edge, a position with a side inside and outside the box. */
+const isAtCodeBoundary = (state: EditorState, markType: MarkType) => {
+  const { selection } = state;
+  const codeBefore = !!markType.isInSet(selection.$from.nodeBefore?.marks ?? []);
+  const codeAfter = !!markType.isInSet(selection.$from.nodeAfter?.marks ?? []);
+
+  return selection.empty && codeBefore !== codeAfter;
+};
+/**
+ * A click at a code boundary puts the caret on the side that was clicked: inside the code's box,
+ * or outside it. Both sides are one position, so the stored mark decides.
+ */
+const setCodeStoredMarkAtBoundary = (state: EditorState, markType: MarkType, inside: boolean) => {
+  if (!isAtCodeBoundary(state, markType)) return null;
+
+  return inside ? state.tr.addStoredMark(markType.create()) : state.tr.removeStoredMark(markType);
 };
 
 const handleBacktick = (
@@ -304,39 +324,35 @@ const handleDelete = (view: EditorView, event: KeyboardEvent, markType: MarkType
   return false;
 };
 
-const createCursor = (inside: boolean, cursorClass: string, insideCursorClass: string) => {
-  return () => {
-    const cursor = document.createElement("span");
-    cursor.classList.add(cursorClass);
-
-    if (inside) cursor.classList.add(insideCursorClass);
-
-    cursor.setAttribute("aria-hidden", "true");
-
-    return cursor;
-  };
-};
-
 const createCodeMarkCursorPlugin = ({
   markType,
-  activeClass = "code-mark-cursor-active",
-  cursorClass = "code-mark-cursor",
-  insideCursorClass = "code-mark-cursor--inside",
   maxSelectedTextLength = 100
 }: CodeMarkCursorPluginOptions) => {
+  // A click inside a code's box puts the caret inside it at its edges, others outside.
+  const clickedSide = createClickedSide({
+    isInside: (target) => Boolean(target.closest("code")),
+    setSide: (view, inside) => {
+      const transaction = setCodeStoredMarkAtBoundary(view.state, markType, inside);
+
+      if (transaction) view.dispatch(transaction);
+    }
+  });
+
   return new Plugin<CodeCursorState>({
     key: codeCursorPluginKey,
     appendTransaction: (transactions, oldState, newState) => {
       const previous = codeCursorPluginKey.getState(oldState);
-      const clicked = transactions.some(
-        (transaction) =>
-          (transaction.getMeta(codeCursorPluginKey) as CodeCursorMeta | undefined)?.action ===
-          "click"
-      );
+      const clicked = clickedSide.get(transactions);
+      // A remote change clears the stored marks, which hold the caret's side at a boundary.
+      const isSideCleared =
+        transactions.some(isRemoteChange) &&
+        oldState.storedMarks &&
+        !newState.storedMarks &&
+        isAtCodeBoundary(newState, markType);
 
-      if (previous?.next || clicked) {
-        return removeCodeStoredMarkAtBoundary(newState, markType);
-      }
+      if (clicked !== null) return setCodeStoredMarkAtBoundary(newState, markType, clicked);
+      if (isSideCleared) return newState.tr.setStoredMarks(oldState.storedMarks);
+      if (previous?.next) return removeCodeStoredMarkAtBoundary(newState, markType);
 
       return null;
     },
@@ -374,7 +390,9 @@ const createCodeMarkCursorPlugin = ({
     },
     props: {
       attributes: (state): Record<string, string> => {
-        return codeCursorPluginKey.getState(state)?.active ? { class: activeClass } : {};
+        return codeCursorPluginKey.getState(state)?.active
+          ? { class: BOUNDARY_CURSOR_ACTIVE_CLASS }
+          : {};
       },
       decorations: (state) => {
         const cursor = codeCursorPluginKey.getState(state);
@@ -382,11 +400,7 @@ const createCodeMarkCursorPlugin = ({
         if (!cursor?.active) return DecorationSet.empty;
 
         return DecorationSet.create(state.doc, [
-          Decoration.widget(
-            state.selection.from,
-            createCursor(!!cursor.inside, cursorClass, insideCursorClass),
-            { side: cursor.side }
-          )
+          createBoundaryCursor(state.selection.from, cursor.side ?? 0, Boolean(cursor.inside))
         ]);
       },
       handleKeyDown: (view, event) => {
@@ -413,7 +427,7 @@ const createCodeMarkCursorPlugin = ({
             return false;
         }
       },
-      handleClick: (view) => leaveCodeAfterNextTransaction(view, "click")
+      handleDOMEvents: { mousedown: clickedSide.mousedown }
     }
   });
 };

@@ -4,6 +4,7 @@ import { fromMarkdown } from "@andesine/converters/markdown";
 import type { Element, ElementContent, Root } from "hast";
 import { bundledLanguages, codeToHast, type BundledLanguage } from "shiki";
 import type { HeadingContext } from "../context";
+import { isEntryLink } from "../navigation/links";
 import { readElement } from "./elements";
 import { getText } from "./hast";
 import { createIconCSS } from "./icons";
@@ -49,15 +50,18 @@ const highlightCode = async (
 
   return highlighted;
 };
-/** Highlights a converter code block. */
-const highlight = (pre: Element, options: HighlightOptions): Promise<Element> => {
+/** Highlights a converter code block, keeping its title. */
+const highlight = async (pre: Element, options: HighlightOptions): Promise<Element> => {
   const code = pre.children.find((child): child is Element => child.type === "element");
-
-  return highlightCode(
+  const highlighted = await highlightCode(
     getText(code ?? pre),
     String(code?.properties.dataLanguage ?? "text"),
     options
   );
+
+  if (pre.properties.dataTitle) highlighted.properties.dataTitle = pre.properties.dataTitle;
+
+  return highlighted;
 };
 
 /**
@@ -108,14 +112,21 @@ const prepareContent = async (
       headings.push({ id: child.properties.id, text: getText(child), depth: Number(depth) });
     }
 
+    // Links to entries without a page on the site, e.g. in another collection, become text.
     if (child.tagName === "a" && typeof href === "string") {
-      child.properties.href = options.linkURL(href);
+      const url = options.linkURL(href);
+
+      if (isEntryLink(url)) delete child.properties.href;
+      else child.properties.href = url;
     }
 
     if (typeof element?.props.icon === "string") icons.push(element.props.icon);
 
     if (isCard && typeof element.props.href === "string") {
-      const props = { ...element.props, href: options.linkURL(element.props.href) };
+      const { href: cardHref, ...rest } = element.props;
+      const url = options.linkURL(cardHref);
+      // A card that links to an entry without a page, e.g. an unpublished one, isn't a link.
+      const props = isEntryLink(url) ? rest : { ...rest, href: url };
 
       child.properties.dataAndesineProps = JSON.stringify(props);
     }

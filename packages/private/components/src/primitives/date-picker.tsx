@@ -157,7 +157,7 @@ const DatePicker: Component<DatePickerProps> = (props) => {
               input.select();
             });
           }}
-          class=":base-2: w-full min-w-0 bg-gray-50 rounded-md"
+          class=":base-2: w-full min-w-0 flex-none bg-gray-50 rounded-md"
           value={inputValue()}
           setValue={setInputValue}
           onConfirm={commitInputValue}

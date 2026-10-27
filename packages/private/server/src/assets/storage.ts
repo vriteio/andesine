@@ -43,7 +43,8 @@ const getAssetUploadKey = (workspaceID: string, assetID: string): string =>
   `${getAssetStagingPrefix(workspaceID, assetID)}upload`;
 // Reserve raw RGBA output sizes plus encoder overhead, then enforce this bound during processing.
 const getAssetReservationBytes = (byteSize: number): number => {
-  return byteSize + (ASSET_DISPLAY_SIZE ** 2 + ASSET_THUMBNAIL_SIZE ** 2) * 4 + 2 * 1024 ** 2;
+  // The display, source, and thumbnail files, each at most its pixels' raw size, and a margin.
+  return byteSize + (2 * ASSET_DISPLAY_SIZE ** 2 + ASSET_THUMBNAIL_SIZE ** 2) * 4 + 2 * 1024 ** 2;
 };
 const createAssetStorage = (config: AssetConfig) => {
   if (!config.ASSET_S3_BUCKET) return null;

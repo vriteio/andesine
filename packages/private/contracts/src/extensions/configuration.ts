@@ -1,14 +1,14 @@
 import * as z from "zod";
 import { uniqueItems } from "../primitives/unique";
+import { createSchemaFieldsType } from "./schema-fields";
 
-type ExtensionConfiguration = z.output<typeof extensionConfigurationType>;
-type ExtensionConfigurationField = ExtensionConfiguration["properties"][string];
-type ExtensionConfigurationItem = Exclude<ExtensionConfigurationField, { type: "array" }>;
+type ExtensionConfiguration = z.output<typeof extensionConfigurationFieldsType>;
+type ExtensionConfigurationField = ExtensionConfiguration[number];
+type ExtensionConfigurationItem = z.output<typeof itemType>;
 type ExtensionConfigurationPrimitive = string | number | boolean;
 type ExtensionConfigurationValue =
   ExtensionConfigurationPrimitive | ExtensionConfigurationPrimitive[];
 
-const JSON_SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema";
 const MAX_CONFIGURATION_FIELDS = 50;
 const MAX_CONFIGURATION_STRING_LENGTH = 10_000;
 const MAX_CONFIGURATION_ARRAY_ITEMS = 100;
@@ -28,8 +28,11 @@ const fieldKeyType = z
   .regex(/^[A-Za-z][A-Za-z0-9_]{0,63}$/, "Use a letter, then letters, digits, or underscores");
 const lengthType = z.int().min(0).max(MAX_CONFIGURATION_STRING_LENGTH);
 const metadata = {
+  name: fieldKeyType,
   title: z.string().min(1).max(100).optional(),
-  description: z.string().min(1).max(500).optional()
+  description: z.string().min(1).max(500).optional(),
+  /** Missing required values are a state that the extension's settings show, not an error. */
+  required: z.boolean().optional()
 };
 const stringItemType = z.strictObject({
   type: z.literal("string"),
@@ -83,34 +86,22 @@ const fieldType = z.union([
     default: z.array(z.union([z.string(), z.number(), z.boolean()])).optional()
   })
 ]);
-/** Flat JSON Schema 2020-12 subset; the host validates it without running extension code. */
-const extensionConfigurationType = z
-  .strictObject({
-    $schema: z.literal(JSON_SCHEMA_DIALECT).optional(),
-    type: z.literal("object"),
-    properties: z
-      .record(fieldKeyType, fieldType)
-      .refine(
-        (properties) => Object.keys(properties).length <= MAX_CONFIGURATION_FIELDS,
-        `Use at most ${MAX_CONFIGURATION_FIELDS} fields`
-      ),
-    required: z.array(fieldKeyType).refine(uniqueItems, "Fields must be unique").optional(),
-    additionalProperties: z.literal(false)
-  })
-  .superRefine((configuration, context) => {
-    for (const [index, key] of (configuration.required || []).entries()) {
-      if (!configuration.properties[key]) {
-        context.addIssue({ code: "custom", path: ["required", index], message: "Unknown field" });
-      }
-    }
-
-    for (const [key, field] of Object.entries(configuration.properties)) {
+/**
+ * Settings fields in order, each a flat JSON Schema subset with its `name`, as stored; the host
+ * validates them without running extension code.
+ */
+const extensionConfigurationFieldsType = z
+  .array(fieldType)
+  .max(MAX_CONFIGURATION_FIELDS, `Use at most ${MAX_CONFIGURATION_FIELDS} fields`)
+  .refine((fields) => uniqueItems(fields.map(({ name }) => name)), "Fields must be unique")
+  .superRefine((fields, context) => {
+    for (const [index, field] of fields.entries()) {
       const isSecretWithDefault = "secret" in field && field.secret && field.default !== undefined;
 
       if (isSecretWithDefault) {
         context.addIssue({
           code: "custom",
-          path: ["properties", key, "default"],
+          path: [index, "default"],
           message: "Secret fields cannot have defaults"
         });
       } else if (field.default !== undefined) {
@@ -119,13 +110,17 @@ const extensionConfigurationType = z
         if (!result.success) {
           context.addIssue({
             code: "custom",
-            path: ["properties", key, "default"],
+            path: [index, "default"],
             message: "The default does not match the field"
           });
         }
       }
     }
   });
+/** The manifest's settings: the fields, or one combined schema that becomes them. */
+const extensionConfigurationType = createSchemaFieldsType(extensionConfigurationFieldsType, {
+  withRequired: true
+});
 const createConfigurationValueType = (
   field: ExtensionConfigurationField | ExtensionConfigurationItem
 ): z.ZodType<ExtensionConfigurationValue> => {
@@ -179,37 +174,16 @@ const createConfigurationValuesType = (
   configuration: ExtensionConfiguration
 ): z.ZodType<Record<string, ExtensionConfigurationValue>> => {
   const shape = Object.fromEntries(
-    Object.entries(configuration.properties).map(([key, field]) => {
-      return [key, createConfigurationValueType(field).optional()];
-    })
+    configuration.map((field) => [field.name, createConfigurationValueType(field).optional()])
   );
 
   return z.strictObject(shape) as z.ZodType<Record<string, ExtensionConfigurationValue>>;
 };
-/** Converts an authoring Zod object to the configuration subset; unsupported constructs throw. */
-const toExtensionConfiguration = (schema: z.ZodObject): ExtensionConfiguration => {
-  const jsonSchema = z.toJSONSchema(schema, {
-    io: "input",
-    target: "draft-2020-12",
-    unrepresentable: "throw"
-  });
-  const result = extensionConfigurationType.safeParse({
-    additionalProperties: false,
-    ...jsonSchema
-  });
-
-  if (!result.success) {
-    throw new Error(`Unsupported configuration schema:\n${z.prettifyError(result.error)}`);
-  }
-
-  return result.data;
-};
-
 export {
   MAX_CONFIGURATION_FIELDS,
+  extensionConfigurationFieldsType,
   extensionConfigurationType,
   createConfigurationValueType,
-  createConfigurationValuesType,
-  toExtensionConfiguration
+  createConfigurationValuesType
 };
 export type { ExtensionConfiguration, ExtensionConfigurationField, ExtensionConfigurationValue };

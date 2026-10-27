@@ -72,7 +72,7 @@ const lateOutcomeLabels: Record<LateOutcome, string> = {
 };
 // Matches the outlined tag style of TagList; only the icon is color-coded.
 const badgeClass =
-  "flex h-6 max-w-full items-center gap-1 rounded-lg bg-white px-1.5 text-sm text-gray-500 shadow-md shadow-gray-200 outline outline-1 -outline-offset-1 outline-gray-200";
+  "flex h-6 max-w-full items-center gap-1 rounded-lg bg-white px-1.5 text-sm text-gray-500 shadow-md shadow-gray-900/8 outline outline-1 -outline-offset-1 outline-gray-200";
 
 const AttemptBadge: Component<AttemptBadgeProps> = (props) => {
   const summary = () =>

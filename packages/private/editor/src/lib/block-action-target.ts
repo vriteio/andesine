@@ -178,4 +178,4 @@ const createBlockActionTarget = (editor: Editor, blocks: SelectedBlock[]): Block
   };
 };
 
-export { createBlockActionTarget, getSelectedBlocks };
+export { MAX_CONTENT_SIZE, createBlockActionTarget, getSelectedBlocks, toEditorContent };

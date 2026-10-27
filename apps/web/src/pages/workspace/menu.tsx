@@ -6,7 +6,8 @@ import { useLayout } from "#web/context/layout";
 import { createMediaQuery } from "@solid-primitives/media";
 import { type PrimaryPanel } from "./side-panel";
 import { ExtensionIconScope } from "#web/components/extensions/panel-view";
-import { getExtensionPanels } from "#web/lib/extensions";
+import { getAvailablePagePath, getExtensionPages, getExtensionPanels } from "#web/lib/extensions";
+import { useLocation, useNavigate, useParams } from "@solidjs/router";
 
 type MenuItem =
   | {
@@ -47,6 +48,9 @@ const Menu: Component<MenuProps> = (props) => {
   const { layout } = useLayout();
   const { currentWorkspace, content } = useWorkspace();
   const md = createMediaQuery("(min-width: 768px)");
+  const navigate = useNavigate();
+  const location = useLocation();
+  const params = useParams<{ workspaceID: string }>();
   const extensionItems = (): MenuItem[] => {
     return getExtensionPanels("left").map((item) => ({
       label: item.panel.name,
@@ -103,9 +107,33 @@ const Menu: Component<MenuProps> = (props) => {
       }
     }
   ];
+  // Workspace pages open in the main area; collection and entry pages are in their menus.
+  const pageItems = (): MenuItem[] => {
+    return getExtensionPages("workspace").flatMap(({ extension, page }) => {
+      const path = getAvailablePagePath(params.workspaceID, extension.extensionID, page, {});
+
+      if (!path) return [];
+
+      return [
+        {
+          label: page.name,
+          icon: page.icon,
+          extension: extension.name,
+          onlineOnly: true,
+          get active() {
+            return location.pathname === path;
+          },
+          onClick() {
+            navigate(path);
+          }
+        }
+      ];
+    });
+  };
   const menu = (): MenuItem[] => [
     ...baseMenu.slice(0, 2),
     ...extensionItems(),
+    ...pageItems(),
     ...baseMenu.slice(2)
   ];
 

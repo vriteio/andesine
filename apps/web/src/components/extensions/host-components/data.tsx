@@ -1,18 +1,19 @@
 import { Card, IconButton, Skeleton, Spinner, Tooltip } from "@andesine/components";
-import { isDeclaredURL } from "#web/lib/extensions";
+import { isDeclaredURL, type ExtensionTreeNode } from "#web/lib/extensions";
 import { TimeAgo } from "#web/components/time-ago";
 import { useClipboard } from "#web/context/clipboard";
 import clsx from "clsx";
 import { createEffect, createSignal, For, Show } from "solid-js";
 import { type HostComponents } from "./types";
 
-const calloutClasses = {
-  info: "border-gray-300",
-  warning: "border-orange-400",
-  danger: "border-red-500",
-  success: "border-green-500"
+// As the app's notices, e.g. on an extension's settings page: the tone is only the icon's.
+const calloutIcons = {
+  info: "i-lucide:info text-gray-400",
+  warning: "i-lucide:triangle-alert text-amber-500",
+  danger: "i-lucide:circle-alert text-red-500",
+  success: "i-lucide:circle-check text-green-500"
 };
-const skeletonHeights = { small: "h-4", medium: "h-8", large: "h-24" };
+const CALLOUT_ACTIONS = new Set(["Button", "IconButton"]);
 const dataComponents: Pick<
   HostComponents,
   | "List"
@@ -33,51 +34,58 @@ const dataComponents: Pick<
     <div class="flex min-w-0 flex-col gap-1">
       <For
         each={props.childNodes()}
-        fallback={<span class="text-xs text-gray-400">{props.props.emptyLabel ?? "No items"}</span>}
+        fallback={
+          // As the app's empty lists, e.g. "No webhooks".
+          <Card
+            class="m-0 flex h-16 items-center justify-center gap-1 rounded-lg bg-white px-2 text-sm text-gray-400"
+            shade
+          >
+            <Show when={props.props.emptyIcon}>
+              {(icon) => <div class={clsx("h-5.5 w-5.5 text-gray-300", icon())} />}
+            </Show>
+            {props.props.emptyLabel ?? "No items"}
+          </Card>
+        }
       >
         {(child, index) => (
           <div class="group/item flex min-w-0 items-start gap-1">
             <div class="min-w-0 flex-1">{props.renderNode(child.id)}</div>
             <Show when={!props.props.disabled}>
               <div class="flex shrink-0 gap-0.5 media-mouse:opacity-0 media-mouse:group-hover/item:opacity-100">
-                <IconButton
-                  variant="ghost"
-                  text="base"
-                  icon="i-lucide:arrow-up"
-                  aria-label="Move up"
-                  disabled={index() === 0}
-                  onClick={() => props.emit("onMove", index(), index() - 1)}
-                />
-                <IconButton
-                  variant="ghost"
-                  text="base"
-                  icon="i-lucide:arrow-down"
-                  aria-label="Move down"
-                  disabled={index() === props.childNodes().length - 1}
-                  onClick={() => props.emit("onMove", index(), index() + 1)}
-                />
-                <IconButton
-                  variant="ghost"
-                  text="base"
-                  icon="i-lucide:trash-2"
-                  aria-label="Remove"
-                  onClick={() => props.emit("onRemove", index())}
-                />
+                <Tooltip content="Move up">
+                  <IconButton
+                    variant="ghost"
+                    text="base"
+                    icon="i-lucide:arrow-up"
+                    aria-label="Move up"
+                    disabled={index() === 0}
+                    onClick={() => props.emit("onMove", index(), index() - 1)}
+                  />
+                </Tooltip>
+                <Tooltip content="Move down">
+                  <IconButton
+                    variant="ghost"
+                    text="base"
+                    icon="i-lucide:arrow-down"
+                    aria-label="Move down"
+                    disabled={index() === props.childNodes().length - 1}
+                    onClick={() => props.emit("onMove", index(), index() + 1)}
+                  />
+                </Tooltip>
+                <Tooltip content="Remove">
+                  <IconButton
+                    variant="ghost"
+                    text="base"
+                    icon="i-lucide:trash-2"
+                    aria-label="Remove"
+                    onClick={() => props.emit("onRemove", index())}
+                  />
+                </Tooltip>
               </div>
             </Show>
           </div>
         )}
       </For>
-      <Show when={!props.props.disabled}>
-        <button
-          type="button"
-          class="flex items-center gap-1 self-start text-sm text-gray-500 hover:text-gray-700"
-          onClick={() => props.emit("onAdd")}
-        >
-          <div class="i-lucide:plus h-4 w-4" />
-          {props.props.addLabel ?? "Add"}
-        </button>
-      </Show>
     </div>
   ),
   Card: (props) => (
@@ -154,19 +162,36 @@ const dataComponents: Pick<
       </div>
     );
   },
-  Callout: (props) => (
-    <div
-      class={clsx(
-        "flex min-w-0 flex-col gap-1 rounded-r-lg border-l-2 bg-gray-50 px-3 py-2 text-sm",
-        calloutClasses[props.props.tone ?? "info"]
-      )}
-    >
-      <Show when={props.props.title}>
-        <span class="font-medium">{props.props.title}</span>
-      </Show>
-      {props.children}
-    </div>
-  ),
+  // Button children are the actions, on the right; the other children are the text.
+  Callout: (props) => {
+    const isAction = (node: ExtensionTreeNode) => CALLOUT_ACTIONS.has(node.component);
+    const text = () => props.childNodes().filter((node) => !isAction(node));
+    const actions = () => props.childNodes().filter(isAction);
+
+    return (
+      // One row that wraps by its own width, not the screen's, e.g. in a narrow panel.
+      <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-gray-100 p-1 pl-1.5 text-sm">
+        {/* At the top, in line with the title; as far from the top as from the left (6px). */}
+        <div
+          class={clsx(
+            "mt-0.5 h-5 w-5 shrink-0 self-start",
+            calloutIcons[props.props.tone ?? "info"]
+          )}
+        />
+        <div class="min-w-0 flex-1 basis-48 py-0.5">
+          <Show when={props.props.title}>
+            <p class="font-medium">{props.props.title}</p>
+          </Show>
+          <For each={text()}>{(node) => props.renderNode(node.id)}</For>
+        </div>
+        <Show when={actions().length}>
+          <div class="ml-auto flex shrink-0 justify-end gap-1">
+            <For each={actions()}>{(node) => props.renderNode(node.id)}</For>
+          </div>
+        </Show>
+      </div>
+    );
+  },
   Steps: (props) => (
     <ol class="flex min-w-0 flex-col gap-3">
       <For each={props.childNodes()}>
@@ -214,11 +239,25 @@ const dataComponents: Pick<
     const { copyText } = useClipboard();
 
     return (
-      <div class="group/code relative min-w-0">
-        <pre class="overflow-x-auto rounded-lg bg-gray-100 p-3 font-mono text-xs">
+      // No width of its own: long lines scroll inside it instead of widening the page.
+      <div class="group/code relative min-w-0 [contain:inline-size]">
+        {/* A log is plain, as the app's webhook payloads: no box, at most 60% of the window high. */}
+        <pre
+          class={clsx(
+            "font-mono text-xs",
+            props.props.log
+              ? "max-h-[60vh] overflow-auto whitespace-pre scrollbar-sm"
+              : "overflow-x-auto rounded-lg bg-gray-100 p-3"
+          )}
+        >
           <code>{props.props.code}</code>
         </pre>
-        <div class="absolute right-1 top-1 media-mouse:opacity-0 media-mouse:group-hover/code:opacity-100">
+        <div
+          class={clsx(
+            "absolute media-mouse:opacity-0 media-mouse:group-hover/code:opacity-100",
+            props.props.log ? "right-0 top-0" : "right-1 top-1"
+          )}
+        >
           <Tooltip content="Copy">
             <IconButton
               variant="ghost"
@@ -233,10 +272,8 @@ const dataComponents: Pick<
     );
   },
   TimeAgo: (props) => <TimeAgo date={props.props.date} class="text-sm text-gray-500" />,
-  Spinner: (props) => <Spinner size={props.props.size ?? "small"} />,
-  Skeleton: (props) => (
-    <Skeleton class={clsx("w-full rounded-lg", skeletonHeights[props.props.height ?? "small"])} />
-  )
+  Spinner: (props) => <Spinner size="small" class={props.props.class} />,
+  Skeleton: (props) => <Skeleton class={clsx(":base: h-4 w-full rounded-lg", props.props.class)} />
 };
 
 export { dataComponents };

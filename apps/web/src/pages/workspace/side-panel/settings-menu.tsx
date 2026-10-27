@@ -1,8 +1,10 @@
 import clsx from "clsx";
 import { A, createAsync, useLocation, useParams } from "@solidjs/router";
 import { type Component, createMemo, For, Show } from "solid-js";
+import { Dynamic } from "solid-js/web";
 
 import { ExtensionIcon, type ExtensionIconSource } from "#web/components/extensions/extension-icon";
+import { MenuSection } from "#web/components/menu-section";
 import { useWorkspace } from "#web/context/workspace";
 import { config } from "#web/lib/api";
 import { extensionsQuery } from "#web/lib/data";
@@ -14,7 +16,9 @@ interface SettingsMenuItem {
   /** Replaces `icon` with the extension's own icon. */
   extensionIcon?: ExtensionIconSource | null;
   label: string;
-  href: string;
+  /** A link, or a button with `onClick`, e.g. in an extension's navigation. */
+  href?: string;
+  onClick?(): void;
   active?: boolean;
   visible?: boolean;
   /** Marks a setting that needs attention. */
@@ -34,8 +38,11 @@ interface SettingsMenuItemRowProps {
 }
 
 const SettingsMenuItemRow: Component<SettingsMenuItemRowProps> = (props) => (
-  <A
+  <Dynamic
+    component={props.item.href ? A : "button"}
     href={props.item.href}
+    type={props.item.href ? undefined : "button"}
+    onClick={props.item.onClick}
     class={clsx(
       ":base: group relative flex min-h-7 w-full flex-1 select-none items-center gap-1 overflow-hidden rounded-r-lg pl-0.5 text-left font-medium focus:outline-none",
       !props.nested && ":base: rounded-l-lg",
@@ -80,7 +87,7 @@ const SettingsMenuItemRow: Component<SettingsMenuItemRowProps> = (props) => (
     <Show when={props.item.indicator}>
       <div class="relative mr-1.5 h-2 w-2 shrink-0 rounded-full bg-red-500" />
     </Show>
-  </A>
+  </Dynamic>
 );
 
 const SettingsMenu: Component = () => {
@@ -283,45 +290,36 @@ const SettingsMenu: Component = () => {
       <div class="flex flex-col gap-3">
         <For each={menu()}>
           {(subMenu) => (
-            <div class="flex min-w-0 flex-col">
-              <Show when={subMenu.label}>
-                <span class="ml-1 text-gray-400 text-xs leading-normal">{subMenu.label}</span>
-              </Show>
-              <div class="flex flex-col gap-0.5">
-                <For each={subMenu.items.filter((item) => item.visible ?? true)}>
-                  {(item) => {
-                    const activeChild = () => {
-                      return item.subItems?.find((subItem) => {
-                        return (subItem.visible ?? true) && subItem.active;
-                      });
-                    };
+            <MenuSection label={subMenu.label}>
+              <For each={subMenu.items.filter((item) => item.visible ?? true)}>
+                {(item) => {
+                  const activeChild = () => {
+                    return item.subItems?.find((subItem) => {
+                      return (subItem.visible ?? true) && subItem.active;
+                    });
+                  };
 
-                    return (
-                      <>
-                        <SettingsMenuItemRow item={item} />
-                        <Show when={activeChild()}>
-                          {(child) => (
-                            <div class="relative flex">
-                              <div class="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-r from-secondary via-primary to-transparent opacity-10" />
-                              <div class="relative flex min-w-3.5 items-center justify-end pl-0.5">
-                                <div class="h-full w-px rounded-full bg-gray-300" />
-                              </div>
-                              <div class="relative flex flex-1 flex-col">
-                                <SettingsMenuItemRow
-                                  item={child()}
-                                  nested
-                                  activeBackground={false}
-                                />
-                              </div>
+                  return (
+                    <>
+                      <SettingsMenuItemRow item={item} />
+                      <Show when={activeChild()}>
+                        {(child) => (
+                          <div class="relative flex">
+                            <div class="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-r from-secondary via-primary to-transparent opacity-10" />
+                            <div class="relative flex min-w-3.5 items-center justify-end pl-0.5">
+                              <div class="h-full w-px rounded-full bg-gray-300" />
                             </div>
-                          )}
-                        </Show>
-                      </>
-                    );
-                  }}
-                </For>
-              </div>
-            </div>
+                            <div class="relative flex flex-1 flex-col">
+                              <SettingsMenuItemRow item={child()} nested activeBackground={false} />
+                            </div>
+                          </div>
+                        )}
+                      </Show>
+                    </>
+                  );
+                }}
+              </For>
+            </MenuSection>
           )}
         </For>
       </div>
@@ -329,4 +327,4 @@ const SettingsMenu: Component = () => {
   );
 };
 
-export { SettingsMenu };
+export { SettingsMenu, SettingsMenuItemRow };

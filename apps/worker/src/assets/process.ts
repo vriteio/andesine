@@ -53,7 +53,9 @@ const processAsset = async (data: AssetProcessJobData, storage: AssetStorage): P
     if (body.length !== row.upload.byteSize || checksum !== row.upload.expectedChecksum) {
       throw new InvalidImageError("Image bytes do not match the upload");
     }
-    files = await processImage(body, config, row.upload.reservedBytes - row.upload.byteSize);
+    files = await processImage(body, config, row.upload.reservedBytes - row.upload.byteSize, {
+      withSource: true
+    });
   } catch (error) {
     if (!(error instanceof InvalidImageError)) throw error;
     failureReason = error.message;

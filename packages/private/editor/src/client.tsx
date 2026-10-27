@@ -24,6 +24,7 @@ import { formatCodeBlock, getCodeFormatParser } from "./lib/code-format";
 import { Element } from "#editor/extensions/nodes/element";
 import { Elements } from "./extensions/elements";
 import { Images } from "./extensions/images";
+import { Links, linksPluginKey } from "./extensions/links";
 import { MAX_ENTRY_TITLE_LENGTH, normalizeEntryTitle } from "@andesine/document";
 import { CodeBlock } from "#editor/extensions/nodes/code-block";
 import { Heading } from "#editor/extensions/nodes/heading";
@@ -39,6 +40,7 @@ import { Strike } from "#editor/extensions/marks/strike";
 import { TaskItem } from "#editor/extensions/nodes/task-item";
 import { Table } from "#editor/extensions/nodes/table";
 import { BubbleMenu } from "./ui/menus/bubble-menu";
+import { LinkBubbleMenu } from "./ui/menus/link-menu";
 import { BlockSelection as BlockSelectionMenu } from "./ui/block-selection";
 import {
   type Component,
@@ -183,6 +185,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
         }
       }),
       Images.configure({ images: () => props.images, notify: props.notify }),
+      Links.configure({ links: () => props.links }),
       Element.extend({
         addNodeView() {
           return createElementViewRenderer({
@@ -195,7 +198,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
           });
         }
       }),
-      Elements.configure({ notify: props.notify }),
+      Elements.configure({ notify: props.notify, elementViews: props.elementViews }),
       CodeBlock.extend({
         addKeyboardShortcuts() {
           return {
@@ -332,6 +335,18 @@ const ClientEditor: Component<EditorProps> = (props) => {
     currentEditor.setEditable(props.editable ?? true);
   });
 
+  // Entry links show their entries' current titles, e.g. after a rename.
+  createEffect(() => {
+    const currentEditor = editor();
+
+    if (!currentEditor) return;
+
+    props.links?.entries();
+    untrack(() =>
+      currentEditor.view.dispatch(currentEditor.state.tr.setMeta(linksPluginKey, true))
+    );
+  });
+
   createEffect(() => {
     const currentEditor = editor();
 
@@ -412,6 +427,9 @@ const ClientEditor: Component<EditorProps> = (props) => {
           <BlockMenuArea
             editor={editableEditor()}
             blockActions={props.blockActions}
+            elementViews={props.elementViews}
+            links={props.links}
+            icons={props.icons}
             menuContainerRef={menuContainerRef}
             notify={(type, text) => props.notify?.(type, text)}
           >
@@ -428,7 +446,16 @@ const ClientEditor: Component<EditorProps> = (props) => {
                     mode={props.mode || "entry"}
                     elementViews={props.elementViews}
                   />
-                  <BubbleMenu editor={editor()!} menuContainerRef={menuContainerRef} />
+                  <BubbleMenu
+                    editor={editor()!}
+                    links={props.links}
+                    menuContainerRef={menuContainerRef}
+                  />
+                  <LinkBubbleMenu
+                    editor={editor()!}
+                    links={props.links}
+                    menuContainerRef={menuContainerRef}
+                  />
                   <DragHandleMenu editor={editor()!} menuContainerRef={menuContainerRef} />
                 </Show>
                 <Show when={props.staticTitle} keyed>

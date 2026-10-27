@@ -29,7 +29,8 @@ const createListItemTargetResolver = (editor: Editor, getPointerY: () => number)
       (list) => {
         const rect = getCachedElementRect(editor, list);
 
-        return y >= rect.top && y <= rect.bottom;
+        // Element views' targets are from their DOM, at the pointer.
+        return y >= rect.top && y <= rect.bottom && !list.closest("[data-element-view]");
       }
     );
 

@@ -66,7 +66,7 @@ const Menu: Component<MenuProps> = (props) => (
         <ArkMenu.Content
           class={clsx(
             // Like the app, menus show and hide without animation.
-            "z-80 flex min-w-48 flex-col gap-0.5 rounded-[0.625rem] border border-gray-200 bg-white p-1 shadow-[0_0_12px_0px] shadow-black/15 outline-none",
+            "z-80 flex min-w-48 flex-col gap-0.5 rounded-[0.625rem] border border-gray-200 bg-white p-1 shadow-[0_0_12px_0px] shadow-gray-900/8 outline-none",
             props.class
           )}
         >

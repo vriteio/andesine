@@ -1,0 +1,88 @@
+# Local services for development: `pnpm services` starts them, `pnpm dev` runs the apps on the host.
+# The ports differ from the usual ones, so e.g. Postgres.app or a Homebrew Redis can keep running;
+# `DEV_*_PORT` in `.env` changes them. `compose.yaml` is for self-hosting the whole app.
+name: andesine-dev
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    # Faster commits for development; a crash can lose the last moments, not corrupt data.
+    command: ["postgres", "-c", "synchronous_commit=off", "-c", "shared_buffers=256MB"]
+    environment:
+      POSTGRES_DB: andesine
+      POSTGRES_PASSWORD: andesine
+      POSTGRES_USER: andesine
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U andesine -d andesine"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    ports:
+      - "${DEV_POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+
+  # Sessions and caches; snapshots keep sessions across restarts.
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "60", "1"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    ports:
+      - "${DEV_REDIS_PORT:-6380}:6379"
+    volumes:
+      - redis-data:/data
+
+  # Job queues; as in production, no job is evicted or lost on a restart.
+  queue-redis:
+    image: redis:7-alpine
+    command:
+      [
+        "redis-server",
+        "--appendonly",
+        "yes",
+        "--appendfsync",
+        "everysec",
+        "--maxmemory-policy",
+        "noeviction"
+      ]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    ports:
+      - "${DEV_QUEUE_REDIS_PORT:-6381}:6379"
+    volumes:
+      - queue-redis-data:/data
+
+  typesense:
+    image: typesense/typesense:30.2
+    environment:
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-typesense-dev-key}
+      TYPESENSE_DATA_DIR: /data
+    healthcheck:
+      # The image has no curl; bash asks the health endpoint directly.
+      test:
+        [
+          "CMD",
+          "bash",
+          "-c",
+          'exec 3<>/dev/tcp/127.0.0.1/8108 && printf "GET /health HTTP/1.0\r\n\r\n" >&3 && grep -q "\"ok\":true" <&3'
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    ports:
+      - "${DEV_TYPESENSE_PORT:-8108}:8108"
+    volumes:
+      - typesense-data:/data
+
+volumes:
+  postgres-data:
+  redis-data:
+  queue-redis-data:
+  typesense-data:

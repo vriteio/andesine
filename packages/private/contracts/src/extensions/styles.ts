@@ -1,7 +1,7 @@
 type ExtensionStyleKind = "view" | "icon";
 
 const MAX_EXTENSION_CSS_SIZE = 256 * 1024;
-const ALLOWED_AT_RULES = new Set(["media", "supports"]);
+const ALLOWED_AT_RULES = new Set(["media", "supports", "container"]);
 // Inline SVG icons (`--un-icon`) are the only URLs: they load nothing.
 const DATA_SVG_URL = /url\(\s*(?:"data:image\/svg\+xml[^"]*"|'data:image\/svg\+xml[^']*')\s*\)/gi;
 const FORBIDDEN_VALUE =
@@ -10,15 +10,18 @@ const NEWLINE = /[\n\r\f]/;
 
 class ExtensionStyleError extends Error {}
 
-/** Host-owned content slots inside element views; extension CSS stops at them. */
-const EXTENSION_SLOT_SELECTOR = "[data-content-slot]";
+/**
+ * Nested element views, e.g. another extension's element in this one's content; view CSS stops at
+ * them, but styles the view's own content.
+ */
+const EXTENSION_SCOPE_LIMIT = "[data-element-view]";
 /** Views render inside `data-extension`; manifest icons inside `data-extension-icon`. */
 const getExtensionScope = (name: string, kind: ExtensionStyleKind = "view"): string => {
   return `[${kind === "view" ? "data-extension" : "data-extension-icon"}="${name}"]`;
 };
-/** The `@scope` prelude of view CSS: the view down to, but not into, its content slots. */
+/** The `@scope` prelude of view CSS: the view and its content, down to nested element views. */
 const getViewScopePrelude = (name: string): string => {
-  return `(${getExtensionScope(name)}) to (${EXTENSION_SLOT_SELECTOR})`;
+  return `(${getExtensionScope(name)}) to (${EXTENSION_SCOPE_LIMIT})`;
 };
 const fail = (message: string): never => {
   throw new ExtensionStyleError(message);
@@ -195,7 +198,7 @@ const validateExtensionCSS = (
 
 export {
   MAX_EXTENSION_CSS_SIZE,
-  EXTENSION_SLOT_SELECTOR,
+  EXTENSION_SCOPE_LIMIT,
   ExtensionStyleError,
   getExtensionScope,
   getViewScopePrelude,

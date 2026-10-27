@@ -1,52 +1,10 @@
 import { ImageURLInput } from "#editor/ui/views/image-view/url-input";
-import { Input, type MenuItem } from "@andesine/components";
+import type { MenuItem } from "@andesine/components";
 import type { Editor } from "@tiptap/core";
-import { createSignal } from "solid-js";
 import { isBlockSelection } from "#editor/extensions/block-selection";
 import { isPositionInInheritedField } from "#editor/ui/block-utils";
+import { MenuField } from "./menu-field";
 
-interface ImageFieldProps {
-  label: string;
-  placeholder: string;
-  value(): string;
-  commit(value: string): void;
-}
-
-const ImageField = (props: ImageFieldProps) => {
-  const [value, setValue] = createSignal(props.value());
-
-  let committedValue = value();
-
-  const commit = () => {
-    const nextValue = value();
-
-    if (nextValue === committedValue) return;
-    if (nextValue !== props.value()) props.commit(nextValue);
-
-    committedValue = nextValue;
-  };
-
-  return (
-    <div class="w-full min-w-0 p-1" data-image-menu-input>
-      <Input
-        class="w-full min-w-0 bg-gray-50"
-        label={props.label}
-        placeholder={props.placeholder}
-        maxLength={2000}
-        value={value()}
-        setValue={setValue}
-        onConfirm={commit}
-        onKeyDown={(event) => {
-          event.stopPropagation();
-          if (event.key === "Escape") {
-            event.preventDefault();
-            event.currentTarget.blur();
-          }
-        }}
-      />
-    </div>
-  );
-};
 const createImageMenuItems = (
   editor: Editor,
   closeMenu: () => void
@@ -82,7 +40,7 @@ const createImageMenuItems = (
   return [
     [
       () => (
-        <ImageField
+        <MenuField
           label="Alt text"
           placeholder="Describe the image"
           value={() => getCurrentImage()?.attrs.alt || ""}
@@ -90,7 +48,7 @@ const createImageMenuItems = (
         />
       ),
       () => (
-        <ImageField
+        <MenuField
           label="Caption"
           placeholder="Add a caption"
           value={() => getCurrentImage()?.attrs.caption || ""}

@@ -44,6 +44,8 @@ const OPEN_DELAY = 500;
 const CLOSE_DELAY = 250;
 const TRANSITION_DURATION = 100;
 const TooltipContext = createContext<TooltipContextValue | null>(null);
+// Inside contained areas, e.g. extension views, tooltips are fixed, so the containment doesn't clip them.
+const FixedTooltipsContext = createContext(false);
 const createTooltipState = (): TooltipContextValue => {
   const [activeTooltip, setActiveTooltip] = createSignal("");
   const [visibleTooltip, setVisibleTooltip] = createSignal("");
@@ -76,6 +78,8 @@ const createTooltipState = (): TooltipContextValue => {
 const Tooltip: Component<TooltipProps> = (props) => {
   const { activeTooltip, visibleTooltip, setActiveTooltip } =
     useContext(TooltipContext) || createTooltipState();
+  const isFixedByDefault = useContext(FixedTooltipsContext);
+  const fixed = () => props.fixed ?? isFixedByDefault;
   const md = createMediaQuery("(min-width: 768px)");
   const enabled = (): boolean => {
     return typeof props.enabled === "boolean" ? props.enabled : true;
@@ -104,7 +108,7 @@ const Tooltip: Component<TooltipProps> = (props) => {
         });
       }}
       positioning={{
-        strategy: props.fixed ? "fixed" : "absolute",
+        strategy: fixed() ? "fixed" : "absolute",
         offset: { mainAxis: props.offset?.mainAxis ?? 6, crossAxis: props.offset?.crossAxis ?? 0 },
         placement: placement()
       }}
@@ -125,7 +129,7 @@ const Tooltip: Component<TooltipProps> = (props) => {
           </div>
         )}
       />
-      <Dynamic component={props.fixed ? Portal : Fragment}>
+      <Dynamic component={fixed() ? Portal : Fragment}>
         <BaseTooltip.Positioner class="flex justify-center items-center">
           <BaseTooltip.Content
             class={clsx(
@@ -153,6 +157,9 @@ const TooltipProvider: ParentComponent = (props) => {
 
   return <TooltipContext.Provider value={context}>{props.children}</TooltipContext.Provider>;
 };
+const FixedTooltips: ParentComponent = (props) => (
+  <FixedTooltipsContext.Provider value={true}>{props.children}</FixedTooltipsContext.Provider>
+);
 const useTooltipContext = () => useContext(TooltipContext)!;
 
-export { Tooltip, TooltipProvider, useTooltipContext };
+export { FixedTooltips, Tooltip, TooltipProvider, useTooltipContext };

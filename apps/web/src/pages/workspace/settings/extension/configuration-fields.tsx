@@ -154,7 +154,7 @@ const ConfigurationFields: Component<ConfigurationFieldsProps> = (props) => (
     fallback={<span class="py-2 text-sm text-gray-400">This extension has no configuration.</span>}
   >
     {([key, field]) => {
-      const required = () => props.schema?.required?.includes(key) ?? false;
+      const required = () => Boolean(field.required);
       const label = (): JSX.Element => (
         <span class="flex items-center gap-1">
           {field.title || key}

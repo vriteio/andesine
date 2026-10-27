@@ -1,10 +1,11 @@
 import { ResourceTemplate, type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ReadResourceResult } from "@modelcontextprotocol/sdk/types.js";
 import { completeChannel, completePath } from "./completion";
+import { formatElementsGuide } from "./elements-guide";
 import { MDX_GUIDE } from "./guide";
 import type { ToolContext } from "./context";
 
-type ResourceName = "workspace" | "entries" | "published" | "schema" | "guide";
+type ResourceName = "workspace" | "entries" | "published" | "schema" | "guide" | "elements";
 type TypeMetadata = Awaited<ReturnType<ToolContext["client"]["typeMetadata"]["getCurrent"]>>;
 
 const OVERVIEW_DEPTH = 2;
@@ -82,7 +83,8 @@ const registerWorkspace = (server: McpServer, context: ToolContext) => {
         "",
         "- Entries: andesine://entries/{path}, as MDX (see andesine://guide/mdx).",
         "- Published content: andesine://published/{channel}/{path}.",
-        "- Collection schemas: andesine://collections/{path}/schema."
+        "- Collection schemas: andesine://collections/{path}/schema.",
+        "- Custom elements and their rules: andesine://guide/elements."
       ].join("\n");
 
       return textResource(uri, text);
@@ -181,13 +183,31 @@ const registerGuide = (server: McpServer) => {
     async (uri) => textResource(uri, MDX_GUIDE)
   );
 };
+const registerElements = (server: McpServer, context: ToolContext) => {
+  server.registerResource(
+    "elements-guide",
+    "andesine://guide/elements",
+    {
+      title: "Custom elements",
+      description:
+        "The workspace's custom elements, e.g. Tabs: how to write them, their props, and which blocks their content accepts",
+      mimeType: "text/markdown"
+    },
+    async (uri) => {
+      const elements = await context.client.extensions.listElements({}).catch(() => []);
+
+      return textResource(uri, formatElementsGuide(elements));
+    }
+  );
+};
 
 const resources: Record<ResourceName, (server: McpServer, context: ToolContext) => void> = {
   workspace: registerWorkspace,
   entries: registerEntries,
   published: registerPublished,
   schema: registerSchema,
-  guide: registerGuide
+  guide: registerGuide,
+  elements: registerElements
 };
 
 export { resources };

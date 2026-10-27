@@ -1,6 +1,7 @@
 import { type ExtensionRequestParams } from "@andesine/contracts/extensions";
 import { client } from "#web/lib/api";
 import { ORPCError } from "@orpc/client";
+import { setPageStorageKey } from "./page-availability";
 
 /** A storage request the server rejected; its fixed message goes back to the extension. */
 class ExtensionStorageError extends Error {}
@@ -28,11 +29,24 @@ const createStoragePerformers = (extensionID: string) => ({
       throw error;
     }
   },
-  "storage.set": (params: ExtensionRequestParams<"storage.set">) => {
-    return withStorageErrors(client.extensions.setStorageEntry({ extensionID, ...params }));
+  // A write can change which of the extension's pages are available.
+  "storage.set": async (params: ExtensionRequestParams<"storage.set">) => {
+    const result = await withStorageErrors(
+      client.extensions.setStorageEntry({ extensionID, ...params })
+    );
+
+    setPageStorageKey(extensionID, params.key, true);
+
+    return result;
   },
-  "storage.delete": (params: ExtensionRequestParams<"storage.delete">) => {
-    return withStorageErrors(client.extensions.deleteStorageEntry({ extensionID, ...params }));
+  "storage.delete": async (params: ExtensionRequestParams<"storage.delete">) => {
+    const result = await withStorageErrors(
+      client.extensions.deleteStorageEntry({ extensionID, ...params })
+    );
+
+    setPageStorageKey(extensionID, params.key, false);
+
+    return result;
   },
   "storage.list": (params: ExtensionRequestParams<"storage.list">) => {
     return withStorageErrors(

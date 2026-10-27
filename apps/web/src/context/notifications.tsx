@@ -35,7 +35,7 @@ const Notification: Component<NotificationProps> = (props) => (
     color="contrast"
     class="flex p-0 justify-center items-center w-full rounded-xl transition-shadow duration-250 shadow-lg"
   >
-    <div class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center w-full p-1 rounded-xl shadow-inner shadow-gray-200 shadow-opacity-60">
+    <div class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center w-full p-1 rounded-xl shadow-inner shadow-gray-900/8">
       <Show when={props.type !== "loading"} fallback={<Spinner class="h-6 w-6" color="primary" />}>
         <div class="p-1 flex justify-center items-center">
           <div

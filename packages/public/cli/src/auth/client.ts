@@ -3,10 +3,12 @@ import type { CommandContext } from "../context";
 import { CLIError } from "../errors";
 import { credentialStore } from "../storage/credentials";
 import { withStateLock } from "../storage/lock";
-import { refreshAccess } from "./oauth";
+import { OAuthError, refreshAccess } from "./oauth";
 
 const ACCESS_TOKEN_MIN_VALIDITY_MS = 60_000;
 const ACCESS_TOKEN_REUSE_MS = ACCESS_TOKEN_MIN_VALIDITY_MS / 2;
+// OAuth errors after which only a new login helps; others, e.g. an unreachable instance, pass.
+const LOGIN_ERRORS = new Set(["invalid_grant", "invalid_client", "unauthorized_client"]);
 
 /** The saved OAuth access token of the selected profile, refreshed when it expires soon. */
 const getAccessToken = async (context: CommandContext): Promise<string> => {
@@ -34,15 +36,11 @@ const getAccessToken = async (context: CommandContext): Promise<string> => {
       );
     }
 
-    if (credentials.refreshPending) {
-      throw new CLIError(
-        "The previous token exchange was interrupted. Run auth login again; the old refresh token will not be reused."
-      );
-    }
+    const isValid = credentials.expiresAt > Date.now() + ACCESS_TOKEN_MIN_VALIDITY_MS;
 
-    if (credentials.expiresAt > Date.now() + ACCESS_TOKEN_MIN_VALIDITY_MS) {
-      return credentials.accessToken;
-    }
+    // An exchange that was cut off, e.g. by a killed process, is tried once more with its refresh
+    // token: if the server already rotated it, the server refuses it and a login is needed.
+    if (isValid && !credentials.refreshPending) return credentials.accessToken;
 
     assertOwned();
 
@@ -64,11 +62,15 @@ const getAccessToken = async (context: CommandContext): Promise<string> => {
         refreshPending: false
       });
       return tokens.access_token;
-    } catch {
+    } catch (error) {
       signal.throwIfAborted();
-      throw new CLIError(
-        "Could not complete the token exchange. Run auth login again; the previous refresh token will not be reused."
-      );
+
+      const isTemporary = error instanceof OAuthError && !LOGIN_ERRORS.has(error.code);
+
+      // The token stays pending, so the next command tries it again.
+      if (isTemporary) throw new CLIError("Could not refresh the login. Try again.");
+
+      throw new CLIError("The login expired or was revoked. Run auth login again.");
     }
   });
 };

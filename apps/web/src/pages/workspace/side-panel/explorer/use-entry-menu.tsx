@@ -1,6 +1,7 @@
 import { type MenuItem } from "@andesine/components";
 import { createEffect, createMemo, createSignal, on } from "solid-js";
 import { useTree } from "#web/components/tree";
+import { useExtensionPageItems } from "#web/components/extensions/page-menu-items";
 import { useClipboard } from "#web/context/clipboard";
 import { usePublishing } from "#web/context/publishing";
 import { useWorkspace } from "#web/context/workspace";
@@ -11,6 +12,7 @@ const useEntryMenu = (entryID: string) => {
   const { content } = useWorkspace();
   const publishing = usePublishing();
   const publishingActions = usePublishingActions();
+  const extensionPageItems = useExtensionPageItems("entry");
   const [{ selection }, { setRenaming, setSelection }] = useTree();
   const [menuOpened, setMenuOpened] = createSignal(false);
   const startRenaming = () => {
@@ -147,6 +149,12 @@ const useEntryMenu = (entryID: string) => {
       }
 
       if (publishingOptions.length > 0) options.push(publishingOptions);
+    }
+
+    if (!isMulti) {
+      const pageItems = extensionPageItems.getItems(entryID);
+
+      if (pageItems.length) options.push(pageItems);
     }
 
     if (canDelete) {

@@ -3,11 +3,21 @@ import { getCachedElementRect } from "#editor/ui/block-control-sizing";
 import { getTableElement, getTableScrollContainer } from "#editor/ui/views/table-view/scroll";
 
 interface BlockSelectionShadeSegment {
+  /** Blocks with their own `selectable` UI, e.g. file tree rows; the shade spans their boxes. */
+  boxes: HTMLElement[];
   first: HTMLElement;
   last: HTMLElement;
   table: HTMLTableElement | null;
   tableContainer: HTMLElement | null;
 }
+
+/** Whether the block has its own `selectable` UI, e.g. a file tree row or an accordion's header. */
+const hasSelectableUI = (block: HTMLElement): boolean => {
+  const areas = block.querySelectorAll("[data-block-area][data-block-selectable]");
+
+  return Array.from(areas).some((area) => area.closest("[data-element-node-view]") === block);
+};
+const ELEMENT_VIEW = "[data-element-view]";
 
 const createBlockSelectionShade = (
   container: HTMLElement,
@@ -65,21 +75,23 @@ const createBlockSelectionShade = (
       const tableContainer = getTableScrollContainer(block);
 
       if (table && tableContainer) {
-        segments.push({ first: block, last: block, table, tableContainer });
+        segments.push({ boxes: [], first: block, last: block, table, tableContainer });
         return;
       }
 
       const previous = segments[segments.length - 1];
-
-      if (
+      const boxes = hasSelectableUI(block) ? [block] : [];
+      const joinsPrevious =
         previous &&
         !previous.table &&
         !previous.first.matches("[data-code-block]") &&
-        !block.matches("[data-code-block]")
-      ) {
+        !block.matches("[data-code-block]");
+
+      if (joinsPrevious) {
         previous.last = block;
+        previous.boxes.push(...boxes);
       } else {
-        segments.push({ first: block, last: block, table: null, tableContainer: null });
+        segments.push({ boxes, first: block, last: block, table: null, tableContainer: null });
       }
     });
 
@@ -110,18 +122,33 @@ const createBlockSelectionShade = (
       return;
     }
 
-    const first = getFirstVisualBlock(segment.first);
-    const last = getLastVisualBlock(segment.last);
-    const containerRect = getCachedElementRect(currentEditor, container);
-    const editorRect = getCachedElementRect(currentEditor, currentEditor.view.dom);
-    const firstRect = getCachedElementRect(currentEditor, first);
-    const lastRect = getCachedElementRect(currentEditor, last);
+    const editor = currentEditor;
+    const containerRect = getCachedElementRect(editor, container);
+    const editorRect = getCachedElementRect(editor, editor.view.dom);
+    // Blocks have a 4px outset; items in a view's layout none, e.g. close file tree rows.
+    const getOutset = (block: HTMLElement) => {
+      const isViewItem =
+        segment.boxes.includes(block) && block.parentElement?.closest(ELEMENT_VIEW);
+
+      return isViewItem ? 0 : 4;
+    };
+    // Blocks with their own selectable UI span their whole box, e.g. a folder with its rows.
+    const ends = [
+      {
+        block: segment.first,
+        rect: getCachedElementRect(editor, getFirstVisualBlock(segment.first))
+      },
+      { block: segment.last, rect: getCachedElementRect(editor, getLastVisualBlock(segment.last)) },
+      ...segment.boxes.map((block) => ({ block, rect: getCachedElementRect(editor, block) }))
+    ].filter(({ rect }) => rect.width);
+    const top = Math.min(...ends.map(({ block, rect }) => rect.top - getOutset(block)));
+    const bottom = Math.max(...ends.map(({ block, rect }) => rect.bottom + getOutset(block)));
 
     mountElement(shade, container);
     delete shade.dataset.tableSelectionShade;
-    shade.style.height = `${lastRect.bottom - firstRect.top + 8}px`;
+    shade.style.height = `${bottom - top}px`;
     shade.style.left = `${editorRect.left - containerRect.left + container.scrollLeft - 8}px`;
-    shade.style.top = `${firstRect.top - containerRect.top + container.scrollTop - 4}px`;
+    shade.style.top = `${top - containerRect.top + container.scrollTop}px`;
     shade.style.width = `${editorRect.width + 16}px`;
   };
   const positionTableSegment = (shade: HTMLElement, segment: BlockSelectionShadeSegment) => {
@@ -182,7 +209,10 @@ const createBlockSelectionShade = (
     currentEditor = editor;
     currentBlocks = blocks;
     if (changed) currentSegments = getSegments();
-    if (changed || currentSegments.some((segment) => segment.table)) position();
+    // Tables and views can change their layout with the same blocks; their boxes are cached.
+    const hasOwnLayout = currentSegments.some(({ table, boxes }) => table || boxes.length);
+
+    if (changed || hasOwnLayout) position();
   };
 
   return {

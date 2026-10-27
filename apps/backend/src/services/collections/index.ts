@@ -1,5 +1,6 @@
 import { createCollection } from "./create";
 import { deleteCollections } from "./delete";
+import { getCollection } from "./get";
 import { listCollections } from "./list";
 import { moveCollection } from "./move";
 import { updateCollection } from "./update";
@@ -13,6 +14,7 @@ import { setRestrictedAssignments } from "./set-restricted-assignments";
 
 const Collections = {
   create: createCollection,
+  get: getCollection,
   list: listCollections,
   delete: deleteCollections,
   update: updateCollection,

@@ -213,7 +213,7 @@ const SearchResults: Component<SearchResultsProps> = (props) => {
               onClick={() => ask().onAsk()}
             >
               <ResultContent
-                icon="i-material-symbols:magic-button-outline"
+                icon="i-lucide:wand-sparkles"
                 label={`Tell me “${props.query}”`}
                 sublabel={ask().followUp ? "Ask a follow-up..." : "Ask a question..."}
               />

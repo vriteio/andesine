@@ -1,4 +1,5 @@
 import { type Component, For } from "solid-js";
+import { MenuSection } from "#web/components/menu-section";
 
 interface HelpMenuItem {
   icon: string;
@@ -51,26 +52,23 @@ const HelpPanel: Component = () => (
     <div class="flex flex-col gap-3">
       <For each={menu}>
         {(section) => (
-          <div class="flex min-w-0 flex-col">
-            <span class="ml-1 text-gray-400 text-xs leading-normal">{section.label}</span>
-            <div class="flex flex-col gap-0.5">
-              <For each={section.items}>
-                {(item) => (
-                  <a
-                    class="group relative flex min-h-7 w-full flex-1 select-none items-center gap-1 overflow-hidden rounded-lg pl-0.5 text-left font-medium @hover:bg-gradient-to-r @hover:from-gray-500/10 @hover:to-transparent focus:outline-none"
-                    href={item.href}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <div class="flex h-6 w-6 items-center justify-center">
-                      <div class={`${item.icon} h-5 w-5 text-gray-400`} />
-                    </div>
-                    <span class="flex-1 line-clamp-1">{item.label}</span>
-                  </a>
-                )}
-              </For>
-            </div>
-          </div>
+          <MenuSection label={section.label}>
+            <For each={section.items}>
+              {(item) => (
+                <a
+                  class="group relative flex min-h-7 w-full flex-1 select-none items-center gap-1 overflow-hidden rounded-lg pl-0.5 text-left font-medium @hover:bg-gradient-to-r @hover:from-gray-500/10 @hover:to-transparent focus:outline-none"
+                  href={item.href}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <div class="flex h-6 w-6 items-center justify-center">
+                    <div class={`${item.icon} h-5 w-5 text-gray-400`} />
+                  </div>
+                  <span class="flex-1 line-clamp-1">{item.label}</span>
+                </a>
+              )}
+            </For>
+          </MenuSection>
         )}
       </For>
     </div>

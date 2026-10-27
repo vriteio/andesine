@@ -27,7 +27,9 @@ const DragHandleTargetPlugin = () => {
 
         const node = state.doc.nodeAt(pos);
 
-        if (!node || node.type.name !== "heading") return DecorationSet.empty;
+        // The state is any target, for element views; only gutter markers that the handle covers,
+        // heading levels and element warnings, are hidden.
+        if (!node || !["heading", "element"].includes(node.type.name)) return DecorationSet.empty;
 
         return DecorationSet.create(state.doc, [
           Decoration.node(pos, pos + node.nodeSize, { "data-drag-handle-target": "" })

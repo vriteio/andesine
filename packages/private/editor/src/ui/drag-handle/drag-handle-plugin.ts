@@ -9,6 +9,8 @@ import {
   ySyncPluginKey
 } from "@tiptap/y-tiptap";
 import { dragTarget, type DragTarget } from "./drag-handler";
+import { getViewDropPosition } from "#editor/ui/element-view-target";
+import { getDropSlot } from "#editor/ui/element-view-drop";
 import {
   createDroppedSelection,
   getActiveDragRange,
@@ -141,7 +143,18 @@ const createDragHandlePlugin = (options: DragHandlePluginOptions) => {
 
       return selection ? newState.tr.setSelection(selection) : null;
     },
-    view() {
+    view(view) {
+      const posAtCoords = view.posAtCoords.bind(view);
+
+      // Drops and the drop cursor over element views' UI, e.g. file rows, go between blocks;
+      // among droppable areas, only to their slots, e.g. a card's place.
+      view.posAtCoords = (coords) => {
+        const slot = view.dragging ? getDropSlot(editor, coords) : undefined;
+
+        if (slot !== undefined) return slot && { pos: slot.pos, inside: -1 };
+
+        return (view.dragging && getViewDropPosition(editor, coords)) || posAtCoords(coords);
+      };
       element.draggable = true;
       element.dataset.dragging = "false";
       element.style.pointerEvents = "auto";
@@ -165,6 +178,7 @@ const createDragHandlePlugin = (options: DragHandlePluginOptions) => {
           if (!editor.isEditable) hide();
         },
         destroy() {
+          view.posAtCoords = posAtCoords;
           cleanup();
           wrapper.remove();
         }

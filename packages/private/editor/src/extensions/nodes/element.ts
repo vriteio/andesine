@@ -10,6 +10,7 @@ import { Element as BaseElement } from "@andesine/document/tiptap";
 import { nanoid } from "nanoid";
 import { InputRule } from "@tiptap/core";
 import { NodeSelection, Selection, TextSelection } from "@tiptap/pm/state";
+import { showsView } from "../elements";
 import { Fragment, type Node as ProseMirrorNode, type ResolvedPos } from "@tiptap/pm/model";
 
 declare module "@tiptap/core" {
@@ -227,10 +228,13 @@ const Element = BaseElement.extend({
   addKeyboardShortcuts() {
     return {
       "Mod-Shift-f": () => this.editor.commands.formatElementTag(),
+      // A selected element's view stays; its menu switches it to its XML.
       "Enter": () => {
         const { selection } = this.editor.state;
+        const isElement =
+          selection instanceof NodeSelection && selection.node.type.name === "element";
 
-        return selection instanceof NodeSelection && selection.node.type.name === "element"
+        return isElement && !showsView(this.editor.view, selection.from)
           ? this.editor.commands.editElement()
           : false;
       },

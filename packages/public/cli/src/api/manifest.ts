@@ -658,6 +658,82 @@ const commands: APICommand[] = [
     response: "empty"
   },
   {
+    id: "collections.get",
+    group: "collections",
+    command: "get",
+    method: "get",
+    path: "/collections/get",
+    summary: "Get a collection",
+    description:
+      "Returns one collection by collectionID, collectionPath, or collectionSlugPath, with its name, path, and ancestors.\n\nRequired API key permissions: read:collections. Write permissions also grant read access for the same resource.",
+    example: {
+      collectionID: "coll_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "collectionID",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          pattern: "^coll_[A-Za-z\\d]{1,22}$"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+        },
+        flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
     id: "collections.list",
     group: "collections",
     command: "list",
@@ -3046,6 +3122,41 @@ const commands: APICommand[] = [
         },
         flag: "version",
         kind: "json",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "extensions.listElements",
+    group: "extensions",
+    command: "list-elements",
+    method: "get",
+    path: "/extensions/elements",
+    summary: "List custom elements",
+    description:
+      "The custom elements that the workspace's active extensions draw in the editor, e.g. Tabs: their props, whether they have content, which child blocks their content accepts, and the elements that belong inside them. Write them in MDX as <Name prop=\"value\">content</Name>. The editor guides edits by these rules and offers a clean-up; the API doesn't enforce them.\n\nRequired API key permissions: read:entries. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
         nullable: false
       }
     ],

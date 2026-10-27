@@ -17,6 +17,12 @@ interface ComboboxProps<O extends ComboboxOption> {
   closeOnSelect?: boolean;
   disabled?: boolean;
   displaySelectedLabel?: boolean;
+  /** Shown when no option matches; "No options" by default. */
+  emptyLabel?: string;
+  /** The icon at the field's end; chevrons by default. */
+  indicator?: string;
+  /** An icon at the field's start, e.g. the kind of the chosen value. */
+  startIcon?: string;
   inlineOptions?: boolean;
   label?: string;
   openOnFocus?: boolean;
@@ -32,9 +38,13 @@ interface ComboboxProps<O extends ComboboxOption> {
   scrollableContainerClass?: string;
   setOpened?(opened: boolean): void;
   setValue?(value: string): void;
+  /** The options for typed text, in place of filtering `options` by label. */
+  filterOptions?(query: string): O[];
+  /** Typed text when the field is left without choosing an option, e.g. to take it as a value. */
+  onInputCommit?(text: string): void;
 }
 
-type OptionsPlacement = "bottom" | "top";
+type OptionsPlacement = "bottom" | "top" | "right";
 
 const Combobox = <O extends ComboboxOption>(props: ComboboxProps<O>): JSX.Element => {
   const [placement, setPlacement] = createSignal<OptionsPlacement>(
@@ -68,9 +78,12 @@ const Combobox = <O extends ComboboxOption>(props: ComboboxProps<O>): JSX.Elemen
     props.setOpened?.(nextOpened);
   };
   const opensToTop = () => resolvedOptionsPlacement() === "top";
+  // A separate card beside the field, e.g. in a narrow menu; inline options stay below the field.
+  const opensToSide = () => !optionsInline() && defaultOptionsPlacement() === "right";
   const filteredOptions = createMemo(() => {
     const query = inputValue()?.trim().toLocaleLowerCase();
 
+    if (props.filterOptions) return props.filterOptions(inputValue() ?? "");
     if (!query) return props.options;
 
     return props.options.filter((option) => {
@@ -127,16 +140,18 @@ const Combobox = <O extends ComboboxOption>(props: ComboboxProps<O>): JSX.Elemen
       positioning={{
         placement: `${defaultOptionsPlacement()}-start`,
         strategy: "absolute",
-        offset: { mainAxis: 0 },
+        offset: { mainAxis: opensToSide() ? 6 : 0 },
         flip: optionsInline()
           ? false
-          : [defaultOptionsPlacement() === "top" ? "bottom-start" : "top-start"],
-        sameWidth: !optionsInline(),
+          : opensToSide()
+            ? ["left-start"]
+            : [defaultOptionsPlacement() === "top" ? "bottom-start" : "top-start"],
+        sameWidth: !optionsInline() && !opensToSide(),
         slide: false,
         async updatePosition(data) {
           await data.updatePosition();
 
-          if (optionsInline()) return;
+          if (optionsInline() || opensToSide()) return;
 
           setPlacement(
             contentRef()?.getAttribute("data-placement")?.startsWith("top") ? "top" : "bottom"
@@ -165,6 +180,10 @@ const Combobox = <O extends ComboboxOption>(props: ComboboxProps<O>): JSX.Elemen
         }
       }}
       onOpenChange={(details) => {
+        const text = inputValue();
+        const isLeftTyped = !details.open && details.reason === "interact-outside" && text !== null;
+
+        if (isLeftTyped) props.onInputCommit?.(text);
         if (!details.open) setInputValue(null);
 
         setOpened(details.open);
@@ -198,10 +217,12 @@ const Combobox = <O extends ComboboxOption>(props: ComboboxProps<O>): JSX.Elemen
           inert={mobileTapControl()}
           aria-label={props.label || props.placeholder || "Select"}
           class={clsx(
-            ":base: h-7 max-h-7 w-full min-w-0 flex-1 rounded-lg border border-gray-200 bg-white p-1 px-2 pr-8 text-[16px] shadow-md shadow-gray-200 ring-offset-1 outline-none placeholder:opacity-50 focus:bg-gray-100! md:text-sm",
-            opensToTop()
-              ? ":base: data-[state=open]:rounded-t-none"
-              : ":base: data-[state=open]:rounded-b-none",
+            ":base: h-7 max-h-7 w-full min-w-0 flex-1 rounded-lg border border-gray-200 bg-white p-1 px-2 pr-8 text-[16px] shadow-md shadow-gray-900/8 disabled:shadow-none ring-offset-1 outline-none placeholder:opacity-50 focus:bg-gray-100! md:text-sm",
+            !opensToSide() &&
+              (opensToTop()
+                ? ":base: data-[state=open]:rounded-t-none"
+                : ":base: data-[state=open]:rounded-b-none"),
+            props.startIcon && ":base: pl-7",
             props.surfaceClass,
             props.inputClass
           )}
@@ -210,6 +231,16 @@ const Combobox = <O extends ComboboxOption>(props: ComboboxProps<O>): JSX.Elemen
             if (props.openOnFocus !== false) setOpened(true);
           }}
         />
+        <Show when={props.startIcon}>
+          {(icon) => (
+            <span
+              class={clsx(
+                ":base: pointer-events-none absolute left-2 h-4 w-4 shrink-0 text-gray-400",
+                icon()
+              )}
+            />
+          )}
+        </Show>
         <Show when={mobileTapControl()}>
           <button
             ref={setMobileControlRef}
@@ -230,7 +261,12 @@ const Combobox = <O extends ComboboxOption>(props: ComboboxProps<O>): JSX.Elemen
             }}
           />
         </Show>
-        <span class=":base: i-lucide:chevrons-up-down pointer-events-none absolute right-2 shrink-0 text-gray-400" />
+        <span
+          class={clsx(
+            ":base: pointer-events-none absolute right-2 shrink-0 text-gray-400",
+            props.indicator ?? ":base: i-lucide:chevrons-up-down"
+          )}
+        />
       </ArkCombobox.Control>
       <Dynamic component={!optionsInline() && props.portal !== false ? Portal : Fragment}>
         <ArkCombobox.Positioner
@@ -239,16 +275,20 @@ const Combobox = <O extends ComboboxOption>(props: ComboboxProps<O>): JSX.Elemen
             optionsInline() && opensToTop() && ":base: order-1",
             optionsInline()
               ? ":base: !static !inset-auto !w-full !min-w-0 !max-w-full !transform-none"
-              : ":base: w-[var(--reference-width)] min-w-[var(--reference-width)] max-w-[var(--reference-width)]"
+              : opensToSide()
+                ? ":base: w-64"
+                : ":base: w-[var(--reference-width)] min-w-[var(--reference-width)] max-w-[var(--reference-width)]"
           )}
         >
           <ArkCombobox.Content
             class={clsx(
-              ":base: z-50 flex max-h-none w-full min-w-0 max-w-full flex-col overflow-hidden border-x border-gray-200 bg-white px-1 pointer-events-auto shadow-gray-200",
+              ":base: z-50 flex max-h-none w-full min-w-0 max-w-full flex-col overflow-hidden border-x border-gray-200 bg-white px-1 pointer-events-auto shadow-gray-900/8",
               !optionsInline() && ":base: max-h-[var(--available-height)] min-w-full",
-              opensToTop()
-                ? ":base: rounded-t-lg border-t shadow-[0_-4px_6px_-1px]"
-                : ":base: rounded-b-lg border-b shadow-[0_4px_6px_-1px]",
+              opensToSide()
+                ? ":base: rounded-lg border-y shadow-[0_0_12px_0px]"
+                : opensToTop()
+                  ? ":base: rounded-t-lg border-t shadow-[0_-4px_6px_-1px]"
+                  : ":base: rounded-b-lg border-b shadow-[0_4px_6px_-1px]",
               props.surfaceClass
             )}
             ref={setContentRef}
@@ -286,8 +326,8 @@ const Combobox = <O extends ComboboxOption>(props: ComboboxProps<O>): JSX.Elemen
                                 ":base: h-4.5 w-4.5 shrink-0",
                                 typeof icon === "string" && icon,
                                 selected()
-                                  ? ":base: bg-gradient-to-tr media-mouse:group-data-[highlighted]/combobox-item:(text-white bg-none)"
-                                  : ":base: text-gray-500"
+                                  ? ":base: bg-gradient-to-tr media-mouse:group-data-[highlighted]/combobox-item:bg-none media-mouse:group-data-[highlighted]/combobox-item:bg-white"
+                                  : ":base: text-gray-400"
                               )}
                             >
                               {typeof icon === "function" && <Dynamic component={icon} />}
@@ -297,7 +337,7 @@ const Combobox = <O extends ComboboxOption>(props: ComboboxProps<O>): JSX.Elemen
                         <ArkCombobox.ItemText
                           title={option.label}
                           class={clsx(
-                            ":base: flex-1 px-1 text-start text-sm line-clamp-1",
+                            ":base: flex-1 pr-1 text-start text-sm line-clamp-1",
                             selected()
                               ? ":base: bg-gradient-to-tr bg-clip-text text-transparent media-mouse:group-data-[highlighted]/combobox-item:text-white"
                               : ":base: text-gray-700"
@@ -310,7 +350,7 @@ const Combobox = <O extends ComboboxOption>(props: ComboboxProps<O>): JSX.Elemen
                   }}
                 </For>
                 <ArkCombobox.Empty class=":base: px-2 py-1 text-sm text-gray-400">
-                  No options
+                  {props.emptyLabel ?? "No options"}
                 </ArkCombobox.Empty>
               </ArkCombobox.List>
             </div>

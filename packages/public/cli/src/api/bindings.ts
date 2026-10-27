@@ -39,6 +39,8 @@ const bindings: Record<
     client.collections.create(input as OperationInput<"collections.create">, options),
   "collections.delete": (client, input, options) =>
     client.collections.delete(input as OperationInput<"collections.delete">, options),
+  "collections.get": (client, input, options) =>
+    client.collections.get(input as OperationInput<"collections.get">, options),
   "collections.list": (client, input, options) =>
     client.collections.list(input as OperationInput<"collections.list">, options),
   "collections.move": (client, input, options) =>
@@ -75,6 +77,8 @@ const bindings: Record<
     client.entries.move(input as OperationInput<"entries.move">, options),
   "entries.update": (client, input, options) =>
     client.entries.update(input as OperationInput<"entries.update">, options),
+  "extensions.listElements": (client, input, options) =>
+    client.extensions.listElements(input as OperationInput<"extensions.listElements">, options),
   "instance.get": (client, input, options) =>
     client.instance.get(input as OperationInput<"instance.get">, options),
   "memberships.invite": (client, input, options) =>

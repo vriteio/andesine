@@ -31,6 +31,7 @@ import { createBlockRangeSelection } from "../../../extensions/block-selection";
 import { getCodePresence } from "./presence";
 import { syntaxHighlightStyle } from "../../../lib/syntax-highlight";
 import { codeBlockScrollShadows } from "./scroll";
+import { findNextStop, selectStop } from "../../keyboard-stops";
 import { createCodeBlockViewport } from "./viewport";
 import { codeBlockFoldGutter, codeBlockIndentGuides } from "./guides";
 import { formatCodeBlock, getCodeFormatParser } from "../../../lib/code-format";
@@ -129,8 +130,18 @@ const createCodeBlockViewRenderer =
       if (typeof pos !== "number") return false;
 
       const state = editor.state;
+      const dir = forward ? 1 : -1;
+      // As the arrow keys elsewhere: to the next stop, e.g. a code group's next tab, not hidden code.
+      const stop = extend ? null : findNextStop(editor, { pos, block: false }, dir);
+
+      if (stop) {
+        selectStop(editor, stop, dir);
+        editor.view.focus();
+        return true;
+      }
+
       const boundary = forward ? pos + node.nodeSize : pos;
-      const next = Selection.near(state.doc.resolve(boundary), forward ? 1 : -1);
+      const next = Selection.near(state.doc.resolve(boundary), dir);
 
       if (next.$head.parent === node) return false;
 

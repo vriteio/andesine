@@ -93,9 +93,12 @@ const verifySession = withAuthorization<VerifySessionInput, undefined, Extension
           loadAuthorizedCollectionTree({ auth })
         ])
       : [];
+    // The member's authority, for collections the extension can read; its own calls use its grant.
     const checks = (input.checks ?? []).map(({ collectionID, actions }) => {
+      const [memberTree, extensionTree] = trees;
+      const isReadable = extensionTree!.canCollection(collectionID, "collection:read");
       const denied = actions.filter((action) => {
-        return !trees.every((tree) => canTake(tree, collectionID, action));
+        return !isReadable || !canTake(memberTree!, collectionID, action);
       });
 
       return { collectionID, allowed: denied.length === 0, denied };

@@ -1,16 +1,8 @@
 import clsx from "clsx";
-import { Skeleton } from "@andesine/components";
 import { type RunningExtensionPanel } from "#web/lib/extensions";
-import {
-  type Component,
-  createEffect,
-  createSignal,
-  type JSX,
-  on,
-  onCleanup,
-  Show
-} from "solid-js";
+import { type Component, type JSX, Show } from "solid-js";
 import { ExtensionView } from "./extension-view";
+import { useExtensionView } from "./use-extension-view";
 
 interface ExtensionPanelViewProps {
   item: RunningExtensionPanel;
@@ -23,10 +15,6 @@ interface ExtensionIconScopeProps {
   children: JSX.Element;
 }
 
-type ViewProps = NonNullable<
-  Parameters<RunningExtensionPanel["extension"]["host"]["createView"]>[1]
->;
-
 /** Wraps host UI that shows a manifest icon; the icon CSS applies only inside it. */
 const ExtensionIconScope: Component<ExtensionIconScopeProps> = (props) => (
   <span
@@ -38,24 +26,10 @@ const ExtensionIconScope: Component<ExtensionIconScopeProps> = (props) => (
 );
 const ExtensionPanelView: Component<ExtensionPanelViewProps> = (props) => {
   const { host } = props.item.extension;
-  const [failed, setFailed] = createSignal(false);
-  const viewID = host.createView(props.item.panel.entry, props.context as ViewProps);
-  const rendered = () => {
-    const root = host.tree.state.roots[viewID];
-
-    return root !== undefined && host.tree.state.nodes[root]?.children.length > 0;
-  };
-  const unavailable = () => failed() || props.item.extension.status() === "failed";
-
-  onCleanup(props.item.extension.onViewError(viewID, () => setFailed(true)));
-  onCleanup(() => host.disposeView(viewID));
-  // Sends the context only when its IDs change, not on every recomputation.
-  createEffect(
-    on(
-      () => JSON.stringify(props.context),
-      () => host.updateView(viewID, props.context as ViewProps),
-      { defer: true }
-    )
+  const { viewID, rendered, unavailable } = useExtensionView(
+    props.item.extension,
+    props.item.panel.view,
+    () => props.context
   );
 
   return (
@@ -67,11 +41,9 @@ const ExtensionPanelView: Component<ExtensionPanelViewProps> = (props) => {
         when={!unavailable()}
         fallback={<span class="text-sm text-gray-500">This panel is unavailable.</span>}
       >
-        <Show when={!rendered()}>
-          <Skeleton class={["h-6 w-full rounded-lg", "h-6 w-2/3 rounded-lg"]} />
-        </Show>
-        <div class="min-h-0 flex-1 overflow-y-auto scrollbar-sm" hidden={!rendered()}>
-          <ExtensionView host={host} viewID={viewID} />
+        {/* Room for the view's shadows, e.g. a full-width button's, which the view's box clips. */}
+        <div class="-mx-1 min-h-0 flex-1 overflow-y-auto scrollbar-sm" hidden={!rendered()}>
+          <ExtensionView host={host} viewID={viewID} class="w-full px-1 pb-2" />
         </div>
       </Show>
     </div>

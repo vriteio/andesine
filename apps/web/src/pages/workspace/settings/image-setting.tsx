@@ -119,7 +119,9 @@ const ImageSetting: Component<ImageSettingProps> = (props) => {
           type="button"
           class={clsx(
             "group/image relative h-14 w-14 shrink-0 overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-tertiary rounded-xl",
-            disabled() ? "cursor-default" : "cursor-pointer"
+            disabled() ? "cursor-default" : "cursor-pointer",
+            // As gradient buttons, on the placeholder only; none while it can't be changed.
+            !image() && !disabled() && "shadow-md shadow-tertiary/25"
           )}
           aria-label={image() ? "Replace image" : "Upload image"}
           aria-disabled={disabled()}

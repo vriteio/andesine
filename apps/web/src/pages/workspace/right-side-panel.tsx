@@ -1,5 +1,5 @@
 import { IconButton, Skeleton, Tooltip } from "@andesine/components";
-import { useParams, useSearchParams } from "@solidjs/router";
+import { useLocation, useParams, useSearchParams } from "@solidjs/router";
 import { type Component, createEffect, createMemo, For, type JSX, Show, Suspense } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import { useLayout } from "#web/context/layout";
@@ -10,8 +10,14 @@ import { SchemaVersionHistoryPanel } from "./schema/version-history-panel";
 import { PublishingPanel, PublishingPanelFallback } from "./publishing";
 import { usePublishing } from "#web/context/publishing";
 import { RIGHT_SIDE_PANEL_PARAM } from "./panel-navigation";
+import { usePanelContext, usePublishingResolved } from "./use-panel-context";
 import { ExtensionIconScope, ExtensionPanelView } from "#web/components/extensions/panel-view";
-import { getExtensionPanels, type RunningExtensionPanel } from "#web/lib/extensions";
+import {
+  extensionsLoading,
+  getExtensionPanels,
+  runningExtensions,
+  type RunningExtensionPanel
+} from "#web/lib/extensions";
 
 interface RightSidePanelOption {
   id: string;
@@ -45,16 +51,45 @@ const VersionHistoryPanelFallback: Component = () => {
   );
 };
 
+/** Whether the route has no right panel: settings, or a collection's access page. */
+const useRightSidePanelHidden = () => {
+  const location = useLocation();
+  const params = useParams<{ workspaceID?: string; slug?: string }>();
+
+  return () => {
+    const isSettingsRoute = location.pathname.startsWith(`/${params.workspaceID || ""}/settings`);
+
+    return isSettingsRoute || Boolean(params.slug?.startsWith("coll_"));
+  };
+};
+/** Whether the panels may still change, e.g. while the publishing state and extensions load. */
+const useRightSidePanelLoading = () => {
+  const { content } = useWorkspace();
+  const publishingAvailabilityResolved = usePublishingResolved();
+
+  return () => {
+    // Offline, extensions don't load and no panels show.
+    if (content.offline()) return false;
+
+    const isStarting = runningExtensions().some((extension) => extension.status() === "starting");
+
+    return !publishingAvailabilityResolved() || extensionsLoading() || isStarting;
+  };
+};
 const useRightSidePanelOptions = () => {
-  const params = useParams<{ slug?: string }>();
+  const params = useParams<{ slug?: string; extensionID?: string; pageID?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { content, currentWorkspace } = useWorkspace();
   const publishing = usePublishing();
+  const panelContext = usePanelContext();
   const publishingAvailable = () => {
     const entry = content.entries.get({ entryID: params.slug || "" });
     const deletedEntry = entry ? undefined : publishing.getDeletedEntry(params.slug || "");
     const status = entry ? content.getEntryPublishingStatus(entry.id) : null;
     const publishedRoot = publishing.getPublishedEntryRoot(params.slug || "");
+    // Collection pages and collection-bound extension pages show their collection's publishing.
+    const collectionID = entry || deletedEntry ? null : panelContext().collectionID;
+    const publishingCollectionID = collectionID && content.getPublishingCollectionID(collectionID);
 
     return Boolean(
       currentWorkspace() &&
@@ -63,39 +98,43 @@ const useRightSidePanelOptions = () => {
         (entry &&
           status &&
           status !== "outside" &&
-          content.canEntry(entry.collectionID || null, "publishing:read")))
+          content.canEntry(entry.collectionID || null, "publishing:read")) ||
+        (publishingCollectionID && content.canEntry(publishingCollectionID, "publishing:read")))
     );
   };
-  const publishingAvailabilityResolved = () => {
-    return (
-      content.offline() ||
-      (!content.loading() && !publishing.statusLoading() && !publishing.explorerOverlayLoading())
-    );
-  };
-  // Extensions get only context IDs: the current entry and its collection, or the schema's.
-  const getContext = (): Record<string, string> => {
-    const entry = content.entries.get({ entryID: params.slug || "" });
-    const schema = entry ? null : content.schemasCollection().findOne({ id: params.slug || "" });
-    const collectionID = entry?.collectionID || schema?.collectionID || null;
+  const publishingAvailabilityResolved = usePublishingResolved();
+  // Extensions get only context IDs: the panel's entry and collection, or the schema's collection.
+  const context = createMemo((): Record<string, string> => {
+    const { entryID, collectionID: panelCollectionID } = panelContext();
+    const schema = entryID ? null : content.schemasCollection().findOne({ id: params.slug || "" });
+    const collectionID = panelCollectionID || schema?.collectionID;
+    // The nearest collection with publishing on, e.g. a docs site's root for a nested entry.
+    const publishingCollectionID = collectionID && content.getPublishingCollectionID(collectionID);
 
     return {
-      ...(entry && { entryID: entry.id }),
-      ...(collectionID && { collectionID })
+      ...(entryID && { entryID }),
+      ...(collectionID && { collectionID }),
+      ...(publishingCollectionID && { publishingCollectionID })
     };
-  };
+  });
   const getPanelContext = (item: RunningExtensionPanel): Record<string, string> => {
-    const context = getContext();
+    const isOwnPage = params.pageID && params.extensionID === item.extension.extensionID;
+    // The open page of the panel's extension, e.g. to mark it in the panel's navigation.
+    const page: Record<string, string> = isOwnPage ? { pageID: params.pageID! } : {};
 
-    if (item.panel.side !== "right" || item.panel.context === "workspace") return {};
+    if (item.panel.side !== "right" || item.panel.context === "workspace") return page;
 
-    if (item.panel.context === "entry") return context;
-
-    return context.collectionID ? { collectionID: context.collectionID } : {};
+    // Collection panels also get the open entry, e.g. to link its page.
+    return item.panel.context === "entry" || context().collectionID
+      ? { ...context(), ...page }
+      : {};
   };
   const isPanelAvailable = (item: RunningExtensionPanel): boolean => {
     const context = getPanelContext(item);
 
     if (item.panel.side !== "right" || item.panel.context === "workspace") return true;
+    // Its `publishingCollectionID` is known only then; the panel's loading state shows meanwhile.
+    if (!publishingAvailabilityResolved()) return false;
 
     return Boolean(item.panel.context === "entry" ? context.entryID : context.collectionID);
   };
@@ -192,11 +231,14 @@ const RightSidePanel: Component = () => {
   const { layout } = useLayout();
   const [searchParams, setSearchParams] = useSearchParams();
   const options = useRightSidePanelOptions();
+  const loading = useRightSidePanelLoading();
   const selectedOption = createMemo(() => {
     const requested = searchParams[RIGHT_SIDE_PANEL_PARAM];
     const requestedOptionID = typeof requested === "string" && requested ? requested : "versions";
+    const option = options().find((item) => item.id === requestedOptionID);
 
-    return options().find((option) => option.id === requestedOptionID) || options()[0];
+    // A requested extension panel shows once its extension starts, not another panel meanwhile.
+    return option || (loading() && requested ? undefined : options()[0]);
   });
   const selectOption = (option: RightSidePanelOption) => {
     setSearchParams({
@@ -208,7 +250,7 @@ const RightSidePanel: Component = () => {
     <div class="flex min-h-0 w-full flex-1 flex-col">
       <div class="flex w-full gap-1 px-1">
         <Show when={options().length === 0 && layout.rightSidePanelWidth > 0}>
-          <Skeleton class={["h-7 w-7 rounded-lg", "h-7 w-7 rounded-lg"]} />
+          <Skeleton class={["h-7 w-7 rounded-lg", "h-7 w-7 rounded-lg", "h-7 w-7 rounded-lg"]} />
         </Show>
         <For each={options()}>
           {(option) => {
@@ -243,7 +285,10 @@ const RightSidePanel: Component = () => {
           when={layout.rightSidePanelWidth > 0 && selectedOption()}
           fallback={
             <Show when={layout.rightSidePanelWidth > 0}>
-              <VersionHistoryPanelFallback />
+              {/* While panels load, only the option skeletons show; each panel has its own. */}
+              <Show when={!loading()}>
+                <VersionHistoryPanelFallback />
+              </Show>
             </Show>
           }
           keyed
@@ -262,10 +307,12 @@ const RightSidePanel: Component = () => {
 const RightSidePanelToggle: Component = () => {
   const { layout, setLayout } = useLayout();
   const options = useRightSidePanelOptions();
+  const loading = useRightSidePanelLoading();
+  const hidden = useRightSidePanelHidden();
   const opened = () => layout.rightSidePanelWidth > 0;
 
   return (
-    <Show when={options().length > 0}>
+    <Show when={!hidden() && (options().length > 0 || (opened() && loading()))}>
       <Tooltip
         content={opened() ? "Close side panel" : "Open side panel"}
         placement="bottom"
@@ -291,5 +338,7 @@ export {
   RightSidePanel,
   RightSidePanelIcon,
   RightSidePanelToggle,
+  useRightSidePanelHidden,
+  useRightSidePanelLoading,
   useRightSidePanelOptions
 };

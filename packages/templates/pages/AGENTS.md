@@ -51,16 +51,16 @@ lists them; add a component there before you use it.
 | `Callout`          | `type`: `note` (default), `tip`, `warning`, or `danger`    |
 | `Tabs`, `Tab`      | Alternatives; tabs with the same `syncKey` share selection |
 | `CodeGroup`        | Code blocks in tabs, from their `title`s                   |
-| `Steps`            | An ordered list of steps                                   |
-| `FileTree`         | A nested list of files and folders                         |
-| `CardGrid`, `Card` | Links with `title`, `icon` (an Iconify class), and `href`  |
-| `Disclosure`       | Content that opens on click, with a `title`                |
+| `Steps`, `Step`    | Numbered steps; each `Step` has a `title` and content      |
+| `FileTree`         | `Folder` (with a `name`, holding more) and `File` (`name`) |
+| `CardGrid`, `Card` | Links with `title`, `icon` (an icon class), and `href`     |
+| `Accordion`        | Content that opens on click, with a `title`                |
 | `Figure`           | An image (as content) with a `caption`                     |
 | `Operation`        | An API operation: `source` and `id` of an OpenAPI source   |
 | `Visibility`       | Content for one audience; see below                        |
 
-Leave an empty line around Markdown content inside `Steps`, `CodeGroup`, and
-`FileTree`.
+Leave an empty line around Markdown content inside `CodeGroup`. Icon classes come from
+Lucide, Tabler, or Simple Icons, e.g. `i-lucide:book`.
 
 ## Visibility
 

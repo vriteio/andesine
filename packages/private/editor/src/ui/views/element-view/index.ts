@@ -2,7 +2,6 @@ import {
   normalizeElementAttributes,
   getElementTagName,
   parseElement,
-  tokenizeElement,
   type ElementData
 } from "@andesine/document";
 import { isPositionInInheritedField } from "../../block-utils";
@@ -12,13 +11,16 @@ import type { HocuspocusProvider } from "@hocuspocus/provider";
 import type { NodeViewRenderer, EditorEvents } from "@tiptap/core";
 import { NodeSelection, Selection } from "@tiptap/pm/state";
 import { setElementExitSelection } from "../../../lib/element-selection";
+import { isBlockSelection } from "../../../extensions/block-selection";
 import { createElementAwareness } from "../../../lib/element-awareness";
-import { renderElementTag } from "./tag-presence";
+import { renderClosingTag, renderElementTag } from "./tag-presence";
 import { createElementDiffView } from "../../../extensions/version-diff/element";
 import { closeHistory } from "@tiptap/pm/history";
 import { yUndoPluginKey } from "@tiptap/y-tiptap";
 import type { ElementViews } from "../../../client-types";
-import { createElementExtensionView, getElementAncestors } from "./extension-view";
+import { createElementExtensionView, type NodeRange } from "./extension-view";
+import { getElementAncestors } from "#editor/lib/element-content";
+import { createElementContentBadge } from "./content-badge";
 
 interface ElementViewOptions {
   owner: unknown;
@@ -67,10 +69,14 @@ const createElementViewRenderer =
       onChange: () => render(),
       editor,
       getPos,
-      canEdit: () => canEdit() && !presence.getRemote()
+      canEdit: () => canEdit() && !presence.getRemote(),
+      onContextMenu: (descendant) => contextMenu(descendant)
     });
 
+    const badge = createElementContentBadge({ editor, getPos, elementViews: options.elementViews });
     const diff = createElementDiffView(dom, opening, closing, options.owner);
+
+    dom.append(badge.dom);
     const presence = createElementAwareness(awareness, () => node.attrs.id, options.user);
     const canEdit = () => {
       const pos = getPos();
@@ -100,21 +106,11 @@ const createElementViewRenderer =
       if (!node.attrs.selfClosing) {
         const name =
           remote?.source === undefined ? node.attrs.name : getElementTagName(remote.source);
-        const text = `</${editing ? draftName : name}>`;
 
-        if (editing) {
-          for (const token of tokenizeElement(text)) {
-            const span = document.createElement("span");
-
-            span.className = `element-token-${token.kind}`;
-            span.textContent = text.slice(token.from, token.to);
-            closing.append(span);
-          }
-        } else {
-          closing.textContent = text;
-        }
+        closing.replaceChildren(...renderClosingTag(`</${editing ? draftName : name}>`, editing));
       }
       contentDOM.hidden = node.attrs.selfClosing;
+      badge.update();
       closing.hidden = node.attrs.selfClosing || extensionView.active();
       opening.hidden = extensionView.active();
       dom.toggleAttribute("data-element-editing", editing);
@@ -340,19 +336,28 @@ const createElementViewRenderer =
       editor.view.dispatch(tr);
       editor.view.focus();
     });
-    const contextMenu = () => {
+    // The element, or a descendant whose UI is in its view, e.g. a tab in a tab bar.
+    const contextMenu = (descendant?: NodeRange | null) => {
       const pos = getPos();
       if (editing || !canEdit() || typeof pos !== "number") {
         return;
       }
+      const { pos: from, size } = descendant ?? { pos, size: node.nodeSize };
+      const { selection } = editor.state;
+      // A block selection with the block, e.g. from a box selection, stays for the menu.
+      const isSelected =
+        isBlockSelection(selection) && selection.from <= from && selection.to >= from + size;
+
+      if (isSelected) return;
+
       editor.commands.setBlockSelection({
-        from: pos,
-        to: pos + node.nodeSize,
-        depth: editor.state.doc.resolve(pos).depth
+        from,
+        to: from + size,
+        depth: editor.state.doc.resolve(from).depth
       });
     };
-    opening.addEventListener("contextmenu", contextMenu);
-    closing.addEventListener("contextmenu", contextMenu);
+    opening.addEventListener("contextmenu", () => contextMenu());
+    closing.addEventListener("contextmenu", () => contextMenu());
     opening.addEventListener("click", click);
     closing.addEventListener("click", click);
     opening.addEventListener("keydown", (event) => {
@@ -398,12 +403,18 @@ const createElementViewRenderer =
       stopEvent(event) {
         const target = event.target as globalThis.Node;
 
-        return opening.contains(target) || closing.contains(target) || extensionView.owns(target);
+        const isOwnUI = [opening, closing, badge.dom].some((part) => part.contains(target));
+        // A drag from the editor, e.g. of a file row, drops over the view's UI too.
+        const isEditorDrop =
+          (event.type.startsWith("drag") && event.type !== "dragstart") || event.type === "drop";
+
+        if (isEditorDrop && editor.view.dragging) return false;
+
+        return isOwnUI || extensionView.owns(target);
       },
       ignoreMutation(mutation) {
-        if (mutation.type === "selection") {
-          return (editing || extensionView.active()) && !contentDOM.contains(mutation.target);
-        }
+        if (mutation.type === "selection" && editing) return !contentDOM.contains(mutation.target);
+        if (mutation.type === "selection") return extensionView.ownsUI(mutation.target);
         if (mutation.type === "attributes" && mutation.target === contentDOM) {
           return true;
         }

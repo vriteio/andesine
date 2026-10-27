@@ -1,7 +1,11 @@
-import { defineBuild, defineExtension } from "@andesine/extensions";
+import { defineExtension, viewRefs } from "@andesine/extensions";
 import * as z from "zod";
 // `andesine extensions keys generate` and `keys revoke` maintain this file.
 import backendKeys from "./andesine.keys.json" with { type: "json" };
+// Only the views' types: they run in the frontend, from src/views.tsx.
+import type { Views } from "./src/views";
+
+const View = viewRefs<Views>();
 
 export default defineExtension({
   // Your registry name, e.g. `acme/publish`.
@@ -31,17 +35,41 @@ export default defineExtension({
       .optional()
       .meta({ title: "API token", description: "Only the backend reads it", secret: true })
   }),
-  // Renders `<Note>` elements; `<NoteTitle>` inside a note uses its own view.
+  // Renders `<Note>` elements; the note view also draws the `<NoteTitle>` elements inside it.
   elementViews: [
     {
       id: "note",
       name: "Note",
-      // Shown in the editor's slash menu, under Elements.
+      // Shown in the editor's slash menu, in its category's group.
       description: "A highlighted note with a title and a tone",
       icon: "i-lucide:sticky-note",
+      category: "Samples",
       element: "Note",
-      entry: "NoteView",
-      descendants: [{ element: "NoteTitle", entry: "NoteTitleView" }]
+      view: View.NoteView,
+      // Any blocks but another note.
+      rejects: { elements: ["Note"] },
+      // The note's menu edits these props, in this order, and a new note gets their defaults; a Zod
+      // object works too, as above.
+      props: [
+        {
+          name: "tone",
+          type: "string",
+          title: "Tone",
+          enum: ["info", "warning"],
+          control: "toggle",
+          default: "info"
+        }
+      ],
+      // Drawn by the note view's template, and offered in the slash menu inside notes.
+      children: [
+        {
+          element: "NoteTitle",
+          name: "Note title",
+          description: "The title of the note it's in",
+          icon: "i-lucide:heading",
+          accepts: { blocks: ["paragraph"] }
+        }
+      ]
     }
   ],
   // Shown in the block menu of the listed block types; each view decides its own UI.
@@ -51,21 +79,21 @@ export default defineExtension({
       label: "Shout",
       icon: "i-lucide:megaphone",
       blocks: ["paragraph", "heading"],
-      entry: "ShoutAction"
+      view: View.ShoutAction
     },
     {
       id: "count-words",
       label: "Count words",
       icon: "i-lucide:hash",
       blocks: ["paragraph", "heading"],
-      entry: "CountWordsAction"
+      view: View.CountWordsAction
     },
     {
       id: "wrap-in-note",
       label: "Wrap in Note",
       icon: "i-lucide:sticky-note",
       blocks: ["paragraph", "heading"],
-      entry: "WrapInNoteAction"
+      view: View.WrapInNoteAction
     }
   ],
   panels: [
@@ -75,9 +103,7 @@ export default defineExtension({
       name: "Hello",
       icon: "i-lucide:hand",
       context: "entry",
-      entry: "HelloPanel"
+      view: View.HelloPanel
     }
   ]
 });
-
-export const build = defineBuild({ frontend: "src/frontend/index.tsx" });

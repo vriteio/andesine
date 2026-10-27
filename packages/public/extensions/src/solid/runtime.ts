@@ -12,7 +12,10 @@ import {
 } from "./renderer";
 import type { Envelope, HostMessageBody, WorkerMessageBody } from "./protocol";
 import { setRequestSender, settleRequest } from "./requests";
+import { emitStorageChange } from "./storage";
 import { updateContext, updateSession } from "./context";
+import { ViewPropsContext, whenTemplate } from "./templates";
+import type { ViewComponents, Views } from "../views";
 
 interface RunningView {
   root: ViewNode;
@@ -28,7 +31,13 @@ const ViewProvider = ViewContext.Provider as unknown as (props: {
   value: string;
   children: ViewNode;
 }) => ViewNode;
+const ViewPropsProvider = ViewPropsContext.Provider as unknown as (props: {
+  value: Record<string, unknown>;
+  children: ViewNode;
+}) => ViewNode;
 const views = new Map<string, RunningView>();
+// Template views that wait for their root view's `<Element>`; disposing one cancels it.
+const pendingTemplates = new Set<string>();
 
 let started = false;
 
@@ -58,18 +67,11 @@ const startExtension = (entries: ExtensionViews): void => {
     const sendError = (error: unknown, viewID?: string): void => {
       send({ type: "error", viewID, message: getErrorMessage(error) });
     };
-    const createView = (viewID: string, entry: string, props: Record<string, unknown>): void => {
-      // Solid components return JSX elements, which are view nodes in this renderer.
-      const component = Object.hasOwn(entries, entry)
-        ? (entries[entry] as unknown as (props: object) => ViewNode)
-        : undefined;
-
-      if (!component || views.has(viewID)) {
-        sendError(`Unknown or duplicate view: ${entry}`, viewID);
-
-        return;
-      }
-
+    const mountView = (
+      viewID: string,
+      component: (props: object) => ViewNode,
+      props: Record<string, unknown>
+    ): void => {
       const root = createViewRoot(viewID);
       const [viewProps, setViewProps] = createStore({ ...props });
       const dispose = render(() => {
@@ -78,7 +80,12 @@ const startExtension = (entries: ExtensionViews): void => {
             return createComponent(ViewProvider, {
               value: viewID,
               get children() {
-                return createComponent(component, viewProps);
+                return createComponent(ViewPropsProvider, {
+                  value: viewProps,
+                  get children() {
+                    return createComponent(component, viewProps);
+                  }
+                });
               }
             });
           },
@@ -92,8 +99,44 @@ const startExtension = (entries: ExtensionViews): void => {
         dispose
       });
     };
+    const createView = (viewID: string, entry: string, props: Record<string, unknown>): void => {
+      // Solid components return JSX elements, which are view nodes in this renderer.
+      const component = Object.hasOwn(entries, entry)
+        ? (entries[entry] as unknown as (props: object) => ViewNode)
+        : undefined;
+
+      if (!component || views.has(viewID)) {
+        sendError(`Unknown or duplicate view: ${entry}`, viewID);
+
+        return;
+      }
+
+      mountView(viewID, component, props);
+    };
+    /** A child element's view from its root view's template, once the root has rendered it. */
+    const createTemplateView = (
+      viewID: string,
+      rootViewID: string,
+      tag: string,
+      props: Record<string, unknown>
+    ): void => {
+      if (views.has(viewID) || pendingTemplates.has(viewID)) {
+        sendError(`Duplicate view: ${viewID}`, viewID);
+
+        return;
+      }
+
+      pendingTemplates.add(viewID);
+      whenTemplate(rootViewID, tag, (template) => {
+        if (!pendingTemplates.delete(viewID)) return;
+
+        mountView(viewID, template as unknown as (props: object) => ViewNode, props);
+      });
+    };
     const disposeView = (viewID: string): void => {
       const view = views.get(viewID);
+
+      pendingTemplates.delete(viewID);
 
       if (!view) return;
 
@@ -106,12 +149,16 @@ const startExtension = (entries: ExtensionViews): void => {
         send({ type: "heartbeat", id: message.id });
       } else if (message.type === "view.create") {
         createView(message.viewID, message.entry, message.props);
+      } else if (message.type === "view.template") {
+        createTemplateView(message.viewID, message.rootViewID, message.tag, message.props);
       } else if (message.type === "view.update") {
         views.get(message.viewID)?.setProps(message.props);
       } else if (message.type === "view.dispose") {
         disposeView(message.viewID);
       } else if (message.type === "context") {
         updateContext(message);
+      } else if (message.type === "storage") {
+        emitStorageChange({ key: message.key, exists: message.exists });
       } else if (message.type === "session") {
         updateSession(message);
       } else if (message.type === "response") {
@@ -143,4 +190,12 @@ const startExtension = (entries: ExtensionViews): void => {
   });
 };
 
-export { startExtension };
+/**
+ * The extension's views by name, the default export of its views module (`src/views.tsx`); the
+ * build starts the frontend with them. The manifest names them through `viewRefs`.
+ */
+const defineViews = <Components extends ViewComponents>(
+  components: Components
+): Views<Components> => components as unknown as Views<Components>;
+
+export { defineViews, startExtension };

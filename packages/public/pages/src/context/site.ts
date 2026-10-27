@@ -1,4 +1,6 @@
 import type { PagesConfig, SourceConfig } from "../config";
+import { createLinkResolver } from "../navigation/links";
+import type { SourceData } from "../sources";
 import type { AndesineAPIContext, SearchSourceContext, SiteContext } from "./types";
 
 const defaultAPIURL = "https://api.andesine.app";
@@ -30,8 +32,9 @@ const createSearchSources = (config: PagesConfig): SearchSourceContext[] => {
     };
   });
 };
-const createSiteContext = (config: PagesConfig): SiteContext => {
+const createSiteContext = (config: PagesConfig, loaded: SourceData[]): SiteContext => {
   const sources = createSearchSources(config);
+  const links = createLinkResolver(loaded);
   // The API answers about one collection, so the first source with answers is used.
   const answers = config.sources.find((source) => source.type === "andesine" && source.answers);
 
@@ -45,9 +48,10 @@ const createSiteContext = (config: PagesConfig): SiteContext => {
     logo: config.logo,
     favicon: config.favicon,
     sectionsDisplay: config.sectionsDisplay,
-    links: config.links,
-    cta: config.cta,
-    socialLinks: config.socialLinks,
+    links: links.resolveAll(config.links),
+    cta: config.cta && links.resolve(config.cta),
+    socialLinks: links.resolveAll(config.socialLinks),
+    poweredBy: config.poweredBy,
     search: sources.length
       ? {
           sources,

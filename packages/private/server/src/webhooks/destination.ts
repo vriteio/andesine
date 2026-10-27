@@ -6,6 +6,8 @@ interface WebhookDestination {
   url: URL;
   hostname: string;
   port: number;
+  /** An exception's addresses, which replace DNS, e.g. for `localhost`; only they are allowed. */
+  addresses?: string[];
   allowsAddress: (address: string) => boolean;
 }
 
@@ -79,6 +81,7 @@ const parseWebhookDestination = (
     url,
     hostname: url.hostname.replace(/^\[|\]$/g, ""),
     port: Number(url.port || (url.protocol === "https:" ? 443 : 80)),
+    addresses: exception?.addresses,
     allowsAddress
   };
 };

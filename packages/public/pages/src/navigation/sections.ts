@@ -1,6 +1,7 @@
 import type { IconLinkConfig, PagesConfig } from "../config";
 import { toHref, toSegments } from "../routing/paths";
 import type { SourceData, SourceNode } from "../sources";
+import { createLinkResolver } from "./links";
 import { flattenTree } from "./tree";
 
 interface Section {
@@ -44,9 +45,11 @@ const createSections = (config: PagesConfig, sources: SourceData[]): Section[] =
     ];
   }
 
+  const links = createLinkResolver(sources);
+
   return config.sections.map((section) => {
     return createSection(
-      section,
+      { ...section, links: links.resolveAll(section.links) },
       sources.filter((source) => section.sources.includes(source.id)),
       mountHref(section.sources[0])
     );

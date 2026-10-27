@@ -1,9 +1,10 @@
 import type { CommandProps, Editor, KeyboardShortcutCommand, Range } from "@tiptap/core";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
-import { PluginKey, Plugin, type Selection } from "@tiptap/pm/state";
+import { PluginKey, Plugin, Selection } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import { isNodeRangeSelection, NodeRange, NodeRangeSelection } from "@tiptap/extension-node-range";
 import { forEachSelectedBlock } from "#editor/ui/block-utils";
+import { getViewTargetAtPoint } from "#editor/ui/element-view-target";
 
 interface BlockSelectionRange extends Range {
   depth?: number;
@@ -16,6 +17,19 @@ declare module "@tiptap/core" {
     };
   }
 }
+
+const mapNodeRange = NodeRangeSelection.prototype.map;
+const nodeRangePrototype: Pick<Selection, "map"> = NodeRangeSelection.prototype;
+
+// The library throws when no block is left at the mapped place, e.g. after deleting a container's
+// last child; the selection becomes a cursor next to it.
+nodeRangePrototype.map = function (this: NodeRangeSelection, doc, mapping) {
+  try {
+    return mapNodeRange.call(this, doc, mapping as Parameters<typeof mapNodeRange>[1]);
+  } catch {
+    return Selection.near(doc.resolve(mapping.map(this.head)), -1);
+  }
+};
 
 const BlockSelection = NodeRangeSelection;
 const isBlockSelection = isNodeRangeSelection;
@@ -41,6 +55,22 @@ const setBlockSelectionAtCoords = (
 ): boolean => {
   const { doc, selection } = editor.state;
   const { pos } = editor.view.posAtCoords(coords) || {};
+  // In an element view, the top-level block, or a child that the view opts in.
+  const viewBlock = getViewTargetAtPoint(editor, coords.left, coords.top, false, "menu");
+
+  if (viewBlock) {
+    const to = viewBlock.pos + viewBlock.node.nodeSize;
+
+    if (!(isBlockSelection(selection) && selection.from <= viewBlock.pos && selection.to >= to)) {
+      editor.commands.setBlockSelection({
+        from: viewBlock.pos,
+        to,
+        depth: doc.resolve(viewBlock.pos).depth
+      });
+    }
+
+    return true;
+  }
 
   if (typeof pos !== "number") return false;
 

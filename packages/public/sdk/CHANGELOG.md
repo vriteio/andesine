@@ -1,7 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.8.0
 
+- `collections.get` returns one collection by `collectionID`, `collectionPath`, or
+  `collectionSlugPath`, with its name, path, and ancestors (`read:collections`).
+- `extensions.listElements` lists the custom elements of the workspace's active extensions (e.g.
+  Tabs): their props, whether they have content, the blocks their content accepts, and the
+  elements that belong inside them (`read:entries`).
 - `extensions.getSelf` and `extensions.verifySession` return `workspacePlan`, the workspace's
   effective plan (`pro` on instances without billing), so extensions can offer plan features.
 - Extension-managed publishable keys: `extensions.listSelfPublishableKeys`,
@@ -13,8 +18,8 @@
   losing `ai-answers` removes it.
 - Keys have `extensionID`: the extension that manages the key, or `null`.
 - `extensions.verifySession` takes optional `checks` (`{ collectionID, actions }`, up to 10) and
-  returns `checks` with `allowed` and the `denied` actions. An action is allowed only when the
-  member and the extension can both take it, restricted collections included.
+  returns `checks` with `allowed` and the `denied` actions. An action is allowed when the
+  member can take it and the extension can read the collection, restricted collections included.
 - `createExtensionBackend().verifySession(headers, { checks })` passes the checks; the results
   are in `session.checks`.
 

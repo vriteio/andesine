@@ -1,7 +1,14 @@
 import { type ExtensionRuntime } from "@andesine/contracts/extensions";
 import { useWorkspace } from "#web/context/workspace";
 import { extensionRuntimeQuery } from "#web/lib/data";
-import { loadExtensionArtifact, startExtension, stopExtension } from "#web/lib/extensions";
+import {
+  loadExtensionArtifact,
+  setExtensionsLoading,
+  isExtensionChange,
+  setPageContextResolver,
+  startExtension,
+  stopExtension
+} from "#web/lib/extensions";
 import { createAsync, revalidate } from "@solidjs/router";
 import { type Component, createEffect, onCleanup } from "solid-js";
 
@@ -12,7 +19,7 @@ const getRuntimeKey = (extension: ExtensionRuntime): string => {
 
 /** Runs active extension frontends from verified registry artifacts. */
 const ExtensionLoader: Component = () => {
-  const { workspaceID, subscribeToUpdates } = useWorkspace();
+  const { workspaceID, subscribeToUpdates, content } = useWorkspace();
   const runtime = createAsync(async () => {
     const id = workspaceID();
 
@@ -41,6 +48,8 @@ const ExtensionLoader: Component = () => {
     await startExtension({
       extensionID: extension.id,
       name: extension.name,
+      displayName: extension.displayName,
+      icon: extension.icon,
       code,
       styles: styleSheet,
       iconStyles,
@@ -49,7 +58,8 @@ const ExtensionLoader: Component = () => {
       grant: extension.grant.permissions,
       elementViews: extension.elementViews,
       blockActions: extension.blockActions,
-      panels: extension.panels
+      panels: extension.panels,
+      pages: extension.pages
     });
 
     // Removed while it was starting.
@@ -84,15 +94,34 @@ const ExtensionLoader: Component = () => {
         })
         .finally(() => {
           if (loads.get(extension.id) === next) loads.delete(extension.id);
+
+          setExtensionsLoading(loads.size > 0);
         });
 
       started.set(extension.id, key);
       loads.set(extension.id, next);
     }
+
+    setExtensionsLoading(loads.size > 0);
   });
   onCleanup(
     subscribeToUpdates((event) => {
-      if (event.action.startsWith("extension:")) void revalidate(extensionRuntimeQuery.key);
+      if (isExtensionChange(event.action)) void revalidate(extensionRuntimeQuery.key);
+    })
+  );
+  // Page conditions, e.g. of `openPage`, use the context's collection with publishing on.
+  onCleanup(
+    setPageContextResolver((ids) => {
+      const entry = ids.entryID ? content.entries.get({ entryID: ids.entryID }) : null;
+      const collectionID = ids.collectionID ?? entry?.collectionID ?? undefined;
+      const publishingCollectionID =
+        collectionID && content.getPublishingCollectionID(collectionID);
+
+      return {
+        ...ids,
+        ...(collectionID && { collectionID }),
+        ...(publishingCollectionID && { publishingCollectionID })
+      };
     })
   );
   onCleanup(() => {

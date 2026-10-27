@@ -50,6 +50,7 @@ const ImageView = (props: ImageViewProps) => {
     busy() || props.editor.storage.collaboration?.imageUploads().has(props.node().attrs.id);
   const loading = () => uploading() || Boolean(assetID() && !loaded() && !error());
   const canUpload = () => props.editable() && props.images()?.enabled() && !uploading();
+  const showsPlaceholder = () => !assetID() || uploading() || Boolean(error());
   const aspectRatio = () => {
     const ratio = attrs().aspectRatio;
 
@@ -305,7 +306,12 @@ const ImageView = (props: ImageViewProps) => {
         }}
       />
       <div
-        class="group relative mx-auto overflow-hidden rounded-lg"
+        // The placeholder's gradient gets the shadow of gradient buttons, with the card's corners;
+        // the clip would cut the card's own shadow.
+        class={clsx(
+          "group relative mx-auto overflow-hidden",
+          showsPlaceholder() ? "rounded-xl shadow-md shadow-tertiary/25" : "rounded-lg"
+        )}
         style={{
           "aspect-ratio": aspectRatio(),
           "width": `${size()}%`
@@ -342,7 +348,7 @@ const ImageView = (props: ImageViewProps) => {
         <Show when={loading() && !uploading()}>
           <Skeleton class="absolute inset-0" aria-label="Loading image" />
         </Show>
-        <Show when={!assetID() || uploading() || error()}>
+        <Show when={showsPlaceholder()}>
           <ImagePlaceholder
             title={
               uploading()

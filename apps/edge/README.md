@@ -6,7 +6,7 @@ and proxies all other paths to the Railway web app.
 Copy `.dev.vars.example` to `.dev.vars` when local origin addresses differ. Then run:
 
 ```sh
-pnpm dev --filter=@andesine/edge
+pnpm dev:edge
 ```
 
 The command builds the landing app, then starts the edge Worker at `http://localhost:8787`.

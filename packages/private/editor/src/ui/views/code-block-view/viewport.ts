@@ -1,4 +1,4 @@
-import type { Editor } from "@tiptap/core";
+import type { Editor, EditorEvents } from "@tiptap/core";
 import type { EditorView } from "@codemirror/view";
 import { invalidateBlockControlLayout } from "../../block-control-sizing";
 
@@ -64,19 +64,23 @@ const createCodeBlockViewport = (editor: Editor, dom: HTMLElement, code: EditorV
   const scheduleLayout = () => {
     if (frame === null) frame = requestAnimationFrame(updateLayout);
   };
+  // Not for transactions with only selection or plugin state, e.g. the hovered block.
+  const onTransaction = ({ transaction }: EditorEvents["transaction"]) => {
+    if (transaction.docChanged) scheduleLayout();
+  };
 
   spacer.className = "code-block-scroll-spacer";
   spacer.setAttribute("aria-hidden", "true");
   code.scrollDOM.prepend(spacer);
   observer.observe(dom);
   observer.observe(code.contentDOM);
-  editor.on("transaction", scheduleLayout);
+  editor.on("transaction", onTransaction);
   window.addEventListener("resize", scheduleLayout);
   scheduleLayout();
 
   return () => {
     observer.disconnect();
-    editor.off("transaction", scheduleLayout);
+    editor.off("transaction", onTransaction);
     window.removeEventListener("resize", scheduleLayout);
     if (frame !== null) cancelAnimationFrame(frame);
     spacer.remove();

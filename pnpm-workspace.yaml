@@ -62,3 +62,5 @@ minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - "@andesine/sdk@0.1.0"
   - "@andesine/converters@0.1.0"
+patchedDependencies:
+  '@tiptap/y-tiptap@3.0.9': patches/@tiptap__y-tiptap@3.0.9.patch

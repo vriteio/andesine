@@ -31,6 +31,7 @@ interface VersionPreviewPaneProps {
   currentUnavailableDescription: string;
   mode?: EditorMode;
   images?: EditorProps["images"];
+  links?: EditorProps["links"];
   staticTitle?: string;
   version(): VersionDocument | undefined;
   versionError(): boolean;
@@ -166,6 +167,7 @@ const VersionPreviewContent: Component<VersionPreviewContentProps> = (props) => 
                 content={selectedVersion.document}
                 images={props.images}
                 editable={false}
+                links={props.links}
                 mode={props.mode}
                 staticTitle={props.staticTitle}
               />
@@ -202,6 +204,7 @@ const VersionPreviewContent: Component<VersionPreviewContentProps> = (props) => 
                           diff={{ changes: comparison().previous.changes }}
                           images={props.images}
                           editable={false}
+                          links={props.links}
                           mode={props.mode}
                           staticTitle={props.staticTitle}
                           onScrollContainer={setPreviousScrollContainer}
@@ -215,6 +218,7 @@ const VersionPreviewContent: Component<VersionPreviewContentProps> = (props) => 
                           diff={{ changes: comparison().current.changes }}
                           images={props.currentImages || props.images}
                           editable={false}
+                          links={props.links}
                           mode={props.mode}
                           staticTitle={props.staticTitle}
                           onScrollContainer={setCurrentScrollContainer}
@@ -230,6 +234,7 @@ const VersionPreviewContent: Component<VersionPreviewContentProps> = (props) => 
                       diff={{ changes: comparison().inline.changes }}
                       images={inlineImages()}
                       editable={false}
+                      links={props.links}
                       mode={props.mode}
                       staticTitle={props.staticTitle}
                     />
