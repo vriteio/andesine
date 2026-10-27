@@ -1264,7 +1264,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          enum: ["thumbnail", "display"],
+          enum: ["thumbnail", "display", "source"],
           type: "string"
         },
         flag: "variant",

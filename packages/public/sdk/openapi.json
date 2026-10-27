@@ -4169,7 +4169,7 @@
         "required": ["variant", "format", "byteSize", "width", "height", "url", "expiresAt"]
       },
       "AssetFileFormat": { "enum": ["jpeg", "png", "webp"], "type": "string" },
-      "AssetVariant": { "enum": ["thumbnail", "display"], "type": "string" },
+      "AssetVariant": { "enum": ["thumbnail", "display", "source"], "type": "string" },
       "AssetSearchResult": {
         "type": "object",
         "properties": {
@@ -19069,7 +19069,7 @@
                                   "items": { "type": "string", "minLength": 1, "maxLength": 100 }
                                 },
                                 "control": {
-                                  "enum": ["input", "textarea", "icon", "select", "toggle"],
+                                  "enum": ["input", "textarea", "icon", "link", "select", "toggle"],
                                   "type": "string"
                                 },
                                 "placeholder": {
@@ -19223,7 +19223,14 @@
                                         }
                                       },
                                       "control": {
-                                        "enum": ["input", "textarea", "icon", "select", "toggle"],
+                                        "enum": [
+                                          "input",
+                                          "textarea",
+                                          "icon",
+                                          "link",
+                                          "select",
+                                          "toggle"
+                                        ],
                                         "type": "string"
                                       },
                                       "placeholder": {
@@ -23280,7 +23287,7 @@
             "name": "variant",
             "in": "path",
             "required": true,
-            "schema": { "enum": ["thumbnail", "display"], "type": "string" },
+            "schema": { "enum": ["thumbnail", "display", "source"], "type": "string" },
             "example": "display"
           }
         ],

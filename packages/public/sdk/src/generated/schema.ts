@@ -4005,7 +4005,7 @@ export interface components {
     /** @enum {string} */
     AssetFileFormat: "jpeg" | "png" | "webp";
     /** @enum {string} */
-    AssetVariant: "thumbnail" | "display";
+    AssetVariant: "thumbnail" | "display" | "source";
     AssetSearchResult: {
       assetID: string;
       entryID: string;
@@ -14480,7 +14480,7 @@ export interface operations {
                   type: "string";
                   enum?: string[];
                   /** @enum {string} */
-                  control?: "input" | "textarea" | "icon" | "select" | "toggle";
+                  control?: "input" | "textarea" | "icon" | "link" | "select" | "toggle";
                   placeholder?: string;
                   minLength?: number;
                   maxLength?: number;
@@ -14534,7 +14534,7 @@ export interface operations {
                     type: "string";
                     enum?: string[];
                     /** @enum {string} */
-                    control?: "input" | "textarea" | "icon" | "select" | "toggle";
+                    control?: "input" | "textarea" | "icon" | "link" | "select" | "toggle";
                     placeholder?: string;
                     minLength?: number;
                     maxLength?: number;
@@ -17623,7 +17623,7 @@ export interface operations {
         /** @example ast_example */
         assetID: string;
         /** @example display */
-        variant: "thumbnail" | "display";
+        variant: "thumbnail" | "display" | "source";
       };
       cookie?: never;
     };
