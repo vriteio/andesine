@@ -1,7 +1,8 @@
 name: Publish public packages
 
-# Pushes publish every package whose committed version is not on npm yet; the manual run
-# publishes one package. Keep this file name: npm trusted publishing refers to it.
+# Pushes, and the manual run with `all`, publish every package whose committed version is not on
+# npm yet; the manual run with a package publishes it. Keep this file name: npm trusted
+# publishing refers to it.
 on:
   push:
     branches: [andesine]
@@ -11,16 +12,17 @@ on:
   workflow_dispatch:
     inputs:
       package:
-        description: Package to publish
+        description: Package to publish, or all unpublished versions
         type: choice
-        options: [sdk, converters, extensions, ui, pages, cli]
+        options: [all, sdk, converters, extensions, ui, pages, cli]
         required: true
+        default: all
       version:
-        description: Exact version already committed in the package.json
+        description: Exact version already committed in the package.json (not for all)
         type: string
-        required: true
+        required: false
       tag:
-        description: npm distribution tag
+        description: npm distribution tag (not for all, which uses next for prereleases)
         type: choice
         options: [latest, next]
         required: true
@@ -68,7 +70,7 @@ jobs:
             name="$(jq -r '.name' "$manifest")"
             version="$(jq -r '.version' "$manifest")"
 
-            if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ "$INPUT_PACKAGE" != "all" ]; then
               [ "$package" = "$INPUT_PACKAGE" ] || continue
               if [ "$version" != "$INPUT_VERSION" ]; then
                 echo "Expected $INPUT_VERSION, found $version. Commit the version change first."
