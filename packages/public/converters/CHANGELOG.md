@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.1
+
+- MDX elements that stand alone, with nothing but other elements and whitespace on their lines,
+  import as blocks, e.g. one-line `<Step title="...">...</Step>`s in `<Steps>`. Their content
+  becomes a paragraph. Elements between text still need a custom handler.
+
 ## 0.8.0
 
 - Code blocks keep an optional `title`: a fence's `title="..."` meta in Markdown and MDX, a

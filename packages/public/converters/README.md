@@ -359,8 +359,9 @@ node boundaries can change without changing displayed content.
 
 MDX supports block components with static JSON-compatible properties. Expressions
 inside property values may contain literal arrays/objects, but no calls, variable
-references, spreads, imports, exports, or executable code. Inline JSX and JSX
-fragments require custom handlers. Markdoc variables/functions also require custom
+references, spreads, imports, exports, or executable code. Elements that stand alone
+on their lines, e.g. one-line `<Step>`s in `<Steps>`, import as blocks. JSX between
+text and JSX fragments require custom handlers. Markdoc variables/functions also require custom
 handlers. No source is evaluated during conversion.
 
 Mixed bullet/task lists import as task lists with unchecked plain items. Ordered

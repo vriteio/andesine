@@ -9,8 +9,33 @@ import type { ConverterOptions, FormatAdapter } from "./types";
 
 type MDXNode = MarkdownNode | MdxJsxFlowElement;
 type MDXOptions = ConverterOptions<MDXNode>;
+type Paragraph = Extract<MarkdownNode, { type: "paragraph" }>;
+type PhrasingNode = Paragraph["children"][number];
+type TextElement = Extract<PhrasingNode, { type: "mdxJsxTextElement" }>;
 
 const markdown = createMarkdownAdapter(remarkMDX);
+const isBlank = (node: PhrasingNode) => node.type === "text" && !node.value.trim();
+/**
+ * A paragraph of elements only, e.g. one-line `<Step>`s in `<Steps>`: the parser reads them as
+ * text, but nothing is around them, so they are blocks. Elements between text stay unsupported.
+ */
+const isElementParagraph = (node: MDXNode): node is Paragraph => {
+  return (
+    node.type === "paragraph" &&
+    node.children.some((child) => child.type === "mdxJsxTextElement") &&
+    node.children.every((child) => child.type === "mdxJsxTextElement" || isBlank(child))
+  );
+};
+/** The block form of a one-line element: its content becomes a paragraph. */
+const toFlowElement = (node: TextElement): MdxJsxFlowElement => {
+  const children = node.children.filter((child) => !isBlank(child));
+
+  return {
+    ...node,
+    type: "mdxJsxFlowElement",
+    children: children.length ? [{ type: "paragraph", children }] : []
+  };
+};
 /** MDX adapter for createConverter(), including its parser and node/mark mappings. */
 const mdxAdapter: FormatAdapter<MDXNode> = {
   ...markdown,
@@ -45,6 +70,12 @@ const mdxAdapter: FormatAdapter<MDXNode> = {
     } as Extract<MarkdownNode, { type: "mdxJsxFlowElement" }>;
   },
   async decode(node, context) {
+    if (isElementParagraph(node)) {
+      const elements = node.children.filter((child) => child.type === "mdxJsxTextElement");
+
+      return context.children(elements.map(toFlowElement));
+    }
+
     if (node.type !== "mdxJsxFlowElement") return markdown.decode(node, context);
     if (!node.name)
       throw new ConversionError("MDX fragments require a custom handler", context.path);
