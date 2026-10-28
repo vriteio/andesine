@@ -2394,6 +2394,11 @@
             "pattern": "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
             "description": "ID of the member's latest active entry"
           },
+          "exampleCollectionID": {
+            "type": "string",
+            "pattern": "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
+            "description": "ID of the collection with the example content"
+          },
           "permissions": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/Permission" },

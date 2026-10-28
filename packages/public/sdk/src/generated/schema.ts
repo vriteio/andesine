@@ -3185,6 +3185,8 @@ export interface components {
       userID: string;
       /** @description ID of the member's latest active entry */
       currentEntryID?: string;
+      /** @description ID of the collection with the example content */
+      exampleCollectionID?: string;
       /** @description Permissions granted to the current member */
       permissions: components["schemas"]["Permission"][];
       /** @description Whether the current member has the system admin role */
