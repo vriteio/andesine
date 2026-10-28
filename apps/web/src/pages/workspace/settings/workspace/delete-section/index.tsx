@@ -3,7 +3,7 @@ import { type Component, createSignal, Show } from "solid-js";
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
 import { useWorkspace } from "#web/context/workspace";
-import { ConfirmDeletionDialog } from "./confirm-deletion-dialog";
+import { WorkspaceDeletionDialog } from "./confirm-deletion-dialog";
 
 const WorkspaceDeleteSection: Component = () => {
   const { currentWorkspace } = useWorkspace();
@@ -22,7 +22,7 @@ const WorkspaceDeleteSection: Component = () => {
           </Button>
         </Setting>
       </SettingsSection>
-      <ConfirmDeletionDialog
+      <WorkspaceDeletionDialog
         opened={opened()}
         onClose={() => {
           setOpened(false);

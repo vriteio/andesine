@@ -91,6 +91,16 @@ const configSchema = billingConfigSchema.safeExtend({
     .url()
     .optional()
     .describe("PostHog host for servers, e.g. https://us.i.posthog.com"),
+  POSTHOG_PERSONAL_API_KEY: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("PostHog personal API key with the person:write scope"),
+  POSTHOG_PROJECT_ID: z.string().min(1).optional().describe("PostHog project ID"),
+  POSTHOG_API_HOST: z
+    .url()
+    .optional()
+    .describe("PostHog app host for private API requests, e.g. https://us.posthog.com"),
   // Version retention
   ...versionRetentionConfigSchema.shape,
   ...assetConfigSchema.shape

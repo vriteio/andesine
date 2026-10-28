@@ -2,14 +2,7 @@ import { getUserAuthorization } from "#backend/lib/policy";
 import { emitWorkspaceStateEvent } from "#backend/events";
 import { auth } from "#backend/lib/adapters";
 import { toUserID, toUUID } from "@andesine/contracts/primitives";
-import {
-  enqueueCurrentEntrySync,
-  enqueueCurrentWorkspacePurge,
-  enqueuePublishedWorkspacePurge
-} from "#backend/lib/queue";
 import { authorized } from "#backend/lib/transport/middleware/authorized";
-import { Auth } from "#backend/services/auth";
-import { Billing } from "#backend/services/billing";
 import { Workspaces } from "#backend/services/workspaces";
 import { api } from "./implement";
 import { trackEvent } from "#backend/lib/analytics";
@@ -75,26 +68,7 @@ const workspacesRouter = handlers.router({
     });
   }),
   delete: authorizedHandlers.delete.handler(async ({ context }) => {
-    const { deletingAt } = await Workspaces.beginDeletion({
-      auth: context.auth
-    });
-
-    try {
-      await Auth.invalidateSessionData({ workspaceID: context.auth.workspaceID });
-      await Billing.settle({
-        workspaceID: context.auth.workspaceID
-      });
-    } catch (error) {
-      await Workspaces.cancelDeletion({
-        deletingAt,
-        workspaceID: context.auth.workspaceID
-      });
-      throw error;
-    }
-
-    const { entryIDs, ...result } = await Workspaces.delete({
-      auth: context.auth
-    });
+    const { entryIDs, ...result } = await Workspaces.destroy({ auth: context.auth });
 
     emitWorkspaceStateEvent(context.auth.workspaceID, {
       action: "workspace:delete",
@@ -104,15 +78,6 @@ const workspacesRouter = handlers.router({
         entryIDs
       }
     });
-    await Promise.all([
-      enqueueCurrentEntrySync({
-        workspaceID: context.auth.workspaceID,
-        entryIDs
-      }),
-      enqueueCurrentWorkspacePurge({ workspaceID: context.auth.workspaceID }),
-      enqueuePublishedWorkspacePurge({ workspaceID: context.auth.workspaceID })
-    ]);
-
     trackEvent("workspace_deleted", context.auth);
 
     return result;

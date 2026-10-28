@@ -1,20 +1,19 @@
-import { Button, Dialog, IconButton, Input } from "@andesine/components";
-import { type Component, createSignal } from "solid-js";
+import { type Component } from "solid-js";
 import { createMutation } from "@tanstack/solid-query";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
 import { client } from "#web/lib/api";
+import { ConfirmDeletionDialog } from "../../confirm-deletion-dialog";
 
-interface ConfirmDeletionDialogProps {
+interface WorkspaceDeletionDialogProps {
   opened: boolean;
   onClose(): void;
 }
 
-const ConfirmDeletionDialog: Component<ConfirmDeletionDialogProps> = (props) => {
+const WorkspaceDeletionDialog: Component<WorkspaceDeletionDialogProps> = (props) => {
   const notify = useNotify();
   const { content, currentWorkspace, refreshWorkspaces, switchWorkspace, workspaces } =
     useWorkspace();
-  const [confirmation, setConfirmation] = createSignal("");
   const deleteWorkspaceMutation = createMutation(() => ({
     mutationFn: async () => {
       const workspace = currentWorkspace();
@@ -54,70 +53,18 @@ const ConfirmDeletionDialog: Component<ConfirmDeletionDialogProps> = (props) => 
       window.location.href = "/new-workspace";
     }
   }));
-  const close = () => {
-    if (deleteWorkspaceMutation.isPending) return;
-
-    setConfirmation("");
-    props.onClose();
-  };
-  const canConfirm = () => {
-    const workspace = currentWorkspace();
-
-    return Boolean(
-      workspace && confirmation() === workspace.name && !deleteWorkspaceMutation.isPending
-    );
-  };
 
   return (
-    <Dialog opened={props.opened} onOverlayClick={close} aria-label="Delete workspace">
-      <div class="flex flex-col gap-0.5">
-        <h3 class="text-lg font-semibold leading-tight">Delete workspace permanently?</h3>
-        <p class="text-sm leading-tight text-gray-400">
-          All workspace data will be permanently deleted and any active subscription cancelled. This
-          cannot be undone.
-        </p>
-      </div>
-      <label class="flex flex-col gap-1 text-xs">
-        <span>
-          Type{" "}
-          <span class="relative">
-            <div class="absolute rounded-md top-0 left-0 h-full w-full bg-gray-950/2.5" />
-            <span class="font-mono relative font-medium py-0.5 px-1 whitespace-pre-wrap leading-normal">
-              {currentWorkspace()?.name}
-            </span>
-          </span>{" "}
-          to confirm
-        </span>
-        <Input
-          value={confirmation()}
-          setValue={setConfirmation}
-          disabled={deleteWorkspaceMutation.isPending}
-          placeholder={currentWorkspace()?.name}
-          class="font-mono"
-          onKeyDown={(event) => {
-            if (event.key !== "Enter" || !canConfirm()) return;
-
-            event.preventDefault();
-            deleteWorkspaceMutation.mutate();
-          }}
-        />
-      </label>
-      <div class="flex justify-end gap-2">
-        <IconButton icon="i-lucide:x" disabled={deleteWorkspaceMutation.isPending} onClick={close}>
-          Cancel
-        </IconButton>
-        <Button
-          variant="danger"
-          loading={deleteWorkspaceMutation.isPending}
-          disabled={!canConfirm()}
-          onClick={() => deleteWorkspaceMutation.mutate()}
-          class="flex-1"
-        >
-          Delete permanently
-        </Button>
-      </div>
-    </Dialog>
+    <ConfirmDeletionDialog
+      opened={props.opened}
+      label="Delete workspace"
+      description="All workspace data will be permanently deleted and any active subscription cancelled. This cannot be undone."
+      confirmation={currentWorkspace()?.name ?? ""}
+      pending={deleteWorkspaceMutation.isPending}
+      onConfirm={() => deleteWorkspaceMutation.mutate()}
+      onClose={props.onClose}
+    />
   );
 };
 
-export { ConfirmDeletionDialog };
+export { WorkspaceDeletionDialog };

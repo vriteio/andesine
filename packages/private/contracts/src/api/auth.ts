@@ -1,6 +1,7 @@
 import { permissionType } from "../entities/roles";
 import { keyPermissionType } from "../entities/keys";
 import { userProfileType } from "../entities/users";
+import { workspaceType } from "../entities/workspaces";
 import { id } from "../primitives/id";
 import * as z from "zod";
 import { deviceRequestStateType, deviceUserCodeType } from "../auth/device";
@@ -57,6 +58,12 @@ const authContract = baseContract.router({
     .output(z.object({ state: deviceRequestStateType })),
   listConnectedApps: deviceContract.output(z.array(connectedAppType)),
   revokeConnectedApp: deviceContract.input(z.object({ clientID: z.string() })),
+  listSoleAdminWorkspaces: deviceContract
+    .input(z.object({ userID: id().describe("ID of the signed-in account") }))
+    .output(z.array(workspaceType.pick({ id: true, name: true }))),
+  deleteAccount: deviceContract
+    .input(z.object({ userID: id().describe("ID of the account to delete") }))
+    .output(z.void()),
   getIdentity: baseContract
     .route({
       method: "GET",

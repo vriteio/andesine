@@ -1,4 +1,5 @@
 import { type MemberDetails, listMembers } from "./list";
+import { type UserMembership, listUserMemberships } from "./list-for-user";
 import { updateMember } from "./update";
 import { removeMember } from "./remove";
 import { inviteMember } from "./invite";
@@ -10,6 +11,7 @@ import { setCurrentEntry } from "./set-current-entry";
 
 const Memberships = {
   list: listMembers,
+  listForUser: listUserMemberships,
   update: updateMember,
   remove: removeMember,
   invite: inviteMember,
@@ -21,4 +23,4 @@ const Memberships = {
 };
 
 export { Memberships };
-export type { MemberDetails, InviteDetails };
+export type { MemberDetails, InviteDetails, UserMembership };

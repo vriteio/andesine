@@ -20,6 +20,7 @@ const CONTENT_PROPERTIES = ["title", "$title"];
 const [identifiedWorkspaceID, setIdentifiedWorkspaceID] = createSignal<string | null>(null);
 
 let client: Promise<PostHog> | null = null;
+let capturePaused = false;
 
 const loadClient = (): Promise<PostHog> | null => {
   if (!ANALYTICS_ENABLED || typeof window === "undefined") return null;
@@ -44,6 +45,8 @@ const loadClient = (): Promise<PostHog> | null => {
         maskTextSelector: ".ProseMirror"
       },
       before_send: (event) => {
+        if (capturePaused) return null;
+
         CONTENT_PROPERTIES.forEach((property) => delete event?.properties[property]);
 
         return event;
@@ -99,6 +102,20 @@ const resetAnalytics = (): void => {
     applyConsent(posthog, readConsent() ?? "declined");
   });
 };
+/** Drops events without changing the identity or consent; the result resumes capture. */
+const pauseAnalytics = async (): Promise<() => void> => {
+  const posthog = await loadClient();
+  const recording = Boolean(posthog?.sessionRecordingStarted());
+
+  capturePaused = true;
+  posthog?.stopSessionRecording();
+
+  return () => {
+    capturePaused = false;
+
+    if (recording) posthog?.startSessionRecording();
+  };
+};
 
 export {
   captureEvent,
@@ -106,5 +123,6 @@ export {
   identifiedWorkspaceID,
   identifyAnalytics,
   initAnalytics,
+  pauseAnalytics,
   resetAnalytics
 };

@@ -1,3 +1,4 @@
+export * from "./account";
 export * from "./api-keys";
 export * from "./billing";
 export * from "./connected-apps";

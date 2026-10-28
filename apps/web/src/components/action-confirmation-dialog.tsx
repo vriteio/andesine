@@ -50,6 +50,9 @@ interface ConfirmationDialogActionButtonProps {
   color?: ConfirmationDialogAction["color"];
   disabled?: boolean;
 }
+interface ActionConfirmationContentProps extends ActionConfirmationDialogState {
+  onClose(): void;
+}
 
 const actionVariants = { danger: "danger", primary: "primary", base: "secondary" } as const;
 
@@ -84,8 +87,104 @@ const ConfirmationDialogActionButton: Component<ConfirmationDialogActionButtonPr
   </Show>
 );
 
-const ActionConfirmationDialog: Component<ActionConfirmationDialogProps> = (props) => {
+const ActionConfirmationContent: Component<ActionConfirmationContentProps> = (props) => {
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
+
+  return (
+    <>
+      <div class="flex flex-col gap-0.5">
+        <h3 class="text-lg font-semibold leading-tight">{props.title}</h3>
+        <div class="text-sm leading-tight text-gray-400">{props.description}</div>
+      </div>
+      <Show when={props.affected.length > 0}>
+        <Card
+          class="flex flex-col justify-start items-start relative rounded-lg p-0 text-sm border-0 overflow-hidden"
+          color="contrast"
+        >
+          <ScrollShadow color="contrast" scrollableContainerRef={scrollableContainerRef} />
+          <div
+            class="flex flex-col max-h-48 w-full overflow-y-auto p-2 scrollbar-contrast"
+            ref={setScrollableContainerRef}
+          >
+            <For each={props.affected}>
+              {(item, index) => (
+                <>
+                  <Show when={index() !== 0}>
+                    <div class="w-full h-px bg-gray-200 px-5 my-2 shrink-0 rounded-full" />
+                  </Show>
+                  <div class="flex items-start justify-center gap-1.5">
+                    <div class="h-6 w-6 flex justify-center items-center">
+                      <div
+                        class={`${item.icon || "i-lucide:user"} h-5 w-5 shrink-0 text-gray-400`}
+                      />
+                    </div>
+                    <div class="flex min-w-0 flex-1 flex-col">
+                      <span class="truncate text-base h-6">{item.label}</span>
+                      <Show when={item.detail}>
+                        <span class="truncate text-xs text-gray-400 -mt-1">{item.detail}</span>
+                      </Show>
+                    </div>
+                  </div>
+                </>
+              )}
+            </For>
+          </div>
+        </Card>
+      </Show>
+      <Show when={props.warning}>
+        <div class="text-sm leading-tight text-gray-400">{props.warning}</div>
+      </Show>
+      <Show
+        when={props.secondaryAction}
+        fallback={
+          <div class="flex justify-end gap-2">
+            <IconButton icon="i-lucide:x" disabled={props.action.loading} onClick={props.onClose}>
+              Cancel
+            </IconButton>
+            <ConfirmationDialogActionButton
+              action={props.action}
+              color={props.action.color}
+              class="flex-1"
+            />
+          </div>
+        }
+      >
+        {(secondaryAction) => (
+          <>
+            <Tooltip content="Close" wrapperClass="absolute right-2 top-2" placement="left">
+              <IconButton
+                variant="ghost"
+                icon="i-lucide:x"
+                disabled={props.action.loading || secondaryAction().loading}
+                onClick={props.onClose}
+              />
+            </Tooltip>
+            <div class="flex flex-col gap-1">
+              <ConfirmationDialogActionButton
+                action={props.action}
+                color={props.action.color}
+                disabled={secondaryAction().loading}
+                class="w-full"
+              />
+              <div class="flex items-center gap-2 text-xs text-gray-400">
+                <div class="h-px flex-1 bg-gray-200" />
+                or
+                <div class="h-px flex-1 bg-gray-200" />
+              </div>
+              <ConfirmationDialogActionButton
+                action={secondaryAction()}
+                disabled={props.action.loading}
+                secondary
+                class="w-full"
+              />
+            </div>
+          </>
+        )}
+      </Show>
+    </>
+  );
+};
+const ActionConfirmationDialog: Component<ActionConfirmationDialogProps> = (props) => {
   const [displayedState, setDisplayedState] = createSignal<ActionConfirmationDialogState>({
     action: { ...props.action },
     affected: props.affected.map((item) => ({ ...item })),
@@ -115,102 +214,10 @@ const ActionConfirmationDialog: Component<ActionConfirmationDialogProps> = (prop
       cardClass={displayedState().secondaryAction ? "relative" : undefined}
       aria-label={displayedState().title}
     >
-      <div class="flex flex-col gap-0.5">
-        <h3 class="text-lg font-semibold leading-tight">{displayedState().title}</h3>
-        <div class="text-sm leading-tight text-gray-400">{displayedState().description}</div>
-      </div>
-      <Show when={displayedState().affected.length > 0}>
-        <Card
-          class="flex flex-col justify-start items-start relative rounded-lg p-0 text-sm border-0 overflow-hidden"
-          color="contrast"
-        >
-          <ScrollShadow color="contrast" scrollableContainerRef={scrollableContainerRef} />
-          <div
-            class="flex flex-col max-h-48 w-full overflow-y-auto p-2 scrollbar-contrast"
-            ref={setScrollableContainerRef}
-          >
-            <For each={displayedState().affected}>
-              {(item, index) => (
-                <>
-                  <Show when={index() !== 0}>
-                    <div class="w-full h-px bg-gray-200 px-5 my-2 shrink-0 rounded-full" />
-                  </Show>
-                  <div class="flex items-start justify-center gap-1.5">
-                    <div class="h-6 w-6 flex justify-center items-center">
-                      <div
-                        class={`${item.icon || "i-lucide:user"} h-5 w-5 shrink-0 text-gray-400`}
-                      />
-                    </div>
-                    <div class="flex min-w-0 flex-1 flex-col">
-                      <span class="truncate text-base h-6">{item.label}</span>
-                      <Show when={item.detail}>
-                        <span class="truncate text-xs text-gray-400 -mt-1">{item.detail}</span>
-                      </Show>
-                    </div>
-                  </div>
-                </>
-              )}
-            </For>
-          </div>
-        </Card>
-      </Show>
-      <Show when={displayedState().warning}>
-        <div class="text-sm leading-tight text-gray-400">{displayedState().warning}</div>
-      </Show>
-      <Show
-        when={displayedState().secondaryAction}
-        fallback={
-          <div class="flex justify-end gap-2">
-            <IconButton
-              icon="i-lucide:x"
-              disabled={displayedState().action.loading}
-              onClick={props.onClose}
-            >
-              Cancel
-            </IconButton>
-            <ConfirmationDialogActionButton
-              action={displayedState().action}
-              color={displayedState().action.color}
-              class="flex-1"
-            />
-          </div>
-        }
-      >
-        {(secondaryAction) => (
-          <>
-            <Tooltip content="Close" wrapperClass="absolute right-2 top-2" placement="left">
-              <IconButton
-                variant="ghost"
-                icon="i-lucide:x"
-                disabled={displayedState().action.loading || secondaryAction().loading}
-                onClick={props.onClose}
-              />
-            </Tooltip>
-            <div class="flex flex-col gap-1">
-              <ConfirmationDialogActionButton
-                action={displayedState().action}
-                color={displayedState().action.color}
-                disabled={secondaryAction().loading}
-                class="w-full"
-              />
-              <div class="flex items-center gap-2 text-xs text-gray-400">
-                <div class="h-px flex-1 bg-gray-200" />
-                or
-                <div class="h-px flex-1 bg-gray-200" />
-              </div>
-              <ConfirmationDialogActionButton
-                action={secondaryAction()}
-                disabled={displayedState().action.loading}
-                secondary
-                class="w-full"
-              />
-            </div>
-          </>
-        )}
-      </Show>
+      <ActionConfirmationContent {...displayedState()} onClose={props.onClose} />
     </Dialog>
   );
 };
 
-export { ActionConfirmationDialog };
+export { ActionConfirmationContent, ActionConfirmationDialog };
 export type { AffectedItem, ConfirmationDialogAction };

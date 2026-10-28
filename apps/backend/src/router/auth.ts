@@ -1,6 +1,12 @@
+import { emitMembershipEvent, emitWorkspaceStateEvent } from "#backend/events";
+import { getUserAuthorization } from "#backend/lib/policy";
 import { Auth } from "#backend/services/auth";
+import { Billing } from "#backend/services/billing";
+import { Workspaces } from "#backend/services/workspaces";
 import { verifyOTPToken } from "#backend/lib/security";
 import { authorized } from "#backend/lib/transport";
+import { deleteAnalyticsPerson, trackEvent } from "#backend/lib/analytics";
+import { assertExpectedUser } from "#backend/lib/auth/expected-user";
 import { api } from "./implement";
 
 const handlers = api.auth;
@@ -33,6 +39,56 @@ const authRouter = handlers.router({
   }),
   revokeConnectedApp: authorizedHandlers.revokeConnectedApp.handler(({ context, input }) => {
     return Auth.OAuth.revokeConnectedApp({ ...input, userID: context.auth.session!.userID });
+  }),
+  listSoleAdminWorkspaces: authorizedHandlers.listSoleAdminWorkspaces.handler(
+    ({ context, input }) => {
+      assertExpectedUser(context.auth.session!.userID, input.userID);
+      context.resHeaders?.set("Cache-Control", "private, no-store");
+
+      return Workspaces.listSoleAdmin({ userID: input.userID });
+    }
+  ),
+  deleteAccount: authorizedHandlers.deleteAccount.handler(async ({ context, input }) => {
+    const { workspaceSessions, remainingMemberships } = await Auth.prepareAccountDeletion({
+      headers: context.reqHeaders!,
+      userID: input.userID
+    });
+    const deletions = await Promise.allSettled(
+      workspaceSessions.map(async (workspaceSession) => {
+        const { entryIDs } = await Workspaces.destroy({ auth: workspaceSession });
+
+        emitWorkspaceStateEvent(workspaceSession.workspaceID, {
+          action: "workspace:delete",
+          memberID: getUserAuthorization(workspaceSession)?.memberID,
+          data: { id: workspaceSession.workspaceID, entryIDs }
+        });
+        trackEvent("workspace_deleted", workspaceSession);
+      })
+    );
+    const failedDeletion = deletions.find((deletion) => deletion.status === "rejected");
+
+    if (failedDeletion) throw failedDeletion.reason;
+
+    await Auth.deleteUser({ userID: input.userID });
+
+    // The account is already deleted, so its cleanup doesn't hold or fail the response.
+    void Promise.allSettled([
+      deleteAnalyticsPerson(input.userID),
+      ...remainingMemberships.map(async ({ workspaceID, memberID }) => {
+        emitMembershipEvent(workspaceID, {
+          action: "membership:remove",
+          memberID,
+          data: { id: memberID }
+        });
+        await Billing.updateSeats({ workspaceID });
+      })
+    ]).then((results) => {
+      for (const result of results) {
+        if (result.status !== "rejected") continue;
+
+        console.error("Failed to clean up deleted account", result.reason);
+      }
+    });
   }),
   getIdentity: authorizedHandlers.getIdentity.handler(({ context }) => {
     context.resHeaders?.set("Cache-Control", "private, no-store");
