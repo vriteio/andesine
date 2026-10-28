@@ -1,6 +1,6 @@
 {
   "name": "@andesine/converters",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "description": "TypeScript content converters for Andesine",
   "type": "module",
   "license": "MIT",

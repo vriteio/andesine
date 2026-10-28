@@ -63,11 +63,13 @@ const readExplorerStateCookie = () => {
 };
 
 const ExplorerProvider: ParentComponent = (props) => {
-  const { content } = useWorkspace();
+  const { content, currentWorkspace } = useWorkspace();
   const publishing = usePublishing();
   const params = useParams<{ workspaceID?: string }>();
   const currentWorkspaceID = () => params.workspaceID || null;
   const expandedSourceKey = currentWorkspaceID;
+  const exampleCollectionID = createMemo(() => currentWorkspace()?.exampleCollectionID);
+  // Without a saved state, the explorer opens with the example collection expanded.
   const initialExpanded = () => {
     const workspaceID = currentWorkspaceID();
 
@@ -75,7 +77,9 @@ const ExplorerProvider: ParentComponent = (props) => {
       return [] as string[];
     }
 
-    return readExplorerStateCookie()[workspaceID] ?? [];
+    const collectionID = exampleCollectionID();
+
+    return readExplorerStateCookie()[workspaceID] ?? (collectionID ? [collectionID] : []);
   };
   const persistExpanded = (expanded: string[]) => {
     if (typeof document === "undefined") {
@@ -90,11 +94,8 @@ const ExplorerProvider: ParentComponent = (props) => {
 
     const nextExpandedState = readExplorerStateCookie();
 
-    if (expanded.length > 0) {
-      nextExpandedState[workspaceID] = expanded;
-    } else {
-      delete nextExpandedState[workspaceID];
-    }
+    // An empty state is kept, so collapsed collections don't expand again.
+    nextExpandedState[workspaceID] = expanded;
 
     document.cookie = `${EXPLORER_STATE_COOKIE}=${encodeURIComponent(
       JSON.stringify(nextExpandedState)

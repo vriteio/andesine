@@ -1,0 +1,2 @@
+ALTER TABLE "workspaces" ADD COLUMN "example_collection_id" uuid;--> statement-breakpoint
+ALTER TABLE "workspaces" ADD CONSTRAINT "workspaces_example_collection_id_collections_id_fk" FOREIGN KEY ("example_collection_id") REFERENCES "public"."collections"("id") ON DELETE set null ON UPDATE no action;

@@ -19,6 +19,7 @@ import { and, eq, inArray, isNull } from "drizzle-orm";
 interface WorkspaceListItem extends Pick<Workspace, "id" | "name" | "logo"> {
   userID: string;
   currentEntryID?: string;
+  exampleCollectionID?: string;
   permissions: Permission[];
   admin: boolean;
   subscriptionPlan: string;
@@ -45,7 +46,8 @@ const listWorkspaces = async (input: {
       permissions: roles.permissions,
       roleID: roles.id,
       baseRole: roles.baseRole,
-      subscriptionPlan: workspaces.subscriptionPlan
+      subscriptionPlan: workspaces.subscriptionPlan,
+      exampleCollectionID: workspaces.exampleCollectionID
     })
     .from(memberships)
     .innerJoin(workspaces, eq(workspaces.id, memberships.workspaceID))
@@ -99,6 +101,9 @@ const listWorkspaces = async (input: {
           : undefined,
         userID: toUserID(row.userID),
         currentEntryID,
+        exampleCollectionID: row.exampleCollectionID
+          ? toCollectionID(row.exampleCollectionID)
+          : undefined,
         permissions: row.permissions,
         admin: row.baseRole === "admin",
         subscriptionPlan: getEffectivePlan(row.subscriptionPlan),

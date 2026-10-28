@@ -12,6 +12,7 @@ const workspaceSummaryType = workspaceType.pick({
 const workspaceListItemType = workspaceSummaryType.extend({
   userID: id().describe("ID of the user associated with this workspace membership"),
   currentEntryID: id().optional().describe("ID of the member's latest active entry"),
+  exampleCollectionID: id().optional().describe("ID of the collection with the example content"),
   permissions: z.array(permissionType).describe("Permissions granted to the current member"),
   admin: z.boolean().describe("Whether the current member has the system admin role"),
   subscriptionPlan: z.string().describe("Effective feature plan identifier"),

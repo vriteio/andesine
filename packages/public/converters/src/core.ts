@@ -59,6 +59,8 @@ const createExportConverter = <T>(
           return children;
         },
         imageURL: async (image) => {
+          if (!image.attrs?.assetID) return "";
+
           const url = await settings.imageURL?.(image);
 
           if (!url)
@@ -194,6 +196,13 @@ const createImportConverter = <T>(
           return output;
         },
         image: async (image) => {
+          if (!image.url) {
+            return {
+              type: "image",
+              attrs: { assetID: null, alt: image.alt, caption: image.title || "" }
+            };
+          }
+
           const assetID = await settings.imageAssetID?.(image);
 
           if (!assetID)

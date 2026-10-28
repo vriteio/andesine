@@ -11,6 +11,7 @@ import {
   varchar
 } from "drizzle-orm/pg-core";
 import { assets } from "./assets";
+import { collections } from "./collections";
 import { timestamps } from "./shared";
 
 interface SubscriptionData {
@@ -53,6 +54,10 @@ const workspaces = pgTable(
     /** In cents. */
     spendingLimit: integer("spending_limit"),
     deletingAt: timestamp("deleting_at", { withTimezone: true }),
+    exampleCollectionID: uuid("example_collection_id").references(
+      (): AnyPgColumn => collections.id,
+      { onDelete: "set null" }
+    ),
     ...timestamps
   },
   (table) => [

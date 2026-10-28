@@ -10,6 +10,7 @@ import { getUserAuthorization, withAuthorization } from "#backend/lib/policy";
 import { mapLocalCollectionSchema, mapSchemaVersionSummary } from "#backend/lib/data";
 import {
   type LocalCollectionSchema,
+  type SchemaDefinition,
   createEmptySchemaDefinition
 } from "@andesine/contracts/schema";
 import { toUUID } from "@andesine/contracts/primitives";
@@ -17,6 +18,10 @@ import { and, eq } from "drizzle-orm";
 import { Doc, encodeStateAsUpdate } from "yjs";
 import { type CollectionSchemaInput, resolveLocalCollectionSchema } from "./resolve";
 
+interface CreateCollectionSchemaInput extends CollectionSchemaInput {
+  /** The first draft; empty when unset. */
+  definition?: SchemaDefinition;
+}
 interface CreateCollectionSchemaResult {
   changed: boolean;
   schema: LocalCollectionSchema;
@@ -25,7 +30,7 @@ interface CreateCollectionSchemaResult {
 type ResolvedCreateCollectionSchema = Awaited<ReturnType<typeof resolveLocalCollectionSchema>>;
 
 const createCollectionSchema = withAuthorization<
-  CollectionSchemaInput,
+  CreateCollectionSchemaInput,
   ResolvedCreateCollectionSchema,
   CreateCollectionSchemaResult
 >(
@@ -36,8 +41,8 @@ const createCollectionSchema = withAuthorization<
     resolve: resolveLocalCollectionSchema,
     transaction: "locked-workspace"
   },
-  async ({ auth, database, resolved, workspaceID }) => {
-    const definition = createEmptySchemaDefinition();
+  async ({ auth, database, input, resolved, workspaceID }) => {
+    const definition = input.definition ?? createEmptySchemaDefinition();
     const document = new Doc();
 
     replaceContentDocument(document, createSchemaEditorDocument(definition));

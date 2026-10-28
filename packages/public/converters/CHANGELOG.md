@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0
+
+- Images without an asset are placeholders. They export with an empty URL (`![alt]()` in
+  Markdown, MDX, and Markdoc; `src=""` in HTML), and an empty URL imports as an image without an
+  asset. Neither `imageURL` nor `imageAssetID` is called for them; before, both conversions threw.
+
 ## 0.8.1
 
 - MDX elements that stand alone, with nothing but other elements and whitespace on their lines,

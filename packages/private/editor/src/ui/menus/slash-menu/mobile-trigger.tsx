@@ -46,9 +46,14 @@ const MobileSlashMenuTrigger: Component<{
   });
 
   const setActiveParagraphElement = (paragraphElement: HTMLElement | null) => {
-    const editorContainer = props.editor.view.dom.closest<HTMLElement>("#editor-container");
+    const previousParagraphElement = activeParagraphElement();
 
-    if (paragraphElement === activeParagraphElement()) return;
+    if (paragraphElement === previousParagraphElement) return;
+
+    // The editor view is gone after teardown, so the container comes from the paragraph.
+    const editorContainer = (paragraphElement ?? previousParagraphElement)?.closest<HTMLElement>(
+      "#editor-container"
+    );
 
     setActiveParagraphElementRef(paragraphElement);
     editorContainer?.toggleAttribute(PLACEHOLDER_HIDDEN_ATTRIBUTE, Boolean(paragraphElement));

@@ -3,9 +3,10 @@ import { useEditorLinks } from "./links";
 import { ICON_PICKER_SETS, loadIconSet } from "#web/lib/extensions/icon-masks";
 import { pruneCachedImages } from "#web/context/workspace/image-cache";
 import { getWorkspaceDatabaseName } from "#web/context/workspace/indexeddb";
+import { IconButton } from "@andesine/components";
 import { Editor, type EditorInstance, type EditorMode } from "@andesine/editor";
 import clsx from "clsx";
-import { type Component, createEffect, createMemo, Show } from "solid-js";
+import { type Component, createEffect, createMemo, type JSX, Show } from "solid-js";
 import { useNotify } from "#web/context/notifications";
 import { config } from "#web/lib/api";
 import { createElementViews } from "#web/components/extensions/element-views";
@@ -16,7 +17,8 @@ import { getCollaborationStatus, getCollaborationUser } from "./editor-collabora
 import {
   DocumentLoadError,
   EDITOR_CONTENT_PADDING,
-  EditorContentSkeleton
+  EditorContentSkeleton,
+  EditorPaneMessage
 } from "./editor-pane-states";
 import { createLocalEditorSnapshotLifecycle, LocalSnapshotError } from "./local-editor-snapshot";
 
@@ -24,12 +26,12 @@ interface CollaborativeEditorPaneProps {
   availableDocumentID?: string | null;
   documentID?: string;
   editable: boolean;
-  emptyIcon: string;
-  emptyMessage: string;
+  emptyTitle: string;
+  emptyDescription: string;
   loading: boolean;
   mode?: EditorMode;
-  notFoundIcon: string;
-  notFoundMessage: string;
+  notFoundTitle: string;
+  notFoundDescription: string;
   resourceLabel: string;
   staticTitle?: string;
   user?: { id?: string; name?: string | null; email?: string };
@@ -133,10 +135,9 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
       <Show
         when={selectedDocumentID()}
         fallback={
-          <div class="flex h-full w-full flex-col items-center justify-center gap-2">
-            <div class={clsx("h-12 w-12 text-gray-200", props.emptyIcon)} />
-            <span class="text-xs text-gray-300">{props.emptyMessage}</span>
-          </div>
+          <Show when={!props.loading} fallback={<EditorPaneMessage />}>
+            <EditorPaneMessage title={props.emptyTitle} description={props.emptyDescription} />
+          </Show>
         }
       >
         <Show
@@ -146,10 +147,20 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
             <Show
               when={props.loading}
               fallback={
-                <div class="flex h-full w-full flex-col items-center justify-center gap-2">
-                  <div class={clsx("h-12 w-12 text-gray-200", props.notFoundIcon)} />
-                  <span class="text-xs text-gray-300">{props.notFoundMessage}</span>
-                </div>
+                <EditorPaneMessage
+                  title={props.notFoundTitle}
+                  description={props.notFoundDescription}
+                >
+                  <IconButton
+                    icon="i-lucide:arrow-left"
+                    class="w-full gap-1"
+                    iconProps={{ class: "h-5 w-5 text-gray-400" }}
+                    text="base"
+                    size="medium"
+                    label="Go back"
+                    onClick={props.onBack}
+                  />
+                </EditorPaneMessage>
               }
             >
               <div class="relative h-full w-full overflow-hidden">

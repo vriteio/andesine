@@ -25,7 +25,7 @@ interface EncodeContext<T> {
   encode(node: ContentNode): Promise<T[]>;
   /** Encode child nodes in order, updating their paths and awaiting async handlers. */
   children(node: ContentNode): Promise<T[]>;
-  /** Resolve an image through imageURL; throws ConversionError if no URL is supplied. */
+  /** Resolve an image through imageURL; placeholders without an asset get an empty URL. */
   imageURL(node: ContentNode): Promise<string>;
 }
 interface DecodeContext<T> {
@@ -37,7 +37,7 @@ interface DecodeContext<T> {
   decode(node: T): Promise<ContentNode[]>;
   /** Decode child nodes in order, updating their paths and awaiting async handlers. */
   children(nodes: readonly T[]): Promise<ContentNode[]>;
-  /** Resolve a URL through imageAssetID and create an image node; does not upload assets. */
+  /** Resolve a URL through imageAssetID and create an image node; an empty URL is a placeholder. */
   image(reference: ImageReference): Promise<ContentNode>;
 }
 interface EncodeHandlers<T> {

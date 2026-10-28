@@ -1,8 +1,13 @@
 import { IconButton, Skeleton, DotsBackground } from "@andesine/components";
-import { type Component, type JSX, Show } from "solid-js";
+import { type Component, type JSX, type ParentComponent, Show } from "solid-js";
 import clsx from "clsx";
 import type { DocumentLoadState } from "./document-load-state";
 
+interface EditorPaneMessageProps {
+  /** Without a title, only the background shows, e.g. while content loads. */
+  title?: string;
+  description?: string;
+}
 interface EditorLoadErrorViewProps {
   actionIcon: string;
   actionLabel: string;
@@ -26,6 +31,24 @@ interface EditorContentSkeletonProps {
 
 const EDITOR_CONTENT_PADDING = "px-2.5 pb-5 pt-5 md:px-10 md:pb-10 md:pt-9";
 
+/** A message over a dot grid that fades around it, as in the error views; children are actions. */
+const EditorPaneMessage: ParentComponent<EditorPaneMessageProps> = (props) => (
+  <div class="relative flex h-full w-full items-center justify-center overflow-hidden md:px-5">
+    <DotsBackground class="absolute mask-edge-fading-16" />
+    <div class="relative p-4 lg:p-24">
+      <div class="absolute left-0 top-0 h-full w-full rounded-2xl bg-gray-50 mask-edge-fading-4 lg:mask-edge-fading-24" />
+      <Show when={props.title}>
+        <div class="relative flex w-72 flex-col gap-4">
+          <div>
+            <h1 class="text-2xl font-semibold">{props.title}</h1>
+            <p class="mt-1 text-sm leading-5 text-gray-400">{props.description}</p>
+          </div>
+          {props.children}
+        </div>
+      </Show>
+    </div>
+  </div>
+);
 const EditorLoadErrorView: Component<EditorLoadErrorViewProps> = (props) => {
   return (
     <div class="absolute inset-0 z-10 flex items-center justify-center bg-gray-50 md:px-5">
@@ -104,4 +127,10 @@ const EditorContentSkeleton: Component<EditorContentSkeletonProps> = (props) => 
   </div>
 );
 
-export { DocumentLoadError, EDITOR_CONTENT_PADDING, EditorContentSkeleton, EditorLoadErrorView };
+export {
+  DocumentLoadError,
+  EDITOR_CONTENT_PADDING,
+  EditorContentSkeleton,
+  EditorLoadErrorView,
+  EditorPaneMessage
+};

@@ -23,6 +23,7 @@ interface WorkspaceInfo {
   logo?: string;
   userID: string;
   currentEntryID?: string;
+  exampleCollectionID?: string;
   permissions: Permission[];
   admin: boolean;
   subscriptionPlan: string;

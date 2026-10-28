@@ -1,7 +1,7 @@
-import { createRef } from "@andesine/components";
+import { createRef, IconButton } from "@andesine/components";
 import type { EditorInstance } from "@andesine/editor";
 import { useLocation, useNavigate, useParams } from "@solidjs/router";
-import { type Component, createEffect, createMemo } from "solid-js";
+import { type Component, createEffect, createMemo, Show } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
 import {
   getSearchNavigationTarget,
@@ -41,6 +41,11 @@ const EditorPane: Component = () => {
     );
   });
   const workspaceID = () => params.workspaceID || currentWorkspace()?.id || "unknown";
+  // Actions depend on permissions, which load after the content.
+  const loading = () => content.loading() || content.accessLoading();
+  const emptyWorkspace = () => {
+    return !loading() && !content.offline() && content.entriesCollection().find().count() === 0;
+  };
 
   createEffect(() => {
     const selectedID = selectedEntryID();
@@ -82,14 +87,18 @@ const EditorPane: Component = () => {
       documentID={selectedEntryID()}
       availableDocumentID={availableEntryID()}
       editable={editable()}
-      loading={content.loading()}
+      loading={loading()}
       workspaceID={workspaceID()}
       user={currentSession()?.user}
       resourceLabel="entry"
-      emptyIcon="i-lucide:file-pen"
-      emptyMessage="Select an entry to start editing"
-      notFoundIcon="i-lucide:file-x"
-      notFoundMessage="Entry not found"
+      emptyTitle={emptyWorkspace() ? "No entries yet" : "No entry open"}
+      emptyDescription={
+        emptyWorkspace()
+          ? "Create your first entry, or a collection to organize your entries."
+          : "Select an entry in the explorer to start editing."
+      }
+      notFoundTitle="Entry not found"
+      notFoundDescription="The entry was deleted or moved, or you don't have access to it."
       onBack={() => navigate(`/${workspaceID()}`)}
       onLoadStateChange={setDocumentLoadState}
       onEditor={(editor) => {

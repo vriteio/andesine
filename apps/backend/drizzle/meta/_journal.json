@@ -323,6 +323,13 @@
       "when": 1792928588129,
       "tag": "0045_rename_extension_view_entries",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1793179267963,
+      "tag": "0046_add-workspace-example-collection",
+      "breakpoints": true
     }
   ]
 }

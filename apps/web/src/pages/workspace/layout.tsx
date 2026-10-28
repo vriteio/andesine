@@ -19,7 +19,7 @@ import {
 import { useLayout } from "#web/context/layout";
 import { config } from "#web/lib/api";
 import { PublishingProvider } from "#web/context/publishing";
-import { WorkspaceProvider } from "#web/context/workspace";
+import { useWorkspace, WorkspaceProvider } from "#web/context/workspace";
 import { EditorToolbar } from "./editor-toolbar";
 import { Menu } from "./menu";
 import { ProfileMenu } from "./profile-menu";
@@ -45,7 +45,7 @@ import {
   useRightSidePanelOptions
 } from "./right-side-panel";
 import clsx from "clsx";
-import { LEFT_SIDE_PANEL_PARAM } from "./panel-navigation";
+import { LEFT_SIDE_PANEL_PARAM, RIGHT_SIDE_PANEL_PARAM } from "./panel-navigation";
 
 interface WorkspaceRightSidePanelProps {
   hidden: boolean;
@@ -56,15 +56,20 @@ const MAX_SIDE_PANEL_WIDTH = 640;
 
 const WorkspaceRightSidePanel: Component<WorkspaceRightSidePanelProps> = (props) => {
   const params = useParams<{ slug?: string }>();
+  const [searchParams] = useSearchParams();
   const { layout, setLayout } = useLayout();
+  const { content } = useWorkspace();
   const options = useRightSidePanelOptions();
   const loading = useRightSidePanelLoading();
   const isDocumentRoute = () => {
     return Boolean(params.slug?.startsWith("ent_") || params.slug?.startsWith("sch_"));
   };
-  // An open panel stays while its panels load, e.g. an extension's after a reload.
+  // An open panel stays while its panels load: a requested extension's, or the document's
+  // until content shows whether it exists.
   const available = () => {
-    const isKeptOpen = layout.rightSidePanelWidth > 0 && (isDocumentRoute() || loading());
+    const isLoadingRequested = loading() && Boolean(searchParams[RIGHT_SIDE_PANEL_PARAM]);
+    const isLoadingDocument = isDocumentRoute() && (content.loading() || content.accessLoading());
+    const isKeptOpen = layout.rightSidePanelWidth > 0 && (isLoadingDocument || isLoadingRequested);
 
     return !props.hidden && (options().length > 0 || isKeptOpen);
   };

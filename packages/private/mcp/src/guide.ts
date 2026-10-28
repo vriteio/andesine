@@ -16,6 +16,7 @@ The first line is the title as a level 1 heading: \`# Entry title\`. Use level 2
 ## Images
 
 - \`![Alt text](asset:ast_...)\` shows a workspace image. Keep these references when you edit around an image.
+- \`![Alt text]()\` is an image placeholder, which people fill in the editor.
 - \`![Alt text](https://example.com/image.png)\`: the image is imported into the workspace when the entry is saved.
 
 ## Links to entries

@@ -7,6 +7,7 @@ import { PUBLISHED_CHANNEL_CODE } from "@andesine/contracts/publishing";
 import { ROOT_COLLECTION_NAME } from "@andesine/contracts/content";
 import { eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
+import { seedExampleContent } from "./seed-example-content";
 
 const DEFAULT_ROLES: Array<{
   name: string;
@@ -22,7 +23,7 @@ const DEFAULT_ROLES: Array<{
 const createWorkspace = async (input: { name: string; userID: string }) => {
   const userID = toUUID(input.userID);
 
-  return db.transaction(async (tx) => {
+  const workspace = await db.transaction(async (tx) => {
     const [workspace] = await tx.insert(workspaces).values({ name: input.name }).returning();
 
     const createdRoles = await tx
@@ -69,6 +70,15 @@ const createWorkspace = async (input: { name: string; userID: string }) => {
 
     return { id: toWorkspaceID(workspace.id), name: workspace.name };
   });
+
+  // The workspace is usable without the example content, so a failed seed is only logged.
+  try {
+    await seedExampleContent({ workspaceID: workspace.id, userID: input.userID });
+  } catch (error) {
+    console.error("Failed to add example content", { workspaceID: workspace.id, error });
+  }
+
+  return workspace;
 };
 
 export { createWorkspace };

@@ -43,10 +43,10 @@ const SchemaEditorPane: Component = () => {
       workspaceID={workspaceID()}
       user={currentSession()?.user}
       resourceLabel="schema"
-      emptyIcon="i-tabler:pyramid-off"
-      emptyMessage="Select a schema to start editing"
-      notFoundIcon="i-tabler:pyramid-off"
-      notFoundMessage="Schema not found"
+      emptyTitle="No schema open"
+      emptyDescription="Select a schema in the explorer to start editing."
+      notFoundTitle="Schema not found"
+      notFoundDescription="The schema was removed, or you don't have access to it."
       onBack={() => navigate(`/${workspaceID()}`)}
     />
   );

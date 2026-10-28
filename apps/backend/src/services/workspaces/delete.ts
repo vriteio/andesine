@@ -12,7 +12,7 @@ import {
 } from "@andesine/server/database";
 import { getWorkspaceAssetPrefix, getWorkspaceAssetStagingPrefix } from "@andesine/server/assets";
 import { toEntryID, toUUID, toWorkspaceID } from "@andesine/contracts/primitives";
-import { db } from "#backend/lib/adapters";
+import { auth, db } from "#backend/lib/adapters";
 import { deleteWorkspacePublishingSnapshots } from "#backend/lib/publishing";
 import { withAuthorization } from "#backend/lib/policy";
 import { ORPCError } from "@orpc/server";
@@ -101,6 +101,13 @@ const deleteWorkspaceOperation = async (input: {
         .set({ currentWorkspaceID: fallback.workspaceID, updatedAt: new Date() })
         .where(and(eq(users.id, affectedUserID), isNull(users.currentWorkspaceID)));
     });
+  }
+
+  const { internalAdapter } = await auth.$context;
+
+  // Cached sessions keep the user's current workspace, so they're refreshed from the database.
+  for (const affectedUserID of result.affectedUserIDs) {
+    await internalAdapter.updateUser(affectedUserID, { updatedAt: new Date() });
   }
 
   const [user] = await db
