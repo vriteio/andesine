@@ -1,6 +1,7 @@
 import { revalidate, useParams, useSearchParams } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
 import { createContext, createSignal, type ParentComponent, useContext } from "solid-js";
+import { ActionConfirmationDialog } from "#web/components/action-confirmation-dialog";
 import { useTree } from "#web/components/tree";
 import { useNotify } from "#web/context/notifications";
 import { usePublishing } from "#web/context/publishing";
@@ -40,6 +41,7 @@ const ACTION_ERROR_LABELS: Record<PublishingAction, string> = {
   publish: "Failed to publish content",
   unpublish: "Failed to unpublish content"
 };
+const CONFIRMED_ACTIONS = new Set<PublishingAction>(["disable", "unpublish"]);
 const PublishingActionsContext = createContext<PublishingActionsContextValue>();
 const PublishingActionsProvider: ParentComponent = (props) => {
   const notify = useNotify();
@@ -49,6 +51,7 @@ const PublishingActionsProvider: ParentComponent = (props) => {
   const publishing = usePublishing();
   const [, { setSelection }] = useTree();
   const [revertPreparing, setRevertPreparing] = createSignal(false);
+  const [confirmation, setConfirmation] = createSignal<PublishingMutationInput | null>(null);
   const revert = usePublishingRevert({
     currentEntryID: () => params.slug || "",
     snapshotView: () => Boolean(searchParams.snapshotID),
@@ -330,12 +333,43 @@ const PublishingActionsProvider: ParentComponent = (props) => {
       notify({ type: "error", text: ACTION_ERROR_LABELS[input.action] });
     }
   }));
+  const getConfirmationTitle = (input: PublishingMutationInput) => {
+    const count = input.target.ids.length;
+
+    if (input.action === "disable") {
+      return count > 1 ? `Disable publishing for ${count} collections?` : "Disable publishing?";
+    }
+
+    return count > 1 ? `Unpublish ${count} collections?` : "Unpublish collection?";
+  };
+  const getConfirmationAffected = (input: PublishingMutationInput) => {
+    return input.target.ids.map((collectionID) => ({
+      id: collectionID,
+      icon: "i-lucide:folder",
+      label:
+        content.collections.get({ collectionID })?.name ||
+        publishing.getCollectionOverlay(collectionID)?.name ||
+        "Untitled"
+    }));
+  };
   const open = (
     action: PublishingAction,
     target: PublishingTarget,
     channel = publishing.channel()
   ) => {
-    if (!mutation.isPending) mutation.mutate({ action, channel, target });
+    const needsConfirmation = target.type === "collection" && CONFIRMED_ACTIONS.has(action);
+
+    if (mutation.isPending) return;
+
+    if (needsConfirmation) setConfirmation({ action, channel, target });
+    else mutation.mutate({ action, channel, target });
+  };
+  const confirm = () => {
+    const input = confirmation();
+
+    if (input && !mutation.isPending) {
+      mutation.mutate(input, { onSettled: () => setConfirmation(null) });
+    }
   };
   return (
     <PublishingActionsContext.Provider
@@ -348,6 +382,30 @@ const PublishingActionsProvider: ParentComponent = (props) => {
       }}
     >
       {props.children}
+      <ActionConfirmationDialog
+        opened={Boolean(confirmation())}
+        title={confirmation() ? getConfirmationTitle(confirmation()!) : ""}
+        description={
+          confirmation()?.action === "disable"
+            ? "The content will be unpublished from all channels."
+            : `The content will be removed from the ${publishing.getChannelName(confirmation()?.channel)} channel.`
+        }
+        affected={confirmation() ? getConfirmationAffected(confirmation()!) : []}
+        warning={
+          confirmation()?.action === "disable"
+            ? "Enabling publishing again won't automatically publish the content again."
+            : undefined
+        }
+        action={{
+          color: "danger",
+          label: confirmation()?.action === "disable" ? "Disable publishing" : "Unpublish",
+          loading: mutation.isPending,
+          onClick: confirm
+        }}
+        onClose={() => {
+          if (!mutation.isPending) setConfirmation(null);
+        }}
+      />
     </PublishingActionsContext.Provider>
   );
 };
