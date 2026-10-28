@@ -240,6 +240,12 @@ const Dropdown: Component<DropdownProps> = (props) => {
     removeMobileDropdown(mobileDropdownId);
   });
   createEffect(() => {
+    if (!md() || !opened() || !anchorPoint()) return;
+
+    window.addEventListener("resize", closeDropdown);
+    onCleanup(() => window.removeEventListener("resize", closeDropdown));
+  });
+  createEffect(() => {
     const stackIndex = mobileDropdownIndex();
 
     if (!md() && opened() && stackIndex === -1) {
