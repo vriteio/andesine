@@ -30,6 +30,7 @@ const INDICATOR_SIDE_SPACING = 8;
 const INDICATOR_CENTERING_OFFSET = -0.5;
 const TableControls = (props: TableControlsProps) => {
   const touchInput = createMediaQuery("(hover: none) and (pointer: coarse)");
+  const lg = createMediaQuery("(min-width: 1024px)");
   const [layout, setLayout] = createSignal<TableLayout | null>(null);
   const [drag, setDrag] = createSignal<TableDrag | null>(null);
   const [resizing, setResizing] = createSignal(false);
@@ -43,6 +44,7 @@ const TableControls = (props: TableControlsProps) => {
   let scrollFrame: number | null = null;
   let layoutVersion = -1;
 
+  const gripSize = () => (lg() ? 12 : 16);
   const canEdit = () => {
     const pos = props.getPos();
 
@@ -350,15 +352,10 @@ const TableControls = (props: TableControlsProps) => {
                       icon={
                         axis === "column" ? "i-lucide:grip-horizontal" : "i-lucide:grip-vertical"
                       }
-                      iconProps={{ style: { width: "12px", height: "12px" } }}
+                      iconProps={{ style: { width: `${gripSize()}px`, height: `${gripSize()}px` } }}
                       aria-label={`Select ${axis} ${index + 1} and open cell actions`}
                       title={`Click for ${axis} actions. Drag to move it.`}
                       class="rounded-[0.25rem] opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 cursor-grab active:cursor-grabbing touch-none"
-                      style={
-                        axis === "column"
-                          ? { width: "24px", height: "12px", padding: "0" }
-                          : { width: "12px", height: "24px", padding: "0" }
-                      }
                       onPointerDown={(event) => startDrag(event, axis, index)}
                       onLostPointerCapture={stopDrag}
                       onKeyDown={(event) => moveWithKeyboard(event, axis, index)}
@@ -431,6 +428,7 @@ const TableControls = (props: TableControlsProps) => {
             {...props}
             layout={layout}
             enabled={() => canEdit() && !drag() && !resizing() && !selectingCells()}
+            visible={() => touchInput() && Boolean(selectedCells())}
             setExtending={setExtending}
           />
         </>

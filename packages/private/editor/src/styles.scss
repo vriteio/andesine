@@ -114,8 +114,10 @@ header[data-type="title"] {
 [data-table-content] {
   @apply relative min-w-full;
   width: max-content;
-  padding: 24px calc(24px + var(--table-preview-width, 0px))
-    calc(24px + var(--table-preview-height, 0px)) var(--table-left-space, 24px);
+  // One default column width (80px) of extra space on the right, to drag the "+" handle into.
+  // The bottom space also fits the shadow of the row "+" button, which the scroll container clips.
+  padding: 24px calc(104px + var(--table-preview-width, 0px))
+    calc(32px + var(--table-preview-height, 0px)) var(--table-left-space, 24px);
 }
 
 .ProseMirror [data-table-content] > table {
@@ -143,11 +145,25 @@ header[data-type="title"] {
 }
 
 [data-table-handle="column"] button {
-  @apply absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2;
+  @apply absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 p-0;
+  width: 32px;
+  height: 16px;
+
+  @screen lg {
+    width: 24px;
+    height: 12px;
+  }
 }
 
 [data-table-handle="row"] button {
-  @apply absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2;
+  @apply absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 p-0;
+  width: 16px;
+  height: 32px;
+
+  @screen lg {
+    width: 12px;
+    height: 24px;
+  }
 }
 
 [data-table-handle] {
@@ -166,8 +182,29 @@ header[data-type="title"] {
 }
 
 // Table extension handles
-[data-table-extension-handle][data-active="true"] button {
+[data-table-extension-handle]:is([data-active="true"], [data-selected="true"]) button {
   @apply opacity-100;
+}
+
+// Table extension preview, joined with the table at its starting edge
+[data-table-content][data-table-extending="row"] {
+  > table {
+    @apply rounded-b-none;
+  }
+
+  [data-table-extension-preview] > table {
+    @apply rounded-t-none;
+  }
+}
+
+[data-table-content][data-table-extending="column"] {
+  > table {
+    @apply rounded-r-none;
+  }
+
+  [data-table-extension-preview] > table {
+    @apply rounded-l-none;
+  }
 }
 
 // Table cell selection gesture

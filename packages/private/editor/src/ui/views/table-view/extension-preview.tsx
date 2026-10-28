@@ -52,9 +52,10 @@ const TableExtensionPreview = (props: TableExtensionPreviewProps) => {
     >
       <table
         style={{
+          // Overlap the table's border at the starting edge, so the shared edge stays single.
           position: "absolute",
-          left: "-0.5px",
-          top: "-0.5px",
+          left: props.axis === "column" ? "-1px" : "0",
+          top: props.axis === "row" ? "-1px" : "0",
           margin: "0",
           width: `${columns().reduce((sum, width) => sum + width, 0) + 1}px`
         }}

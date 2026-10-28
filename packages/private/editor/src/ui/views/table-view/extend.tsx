@@ -1,6 +1,7 @@
 import { getTableEdgeScrollSpeed } from "./edge-scroll";
 import { getCachedElementRect } from "#editor/ui/block-control-sizing";
 import { IconButton } from "@andesine/components";
+import { createMediaQuery } from "@solid-primitives/media";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import {
   type Accessor,
@@ -21,6 +22,7 @@ import type { TableAxis, TableControlsProps, TableLayout } from "./types";
 interface TableExtensionControlsProps extends TableControlsProps {
   layout: Accessor<TableLayout | null>;
   enabled: Accessor<boolean>;
+  visible: Accessor<boolean>;
   setExtending(value: boolean): void;
 }
 interface TableExtension {
@@ -44,6 +46,7 @@ interface TableExtension {
 const EXTENSION_SPACE = 24;
 const HOVER_INSET = 5;
 const TableExtensionControls = (props: TableExtensionControlsProps) => {
+  const lg = createMediaQuery("(min-width: 1024px)");
   const [extension, setExtension] = createSignal<TableExtension | null>(null);
   const getContainer = (axis: TableAxis) =>
     props.view.dom.closest<HTMLElement>(
@@ -57,6 +60,7 @@ const TableExtensionControls = (props: TableExtensionControlsProps) => {
     extension()?.axis === "column" ? extension()!.count * DEFAULT_COLUMN_WIDTH : 0;
   const extraHeight = () =>
     extension()?.axis === "row" ? extension()!.count * extension()!.rowHeight : 0;
+  const buttonSize = () => (lg() ? "12px" : "16px");
 
   let scrollFrame: number | null = null;
 
@@ -200,8 +204,12 @@ const TableExtensionControls = (props: TableExtensionControlsProps) => {
   };
 
   createEffect(() => {
+    const current = extension();
+
     props.view.dom.style.setProperty("--table-preview-height", `${extraHeight()}px`);
     props.view.dom.style.setProperty("--table-preview-width", `${extraWidth()}px`);
+    if (current?.count) props.view.dom.setAttribute("data-table-extending", current.axis);
+    else props.view.dom.removeAttribute("data-table-extending");
   });
   createEffect(() => {
     const node = props.node();
@@ -220,6 +228,7 @@ const TableExtensionControls = (props: TableExtensionControlsProps) => {
       stop();
       props.view.dom.style.removeProperty("--table-preview-height");
       props.view.dom.style.removeProperty("--table-preview-width");
+      props.view.dom.removeAttribute("data-table-extending");
       window.removeEventListener("pointermove", movePointer);
       window.removeEventListener("pointerup", finish, true);
       window.removeEventListener("pointercancel", stop);
@@ -246,6 +255,7 @@ const TableExtensionControls = (props: TableExtensionControlsProps) => {
               <div
                 data-table-extension-handle={axis}
                 data-active={extension()?.axis === axis ? "true" : undefined}
+                data-selected={props.visible() ? "true" : undefined}
                 class="group absolute z-30"
                 style={
                   axis === "column"
@@ -268,7 +278,7 @@ const TableExtensionControls = (props: TableExtensionControlsProps) => {
                 <IconButton
                   size="xs"
                   icon="i-lucide:plus"
-                  iconProps={{ style: { width: "12px", height: "12px" } }}
+                  iconProps={{ style: { width: buttonSize(), height: buttonSize() } }}
                   aria-label={axis === "column" ? "Add columns" : "Add rows"}
                   title={extension() ? undefined : `Click to add one ${axis}, or drag to add more`}
                   tabIndex={props.enabled() ? 0 : -1}
@@ -282,7 +292,7 @@ const TableExtensionControls = (props: TableExtensionControlsProps) => {
                           position: "absolute",
                           left: "1px",
                           top: "0",
-                          width: "12px",
+                          width: buttonSize(),
                           height: "100%",
                           padding: "0"
                         }
@@ -290,7 +300,7 @@ const TableExtensionControls = (props: TableExtensionControlsProps) => {
                           position: "absolute",
                           top: "1px",
                           left: "0",
-                          height: "12px",
+                          height: buttonSize(),
                           width: "100%",
                           padding: "0"
                         }

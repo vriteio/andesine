@@ -33,6 +33,8 @@ type CellAction =
   | "toggleHeaderColumn"
   | "deleteTable";
 
+const LONG_PRESS_DELAY = 500;
+const LONG_PRESS_TOLERANCE = 10;
 const TableCellMenu = (props: TableCellMenuProps) => {
   const [selection, setSelection] = createSignal<TableRect | null>(null);
   const [positioned, setPositioned] = createSignal(false);
@@ -40,6 +42,9 @@ const TableCellMenu = (props: TableCellMenuProps) => {
   let contextMenuOpened = false;
   let contextPointerDown = false;
   let menuFrame: number | null = null;
+  let longPressTimer = 0;
+  let longPressStart: TableMenuPoint | null = null;
+  let heldSelection: CellSelection | null = null;
 
   const getSelection = () => {
     const { state } = props.editor;
@@ -203,7 +208,59 @@ const TableCellMenu = (props: TableCellMenuProps) => {
 
     return true;
   };
+  const cancelLongPress = () => {
+    clearTimeout(longPressTimer);
+    longPressStart = null;
+  };
+  const openFromLongPress = (event: MouseEvent) => {
+    const opened = openContextMenu(event);
+    const { selection } = props.editor.state;
+
+    cancelLongPress();
+    heldSelection = opened && selection instanceof CellSelection ? selection : null;
+  };
+  // Touch has no right click, and iOS fires no `contextmenu` on long press.
+  const startLongPress = (event: PointerEvent) => {
+    cancelLongPress();
+    longPressStart = { x: event.clientX, y: event.clientY };
+    longPressTimer = window.setTimeout(() => openFromLongPress(event), LONG_PRESS_DELAY);
+  };
+  // iOS still places the caret or selects a word for the held touch, which would close the menu.
+  const handleTouchEnd = (event: TouchEvent) => {
+    cancelLongPress();
+    if (heldSelection) event.preventDefault();
+  };
+  const cancelOnMove = (x: number, y: number) => {
+    const moved =
+      longPressStart &&
+      Math.hypot(x - longPressStart.x, y - longPressStart.y) > LONG_PRESS_TOLERANCE;
+
+    if (moved) cancelLongPress();
+  };
+  const handlePointerMove = (event: PointerEvent) => cancelOnMove(event.clientX, event.clientY);
+  // Touch events go on after iOS cancels the pointer for its own text selection gesture.
+  const handleTouchMove = (event: TouchEvent) => {
+    const touch = event.touches[0];
+
+    if (touch) cancelOnMove(touch.clientX, touch.clientY);
+  };
+  // The held touch can still focus the cell text on iOS, which opens the virtual keyboard.
+  const handleEditorFocus = () => {
+    if (heldSelection) props.editor.view.dom.blur();
+  };
   const handleContextMenu = (event: MouseEvent) => {
+    // Android also fires `contextmenu` on long press; only the first of the two opens the menu.
+    if (heldSelection) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
+    if (longPressStart) {
+      openFromLongPress(event);
+      return;
+    }
+
     if (contextPointerDown) {
       contextPointerDown = false;
       event.preventDefault();
@@ -214,11 +271,15 @@ const TableCellMenu = (props: TableCellMenuProps) => {
     openContextMenu(event);
   };
   const capturePointerDown = () => {
+    // The next press is the user's own, so its selection changes apply again.
+    heldSelection = null;
     // Read this before the dropdown handles a pointer press outside its menu.
     contextMenuOpened = Boolean(props.anchor());
   };
   const handlePointerDown = (event: PointerEvent) => {
     contextPointerDown = event.button === 2 && openContextMenu(event, contextMenuOpened);
+
+    if (event.pointerType !== "mouse") startLongPress(event);
   };
 
   createEffect(() => {
@@ -238,6 +299,19 @@ const TableCellMenu = (props: TableCellMenuProps) => {
       if (!transaction.docChanged && !transaction.selectionSet) return;
 
       const current = getSelection();
+      const held = heldSelection;
+
+      if (transaction.docChanged) heldSelection = null;
+
+      // Put the cell selection back when the native long press selection replaces it.
+      if (!current && held && !transaction.docChanged) {
+        queueMicrotask(() => {
+          if (props.editor.isDestroyed || heldSelection !== held) return;
+
+          props.editor.view.dispatch(props.editor.state.tr.setSelection(held));
+        });
+        return;
+      }
 
       setSelection(current);
       if (!current) props.setAnchor(null);
@@ -246,14 +320,31 @@ const TableCellMenu = (props: TableCellMenuProps) => {
     props.editor.on("transaction", update);
     window.addEventListener("pointerdown", capturePointerDown, true);
     props.view.table.addEventListener("pointerdown", handlePointerDown, true);
+    // The end of the touch may not reach the table, e.g. when its target is re-rendered meanwhile.
+    window.addEventListener("pointermove", handlePointerMove, true);
+    window.addEventListener("pointerup", cancelLongPress, true);
+    window.addEventListener("touchmove", handleTouchMove, true);
+    window.addEventListener("touchend", handleTouchEnd, {
+      capture: true,
+      passive: false
+    });
+    window.addEventListener("touchcancel", cancelLongPress, true);
     props.view.table.addEventListener("contextmenu", handleContextMenu, true);
+    props.editor.view.dom.addEventListener("focus", handleEditorFocus);
     onCleanup(() => {
       if (menuFrame !== null) cancelAnimationFrame(menuFrame);
 
+      cancelLongPress();
       props.editor.off("transaction", update);
       window.removeEventListener("pointerdown", capturePointerDown, true);
       props.view.table.removeEventListener("pointerdown", handlePointerDown, true);
+      window.removeEventListener("pointermove", handlePointerMove, true);
+      window.removeEventListener("pointerup", cancelLongPress, true);
+      window.removeEventListener("touchmove", handleTouchMove, true);
+      window.removeEventListener("touchend", handleTouchEnd, true);
+      window.removeEventListener("touchcancel", cancelLongPress, true);
       props.view.table.removeEventListener("contextmenu", handleContextMenu, true);
+      props.editor.view.dom.removeEventListener("focus", handleEditorFocus);
     });
   });
 
@@ -264,7 +355,10 @@ const TableCellMenu = (props: TableCellMenuProps) => {
         anchorPoint={props.anchor()}
         opened={Boolean(props.anchor())}
         setOpened={(opened) => {
-          if (!opened) props.setAnchor(null);
+          if (opened) return;
+
+          heldSelection = null;
+          props.setAnchor(null);
         }}
         placement="bottom-start"
         onPlacementChange={() => setPositioned(true)}
