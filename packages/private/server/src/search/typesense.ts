@@ -218,23 +218,43 @@ const ensureSearchCollection = async (
       if (!collectionCreatedByAnotherWorker) throw error;
     }
   }
-
-  const alias = await client.getAlias(definition.alias);
-
-  if (alias?.collection_name !== definition.schema.name) {
-    await client.upsertAlias(definition.alias, definition.schema.name);
-  }
 };
+/**
+ * Creates missing collections and aliases. Returns the aliases that point to another collection
+ * version; only `activateSearchCollections` moves them, once no older worker writes through them.
+ */
 const ensureSearchCollections = async (
   client: TypesenseClient,
   definitions: SearchCollectionDefinition[]
-): Promise<void> => {
+): Promise<string[]> => {
+  const outdatedAliases: string[] = [];
+
   for (const definition of definitions) {
     await ensureSearchCollection(client, definition);
+
+    const alias = await client.getAlias(definition.alias);
+
+    if (!alias) {
+      await client.upsertAlias(definition.alias, definition.schema.name);
+    } else if (alias.collection_name !== definition.schema.name) {
+      outdatedAliases.push(definition.alias);
+    }
+  }
+
+  return outdatedAliases;
+};
+const activateSearchCollections = async (
+  client: TypesenseClient,
+  definitions: SearchCollectionDefinition[]
+): Promise<void> => {
+  await ensureSearchCollections(client, definitions);
+
+  for (const definition of definitions) {
+    await client.upsertAlias(definition.alias, definition.schema.name);
   }
 };
 
-export { TypesenseAPIError, TypesenseClient, ensureSearchCollections };
+export { TypesenseAPIError, TypesenseClient, activateSearchCollections, ensureSearchCollections };
 export type {
   TypesenseAlias,
   TypesenseClientConfig,

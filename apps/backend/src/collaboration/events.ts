@@ -14,7 +14,11 @@ import { hasAuthPermission, isSessionAuthorizationEvent } from "#backend/lib/pol
 import { toUUID } from "@andesine/contracts/primitives";
 import { type Hocuspocus, type WebSocketLike } from "@hocuspocus/server";
 import { eq } from "drizzle-orm";
-import { resetSchemaContentDocument, resetSchemaContentDocuments } from "./schema-content";
+import {
+  prepareSchemaMigrationDocuments,
+  resetSchemaContentDocument,
+  resetSchemaContentDocuments
+} from "./schema-content";
 import type { CollaborationContext } from "./types";
 
 const registerCollaborationEvents = (collab: Hocuspocus<CollaborationContext>): void => {
@@ -152,6 +156,16 @@ const registerCollaborationEvents = (collab: Hocuspocus<CollaborationContext>): 
   });
 
   subscribeToSchemaMigrationEvents("*", (event) => {
+    // Other instances prepare their open documents here; the starting one shares its own run.
+    if (event.data.status === "queued") {
+      prepareSchemaMigrationDocuments(collab, [...new Set(event.data.collectionIDs)]).catch(
+        (error: unknown) => {
+          console.error("Failed to prepare documents for a schema migration", { error });
+        }
+      );
+      return;
+    }
+
     // Activation and rollback can both replace stored content. Reload every affected
     // document, including those kept open by users with read-only access.
     if (event.data.status !== "completed" && event.data.status !== "failed") return;

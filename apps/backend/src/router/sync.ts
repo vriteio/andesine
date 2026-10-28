@@ -1,4 +1,5 @@
 import { authorized } from "#backend/lib/transport/middleware/authorized";
+import { shutdownSignal } from "#backend/lib/transport/shutdown";
 import { Memberships } from "#backend/services/memberships";
 import { Sync } from "#backend/services/sync";
 import { api } from "./implement";
@@ -38,7 +39,7 @@ const syncRouter = handlers.router({
   }) {
     const { events } = await Sync.listenToWorkspaceEvents({
       auth: context.auth,
-      signal
+      signal: signal ? AbortSignal.any([signal, shutdownSignal]) : shutdownSignal
     });
 
     yield* events;

@@ -38,7 +38,7 @@ import { and, eq, inArray, isNull } from "drizzle-orm";
 import { applyUpdate, Doc, encodeStateAsUpdate } from "yjs";
 import { clearPendingContributors, getPendingContributors } from "./activity";
 import { getDocumentTitle, setDocumentTitle } from "./document";
-import { emitStoredEntryUpdates } from "./entry-events";
+import { emitEntryContentReset, emitStoredEntryUpdates } from "./entry-events";
 import type { CollaborationContext } from "./types";
 import { recordVersionActivity } from "./version-activity";
 
@@ -52,6 +52,22 @@ interface StoreEntryDocumentInput {
   state: Uint8Array;
 }
 
+/** Whether the state has edits that the stored state doesn't; Yjs emits updates only for those. */
+const hasUnsavedChanges = (storedState: Buffer | null, state: Uint8Array): boolean => {
+  const document = new Doc();
+
+  let changed = false;
+
+  if (storedState) applyUpdate(document, new Uint8Array(storedState));
+
+  document.on("update", () => {
+    changed = true;
+  });
+  applyUpdate(document, state);
+  document.destroy();
+
+  return changed;
+};
 /** The entry's collaboration state; content saved without a schema loses schema elements. */
 const fetchEntryDocument = async ({
   documentName,
@@ -115,7 +131,7 @@ const storeEntryDocument = async ({
 }: StoreEntryDocumentInput): Promise<void> => {
   const entryID = toUUID(documentName);
   const workspaceID = toUUID(lastContext.workspaceID!);
-  const pendingContributorIDs = getPendingContributors(documentName);
+  const pendingContributorIDs = await getPendingContributors(documentName);
   const contributorIDs = pendingContributorIDs.map(toUUID);
   const webhookOperationID = lastContext.webhookOperationID;
   // Editor saves can combine several people's changes; name a member only when there's one.
@@ -184,7 +200,17 @@ const storeEntryDocument = async ({
     const hasPersistedSchemaRevision = lastContext.persistedSchemaRevisionID !== undefined;
     const preserveSchemaRevision = hasPersistedSchemaRevision || lastContext.preserveSchemaRevision;
 
-    if (activeMigration && !preparingMigration) return null;
+    // Direct connections also save when they only read; only real edits need the editors reset.
+    if (activeMigration && !preparingMigration) {
+      const [storedContent] = await tx
+        .select({ state: contents.state })
+        .from(contents)
+        .where(eq(contents.entryID, entry.id));
+
+      return hasUnsavedChanges(storedContent?.state ?? null, state)
+        ? ("rejected-by-migration" as const)
+        : null;
+    }
 
     const operation = createWebhookOperation(
       toWorkspaceID(workspaceID),
@@ -391,12 +417,23 @@ const storeEntryDocument = async ({
 
   // A direct operation owns one committed save. Do not reuse its identity for
   // later edits if the connection context is retained by a debounced store.
+  // Edits that arrive once a schema migration runs can't be saved; reload the editors so it shows.
+  if (stored === "rejected-by-migration") {
+    console.warn("Rejected collaboration edits during a schema migration", {
+      entryID: documentName
+    });
+    emitEntryContentReset(workspaceID, entryID);
+    void clearPendingContributors(documentName, pendingContributorIDs);
+    return;
+  }
+
   if (stored && lastContext.webhookOperationID === webhookOperationID) {
     delete lastContext.webhookOperationID;
     delete lastContext.webhookActor;
   }
 
-  clearPendingContributors(documentName, pendingContributorIDs);
+  // Not awaited: the save is done, and Redis errors are only logged.
+  void clearPendingContributors(documentName, pendingContributorIDs);
 
   if (stored) emitStoredEntryUpdates(stored);
 };

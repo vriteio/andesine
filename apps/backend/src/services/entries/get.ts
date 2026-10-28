@@ -28,7 +28,7 @@ import {
   type ContentBlockDetails,
   type EntryReferences
 } from "#backend/lib/content";
-import { getLoadedDocumentContent } from "#backend/collaboration";
+import { getOpenDocumentContent } from "#backend/collaboration";
 
 interface EntryDetails extends Entry {
   path: string;
@@ -130,7 +130,7 @@ const getEntry = withAuthorization<GetEntryInput, ResolvedGetEntry, EntryDetails
   },
   async ({ authorization, database, input, resolved, workspaceID }) => {
     // An open document has edits that aren't saved yet; content writes compare against it.
-    const loaded = getLoadedDocumentContent(toEntryID(resolved.id));
+    const loaded = await getOpenDocumentContent(toEntryID(resolved.id), workspaceID);
     const content = loaded?.document ?? getStoredContent(resolved);
 
     const schema = await assertRecordedContent(database, workspaceID, {

@@ -11,13 +11,15 @@ interface StoredEntry {
   title: string | null;
 }
 
+// Open editors reload the entry, e.g. after its stored content changed under them.
+const emitEntryContentReset = (workspaceID: string, entryID: string): void => {
+  emitEntryEvent(toWorkspaceID(workspaceID), {
+    action: "entry:content-reset",
+    data: { id: toEntryID(entryID) }
+  });
+};
 const emitStoredEntryUpdates = (stored: StoredEntry): void => {
-  if (stored.contentNormalized) {
-    emitEntryEvent(toWorkspaceID(stored.entry.workspaceID), {
-      action: "entry:content-reset",
-      data: { id: toEntryID(stored.entry.id) }
-    });
-  }
+  if (stored.contentNormalized) emitEntryContentReset(stored.entry.workspaceID, stored.entry.id);
 
   if (stored.title !== null) {
     emitEntryEvent(toWorkspaceID(stored.entry.workspaceID), {
@@ -44,5 +46,5 @@ const emitStoredEntryUpdates = (stored: StoredEntry): void => {
   }
 };
 
-export { emitStoredEntryUpdates };
+export { emitEntryContentReset, emitStoredEntryUpdates };
 export type { StoredEntry };

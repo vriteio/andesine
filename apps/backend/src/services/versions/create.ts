@@ -21,7 +21,7 @@ import {
 import { Asset } from "#backend/services/assets";
 import {
   getCurrentDocumentContent,
-  getLoadedDocumentContent,
+  getOpenDocumentContent,
   type ContentSnapshot
 } from "#backend/collaboration";
 import { type VersionDetails, type VersionReason } from "@andesine/contracts/versions";
@@ -219,8 +219,8 @@ const commitContentVersion = withAuthorization<
   },
   async ({ auth, authorization, authorizationScope, database, input, resolved, workspaceID }) => {
     const { document, mdx, imageAssetIDs, ...versionInput } = input;
-    // Not through a connection: closing one in this transaction would wait for its own save.
-    const storedBase = getLoadedDocumentContent(input.entryID)?.document ??
+    // Reading a document open on another instance doesn't save it, so it can't wait for these locks.
+    const storedBase = (await getOpenDocumentContent(input.entryID, workspaceID))?.document ??
       resolved.document ?? { type: "doc", content: [] };
     const base = withEntryLinkPaths(
       storedBase,

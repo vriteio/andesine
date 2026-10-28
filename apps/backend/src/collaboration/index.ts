@@ -1,6 +1,6 @@
 export {
   getCurrentDocumentContent,
-  getLoadedDocumentContent,
+  getOpenDocumentContent,
   getCurrentSchemaDefinition,
   openDocumentContentConnection,
   prepareSchemaMigrationConnections,

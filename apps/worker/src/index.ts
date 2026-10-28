@@ -10,11 +10,8 @@ import {
   SCHEMA_MIGRATION_JOB_NAME,
   type SchemaMigrationJobData
 } from "@andesine/server/queue";
-import {
-  createSearchCollectionDefinitions,
-  ensureSearchCollections,
-  TypesenseClient
-} from "@andesine/server/search";
+import { ensureSearchCollections } from "@andesine/server/search";
+import { searchCollectionDefinitions, typesenseClient } from "./search/client";
 import { indexAssetSearch } from "./assets/search";
 import { analyzeAsset, scheduleAssetAnalyses } from "./assets/analyze";
 import { processProfileImage } from "./assets/process-profile";
@@ -47,10 +44,6 @@ const MAINTENANCE_INTERVAL_MS = 60_000;
 const queueRedisClient = createClient({ url: config.QUEUE_REDIS_URL });
 const queueRedisConnection = createNodeRedisClient(queueRedisClient);
 const eventsRedisClient = createClient({ url: config.REDIS_URL });
-const typesenseClient = new TypesenseClient({
-  url: config.TYPESENSE_URL,
-  apiKey: config.TYPESENSE_API_KEY
-});
 const searchIndexingQueue = new Queue(SEARCH_INDEXING_QUEUE_NAME, {
   connection: queueRedisConnection,
   defaultJobOptions: SEARCH_INDEXING_DEFAULT_JOB_OPTIONS,
@@ -82,6 +75,7 @@ const maintenanceHandlers = new Map([
   ["oauth-client-cleanup", removeUnusedOAuthClients]
 ]);
 const maintenanceIntervals = new Map<string, number>([["oauth-client-cleanup", 60 * 60 * 1000]]);
+const reconciliations = new Set<Promise<void>>();
 
 if (isExtensionRegistryEnabled()) {
   maintenanceHandlers.set(EXTENSION_REGISTRY_JOB_NAME, () => refreshExtensions(publishEvent));
@@ -110,14 +104,18 @@ if (assetStorage) {
     maintainAssets(searchIndexingQueue, assetStorage, typesenseClient)
   );
 }
-const worker = new Worker(SEARCH_INDEXING_QUEUE_NAME, (job) => processJob(job, jobHandlers), {
-  autorun: false,
-  connection: queueRedisConnection,
-  concurrency: config.WORKER_CONCURRENCY
-});
+const worker = new Worker(
+  SEARCH_INDEXING_QUEUE_NAME,
+  (job, token) => processJob(job, jobHandlers, token),
+  {
+    autorun: false,
+    connection: queueRedisConnection,
+    concurrency: config.WORKER_CONCURRENCY
+  }
+);
 const maintenanceWorker = new Worker(
   MAINTENANCE_QUEUE_NAME,
-  (job) => processJob(job, maintenanceHandlers),
+  (job, token) => processJob(job, maintenanceHandlers, token),
   { autorun: false, connection: queueRedisConnection, concurrency: 1 }
 );
 
@@ -150,19 +148,23 @@ worker.on("failed", (job, error) => {
 
   const data = job.data as unknown as SchemaMigrationJobData;
 
-  void reconcileFailedSchemaMigrationJob(
+  const reconciliation = reconcileFailedSchemaMigrationJob(
     {
       error,
       migrationID: data.migrationID,
       workspaceID: data.workspaceID
     },
     schemaMigrationDependencies
-  ).catch((reconciliationError) => {
-    console.error("Failed to reconcile exhausted schema migration job", {
-      error: reconciliationError,
-      migrationID: data.migrationID
-    });
-  });
+  )
+    .catch((reconciliationError) => {
+      console.error("Failed to reconcile exhausted schema migration job", {
+        error: reconciliationError,
+        migrationID: data.migrationID
+      });
+    })
+    .finally(() => reconciliations.delete(reconciliation));
+
+  reconciliations.add(reconciliation);
 });
 
 const webhookScheduler = startWebhookScheduler();
@@ -211,6 +213,9 @@ const shutdown = (): Promise<void> => {
       console.error("Failed to close the background worker", error);
     }
 
+    // Reconciliation still needs the queue and the database.
+    await Promise.allSettled([...reconciliations]);
+
     try {
       await searchIndexingQueue.close();
     } catch (error) {
@@ -255,18 +260,20 @@ process.on("SIGINT", shutdown);
 // Webhooks start independently; install shutdown handlers before waiting for
 // Redis, event messaging, or search initialization.
 const startBackgroundWorkers = async (): Promise<void> => {
-  await Promise.all([
+  const [, , , outdatedSearchAliases] = await Promise.all([
     worker.waitUntilReady(),
     maintenanceWorker.waitUntilReady(),
     eventsRedisClient.connect(),
-    ensureSearchCollections(
-      typesenseClient,
-      createSearchCollectionDefinitions({
-        dimensions: config.SEARCH_EMBEDDING_DIMENSIONS
-      })
-    )
+    ensureSearchCollections(typesenseClient, searchCollectionDefinitions)
   ]);
+
   if (shutdownPromise) return;
+
+  if (outdatedSearchAliases.length) {
+    console.warn("Search aliases point to older collections; run search:activate", {
+      aliases: outdatedSearchAliases
+    });
+  }
 
   // Set the shared limit before any replica starts consuming maintenance jobs.
   await maintenanceQueue.setGlobalConcurrency(1);

@@ -14,6 +14,7 @@ import {
   writeContentDocument
 } from "./document";
 import { prepareSchemaMigrationDocuments } from "./schema-content";
+import { collaborationRedis } from "./redis";
 import { collab } from "./server";
 import type { ContentSnapshot } from "./types";
 import { getWebhookActor, type WebhookOperation } from "@andesine/server/webhooks/recording";
@@ -120,6 +121,38 @@ const getLoadedDocumentContent = (documentName: string): ContentSnapshot | null 
 
   return document ? getContentSnapshot(document) : null;
 };
+/** The content of a document open on any instance with its unsaved edits, or null if it's closed. */
+const getOpenDocumentContent = async (
+  documentName: string,
+  workspaceID: string
+): Promise<ContentSnapshot | null> => {
+  const loaded = getLoadedDocumentContent(documentName);
+
+  if (loaded) return loaded;
+
+  if (!(await collaborationRedis.isDocumentOpen(documentName))) return null;
+
+  try {
+    const connection = await openDocumentContentConnection(documentName, workspaceID);
+    const document = connection.document!;
+
+    try {
+      return await readDocumentContent(connection);
+    } finally {
+      // A read changes nothing, so skip the disconnect's save, which could replace a pending
+      // one, and don't wait for the Redis extension's unload delay.
+      document.removeDirectConnection();
+      connection.document = null;
+      collab.unloadDocument(document).catch((error: unknown) => {
+        console.error("Failed to unload a collaboration document after a read", { error });
+      });
+    }
+  } catch (error) {
+    // Callers fall back to the stored content, as when the document is closed.
+    console.error("Failed to read a document open on another instance", { error });
+    return null;
+  }
+};
 const getCurrentDocumentContent = async (
   documentName: string,
   workspaceID: string
@@ -199,7 +232,7 @@ const getCurrentSchemaDefinition = async (
 
 export {
   getCurrentDocumentContent,
-  getLoadedDocumentContent,
+  getOpenDocumentContent,
   getCurrentSchemaDefinition,
   openDocumentContentConnection,
   prepareSchemaMigrationConnections,

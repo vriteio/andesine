@@ -14,7 +14,8 @@ export default defineConfig({
   cwd: __dirname,
   input: {
     "index": "./src/index.ts",
-    "refresh-extension-registry": "./src/refresh-extension-registry.ts"
+    "refresh-extension-registry": "./src/refresh-extension-registry.ts",
+    "activate-search-collections": "./src/activate-search-collections.ts"
   },
   platform: "node",
   tsconfig: "./tsconfig.json",

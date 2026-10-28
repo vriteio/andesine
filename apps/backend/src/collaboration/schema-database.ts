@@ -92,7 +92,7 @@ const storeSchemaDocument = async ({
 }: StoreSchemaDocumentInput): Promise<void> => {
   const schemaID = toUUID(documentName);
   const rawWorkspaceID = toUUID(workspaceID);
-  const pendingContributorIDs = getPendingContributors(documentName);
+  const pendingContributorIDs = await getPendingContributors(documentName);
   const contributorIDs = pendingContributorIDs.map(toUUID);
   const stored = await db.transaction(async (tx) => {
     const [workspace] = await tx
@@ -193,7 +193,7 @@ const storeSchemaDocument = async ({
     };
   });
 
-  clearPendingContributors(documentName, pendingContributorIDs);
+  void clearPendingContributors(documentName, pendingContributorIDs);
 
   if (stored) {
     emitSchemaEvent(toWorkspaceID(rawWorkspaceID), {

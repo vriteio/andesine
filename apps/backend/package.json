@@ -30,6 +30,7 @@
     "@better-auth/passkey": "1.7.5",
     "@fastify/cors": "^11.3.0",
     "@fastify/websocket": "^11.3.0",
+    "@hocuspocus/common": "^4.4.0",
     "@hocuspocus/extension-database": "^4.4.0",
     "@hocuspocus/extension-redis": "^4.4.0",
     "@hocuspocus/server": "^4.4.0",

@@ -6,6 +6,7 @@ import { collab, shutdownCollaboration } from "#backend/collaboration";
 import { config } from "#backend/lib/config";
 import { authPlugin } from "#backend/lib/transport/auth";
 import { mcpPlugin } from "#backend/lib/transport/mcp";
+import { endEventStreams } from "#backend/lib/transport/shutdown";
 import Fastify, { type FastifyRequest } from "fastify";
 import corsPlugin from "@fastify/cors";
 import websocketPlugin from "@fastify/websocket";
@@ -52,6 +53,8 @@ if (hasIncompleteHTTPSConfig) {
 const httpsEnabled = httpsKeyPath && httpsCertPath;
 const app = Fastify({
   bodyLimit: 1_048_576,
+  // Rate limits use the client IP, which proxies otherwise hide behind their own
+  trustProxy: config.TRUST_PROXY_HOPS,
   keepAliveTimeout: 10_000,
   maxRequestsPerSocket: 100,
   requestTimeout: 30_000,
@@ -187,6 +190,8 @@ const shutdown = (): Promise<void> => {
 
   shutdownPromise = (async () => {
     isShuttingDown = true;
+    endEventStreams();
+
     let exitCode = 0;
     const appClose = app.close().catch((error) => {
       exitCode = 1;

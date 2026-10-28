@@ -7,7 +7,9 @@ import type { CollaborationContext } from "./types";
 
 const SCHEMA_CONTENT_RESET_CLOSE_CODE = 4210;
 const SCHEMA_CONTENT_RESET_CLOSE_REASON = "Schema Content Reset";
-const resettingDocuments = new Set<string>();
+// In-flight work, so a second request for the same documents waits for it instead of repeating it.
+const resettingDocuments = new Map<string, Promise<void>>();
+const preparingMigrations = new Map<string, Promise<void>>();
 
 const getAffectedLoadedDocumentIDs = async (
   collab: Hocuspocus<CollaborationContext>,
@@ -78,19 +80,19 @@ const getAffectedLoadedDocumentIDs = async (
 };
 // A normalized document must reconnect with a new local Y.js state. The dedicated close
 // code lets the client lock the stale editor and refresh it instead of enabling offline edits.
-const resetSchemaContentDocument = async (
+const resetSchemaContentDocument = (
   collab: Hocuspocus<CollaborationContext>,
   documentID: string
 ): Promise<void> => {
   const document = collab.documents.get(documentID);
+  const resetting = resettingDocuments.get(documentID);
 
-  if (!document || resettingDocuments.has(documentID)) return;
+  if (resetting) return resetting;
 
-  resettingDocuments.add(documentID);
+  if (!document) return Promise.resolve();
 
   const sockets = [...document.getConnections()].map((connection) => connection.webSocket);
-
-  try {
+  const reset = (async () => {
     for (const connection of document.getConnections()) {
       connection.close({
         code: SCHEMA_CONTENT_RESET_CLOSE_CODE,
@@ -103,9 +105,11 @@ const resetSchemaContentDocument = async (
     for (const socket of sockets) {
       socket.close(SCHEMA_CONTENT_RESET_CLOSE_CODE, SCHEMA_CONTENT_RESET_CLOSE_REASON);
     }
-  } finally {
-    resettingDocuments.delete(documentID);
-  }
+  })().finally(() => resettingDocuments.delete(documentID));
+
+  resettingDocuments.set(documentID, reset);
+
+  return reset;
 };
 const resetSchemaContentDocuments = async (
   collab: Hocuspocus<CollaborationContext>,
@@ -119,7 +123,7 @@ const resetSchemaContentDocuments = async (
     })
   );
 };
-const prepareSchemaMigrationDocuments = async (
+const prepareDocuments = async (
   collab: Hocuspocus<CollaborationContext>,
   collectionIDs: string[],
   documentIDs: string[] = []
@@ -154,6 +158,26 @@ const prepareSchemaMigrationDocuments = async (
       return resetSchemaContentDocument(collab, documentID);
     })
   );
+};
+
+// The starting instance prepares directly and again on its own `queued` event; the second waits.
+const prepareSchemaMigrationDocuments = (
+  collab: Hocuspocus<CollaborationContext>,
+  collectionIDs: string[],
+  documentIDs: string[] = []
+): Promise<void> => {
+  const key = JSON.stringify([collectionIDs.map(toUUID).sort(), [...documentIDs].sort()]);
+  const preparing = preparingMigrations.get(key);
+
+  if (preparing) return preparing;
+
+  const preparation = prepareDocuments(collab, collectionIDs, documentIDs).finally(() => {
+    preparingMigrations.delete(key);
+  });
+
+  preparingMigrations.set(key, preparation);
+
+  return preparation;
 };
 
 export { prepareSchemaMigrationDocuments, resetSchemaContentDocument, resetSchemaContentDocuments };

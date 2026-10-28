@@ -75,6 +75,19 @@ const submitSchemaMigration = async (input: SubmitSchemaMigrationInput): Promise
     return toCollectionID(toUUID(collectionID));
   });
 
+  // Other instances prepare their open documents on this event; see `collaboration/events.ts`.
+  emitSchemaMigrationEvent(workspaceID, {
+    action: "schema-migration:update",
+    data: {
+      id: migrationID,
+      schemaID: null,
+      collectionIDs,
+      status: "queued",
+      totalEntries: input.totalEntries,
+      processedEntries: 0
+    }
+  });
+
   try {
     await input.prepareAffectedContent?.();
   } catch (error) {
@@ -141,18 +154,6 @@ const submitSchemaMigration = async (input: SubmitSchemaMigrationInput): Promise
 
     throw new ORPCError("INTERNAL_SERVER_ERROR", { message });
   }
-
-  emitSchemaMigrationEvent(workspaceID, {
-    action: "schema-migration:update",
-    data: {
-      id: migrationID,
-      schemaID: null,
-      collectionIDs,
-      status: "queued",
-      totalEntries: input.totalEntries,
-      processedEntries: 0
-    }
-  });
 
   try {
     const jobID = await enqueueSchemaMigration({ migrationID, workspaceID });
