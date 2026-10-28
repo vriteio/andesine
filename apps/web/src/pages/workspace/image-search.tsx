@@ -33,6 +33,8 @@ interface ImageSearchProps {
 }
 type ImageSearchResult = Awaited<ReturnType<typeof client.assets.search>>["body"][number];
 
+const SKELETON_DELAY = 200;
+
 const searchImages = query(async (workspaceID: string, text: string, refresh: number) => {
   // Refresh signed thumbnails while the results remain open.
   void refresh;
@@ -54,6 +56,7 @@ const ImageSearch = (props: ImageSearchProps) => {
   const [selectedIndex, setSelectedIndex] = createSignal(0);
   const [text, setText] = createSignal("");
   const [refresh, setRefresh] = createSignal(Date.now());
+  const [skeletonVisible, setSkeletonVisible] = createSignal(false);
   const debouncedText = createDebounced(() => text().trim(), 250);
   const requestKey = () => JSON.stringify([props.workspaceID, text().trim()]);
   const response = createAsync(
@@ -95,7 +98,12 @@ const ImageSearch = (props: ImageSearchProps) => {
 
   onMount(() => {
     const timer = setInterval(() => setRefresh(Date.now()), 45_000);
-    onCleanup(() => clearInterval(timer));
+    const skeletonTimer = setTimeout(() => setSkeletonVisible(true), SKELETON_DELAY);
+
+    onCleanup(() => {
+      clearInterval(timer);
+      clearTimeout(skeletonTimer);
+    });
   });
 
   return (
@@ -169,19 +177,21 @@ const ImageSearch = (props: ImageSearchProps) => {
             <Show
               when={current()}
               fallback={
-                <div class="flex flex-col gap-2 p-2">
-                  <For each={[0, 1, 2]}>
-                    {() => (
-                      <div class="flex gap-3">
-                        <Skeleton class="h-14 w-20 rounded-md" />
-                        <div class="flex flex-1 flex-col justify-center gap-2">
-                          <Skeleton class="h-4 w-2/3 rounded" />
-                          <Skeleton class="h-3 w-1/3 rounded" />
+                <Show when={skeletonVisible()}>
+                  <div class="flex flex-col gap-2 p-2">
+                    <For each={[0, 1, 2]}>
+                      {() => (
+                        <div class="flex gap-3">
+                          <Skeleton class="h-14 w-20 rounded-md" />
+                          <div class="flex flex-1 flex-col justify-center gap-2">
+                            <Skeleton class="h-4 w-2/3 rounded" />
+                            <Skeleton class="h-3 w-1/3 rounded" />
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </For>
-                </div>
+                      )}
+                    </For>
+                  </div>
+                </Show>
               }
             >
               {(result) => (

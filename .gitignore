@@ -53,6 +53,7 @@ NOTES.md
 /AGENTS.override.md
 /CLAUDE.local.md
 /.mcp.json
+/.claude/settings.local.json
 *_PLAN.md
 *_ACCEPTANCE.md
 /notes/
