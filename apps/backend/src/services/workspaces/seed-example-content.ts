@@ -54,7 +54,7 @@ const applyExampleSchema = async (auth: SessionData, collectionID: string): Prom
 };
 
 /** Adds the example content to the user's first workspace (every workspace outside production). */
-const seedExampleContent = async (input: SeedExampleContentInput): Promise<void> => {
+const seedExampleContent = async (input: SeedExampleContentInput): Promise<boolean> => {
   const [{ value: membershipCount }] = await db
     .select({ value: count() })
     .from(memberships)
@@ -63,7 +63,7 @@ const seedExampleContent = async (input: SeedExampleContentInput): Promise<void>
   const firstWorkspace = membershipCount === 1;
   const development = config.NODE_ENV !== "production";
 
-  if (!firstWorkspace && !development) return;
+  if (!firstWorkspace && !development) return false;
 
   const auth = await resolveUserAuthorization({
     userID: input.userID,
@@ -115,6 +115,8 @@ const seedExampleContent = async (input: SeedExampleContentInput): Promise<void>
     workspaceID: input.workspaceID,
     entryIDs: snapshot?.searchSyncEntryIDs ?? []
   });
+
+  return true;
 };
 
 export { seedExampleContent };

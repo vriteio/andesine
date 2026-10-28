@@ -9,6 +9,14 @@ interface Env {
   LANDING: Fetcher;
   APP_ORIGIN: string;
   API_ORIGIN: string;
+  POSTHOG_HOST?: string;
+  /** The clients' PostHog host; a path such as /relay turns on the relay. */
+  PUBLIC_POSTHOG_HOST?: string;
+}
+interface PostHogRelay {
+  path: string;
+  apiOrigin: URL;
+  assetsOrigin: URL;
 }
 
 const SESSION_COOKIE_NAMES = new Set([
@@ -149,6 +157,33 @@ const serveApp = async (request: Request, env: Env): Promise<Response> => {
   return rewriteAppLocation(response, appOrigin);
 };
 
+// PostHog through our own domain, so blockers of posthog.com don't drop client analytics.
+const getPostHogRelay = (env: Env): PostHogRelay | null => {
+  const path = env.PUBLIC_POSTHOG_HOST?.replace(/\/+$/, "");
+  const apiOrigin = env.POSTHOG_HOST ? readOrigin(env.POSTHOG_HOST) : null;
+
+  if (!path?.startsWith("/") || !apiOrigin) return null;
+
+  const assetsOrigin = new URL(apiOrigin.origin);
+
+  // e.g. us.i.posthog.com receives events and us-assets.i.posthog.com serves the SDK's scripts.
+  assetsOrigin.hostname = apiOrigin.hostname.replace(/^([^.]+)\./, "$1-assets.");
+
+  return { path, apiOrigin, assetsOrigin };
+};
+const relayToPostHog = (request: Request, relay: PostHogRelay): Promise<Response> => {
+  const incomingURL = new URL(request.url);
+  const pathname = incomingURL.pathname.slice(relay.path.length) || "/";
+  const origin = pathname.startsWith("/static/") ? relay.assetsOrigin : relay.apiOrigin;
+  const targetURL = new URL(`${pathname}${incomingURL.search}`, origin.origin);
+  const headers = new Headers(request.headers);
+  const clientIP = request.headers.get("cf-connecting-ip");
+
+  headers.delete("cookie");
+  if (clientIP) headers.set("x-forwarded-for", clientIP);
+
+  return fetch(new Request(targetURL, { method: request.method, headers, body: request.body }));
+};
 const isLandingAsset = (pathname: string): boolean => {
   return pathname.startsWith("/_landing/") || LANDING_FILES.has(pathname);
 };
@@ -157,6 +192,11 @@ const worker: ExportedHandler<Env> = {
   async fetch(request, env) {
     const url = new URL(request.url);
     const wantsLanding = url.searchParams.get("landing") === "1";
+    const relay = getPostHogRelay(env);
+    const isPostHogRelay =
+      relay && (url.pathname === relay.path || url.pathname.startsWith(`${relay.path}/`));
+
+    if (isPostHogRelay) return relayToPostHog(request, relay);
 
     if (url.pathname === "/" && isPageRequest(request)) {
       if (!wantsLanding) {

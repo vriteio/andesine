@@ -307,7 +307,7 @@ const SettingsMenu: Component = () => {
                           <div class="relative flex">
                             <div class="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-r from-secondary via-primary to-transparent opacity-10" />
                             <div class="relative flex min-w-3.5 items-center justify-end pl-0.5">
-                              <div class="h-full w-px rounded-full bg-gray-300" />
+                              <div class="h-full w-px rounded-full bg-gradient-to-b" />
                             </div>
                             <div class="relative flex flex-1 flex-col">
                               <SettingsMenuItemRow item={child()} nested activeBackground={false} />

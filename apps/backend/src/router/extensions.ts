@@ -8,6 +8,7 @@ import { Auth } from "#backend/services/auth";
 import { Extensions } from "#backend/services/extensions";
 import { ORPCError } from "@orpc/server";
 import { api } from "./implement";
+import { trackEvent } from "#backend/lib/analytics";
 
 const APP_TOKEN_LIMIT = { max: 60, window: 60 };
 
@@ -243,6 +244,7 @@ const extensionsRouter = handlers.router({
       memberID: context.auth.session?.memberID,
       data: { id: result.id }
     });
+    trackEvent("extension_installed", context.auth, { name: input.name });
 
     return result;
   }),
@@ -282,6 +284,7 @@ const extensionsRouter = handlers.router({
       memberID: context.auth.session?.memberID,
       data: { id: result.id }
     });
+    trackEvent("extension_uninstalled", context.auth);
 
     return result;
   }),

@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest 
 import { AndesineAPIError, createClient } from "@andesine/sdk";
 import { createMCPServer, type CheckpointStore } from "@andesine/mcp";
 import { redis } from "#backend/lib/adapters";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { toUUID } from "@andesine/contracts/primitives";
 import { getMCPResource, MCP_READ_SCOPE, MCP_WRITE_SCOPE } from "#backend/lib/auth/oauth";
@@ -20,6 +20,9 @@ interface MCPRouteParams {
 }
 
 const CHECKPOINT_TTL_SECONDS = 60 * 60;
+const MCP_REQUEST_HEADER = "x-andesine-mcp-request";
+// Only in-process requests know it, so external clients can't mark requests as MCP ones.
+const MCP_REQUEST_SECRET = randomUUID();
 
 // Requests share no session, so checkpoints are per principal (tokens rotate) and entry, for an hour.
 const createCheckpointStore = (workspaceID: string, principal: string): CheckpointStore => {
@@ -42,7 +45,11 @@ const createInjectFetch = (app: FastifyInstance, publicURL: string): typeof fetc
     const response = await app.inject({
       method: request.method as "GET",
       url: `${url.pathname}${url.search}`,
-      headers: { ...Object.fromEntries(request.headers), host: new URL(publicURL).host },
+      headers: {
+        ...Object.fromEntries(request.headers),
+        host: new URL(publicURL).host,
+        [MCP_REQUEST_HEADER]: MCP_REQUEST_SECRET
+      },
       ...(body && { payload: body })
     });
     const headers = new Headers();
@@ -63,6 +70,9 @@ const sendError = (reply: FastifyReply, status: number, message: string) => {
 };
 const getResourceMetadataURL = (publicURL: string, workspaceID?: string): string => {
   return `${publicURL}/.well-known/oauth-protected-resource/mcp${workspaceID ? `/${workspaceID}` : ""}`;
+};
+const isMCPRequest = (headers?: Headers): boolean => {
+  return headers?.get(MCP_REQUEST_HEADER) === MCP_REQUEST_SECRET;
 };
 const isSameWorkspace = (first: string, second: string): boolean => {
   try {
@@ -196,4 +206,4 @@ const mcpPlugin: FastifyPluginAsync<MCPRouteOptions> = async (app, options) => {
   });
 };
 
-export { mcpPlugin };
+export { isMCPRequest, mcpPlugin };

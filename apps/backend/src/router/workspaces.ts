@@ -12,6 +12,7 @@ import { Auth } from "#backend/services/auth";
 import { Billing } from "#backend/services/billing";
 import { Workspaces } from "#backend/services/workspaces";
 import { api } from "./implement";
+import { trackEvent } from "#backend/lib/analytics";
 
 const handlers = api.workspaces;
 const authorizedHandlers = handlers.use(authorized);
@@ -111,6 +112,8 @@ const workspacesRouter = handlers.router({
       enqueueCurrentWorkspacePurge({ workspaceID: context.auth.workspaceID }),
       enqueuePublishedWorkspacePurge({ workspaceID: context.auth.workspaceID })
     ]);
+
+    trackEvent("workspace_deleted", context.auth);
 
     return result;
   }),

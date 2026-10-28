@@ -9,6 +9,7 @@ import { ORPCError } from "@orpc/server";
 interface RecordUsageInput {
   workspaceID: string;
   apiCalls: number;
+  mcpCalls: number;
   aiCredits: number;
 }
 
@@ -29,11 +30,14 @@ const recordUsage = async (input: RecordUsageInput): Promise<void> => {
       for share
     ),
     daily as (
-      insert into daily_usage (workspace_id, usage_date, request_count, ai_credit_count)
-      select id, ${usageDate}::date, ${input.apiCalls}, ${input.aiCredits}
+      insert into daily_usage (
+        workspace_id, usage_date, request_count, mcp_request_count, ai_credit_count
+      )
+      select id, ${usageDate}::date, ${input.apiCalls}, ${input.mcpCalls}, ${input.aiCredits}
       from workspace
       on conflict (workspace_id, usage_date) do update set
         request_count = daily_usage.request_count + excluded.request_count,
+        mcp_request_count = daily_usage.mcp_request_count + excluded.mcp_request_count,
         ai_credit_count = daily_usage.ai_credit_count + excluded.ai_credit_count
     ),
     ledger as (

@@ -5,6 +5,7 @@ import { toCollectionID, toSchemaID, toSchemaMigrationID } from "@andesine/contr
 import { authorized } from "#backend/lib/transport/middleware/authorized";
 import { Schema } from "#backend/services/schemas";
 import { api } from "./implement";
+import { trackEvent } from "#backend/lib/analytics";
 
 const handlers = api.schemas;
 const authorizedHandlers = handlers.use(authorized);
@@ -88,6 +89,7 @@ const schemasRouter = handlers.router({
         data: toSchemaVersionSummary(version),
         memberID: getUserAuthorization(context.auth)?.memberID
       });
+      trackEvent("schema_applied", context.auth);
     }
 
     return result;

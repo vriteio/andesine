@@ -11,6 +11,7 @@ import {
 import { authClient, client } from "#web/lib/api";
 import { getPostAuthRedirectPath } from "#web/lib/navigation";
 import { createMutation } from "@tanstack/solid-query";
+import { resetAnalytics } from "#web/lib/analytics";
 
 const workspacesQuery = query(() => client.workspaces.list(), "workspaces");
 
@@ -26,7 +27,9 @@ const NewWorkspacePage: Component = () => {
   }));
   const signOutMutation = createMutation(() => ({
     mutationFn: async () => {
-      await authClient.signOut();
+      const { error } = await authClient.signOut();
+
+      if (!error) resetAnalytics();
 
       return true;
     }
@@ -108,6 +111,7 @@ const NewWorkspacePage: Component = () => {
                   <Tooltip content="Continue">
                     <IconButton
                       disabled={!name().trim() || createWorkspaceMutation.isPending}
+                      loading={createWorkspaceMutation.isPending}
                       icon="i-lucide:arrow-right"
                       variant="primary"
                       size="medium"

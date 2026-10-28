@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Elastic-2.0
-import { config } from "./config";
-import { pool } from "./database";
-import { stripe } from "./stripe";
+import { config } from "../config";
+import { pool } from "../database";
+import { stripe } from "./client";
 
 interface UsageLedgerRow {
   id: string;
@@ -80,8 +80,9 @@ const claimUsage = async (): Promise<UsageLedgerRow | null> => {
   }
 };
 
-const reportUsage = async (): Promise<number> => {
-  if (!config.BILLING_ENABLED) return 0;
+/** Reports the usage ledger to Stripe, or returns null when billing is disabled. */
+const reportStripeUsage = async (): Promise<number | null> => {
+  if (!config.BILLING_ENABLED) return null;
 
   let reportedCount = 0;
   const failures: unknown[] = [];
@@ -177,4 +178,4 @@ const reportUsage = async (): Promise<number> => {
   }
 };
 
-export { reportUsage };
+export { reportStripeUsage };

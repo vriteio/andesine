@@ -22,6 +22,7 @@ import {
   Switch
 } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
+import { captureEvent } from "#web/lib/analytics";
 import { currentSearchQuery, type SearchPropertyFilter } from "#web/lib/data";
 import type { SearchNavigationState } from "#web/lib/search-navigation";
 import {
@@ -190,7 +191,10 @@ const SearchDialog: Component<SearchDialogProps> = (props) => {
     setFilterDrafts(filters);
     setAnswer();
   };
-  const openResult = (result: SearchResponse["results"][number]) => {
+  const openResult = (
+    result: SearchResponse["results"][number],
+    trigger: "result_opened" | "answer_source_opened" = "result_opened"
+  ) => {
     const state: SearchNavigationState = {
       searchTarget: {
         entryID: result.entryID,
@@ -200,6 +204,7 @@ const SearchDialog: Component<SearchDialogProps> = (props) => {
       }
     };
 
+    captureEvent("search_used", { source: "session", trigger });
     navigate(withWorkspacePanelParams(`/${workspaceID()}/${result.entryID}`, searchParams), {
       state
     });
@@ -371,7 +376,7 @@ const SearchDialog: Component<SearchDialogProps> = (props) => {
                 data={answer()}
                 loading={askMutation.isPending}
                 error={askMutation.isError ? askMutation.error : undefined}
-                openResult={openResult}
+                openResult={(result) => openResult(result, "answer_source_opened")}
                 question={askMutation.variables?.query}
               />
             </Match>

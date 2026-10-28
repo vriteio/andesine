@@ -11,7 +11,12 @@ const configSchema = billingModeConfigSchema
     DATABASE_URL: z.string().min(1).describe("PostgreSQL connection URL"),
     STRIPE_SECRET_KEY: optionalBillingString,
     STRIPE_PRO_API_CALL_METER_EVENT_NAME: optionalBillingString,
-    STRIPE_PRO_AI_CREDIT_METER_EVENT_NAME: optionalBillingString
+    STRIPE_PRO_AI_CREDIT_METER_EVENT_NAME: optionalBillingString,
+    PUBLIC_POSTHOG_KEY: z.string().min(1).optional().describe("PostHog project API key (public)"),
+    POSTHOG_HOST: z
+      .url()
+      .optional()
+      .describe("PostHog host for servers, e.g. https://us.i.posthog.com")
   })
   .superRefine(
     requireBillingSettings([

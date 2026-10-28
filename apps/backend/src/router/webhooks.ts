@@ -3,6 +3,7 @@ import type { SessionData } from "#backend/lib/policy";
 import { authorized } from "#backend/lib/transport/middleware/authorized";
 import { WebhooksService } from "#backend/services/webhooks";
 import { api } from "./implement";
+import { trackEvent } from "#backend/lib/analytics";
 
 const handlers = api.webhooks;
 const authorizedHandlers = handlers.use(authorized).use(async ({ context, next }) => {
@@ -61,6 +62,7 @@ const webhooksRouter = handlers.router({
     const result = await WebhooksService.create({ ...input, auth: context.auth });
 
     emitChange(context.auth, "webhook:create", result.endpoint.id);
+    trackEvent("webhook_created", context.auth);
 
     return result;
   }),

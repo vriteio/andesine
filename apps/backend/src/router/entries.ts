@@ -14,6 +14,7 @@ import { toVersionSummary } from "#backend/lib/versioning/details";
 import { Entries } from "#backend/services/entries";
 import { ORPCError } from "@orpc/server";
 import { api } from "./implement";
+import { trackEvent } from "#backend/lib/analytics";
 
 const handlers = api.entries;
 const authorizedHandlers = handlers.use(authorized).use(idempotent);
@@ -51,6 +52,7 @@ const entriesRouter = handlers.router({
       workspaceID: context.auth.workspaceID,
       entryIDs: [newEntry.id]
     });
+    trackEvent("entry_created", context.auth);
 
     return newEntry;
   }),

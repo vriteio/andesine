@@ -7,6 +7,7 @@ import { clearPersistenceData } from "#web/context/workspace/indexeddb";
 import clsx from "clsx";
 import { createMutation } from "@tanstack/solid-query";
 import { isOffline } from "#web/lib/offline";
+import { resetAnalytics } from "#web/lib/analytics";
 
 interface ProfileMenuProps {
   color?: "base" | "contrast";
@@ -46,7 +47,9 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
   }));
   const signOutMutation = createMutation(() => ({
     mutationFn: async () => {
-      await authClient.signOut();
+      const { error } = await authClient.signOut();
+
+      if (!error) resetAnalytics();
 
       return true;
     }

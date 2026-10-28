@@ -2,6 +2,7 @@
 import { Logo } from "@andesine/components/fragments";
 import DocumentHead from "../document-head/index.astro";
 import { PageScrollShadows } from "../page-scroll-shadows";
+import { Analytics } from "../analytics";
 import styles from "./styles.module.scss";
 import "../../../styles.scss";
 
@@ -21,6 +22,7 @@ const { title, description, path } = Astro.props;
   </head>
   <body style="background-color: #f9fafb">
     <PageScrollShadows client:load />
+    <Analytics client:load />
     <header
       class="mx-auto flex w-full max-w-5xl px-4 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] md:px-8"
     >

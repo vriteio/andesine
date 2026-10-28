@@ -1,4 +1,4 @@
-import { type SchemaDefinition } from "@andesine/contracts/schema";
+import { SCHEMA_BLOCK_TYPES, type SchemaDefinition } from "@andesine/contracts/schema";
 
 interface ExampleEntry {
   mdx: string;
@@ -44,6 +44,13 @@ const createExampleSchema = (): SchemaDefinition => ({
           content: [{ type: "text", text: "A short summary for cards and search results." }]
         }
       ]
+    },
+    {
+      id: crypto.randomUUID(),
+      kind: "fragment",
+      label: "Content",
+      allowedBlocks: [...SCHEMA_BLOCK_TYPES],
+      defaultContent: [{ type: "paragraph" }]
     }
   ]
 });
@@ -63,6 +70,7 @@ const createExampleEntries = (apiURL: string): ExampleEntry[] => [
 What Andesine is, and how this guide helps you get started.
 </Fragment>
 
+<Fragment name="Content">
 Andesine is a **knowledge base** and a **headless CMS** in one place. Your team writes and organizes content here, and your sites, apps, and AI agents read it through the API, MCP, or Andesine Pages.
 
 <Callout type="tip" title="This guide is yours">
@@ -97,6 +105,7 @@ The entries below show how to do each step.
 ---
 
 This entry is already published, so the API, MCP, and Pages can read it now.
+</Fragment>
 `
   },
   {
@@ -106,10 +115,13 @@ This entry is already published, so the API, MCP, and Pages can read it now.
 
 <Property name="Reading time" value={4} />
 
+<Property name="Featured" value={false} />
+
 <Fragment name="Summary">
 Format text, add images and code, and organize entries in collections.
 </Fragment>
 
+<Fragment name="Content">
 Each entry is one document. Your team can edit the same entry at the same time, and you see the cursors of other people as they type.
 
 ## Formatting
@@ -161,6 +173,7 @@ console.log(greet("Andesine"));
 <Callout type="note">
 Collections can contain other collections, so you can make a tree for each product, team, or site.
 </Callout>
+</Fragment>
 `
   },
   {
@@ -170,10 +183,13 @@ Collections can contain other collections, so you can make a tree for each produ
 
 <Property name="Reading time" value={3} />
 
+<Property name="Featured" value={false} />
+
 <Fragment name="Summary">
 Add structured fields that sites and apps can show, sort, and filter.
 </Fragment>
 
+<Fragment name="Content">
 A schema adds structured fields to all entries of a collection. This collection has one: look at the **Topic**, **Reading time**, **Featured**, and **Summary** fields above this text.
 
 Sites and apps read these fields through the API, together with the content, so you can show a topic, sort by reading time, or show a summary on cards.
@@ -207,6 +223,7 @@ Andesine migrates the existing entries to the new version.
 <Callout type="warning" title="Removed fields lose their values">
 When you remove a field, the entries lose the values of that field. Andesine asks you to confirm first.
 </Callout>
+</Fragment>
 `
   },
   {
@@ -216,10 +233,13 @@ When you remove a field, the entries lose the values of that field. Andesine ask
 
 <Property name="Reading time" value={3} />
 
+<Property name="Featured" value={false} />
+
 <Fragment name="Summary">
 Publish versions of entries to channels that sites, apps, and agents read.
 </Fragment>
 
+<Fragment name="Content">
 You edit a draft. Your sites, apps, and agents read published content only, so they don't see changes that aren't ready.
 
 | | Draft | Published |
@@ -256,6 +276,7 @@ Each workspace has the **Published** channel. Add more channels for other stages
 <Callout type="note">
 Publishing is turned on for each collection in its menu. It's already on for this collection.
 </Callout>
+</Fragment>
 `
   },
   {
@@ -271,6 +292,7 @@ Publishing is turned on for each collection in its menu. It's already on for thi
 Read your content with AI agents, the API and SDK, a Pages site, or the CLI.
 </Fragment>
 
+<Fragment name="Content">
 Published content is available in many ways. Pick the one that fits what you build.
 
 <Tabs>
@@ -319,6 +341,7 @@ Use MCP for AI agents, the API and SDK for your own sites and apps, Pages for a 
 <Callout type="tip">
 Browsers use publishable keys, which can only read published content.
 </Callout>
+</Fragment>
 `
   }
 ];

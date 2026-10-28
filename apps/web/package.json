@@ -45,6 +45,7 @@
     "idb": "^8.0.3",
     "lexorank": "catalog:",
     "marked": "15.0.12",
+    "posthog-js": "1.438.10",
     "solid-js": "^1.9.14",
     "srvx": "^0.12.5",
     "tinykeys": "^4.0.0",

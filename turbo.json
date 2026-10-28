@@ -70,7 +70,7 @@
       "dependsOn": ["build"],
       "cache": false
     },
-    "@andesine/stripe-usage-reporter#start": {
+    "@andesine/usage-reporter#start": {
       "dependsOn": ["build"],
       "cache": false
     },

@@ -4,6 +4,7 @@ import { config } from "#backend/lib/config";
 import { authorized } from "#backend/lib/transport";
 import { Billing } from "#backend/services/billing";
 import { api } from "./implement";
+import { trackEvent } from "#backend/lib/analytics";
 
 const handlers = api.billing;
 const authorizedHandlers = handlers.use(authorized);
@@ -32,6 +33,8 @@ const billingRouter = handlers.router({
     }
   ),
   checkout: authorizedHandlers.checkout.handler(async ({ context }) => {
+    trackEvent("checkout_started", context.auth);
+
     return Billing.createCheckout({
       workspaceID: context.auth.workspaceID,
       successURL: `${config.PUBLIC_APP_URL}/${context.auth.workspaceID}/settings/billing?billing=success`,

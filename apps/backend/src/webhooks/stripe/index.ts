@@ -14,7 +14,27 @@ import {
   registerStripeWebhookEvent
 } from "./stripe-event-store";
 import { resolveStripeSubscriptionEvent } from "./stripe-subscription";
+import { capture } from "#backend/lib/analytics";
 
+const SUBSCRIPTION_EVENTS: Partial<Record<string, string>> = {
+  "checkout.session.completed": "subscription_started",
+  "customer.subscription.updated": "subscription_changed",
+  "customer.subscription.deleted": "subscription_ended"
+};
+
+const getItemsKey = (items?: Stripe.ApiList<Stripe.SubscriptionItem>): string => {
+  const keys = items?.data.map((item) => `${item.price.id}:${item.quantity ?? 1}`) ?? [];
+
+  return keys.sort().join(",");
+};
+/** Renewals also update the items (their billing period); only a new price or quantity counts. */
+const isPlanChange = (event: Stripe.CustomerSubscriptionUpdatedEvent): boolean => {
+  const previousItems = event.data.previous_attributes?.items;
+
+  return (
+    Boolean(previousItems) && getItemsKey(previousItems) !== getItemsKey(event.data.object.items)
+  );
+};
 const parseStripeEvent = (
   request: FastifyRequest<{ Body: Buffer }>,
   stripeClient: Stripe,
@@ -71,6 +91,15 @@ const handleStripeWebhook = async (
       workspaceID,
       update: result.update
     });
+    const subscriptionEvent = SUBSCRIPTION_EVENTS[event.type];
+    const routineUpdate = event.type === "customer.subscription.updated" && !isPlanChange(event);
+
+    if (result.workspaceID && subscriptionEvent && !routineUpdate) {
+      capture(subscriptionEvent, {
+        workspaceID: result.workspaceID,
+        properties: { plan: result.update?.subscriptionPlan }
+      });
+    }
 
     if (result.workspaceID && result.update?.subscriptionPlan) {
       await Auth.invalidateSessionData({ workspaceID: result.workspaceID });

@@ -32,6 +32,7 @@ import {
 import { VerticalResizeHandle } from "./vertical-resize-handle";
 import { SnapshotErrorDialog } from "./snapshot-error-dialog";
 import { SearchDialog } from "./search-dialog";
+import { WorkspaceAnalytics } from "#web/components/analytics";
 import { ExtensionLoader } from "#web/components/extensions/extension-loader";
 import { ExtensionMember } from "#web/components/extensions/extension-member";
 import { ExtensionNotices } from "#web/components/extensions/extension-notices";
@@ -212,6 +213,7 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
   return (
     <WorkspaceProvider>
       <PublishingProvider>
+        <WorkspaceAnalytics />
         {/* Fixed element to tint Safari's top UI to use bg-gray-50 color */}
         <div class="pointer-events-none fixed left-0 top-0 h-3 w-full bg-gray-50 md:hidden" />
         <div class="flex h-full min-h-0 w-full">

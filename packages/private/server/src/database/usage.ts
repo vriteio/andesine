@@ -35,13 +35,27 @@ const dailyUsage = pgTable(
     usageDate: date("usage_date", { mode: "string" }).notNull(),
     /** API calls. */
     requestCount: bigint("request_count", { mode: "number" }).notNull().default(0),
-    aiCreditCount: bigint("ai_credit_count", { mode: "number" }).notNull().default(0)
+    aiCreditCount: bigint("ai_credit_count", { mode: "number" }).notNull().default(0),
+    /** API calls made through MCP, also counted in `requestCount`. */
+    mcpRequestCount: bigint("mcp_request_count", { mode: "number" }).notNull().default(0)
   },
   (table) => [
     primaryKey({ columns: [table.workspaceID, table.usageDate] }),
     check("daily_usage_request_count_nonnegative", sql`${table.requestCount} >= 0`),
-    check("daily_usage_ai_credit_count_nonnegative", sql`${table.aiCreditCount} >= 0`)
+    check("daily_usage_ai_credit_count_nonnegative", sql`${table.aiCreditCount} >= 0`),
+    check("daily_usage_mcp_request_count_nonnegative", sql`${table.mcpRequestCount} >= 0`)
   ]
+);
+
+/** The last UTC day of `daily_usage` reported to product analytics. */
+const analyticsUsageCursor = pgTable(
+  "analytics_usage_cursor",
+  {
+    id: integer("id").primaryKey().default(1),
+    reportedThrough: date("reported_through", { mode: "string" }).notNull(),
+    ...timestamps
+  },
+  (table) => [check("analytics_usage_cursor_single_row", sql`${table.id} = 1`)]
 );
 
 const usageLedger = pgTable(
@@ -72,4 +86,4 @@ const usageLedger = pgTable(
   ]
 );
 
-export { dailyUsage, deliveryStatusEnum, usageLedger, usageMeterEnum };
+export { analyticsUsageCursor, dailyUsage, deliveryStatusEnum, usageLedger, usageMeterEnum };

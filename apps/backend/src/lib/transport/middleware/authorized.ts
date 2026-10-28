@@ -17,6 +17,7 @@ import { setErrorResponseHeaders } from "../error";
 import { config } from "#backend/lib/config";
 import { Billing } from "#backend/services/billing";
 import { enforceRateLimit, getPlanRateLimit } from "#backend/lib/security";
+import { isMCPRequest } from "../mcp";
 type Usage = Awaited<ReturnType<typeof Billing.Metering.getUsageTotals>>;
 type Procedure = Parameters<Parameters<typeof base.middleware>[0]>[0]["procedure"];
 
@@ -147,6 +148,7 @@ const authorized = base.middleware(async ({ procedure, context, next }, input) =
   });
 
   const tracksAPICalls = countsAPICalls(sessionData, meta.trackUsage);
+  const tracksMCPCalls = tracksAPICalls && isMCPRequest(context.reqHeaders);
   const aiUsage = await getAIUsage(procedure, input);
   const aiCredits = aiUsage && config.BILLING_ENABLED ? AI_CREDIT_COSTS[aiUsage.kind] : 0;
 
@@ -220,6 +222,7 @@ const authorized = base.middleware(async ({ procedure, context, next }, input) =
       await Billing.Metering.recordUsage({
         workspaceID: sessionData.workspaceID,
         apiCalls: tracksAPICalls ? 1 : 0,
+        mcpCalls: tracksMCPCalls ? 1 : 0,
         aiCredits
       });
 

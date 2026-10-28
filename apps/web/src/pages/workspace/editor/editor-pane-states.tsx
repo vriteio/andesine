@@ -34,7 +34,7 @@ const EDITOR_CONTENT_PADDING = "px-2.5 pb-5 pt-5 md:px-10 md:pb-10 md:pt-9";
 /** A message over a dot grid that fades around it, as in the error views; children are actions. */
 const EditorPaneMessage: ParentComponent<EditorPaneMessageProps> = (props) => (
   <div class="relative flex h-full w-full items-center justify-center overflow-hidden md:px-5">
-    <DotsBackground class="absolute mask-edge-fading-16" />
+    <DotsBackground class="absolute mask-edge-fading-16" contrast />
     <div class="relative p-4 lg:p-24">
       <div class="absolute left-0 top-0 h-full w-full rounded-2xl bg-gray-50 mask-edge-fading-4 lg:mask-edge-fading-24" />
       <Show when={props.title}>
@@ -52,7 +52,7 @@ const EditorPaneMessage: ParentComponent<EditorPaneMessageProps> = (props) => (
 const EditorLoadErrorView: Component<EditorLoadErrorViewProps> = (props) => {
   return (
     <div class="absolute inset-0 z-10 flex items-center justify-center bg-gray-50 md:px-5">
-      <DotsBackground class="absolute mask-edge-fading-16" />
+      <DotsBackground class="absolute mask-edge-fading-16" contrast />
       <div class="relative p-4 lg:p-24">
         <div class="absolute left-0 top-0 h-full w-full rounded-2xl bg-gray-100 mask-edge-fading-4 lg:mask-edge-fading-24" />
         <div class="relative flex w-72 flex-col gap-4">

@@ -13,6 +13,7 @@ import { webhooksPlugin } from "./webhooks";
 import { auth, pool, redis, subscriberRedis } from "#backend/lib/adapters";
 import { RATE_LIMITS, consumeRateLimit } from "#backend/lib/security";
 import { closeQueues } from "#backend/lib/queue";
+import { shutdownAnalytics } from "#backend/lib/analytics";
 import { startAutomaticVersionQueue, stopAutomaticVersionQueue } from "#backend/lib/versioning";
 
 const allowedOrigins = [...new Set([config.PUBLIC_APP_URL, config.PUBLIC_API_URL])];
@@ -208,6 +209,9 @@ const shutdown = (): Promise<void> => {
     }
 
     await Promise.all([appClose, versionQueueClose]);
+    await shutdownAnalytics().catch((error) => {
+      console.error("Failed to flush analytics events", error);
+    });
     await closeQueues().catch((error) => {
       exitCode = 1;
       console.error("Failed to close the background job queues", error);

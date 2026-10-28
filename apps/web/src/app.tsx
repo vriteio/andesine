@@ -12,6 +12,8 @@ import { ErrorBoundary, type ParentComponent, Show, Suspense, createSignal } fro
 import { NotificationsProvider } from "./context/notifications";
 import { ClipboardProvider } from "./context/clipboard";
 import { ExtensionHostActions } from "./components/extensions/host-actions";
+import { Analytics } from "./components/analytics";
+import { resetAnalytics } from "./lib/analytics";
 import { LayoutProvider } from "./context/layout";
 import { authClient, client, config } from "./lib/api";
 import { getRequestEvent } from "solid-js/web";
@@ -65,6 +67,9 @@ const rootRedirectQuery = query(async () => {
   const redirectTo = normalizeRedirectTo(url.searchParams.get("redirectTo"));
 
   if (!data?.session) {
+    // A failed check isn't a signed-out user, so the identity stays.
+    if (!error) resetAnalytics();
+
     if (isOAuthSignIn) throw redirect(appendRedirectTo("/auth/sign-in", consentPath));
 
     if (!isAuthRoute || isConnectRoute) {
@@ -179,6 +184,7 @@ const RootLayout: ParentComponent = (props) => {
                   <Show when={config.PUBLIC_EXTENSIONS_ENABLED}>
                     <ExtensionHostActions />
                   </Show>
+                  <Analytics />
                   <LayoutProvider>
                     <ErrorBoundary
                       fallback={(error, reset) => {

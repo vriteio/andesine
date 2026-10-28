@@ -4,3 +4,4 @@ export * from "./radial-chart";
 export * from "./animated-gradient-card";
 export * from "./dots-background";
 export * from "./logo";
+export * from "./consent-banner";

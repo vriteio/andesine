@@ -77,6 +77,7 @@
     "nodemailer": "^9.0.4",
     "openapi-fetch": "0.17.0",
     "pg": "catalog:",
+    "posthog-node": "5.56.2",
     "react": "19.2.8",
     "redis": "^6.2.0",
     "remark-gfm": "4.0.1",

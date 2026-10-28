@@ -34,7 +34,7 @@ import {
   publishingSnapshots
 } from "./publishing";
 import { roles } from "./roles";
-import { dailyUsage, usageLedger } from "./usage";
+import { analyticsUsageCursor, dailyUsage, usageLedger } from "./usage";
 import { users } from "./users";
 import {
   entryVersionActivity,
@@ -107,6 +107,7 @@ const schema = {
   publishingSnapshotEntries,
   apiKeys,
   dailyUsage,
+  analyticsUsageCursor,
   usageLedger,
   stripeWebhookEvents,
   webhookEndpoints,

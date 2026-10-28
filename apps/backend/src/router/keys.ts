@@ -4,6 +4,7 @@ import { Auth } from "#backend/services/auth";
 import { Keys } from "#backend/services/keys";
 import { ORPCError } from "@orpc/server";
 import { api } from "./implement";
+import { trackEvent } from "#backend/lib/analytics";
 
 const handlers = api.keys;
 const authorizedHandlers = handlers.use(authorized);
@@ -24,6 +25,7 @@ const keysRouter = handlers.router({
       memberID: context.auth.session.memberID,
       data: safeKey
     });
+    trackEvent("api_key_created", context.auth, { kind: input.kind });
 
     return key;
   }),

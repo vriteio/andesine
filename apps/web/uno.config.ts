@@ -11,6 +11,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { transformerCompileClass } from "unocss";
 
+const ICON_MASK = "var(--un-icon) no-repeat";
+
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(projectRoot, "../..");
 const config = defineConfig({
@@ -51,6 +53,22 @@ const config = defineConfig({
     presetWind3(),
     presetTypography(),
     presetAndesine()
+  ],
+  postprocess: [
+    // Chrome serializes `var()` in mask shorthands as empty longhands, which hides icons in replays.
+    (util) => {
+      util.entries = util.entries.flatMap(([property, value]) => {
+        const iconMask =
+          (property === "mask" || property === "-webkit-mask") && value === ICON_MASK;
+
+        if (!iconMask) return [[property, value]];
+
+        return [
+          [`${property}-image`, "var(--un-icon)"],
+          [`${property}-repeat`, "no-repeat"]
+        ];
+      });
+    }
   ]
 });
 

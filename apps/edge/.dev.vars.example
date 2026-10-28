@@ -1,2 +1,5 @@
 APP_ORIGIN=http://127.0.0.1:3000
 API_ORIGIN=http://127.0.0.1:3333
+# Optional PostHog relay: on when PUBLIC_POSTHOG_HOST is a path (match the web app and landing page).
+# POSTHOG_HOST=https://us.i.posthog.com
+# PUBLIC_POSTHOG_HOST=/relay

@@ -15,6 +15,8 @@ import type { BetterAuthPlugin } from "better-auth";
 import { cimd } from "@better-auth/cimd";
 import { fetchClientMetadataResource } from "@better-auth/cimd/node";
 import { CLI_CLIENT_ID } from "@andesine/server/database";
+import { capture } from "#backend/lib/analytics";
+import { toUserID } from "@andesine/contracts/primitives";
 
 interface ConsentWorkspaceStore {
   /** Checks membership and keeps the picked workspace for the browser session. */
@@ -34,6 +36,9 @@ interface VerifiedAccessToken {
   scopes: string[];
   /** The workspace picked at consent for an MCP token; CLI tokens select it per request. */
   workspaceID?: string;
+}
+interface ConsentResult {
+  url?: unknown;
 }
 
 const CLI_SCOPES = ["andesine:api", "offline_access"];
@@ -301,7 +306,30 @@ const createOAuthPlugins = (options: OAuthPluginOptions) => {
           handler: createAuthMiddleware(async (context) => {
             const session = await getSessionFromCtx(context);
 
-            if (session) await consentWorkspace.clear(session.session.id);
+            if (!session) return;
+
+            const body = (context.body ?? {}) as Record<string, unknown>;
+            const query = new URLSearchParams(String(body.oauth_query ?? ""));
+            const scope = typeof body.scope === "string" ? body.scope : query.get("scope");
+            const returned = context.context.returned as ConsentResult | undefined;
+            // Sign-in prompts and error redirects carry no authorization code.
+            const granted =
+              typeof returned?.url === "string" &&
+              Boolean(URL.parse(returned.url)?.searchParams.has("code"));
+            const workspaceID = granted && (await consentWorkspace.get(session.session.id));
+
+            if (workspaceID) {
+              capture("mcp_connected", {
+                userID: toUserID(session.user.id),
+                workspaceID,
+                properties: {
+                  client_id: query.get("client_id"),
+                  write_access: scope?.split(" ").includes(MCP_WRITE_SCOPE) ?? false
+                }
+              });
+            }
+
+            await consentWorkspace.clear(session.session.id);
           })
         },
         {

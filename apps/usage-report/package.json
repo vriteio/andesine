@@ -1,5 +1,5 @@
 {
-  "name": "@andesine/stripe-usage-reporter",
+  "name": "@andesine/usage-reporter",
   "type": "module",
   "private": true,
   "main": "./dist/index.js",
@@ -12,6 +12,7 @@
     "pg": "catalog:",
     "stripe": "^22.4.0",
     "zod": "catalog:",
+    "@andesine/contracts": "workspace:*",
     "@andesine/server": "workspace:*"
   },
   "devDependencies": {

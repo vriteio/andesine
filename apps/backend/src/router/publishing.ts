@@ -19,11 +19,17 @@ import { authorized } from "#backend/lib/transport/middleware/authorized";
 import { Publishing } from "#backend/services/publishing";
 import { ORPCError } from "@orpc/server";
 import { api } from "./implement";
+import { trackEvent } from "#backend/lib/analytics";
+
 interface PublishingSnapshotUpdateInput {
   channel: string;
   memberID?: string;
   snapshot: CommitPublishingSnapshotResult | null;
   workspaceID: string;
+}
+interface PublishResult {
+  publishedEntries: number;
+  snapshot: CommitPublishingSnapshotResult | null;
 }
 const getContributorIDs = (auth: SessionData): string[] => {
   const memberID = getUserAuthorization(auth)?.memberID;
@@ -50,6 +56,11 @@ const handlePublishingSnapshotUpdate = async (
     workspaceID: input.workspaceID,
     entryIDs: snapshot.searchSyncEntryIDs
   });
+};
+const trackPublish = (auth: SessionData, result: PublishResult): void => {
+  if (result.snapshot?.created && result.publishedEntries > 0) {
+    trackEvent("entry_published", auth, { entries: result.publishedEntries });
+  }
 };
 const handlers = api.publishing;
 const authorizedHandlers = handlers.use(authorized);
@@ -170,6 +181,7 @@ const publishingRouter = handlers.router({
       memberID: getUserAuthorization(context.auth)?.memberID,
       snapshot: result.snapshot
     });
+    trackPublish(context.auth, result);
 
     return { publishedEntries: result.publishedEntries };
   }),
@@ -201,6 +213,7 @@ const publishingRouter = handlers.router({
         memberID: getUserAuthorization(context.auth)?.memberID,
         snapshot: result.snapshot
       });
+      trackPublish(context.auth, result);
 
       return { publishedEntries: result.publishedEntries };
     }
@@ -282,6 +295,7 @@ const publishingRouter = handlers.router({
       memberID: getUserAuthorization(context.auth)?.memberID,
       snapshot: result.snapshot
     });
+    trackPublish(context.auth, result);
   }),
   bulkPublishEntries: authorizedHandlers.bulkPublishEntries.handler(async ({ context, input }) => {
     const result = await Publishing.Entries.publish({
@@ -310,6 +324,7 @@ const publishingRouter = handlers.router({
       memberID: getUserAuthorization(context.auth)?.memberID,
       snapshot: result.snapshot
     });
+    trackPublish(context.auth, result);
   }),
   unpublishEntry: authorizedHandlers.unpublishEntry.handler(async ({ context, input }) => {
     const result = await Publishing.Entries.unpublish({
@@ -591,6 +606,7 @@ const publishingRouter = handlers.router({
       data: channel,
       memberID: getUserAuthorization(context.auth)?.memberID
     });
+    trackEvent("channel_created", context.auth);
 
     return channel;
   }),

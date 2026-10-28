@@ -6,6 +6,7 @@ import { Billing } from "#backend/services/billing";
 import { Memberships } from "#backend/services/memberships";
 import { ORPCError } from "@orpc/server";
 import { api } from "./implement";
+import { capture, trackEvent } from "#backend/lib/analytics";
 const emitUpdatedGroups = (input: {
   groups: Array<{ id: string; invitationIDs: string[]; memberIDs: string[] }>;
   memberID?: string;
@@ -83,6 +84,7 @@ const membershipsRouter = handlers.router({
       memberID: getUserAuthorization(context.auth)?.memberID,
       data: newInviteDetails.invite
     });
+    trackEvent("member_invited", context.auth);
 
     return newInviteDetails;
   }),
@@ -142,6 +144,10 @@ const membershipsRouter = handlers.router({
     });
     emitUpdatedGroups({
       groups: result.updatedGroups,
+      workspaceID: result.workspaceID
+    });
+    capture("invite_accepted", {
+      userID: context.auth.session.userID,
       workspaceID: result.workspaceID
     });
 

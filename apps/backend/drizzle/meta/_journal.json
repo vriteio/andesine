@@ -330,6 +330,13 @@
       "when": 1793179267963,
       "tag": "0046_add-workspace-example-collection",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1793183276936,
+      "tag": "0047_add-analytics-usage",
+      "breakpoints": true
     }
   ]
 }

@@ -85,6 +85,12 @@ const configSchema = billingConfigSchema.safeExtend({
     .regex(/^glama_claim_[\w-]{32}$/)
     .optional()
     .describe("Glama listing claim token, served at /.well-known/glama.json on the API host"),
+  // Product analytics (cloud); off when unset
+  PUBLIC_POSTHOG_KEY: z.string().min(1).optional().describe("PostHog project API key (public)"),
+  POSTHOG_HOST: z
+    .url()
+    .optional()
+    .describe("PostHog host for servers, e.g. https://us.i.posthog.com"),
   // Version retention
   ...versionRetentionConfigSchema.shape,
   ...assetConfigSchema.shape

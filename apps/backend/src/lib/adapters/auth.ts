@@ -15,6 +15,13 @@ import { add } from "date-fns";
 import { APIError, createAuthMiddleware, isAPIError } from "better-auth/api";
 import { createOAuthPlugins, OAUTH_DISABLED_PATHS } from "#backend/lib/auth/oauth";
 import { Auth } from "#backend/services/auth";
+import { capture } from "#backend/lib/analytics";
+
+interface AuthHookContext {
+  path?: string;
+  params?: Record<string, string | undefined>;
+  body?: Record<string, unknown>;
+}
 
 const OTP_EXPIRY_SECONDS = 300;
 // A new review code is the same code, so failed guesses are limited, per client IP.
@@ -26,6 +33,19 @@ const OTP_VERIFICATION_PATHS = [
   "/email-otp/check-verification-otp"
 ];
 
+// Sign-ups also create a session; their requests don't count as sign-ins.
+const signUpContexts = new WeakSet<object>();
+
+const getAuthMethod = (context: AuthHookContext | null): string | undefined => {
+  const path = context?.path ?? "";
+  const provider = context?.body?.provider;
+
+  if (path === "/callback/:id") return context?.params?.id;
+  if (path === "/sign-in/social" && typeof provider === "string") return provider;
+  if (path.startsWith("/passkey/")) return "passkey";
+
+  return path.includes("email-otp") ? "email" : path || undefined;
+};
 // Directory reviewers can't receive email codes, so their account has a fixed code.
 const isReviewAccount = (email: string): boolean => {
   const reviewEmail = config.REVIEW_ACCOUNT_EMAIL?.toLowerCase();
@@ -181,6 +201,13 @@ const auth = betterAuth({
           };
         },
         after: async (user, context) => {
+          if (context) signUpContexts.add(context);
+
+          capture("user_signed_up", {
+            userID: toUserID(user.id),
+            properties: { method: getAuthMethod(context) }
+          });
+
           try {
             const defaultWorkspaceName = `${user.name} (Personal Workspace)`;
             const workspaceName =
@@ -200,6 +227,18 @@ const auth = betterAuth({
               error
             });
           }
+        }
+      }
+    },
+    session: {
+      create: {
+        after: async (session, context) => {
+          if (context && signUpContexts.has(context)) return;
+
+          capture("user_signed_in", {
+            userID: toUserID(session.userId),
+            properties: { method: getAuthMethod(context) }
+          });
         }
       }
     }

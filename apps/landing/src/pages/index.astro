@@ -7,6 +7,7 @@ import { HeroHeading } from "../components/sections/hero/hero-heading";
 import { Publishing } from "../components/sections/publishing";
 import DocumentHead from "../components/shared/document-head/index.astro";
 import { PageScrollShadows } from "../components/shared/page-scroll-shadows";
+import { Analytics } from "../components/shared/analytics";
 import "../styles.scss";
 
 const title = "Andesine — The adaptive content workspace";
@@ -21,6 +22,7 @@ const description =
   </head>
   <body style="background-color: #f9fafb">
     <PageScrollShadows client:load />
+    <Analytics client:load />
     <LandingPage>
       <SiteHeader slot="header" client:load />
       <HeroRibbon slot="ribbon" client:load />

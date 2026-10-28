@@ -16,6 +16,7 @@ import {
 import { authorized } from "#backend/lib/transport/middleware/authorized";
 import { Collections } from "#backend/services/collections";
 import { api } from "./implement";
+import { trackEvent } from "#backend/lib/analytics";
 
 const handlers = api.collections;
 const authorizedHandlers = handlers.use(authorized);
@@ -56,6 +57,7 @@ const collectionsRouter = handlers.router({
       memberID: getUserAuthorization(context.auth)?.memberID,
       data: newCollection
     });
+    trackEvent("collection_created", context.auth);
 
     return newCollection;
   }),
