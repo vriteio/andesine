@@ -230,7 +230,7 @@ const Explorer = () => {
             </div>
             <div
               ref={setScrollableContainerRef}
-              class="relative flex min-h-0 w-full flex-1 flex-col scrollbar-contrast overflow-y-auto px-1"
+              class="relative flex min-h-0 w-full flex-1 flex-col scrollbar-contrast scrollbar-hover overflow-y-auto px-1"
             >
               <div
                 ref={setTitleRef}

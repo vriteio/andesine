@@ -84,6 +84,18 @@ body {
 ::-webkit-scrollbar-thumb:horizontal {
   box-shadow: inset 2px 0 4px 0 rgb(0 0 0 / 5%);
 }
+// Chromium doesn't repaint scrollbar pseudo-elements on hover, so toggle the scrollbar itself
+// `data-overflowing` comes from `ScrollShadow`; the gutter then replaces the right padding
+@media (hover: hover) and (pointer: fine) {
+  .scrollbar-hover[data-overflowing] {
+    scrollbar-gutter: stable;
+    overflow-x: hidden;
+    padding-right: 0;
+  }
+  .scrollbar-hover:not(:hover, :has(:focus-visible)) {
+    overflow-y: hidden;
+  }
+}
 
 // Ark UI visibility state
 [hidden] {

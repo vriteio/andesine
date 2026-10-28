@@ -26,6 +26,7 @@ interface TreeProps {
   renderLevel?(levelID: string): JSX.Element;
   renderItem?(itemID: string): JSX.Element;
   renderHeader?(): JSX.Element;
+  renderContent?(content: JSX.Element): JSX.Element;
   selectionTransform?(selection: string[]): string[];
   emptyMessage?: string;
   itemHeight?: TreeSize;
@@ -98,7 +99,9 @@ const Tree: ParentComponent<TreeProps> = (props) => (
     gap={props.gap}
   >
     {props.renderHeader?.()}
-    <TreeContent {...props} />
+    <Show when={props.renderContent} fallback={<TreeContent {...props} />}>
+      {(renderContent) => renderContent()(<TreeContent {...props} />)}
+    </Show>
   </TreeProvider>
 );
 

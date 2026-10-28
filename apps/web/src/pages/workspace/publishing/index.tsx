@@ -1,7 +1,6 @@
 import {
   Button,
   type Card,
-  createRef,
   DropdownArea,
   DropdownMenu,
   IconButton,
@@ -56,7 +55,6 @@ const PublishingPanel: Component<PublishingPanelProps> = (props) => {
   const [menuOpened, setMenuOpened] = createSignal(false);
   const [actionMenuItems, setActionMenuItems] = createSignal<MenuItem[]>([]);
   const [revertCompleted, setRevertCompleted] = createSignal(0);
-  const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const revert = usePublishingRevert({
     currentEntryID: () => params.slug || "",
     snapshotView: () => Boolean(searchParams.snapshotID),
@@ -282,15 +280,8 @@ const PublishingPanel: Component<PublishingPanelProps> = (props) => {
 
   return (
     <DropdownArea>
-      <div
-        ref={setScrollableContainerRef}
-        data-tree-marquee
-        class="flex min-h-0 w-full flex-1 flex-col overflow-y-auto px-1 scrollbar-contrast"
-      >
-        <div
-          data-tree-interaction
-          class="sticky top-0 z-20 -mx-1 flex shrink-0 flex-col bg-white px-1 md:bg-gray-100"
-        >
+      <div class="flex min-h-0 w-full flex-1 flex-col">
+        <div data-tree-interaction class="flex shrink-0 flex-col px-1">
           <div class="group/publishing-header relative flex h-9 items-center gap-2">
             <h2 class="min-w-0 flex-1 truncate text-2xl font-semibold">Publishing</h2>
             <Show when={hasHeaderOptions()}>
@@ -330,12 +321,19 @@ const PublishingPanel: Component<PublishingPanelProps> = (props) => {
             {publishingCollection()?.name}
           </span>
         </div>
-        <Show when={response()} fallback={<PublishingPanelContentSkeleton />}>
+        <Show
+          when={response()}
+          fallback={
+            <div class="px-1">
+              <PublishingPanelContentSkeleton />
+            </div>
+          }
+        >
           {(currentResponse) => (
             <Show
               when={!currentResponse().error}
               fallback={
-                <div class="flex flex-1 flex-col pt-1">
+                <div class="flex flex-1 flex-col px-1 pt-1">
                   <Button
                     class="flex w-full items-center justify-start gap-1 py-0.5 pl-0.5"
                     variant="ghost"
@@ -360,7 +358,7 @@ const PublishingPanel: Component<PublishingPanelProps> = (props) => {
               <Show
                 when={currentResponse().result && pendingCount() > 0}
                 fallback={
-                  <div class="flex h-7 w-full items-center gap-1 pl-0.5 font-medium">
+                  <div class="flex h-7 w-full items-center gap-1 pl-1.5 font-medium">
                     <div class="flex h-6 w-6 items-center justify-center">
                       <div class="h-5 w-5 text-green-500 i-material-symbols:check-circle-outline-rounded" />
                     </div>
@@ -378,7 +376,6 @@ const PublishingPanel: Component<PublishingPanelProps> = (props) => {
                   onAction={runMutation}
                   onMenuItemsChange={setActionMenuItems}
                   onRevert={revertChanges}
-                  scrollableContainer={scrollableContainerRef}
                 />
               </Show>
             </Show>

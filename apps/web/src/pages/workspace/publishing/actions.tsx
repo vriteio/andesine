@@ -322,7 +322,7 @@ const PublishingPanelActions: Component<PublishingPanelActionsProps> = (props) =
   onCleanup(() => props.onMenuItemsChange([]));
 
   return (
-    <div data-tree-interaction class="my-1 flex h-7 min-w-0 items-center gap-1">
+    <div data-tree-interaction class="my-1 flex h-7 min-w-0 items-center gap-1 px-1">
       <Show
         when={!useDefaultAction()}
         fallback={

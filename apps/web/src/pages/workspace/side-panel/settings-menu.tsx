@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import { createRef, ScrollShadow } from "@andesine/components";
 import { A, createAsync, useLocation, useParams } from "@solidjs/router";
 import { type Component, createMemo, For, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
@@ -103,6 +104,7 @@ const SettingsMenu: Component = () => {
     name?: string;
   }>();
   const { sessions, currentWorkspace, hasPermission } = useWorkspace();
+  const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const routeExtension = useRouteExtension();
   const settingsPath = () => `/${params.workspaceID || ""}/settings`;
   // Managers see when an update or a revocation keeps an extension disabled.
@@ -285,43 +287,61 @@ const SettingsMenu: Component = () => {
   });
 
   return (
-    <div class="flex min-h-0 flex-col overflow-y-auto px-1 pb-1 scrollbar-sm md:flex-1">
-      <h2 class="my-0.5 truncate text-2xl font-semibold">Settings</h2>
-      <div class="flex flex-col gap-3">
-        <For each={menu()}>
-          {(subMenu) => (
-            <MenuSection label={subMenu.label}>
-              <For each={subMenu.items.filter((item) => item.visible ?? true)}>
-                {(item) => {
-                  const activeChild = () => {
-                    return item.subItems?.find((subItem) => {
-                      return (subItem.visible ?? true) && subItem.active;
-                    });
-                  };
+    <div class="relative flex min-h-0 w-full md:flex-1">
+      <div class="pointer-events-none absolute inset-y-0 left-0 right-3 overflow-hidden">
+        <ScrollShadow
+          color="contrast"
+          offset={{ top: "2.25rem" }}
+          scrollableContainerRef={scrollableContainerRef}
+        />
+      </div>
+      <div
+        ref={setScrollableContainerRef}
+        class="relative flex min-h-0 w-full flex-col scrollbar-contrast scrollbar-hover overflow-y-auto px-1 pb-1 md:flex-1"
+      >
+        <div class="sticky top-0 z-20 -mx-1 flex h-9 shrink-0 items-center px-1 bg-white md:bg-gray-100">
+          <h2 class="min-w-0 truncate text-2xl font-semibold">Settings</h2>
+        </div>
+        <div class="flex flex-col gap-3">
+          <For each={menu()}>
+            {(subMenu) => (
+              <MenuSection label={subMenu.label}>
+                <For each={subMenu.items.filter((item) => item.visible ?? true)}>
+                  {(item) => {
+                    const activeChild = () => {
+                      return item.subItems?.find((subItem) => {
+                        return (subItem.visible ?? true) && subItem.active;
+                      });
+                    };
 
-                  return (
-                    <>
-                      <SettingsMenuItemRow item={item} />
-                      <Show when={activeChild()}>
-                        {(child) => (
-                          <div class="relative flex">
-                            <div class="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-r from-secondary via-primary to-transparent opacity-10" />
-                            <div class="relative flex min-w-3.5 items-center justify-end pl-0.5">
-                              <div class="h-full w-px rounded-full bg-gradient-to-b" />
+                    return (
+                      <>
+                        <SettingsMenuItemRow item={item} />
+                        <Show when={activeChild()}>
+                          {(child) => (
+                            <div class="relative flex">
+                              <div class="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-r from-secondary via-primary to-transparent opacity-10" />
+                              <div class="relative flex min-w-3.5 items-center justify-end pl-0.5">
+                                <div class="h-full w-px rounded-full bg-gradient-to-b" />
+                              </div>
+                              <div class="relative flex flex-1 flex-col">
+                                <SettingsMenuItemRow
+                                  item={child()}
+                                  nested
+                                  activeBackground={false}
+                                />
+                              </div>
                             </div>
-                            <div class="relative flex flex-1 flex-col">
-                              <SettingsMenuItemRow item={child()} nested activeBackground={false} />
-                            </div>
-                          </div>
-                        )}
-                      </Show>
-                    </>
-                  );
-                }}
-              </For>
-            </MenuSection>
-          )}
-        </For>
+                          )}
+                        </Show>
+                      </>
+                    );
+                  }}
+                </For>
+              </MenuSection>
+            )}
+          </For>
+        </div>
       </div>
     </div>
   );

@@ -178,7 +178,7 @@ const dataComponents: Pick<
             calloutIcons[props.props.tone ?? "info"]
           )}
         />
-        <div class="min-w-0 flex-1 basis-48 py-0.5">
+        <div class="min-w-0 flex-1 basis-40 py-0.5">
           <Show when={props.props.title}>
             <p class="font-medium">{props.props.title}</p>
           </Show>

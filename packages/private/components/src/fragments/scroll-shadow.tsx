@@ -61,6 +61,8 @@ const ScrollShadow: Component<ScrollShadowProps> = (props) => {
       return;
     }
 
+    element.toggleAttribute("data-overflowing", element.clientHeight < element.scrollHeight);
+
     if (element.clientHeight >= element.scrollHeight) {
       setScrollState("none");
     } else if (element.scrollTop === 0) {
@@ -104,12 +106,25 @@ const ScrollShadow: Component<ScrollShadowProps> = (props) => {
     const resizeObserver = new ResizeObserver(() => {
       controller.processScrollState();
     });
+    // Content size changes the scroll state without resizing the container
+    const observeContent = (): void => {
+      if (!scrollableContainer) return;
+
+      resizeObserver.disconnect();
+      resizeObserver.observe(scrollableContainer);
+      for (const child of scrollableContainer.children) resizeObserver.observe(child);
+    };
+    const mutationObserver = new MutationObserver(() => {
+      observeContent();
+      controller.processScrollState();
+    });
 
     if (scrollableContainer) {
       scrollableContainer.addEventListener("scroll", () => {
         controller.processScrollState();
       });
-      resizeObserver.observe(scrollableContainer);
+      observeContent();
+      mutationObserver.observe(scrollableContainer, { childList: true });
       controller.processScrollState();
     }
 
@@ -117,6 +132,7 @@ const ScrollShadow: Component<ScrollShadowProps> = (props) => {
     onCleanup(() => {
       window.removeEventListener("resize", handleWindowResize);
       resizeObserver.disconnect();
+      mutationObserver.disconnect();
     });
   });
 

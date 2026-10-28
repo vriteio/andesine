@@ -13,7 +13,7 @@ import {
   type PublishingChannelContentCollection
 } from "#web/lib/data";
 import { useNavigate, useSearchParams } from "@solidjs/router";
-import { type MenuItem, Spinner } from "@andesine/components";
+import { createRef, type MenuItem, ScrollShadow, Spinner } from "@andesine/components";
 import clsx from "clsx";
 import { type Component, createMemo, Show } from "solid-js";
 import {
@@ -37,7 +37,6 @@ interface PublishingPanelTreeProps {
   onAction(input: PublishingPanelActionInput): void;
   onMenuItemsChange(items: MenuItem[]): void;
   onRevert(target: PublishingRevertTarget): void;
-  scrollableContainer(): HTMLElement | null;
 }
 interface PublishingPanelCollectionProps extends PublishingPanelTreeProps {
   collection: PublishingChannelContentCollection;
@@ -367,6 +366,7 @@ const PublishingPanelCollection: Component<PublishingPanelCollectionProps> = (pr
 };
 const PublishingPanelTree: Component<PublishingPanelTreeProps> = (props) => {
   const publishing = usePublishing();
+  const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const collectionsByID = createMemo(() => {
     return new Map(
       props.content.collections.map((collection) => [collection.collectionID, collection])
@@ -451,11 +451,11 @@ const PublishingPanelTree: Component<PublishingPanelTreeProps> = (props) => {
   };
 
   return (
-    <div class="relative flex min-w-0 flex-col">
+    <div class="relative flex min-h-0 min-w-0 flex-1 flex-col">
       <Tree
         keyboard
         marquee
-        marqueeContainer={props.scrollableContainer}
+        marqueeContainer={scrollableContainerRef}
         tree={tree}
         levelIDs={() => {
           return Object.fromEntries(
@@ -480,6 +480,20 @@ const PublishingPanelTree: Component<PublishingPanelTreeProps> = (props) => {
             onMenuItemsChange={props.onMenuItemsChange}
             onRevert={props.onRevert}
           />
+        )}
+        renderContent={(treeContent) => (
+          <div class="relative flex min-h-0 w-full flex-1">
+            <div class="pointer-events-none absolute inset-y-0 left-0 right-3 overflow-hidden">
+              <ScrollShadow color="contrast" scrollableContainerRef={scrollableContainerRef} />
+            </div>
+            <div
+              ref={setScrollableContainerRef}
+              data-tree-marquee
+              class="relative flex min-h-0 w-full flex-1 flex-col scrollbar-contrast scrollbar-hover overflow-y-auto px-1"
+            >
+              {treeContent}
+            </div>
+          </div>
         )}
         renderLevel={(collectionID) => {
           const collection = () => collectionsByID().get(collectionID);
