@@ -99,6 +99,10 @@ const createWorkspaceCollections = (workspaceID?: string, userID = "") => {
       : undefined,
     reactivity: solidReactivityAdapter
   });
+
+  // Each reactive query adds listeners, so the count follows the number of rendered items.
+  for (const collection of [entries, collections, schemas]) collection.setMaxListeners(Infinity);
+
   const isReady = async () => {
     await Promise.all([entries.isReady(), collections.isReady(), schemas.isReady()]);
   };

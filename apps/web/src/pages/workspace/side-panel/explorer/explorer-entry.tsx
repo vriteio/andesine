@@ -1,7 +1,7 @@
 import { type Card, DropdownMenu, IconButton, Spinner, Tooltip } from "@andesine/components";
 import { TreeItem } from "#web/components/tree";
 import clsx from "clsx";
-import { type Component, type ComponentProps, Show } from "solid-js";
+import { type Component, type ComponentProps, createMemo, Show } from "solid-js";
 import { MAX_CONTENT_NAME_LENGTH, normalizeEntryName } from "#web/lib/validation";
 import { useWorkspace } from "#web/context/workspace";
 import { usePublishing } from "#web/context/publishing";
@@ -26,7 +26,7 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
     swipe
   } = useExplorerEntry(props);
   const reverting = () => publishing.isEntryReverting(props.entry.id);
-  const publishingStatus = () => publishing.getEntryPublishingStatus(props.entry.id);
+  const publishingStatus = createMemo(() => publishing.getEntryPublishingStatus(props.entry.id));
   const canEdit = () => {
     return workspaceContent.canEntry(props.entry.collectionID || null, "entry:update");
   };

@@ -39,33 +39,28 @@ const useVersionPublishing = (input: UseVersionPublishingInput) => {
   const publishing = usePublishing();
   const notify = useNotify();
   const [publicationsRefreshing, startPublicationsRefresh] = useTransition();
-  const canRead = () => {
-    const entry = content.entries.get({ entryID: input.entryID() });
-    const deletedEntry = publishing.getDeletedEntry(input.entryID());
-
-    return Boolean(deletedEntry || content.canEntry(entry?.collectionID || null, "entry:read"));
-  };
-  const publishingEnabled = () => {
-    if (publishing.getDeletedEntry(input.entryID())) return true;
+  const entry = createMemo(() => content.entries.get({ entryID: input.entryID() }));
+  const deleted = createMemo(() => Boolean(publishing.getDeletedEntry(input.entryID())));
+  const canRead = createMemo(() => {
+    return deleted() || content.canEntry(entry()?.collectionID || null, "entry:read");
+  });
+  const publishingEnabled = createMemo(() => {
+    if (deleted()) return true;
 
     const status = content.getEntryPublishingStatus(input.entryID());
 
     return status !== null && status !== "outside";
-  };
-  const canManage = () => {
-    if (publishing.getDeletedEntry(input.entryID())) return false;
+  });
+  const canManage = createMemo(() => {
+    if (deleted()) return false;
 
     return (
-      (() => {
-        const entry = content.entries.get({ entryID: input.entryID() });
-
-        return content.canEntry(entry?.collectionID || null, "publishing:publish");
-      })() &&
+      content.canEntry(entry()?.collectionID || null, "publishing:publish") &&
       publishingEnabled() &&
       !content.offline() &&
       !content.syncing()
     );
-  };
+  });
   const publications = createAsync(
     async (): Promise<PublishingPublicationsResult | null> => {
       const entryID = input.entryID();

@@ -8,7 +8,7 @@ import {
 } from "@andesine/components";
 import { TreeItem, TreeLevel } from "#web/components/tree";
 import clsx from "clsx";
-import { type Component, type ComponentProps, Show } from "solid-js";
+import { type Component, type ComponentProps, createMemo, Show } from "solid-js";
 import { ExplorerEntry } from "./explorer-entry";
 import { MAX_CONTENT_NAME_LENGTH, normalizeCollectionName } from "#web/lib/validation";
 import { useExplorerCollection, type ExplorerCollectionProps } from "./use-explorer-collection";
@@ -45,19 +45,21 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
     swipe
   } = useExplorerCollection(props);
   const reverting = () => publishing.isCollectionReverting(props.collection.id);
-  const publishingEnabledRoot = () => content.isCollectionPublishingRoot(props.collection.id);
-  const schema = () => content.schemas.get(props.collection.id);
+  const publishingEnabledRoot = createMemo(() => {
+    return content.isCollectionPublishingRoot(props.collection.id);
+  });
+  const schema = createMemo(() => content.schemas.get(props.collection.id));
   // Without a slug, e.g. on extension pages, nothing is open; collections may have no schema.
   const schemaOpened = () => Boolean(params.slug) && params.slug === schema()?.id;
   const highlighted = () => schemaOpened() || props.collection.id === pageHighlight();
   const collectionEditorOpened = () => props.collection.id === params.slug || highlighted();
   const schemaMigration = () => content.getSchemaMigration(props.collection.id);
-  const restricted = () => {
+  const restricted = createMemo(() => {
     return content.collections.isRestricted({ collectionID: props.collection.id });
-  };
-  const restrictionRoot = () => {
+  });
+  const restrictionRoot = createMemo(() => {
     return content.collections.isRestrictionRoot({ collectionID: props.collection.id });
-  };
+  });
   const unpublishedCount = () => {
     return publishing.getCollectionUnpublishedCount(props.collection.id);
   };

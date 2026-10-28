@@ -82,32 +82,38 @@ const useRightSidePanelOptions = () => {
   const { content, currentWorkspace } = useWorkspace();
   const publishing = usePublishing();
   const panelContext = usePanelContext();
-  const publishingAvailable = () => {
-    const entry = content.entries.get({ entryID: params.slug || "" });
-    const deletedEntry = entry ? undefined : publishing.getDeletedEntry(params.slug || "");
-    const status = entry ? content.getEntryPublishingStatus(entry.id) : null;
+  const entry = createMemo(() => content.entries.get({ entryID: params.slug || "" }));
+  const deletedEntry = createMemo(() => {
+    return entry() ? undefined : publishing.getDeletedEntry(params.slug || "");
+  });
+  const schema = createMemo(() => {
+    return content.schemasCollection().findOne({ id: params.slug || "" });
+  });
+  const publishingAvailable = createMemo(() => {
+    const currentEntry = entry();
+    const currentDeletedEntry = deletedEntry();
+    const status = currentEntry ? content.getEntryPublishingStatus(currentEntry.id) : null;
     const publishedRoot = publishing.getPublishedEntryRoot(params.slug || "");
     // Collection pages and collection-bound extension pages show their collection's publishing.
-    const collectionID = entry || deletedEntry ? null : panelContext().collectionID;
+    const collectionID = currentEntry || currentDeletedEntry ? null : panelContext().collectionID;
     const publishingCollectionID = collectionID && content.getPublishingCollectionID(collectionID);
 
     return Boolean(
       currentWorkspace() &&
-      (deletedEntry ||
+      (currentDeletedEntry ||
         publishedRoot ||
-        (entry &&
+        (currentEntry &&
           status &&
           status !== "outside" &&
-          content.canEntry(entry.collectionID || null, "publishing:read")) ||
+          content.canEntry(currentEntry.collectionID || null, "publishing:read")) ||
         (publishingCollectionID && content.canEntry(publishingCollectionID, "publishing:read")))
     );
-  };
+  });
   const publishingAvailabilityResolved = usePublishingResolved();
   // Extensions get only context IDs: the panel's entry and collection, or the schema's collection.
   const context = createMemo((): Record<string, string> => {
     const { entryID, collectionID: panelCollectionID } = panelContext();
-    const schema = entryID ? null : content.schemasCollection().findOne({ id: params.slug || "" });
-    const collectionID = panelCollectionID || schema?.collectionID;
+    const collectionID = panelCollectionID || (entryID ? null : schema()?.collectionID);
     // The nearest collection with publishing on, e.g. a docs site's root for a nested entry.
     const publishingCollectionID = collectionID && content.getPublishingCollectionID(collectionID);
 
@@ -161,13 +167,12 @@ const useRightSidePanelOptions = () => {
       component: VersionHistoryPanel,
       fallback: VersionHistoryPanelFallback,
       available: () => {
-        const entry = content.entries.get({ entryID: params.slug || "" });
-        const deletedEntry = entry ? undefined : publishing.getDeletedEntry(params.slug || "");
+        const currentEntry = entry();
 
         return Boolean(
-          (entry || deletedEntry?.canReadVersions) &&
+          (currentEntry || deletedEntry()?.canReadVersions) &&
           currentWorkspace() &&
-          (!entry || content.canEntry(entry.collectionID || null, "version:read"))
+          (!currentEntry || content.canEntry(currentEntry.collectionID || null, "version:read"))
         );
       }
     },
@@ -192,12 +197,12 @@ const useRightSidePanelOptions = () => {
       component: SchemaVersionHistoryPanel,
       fallback: VersionHistoryPanelFallback,
       available: () => {
-        const schema = content.schemasCollection().findOne({ id: params.slug || "" });
+        const currentSchema = schema();
 
         return Boolean(
-          schema &&
+          currentSchema &&
           currentWorkspace() &&
-          content.canCollection(schema.collectionID, "collection:read")
+          content.canCollection(currentSchema.collectionID, "collection:read")
         );
       }
     }
