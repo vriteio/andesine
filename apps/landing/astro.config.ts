@@ -18,7 +18,7 @@ export default defineConfig({
   site: "https://andesine.app",
   output: "static",
   build: { assets: "_landing" },
-  server: { host: true, port: 4321, allowedHosts: [".local"] },
+  server: { host: true, port: 43213, allowedHosts: [".local"] },
   integrations: [unoCSS(), solid()],
   build: {
     assets: "_landing"

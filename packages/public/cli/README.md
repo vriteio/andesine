@@ -63,7 +63,7 @@ only `dev` and `test-event` need credentials.
 ### Local development
 
 ```sh
-npx andesine --base-url http://localhost:3333 --workspace ws_... extensions dev
+npx andesine --base-url http://localhost:43211 --workspace ws_... extensions dev
 npx andesine extensions test-event content entry.created
 npx andesine extensions dev --remove
 ```
@@ -202,7 +202,7 @@ Windows, and `~/.config` on Linux. Override directories must be absolute paths.
   "defaultProfile": "local",
   "profiles": {
     "local": {
-      "baseURL": "http://localhost:3000",
+      "baseURL": "http://localhost:43211",
       "workspaceID": "ws_example"
     }
   }

@@ -10,10 +10,10 @@ extends the web app's colors, icon collection, and component class transformers.
 - Type check: `pnpm typecheck --filter=@andesine/landing`
 - Output: `apps/landing/dist`
 
-The dev command loads the root `.env` and listens on all network interfaces on port 4321.
+The dev command loads the root `.env` and listens on all network interfaces on port 43213.
 Like the web app, HTTPS uses `HTTPS_KEY_PATH` and `HTTPS_CERT_PATH`, resolved from the
 repository root. Set both to use HTTPS, or leave both unset to use HTTP. The existing local
-certificate supports [https://macbook-pro.local:4321](https://macbook-pro.local:4321).
+certificate supports [https://macbook-pro.local:43213](https://macbook-pro.local:43213).
 Devices that open this address must trust the certificate's local CA. Restart an existing
 dev process with the command above to load these settings and remove any old `--host` override.
 

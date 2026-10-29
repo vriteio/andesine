@@ -18,7 +18,7 @@ services:
       timeout: 5s
       retries: 30
     ports:
-      - "${DEV_POSTGRES_PORT:-5433}:5432"
+      - "${DEV_POSTGRES_PORT:-43214}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
 
@@ -32,7 +32,7 @@ services:
       timeout: 5s
       retries: 30
     ports:
-      - "${DEV_REDIS_PORT:-6380}:6379"
+      - "${DEV_REDIS_PORT:-43215}:6379"
     volumes:
       - redis-data:/data
 
@@ -55,7 +55,7 @@ services:
       timeout: 5s
       retries: 30
     ports:
-      - "${DEV_QUEUE_REDIS_PORT:-6381}:6379"
+      - "${DEV_QUEUE_REDIS_PORT:-43216}:6379"
     volumes:
       - queue-redis-data:/data
 
@@ -77,7 +77,7 @@ services:
       timeout: 5s
       retries: 30
     ports:
-      - "${DEV_TYPESENSE_PORT:-8108}:8108"
+      - "${DEV_TYPESENSE_PORT:-43217}:8108"
     volumes:
       - typesense-data:/data
 

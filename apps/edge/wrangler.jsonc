@@ -5,6 +5,7 @@
   "compatibility_date": "2026-09-13",
   "workers_dev": true,
   "keep_vars": true,
+  "dev": { "port": 43212 },
   "assets": {
     "directory": "../landing/dist",
     "binding": "LANDING",

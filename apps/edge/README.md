@@ -12,7 +12,7 @@ Copy `.dev.vars.example` to `.dev.vars` when local origin addresses differ. Then
 pnpm dev:edge
 ```
 
-The command builds the landing app, then starts the edge Worker at `http://localhost:8787`.
+The command builds the landing app, then starts the edge Worker at `http://localhost:43212`.
 
 Run `pnpm deploy:edge` to build the landing app, check the edge Worker, and deploy it.
 After the first edge deployment, set `APP_ORIGIN` to the Railway service origin

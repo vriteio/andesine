@@ -23,7 +23,7 @@ Each frontend module shows one kind of contribution; remove the ones you do not 
 Extensions are developed against a fully local Andesine stack; the hosted app has no development mode.
 
 1. On the local stack, set `PUBLIC_EXTENSIONS_ENABLED=true` and `EXTENSIONS_DEVELOPMENT_ENABLED=true` for the backend and the web app. For webhooks to reach a backend on your machine, also allow local HTTP destinations: `WEBHOOK_ALLOW_HTTP=true` and a `WEBHOOK_DESTINATION_EXCEPTIONS` entry for the backend's origin.
-2. Sign in the CLI to the local instance (API keys cannot develop extensions): `npx andesine --base-url http://localhost:3333 auth login`.
+2. Sign in the CLI to the local instance (API keys cannot develop extensions): `npx andesine --base-url http://localhost:43211 auth login`.
 3. Start the backend with `npm run backend`, then `npm run dev`. Only you see and run the development extension; `npm run dev -- --remove` uninstalls it.
 
 ## Commands

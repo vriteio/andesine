@@ -4,7 +4,7 @@ import Fastify from "fastify";
 import { viteSSRPlugin } from "./vite-ssr-plugin";
 
 const host = process.env.HOST ?? "0.0.0.0";
-const port = Number(process.env.PORT ?? 3000);
+const port = Number(process.env.PORT ?? 43210);
 const httpsKeyPath = process.env.HTTPS_KEY_PATH;
 const httpsCertPath = process.env.HTTPS_CERT_PATH;
 const hasIncompleteHTTPSConfig = Boolean(httpsKeyPath) !== Boolean(httpsCertPath);

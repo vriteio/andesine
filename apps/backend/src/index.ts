@@ -41,7 +41,7 @@ const exposedHeaders = [
   "X-RateLimit-Reset"
 ];
 const host = process.env.HOST ?? "0.0.0.0";
-const port = Number(process.env.PORT ?? 3333);
+const port = Number(process.env.PORT ?? 43211);
 const httpsKeyPath = process.env.HTTPS_KEY_PATH;
 const httpsCertPath = process.env.HTTPS_CERT_PATH;
 const hasIncompleteHTTPSConfig = Boolean(httpsKeyPath) !== Boolean(httpsCertPath);
