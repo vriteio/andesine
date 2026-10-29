@@ -208,8 +208,13 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
       left: event.clientX,
       top: event.clientY
     });
+    // Safari finds the nearest text position for points outside the editor too, e.g. below it.
+    const onContent = pos && target instanceof Node && editor.view.dom.contains(target);
 
-    if (pos || !container || event.button !== 0) return;
+    if (onContent || !container || event.button !== 0) return;
+
+    // Without it, Safari starts a native text selection, which replaces the block selection.
+    event.preventDefault();
 
     const containerRect = container.getBoundingClientRect();
     const localX = Math.max(
@@ -330,6 +335,9 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
     autoScroll.update(event);
     updateSelection(event);
   };
+  const preventNativeSelection = (event: Event) => {
+    if (pointerDown()) event.preventDefault();
+  };
   const onPointerEnd = () => {
     const editor = props.editor;
 
@@ -428,6 +436,7 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
     window.addEventListener("pointercancel", onPointerEnd);
     window.addEventListener("pointerleave", onPointerEnd);
     window.addEventListener("contextmenu", onPointerEnd);
+    document.addEventListener("selectstart", preventNativeSelection, true);
 
     onCleanup(() => {
       setPointerDown(false);
@@ -438,6 +447,7 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
       window.removeEventListener("pointercancel", onPointerEnd);
       window.removeEventListener("pointerleave", onPointerEnd);
       window.removeEventListener("contextmenu", onPointerEnd);
+      document.removeEventListener("selectstart", preventNativeSelection, true);
     });
   });
 

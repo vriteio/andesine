@@ -37,6 +37,14 @@ header[data-type="title"] {
   .block-selection-marker {
     @apply select-none;
   }
+
+  // The shade shows a block selection; Safari also paints the native one in the gaps between blocks.
+  .ProseMirror-hideselection,
+  .ProseMirror-hideselection * {
+    &::selection {
+      @apply bg-transparent;
+    }
+  }
 }
 
 // Links
