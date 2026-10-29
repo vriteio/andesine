@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { type Component, type JSX, Show } from "solid-js";
+import { type Component, createEffect, createSignal, type JSX, onCleanup, Show } from "solid-js";
 import { Portal } from "solid-js/web";
 import { Menu } from "@ark-ui/solid/menu";
 import { Card } from "../card";
@@ -20,6 +20,8 @@ interface DropdownMobileContentProps {
 
 const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
   const [backdropPressed, setBackdropPressed] = createRef(false);
+  const [sheet, setSheet] = createSignal<HTMLElement | null>(null);
+  const [filled, setFilled] = createSignal(false);
   const {
     activeMobileDropdown,
     closeMobileDropdowns,
@@ -49,6 +51,27 @@ const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
     opened,
     close: closeMobileDropdowns,
     setExpanded: setMobileDropdownExpanded
+  });
+  // Long content can also make the sheet reach its max height without expanding it
+  const reachesTop = () => mobileDropdownExpanded() || filled();
+  // The top bar tint switches back as soon as the sheet leaves the top
+  const fullHeight = () => {
+    return reachesTop() && !drag.dragging() && !activeEntry()?.getClosing();
+  };
+
+  createEffect(() => {
+    const element = sheet();
+
+    if (!element) return;
+
+    const observer = new ResizeObserver(() => {
+      const maxHeight = parseFloat(window.getComputedStyle(element).maxHeight);
+
+      setFilled(element.offsetHeight >= maxHeight - 1);
+    });
+
+    observer.observe(element);
+    onCleanup(() => observer.disconnect());
   });
 
   return (
@@ -80,10 +103,15 @@ const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
 
               if (shouldClose) closeMobileDropdowns();
             }}
-          />
+          >
+            {/* Fades the blurred page into Safari's solid top bar, below the layout's 12px tint */}
+            <div class="pointer-events-none absolute inset-x-0 top-3 h-6 bg-gradient-to-b from-gray-50 to-transparent md:hidden" />
+          </div>
           <Card
             {...(cardProps() || {})}
             data-dropdown-mobile-sheet
+            ref={setSheet}
+            data-expanded={fullHeight() || undefined}
             shade
             style={{
               ...(cardProps()?.style || {}),
@@ -105,7 +133,7 @@ const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
             class={clsx(
               styles.sheet,
               ":base-2: fixed bottom-0 left-0 z-50 flex !w-full min-w-0 max-w-full transform flex-col overflow-hidden select-none rounded-b-none !border-0 p-1 pb-[calc(0.25rem+env(safe-area-inset-bottom,0px))] pointer-events-auto shadow-gray-900/8 shadow-xl bg-white",
-              mobileDropdownExpanded() ? ":base-2: rounded-t-none" : ":base-2: rounded-t-2xl",
+              filled() ? ":base-2: rounded-t-none" : ":base-2: rounded-t-2xl",
               activeEntry()?.getClosing() && styles.closing,
               cardProps()?.class
             )}

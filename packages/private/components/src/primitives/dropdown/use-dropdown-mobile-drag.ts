@@ -99,6 +99,8 @@ const useMobileDropdownDrag = (options: MobileDropdownDragOptions) => {
       setHeight(viewportHeight());
     } else if (shouldClose) {
       options.close();
+    } else if (options.expanded()) {
+      setHeight(viewportHeight());
     } else if (shouldAnimateToRestingHeight) {
       setHeightCleanupPending(true);
       setHeight(restingHeight);

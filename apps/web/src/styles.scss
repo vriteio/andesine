@@ -101,3 +101,8 @@ body {
 [hidden] {
   @apply hidden!;
 }
+
+// Safari top bar tint; matches an expanded mobile sheet
+body:has([data-dropdown-mobile-sheet][data-expanded]) [data-safari-tint] {
+  @apply bg-white;
+}

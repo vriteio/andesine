@@ -214,8 +214,12 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
     <WorkspaceProvider>
       <PublishingProvider>
         <WorkspaceAnalytics />
-        {/* Fixed element to tint Safari's top UI to use bg-gray-50 color */}
-        <div class="pointer-events-none fixed left-0 top-0 h-3 w-full bg-gray-50 md:hidden" />
+        {/* Fixed element to tint Safari's top UI to use bg-gray-50 color; above sheet backdrops,
+        so an open sheet doesn't change it */}
+        <div
+          data-safari-tint
+          class="pointer-events-none fixed left-0 top-0 z-100 h-3 w-full bg-gray-50 md:hidden"
+        />
         <div class="flex h-full min-h-0 w-full">
           <aside class="hidden h-full shrink-0 py-3 md:flex">
             <Show when={layout.leftSidePanelWidth === 0}>

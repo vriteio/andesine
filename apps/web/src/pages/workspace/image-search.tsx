@@ -155,7 +155,11 @@ const ImageSearch = (props: ImageSearchProps) => {
         </Tooltip>
       </div>
       <div class="relative flex min-h-0 flex-1 overflow-hidden">
-        <ScrollShadow controller={scrollShadowController} scrollableContainerRef={resultsRef} />
+        <ScrollShadow
+          controller={scrollShadowController}
+          scrollableContainerRef={resultsRef}
+          color={md() ? "base" : "white"}
+        />
         <div
           ref={setResultsRef}
           id={resultID}

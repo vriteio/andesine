@@ -355,7 +355,11 @@ const SearchDialog: Component<SearchDialogProps> = (props) => {
       </div>
       <SearchFilters filters={filterDrafts()} setFilters={updateFilterDrafts} />
       <div class="relative flex min-h-0 flex-1 overflow-hidden">
-        <ScrollShadow controller={scrollShadowController} scrollableContainerRef={resultsRef} />
+        <ScrollShadow
+          controller={scrollShadowController}
+          scrollableContainerRef={resultsRef}
+          color={md() ? "base" : "white"}
+        />
         <div
           id="workspace-search-results"
           ref={setResultsRef}
