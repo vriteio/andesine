@@ -6,6 +6,7 @@ import { createSignal, Match, Show, Switch, type Component } from "solid-js";
 import { useNotify } from "#web/context/notifications";
 import { authClient, client } from "#web/lib/api";
 import { appendRedirectTo } from "#web/lib/navigation";
+import clsx from "clsx";
 
 interface PublicClient {
   client_id: string;
@@ -151,7 +152,10 @@ const ConnectPage: Component = () => {
                 {clientName()} wants to access the workspace:
                 <Card
                   color="soft"
-                  class="mt-2 rounded-lg flex items-center gap-2 pt-1 pb-1.5 px-3 border-0 min-h-12"
+                  class={clsx(
+                    "mt-2 rounded-lg flex items-center gap-2 pt-1 pb-1.5 border-0 min-h-12",
+                    target().logo ? "px-2" : "px-3"
+                  )}
                 >
                   <Show when={target().logo}>
                     {(logo) => (

@@ -1,4 +1,4 @@
-import { Card, ScrollArea, ScrollShadow, Spinner, createRef } from "@andesine/components";
+import { Card, ScrollShadow, Spinner, createRef } from "@andesine/components";
 import { Title } from "@solidjs/meta";
 import {
   revalidate,
@@ -211,11 +211,12 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
       <Show when={!content.offline()}>
         <div class="flex w-full flex-1 overflow-hidden px-1">
           <div class="relative flex h-full w-full overflow-hidden">
-            <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
-            <ScrollArea
-              class="z-0 w-full"
-              contentClass="flex min-h-full flex-col"
-              viewportRef={setScrollableContainerRef}
+            <div class="pointer-events-none absolute inset-y-0 left-0 right-3 overflow-hidden">
+              <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
+            </div>
+            <div
+              ref={setScrollableContainerRef}
+              class="relative z-0 flex min-h-0 w-full flex-col overflow-y-auto scrollbar-base scrollbar-hover"
             >
               <div class="flex w-full flex-1 flex-col items-center px-2.5 pb-5 pt-5 md:px-10 md:pb-10 md:pt-9">
                 <div class="relative flex w-full max-w-[44rem] flex-1 flex-col">
@@ -259,7 +260,7 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
                   </Show>
                 </div>
               </div>
-            </ScrollArea>
+            </div>
           </div>
         </div>
         <Suspense>

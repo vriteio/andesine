@@ -347,7 +347,7 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
       <Show when={!content.offline() && displayStatus()}>
         {(currentStatus) => (
           <DropdownMenu
-            title="Publishing"
+            title="Publish"
             cardProps={{ class: "w-52" }}
             items={options()}
             opened={menuOpened()}
@@ -379,10 +379,10 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
                 <button
                   type="button"
                   class="group relative flex min-h-7 w-full flex-1 select-none items-center gap-1 overflow-hidden rounded-lg pl-0.5 text-left font-medium outline-none @hover:bg-gradient-to-r @hover:from-gray-500/10 @hover:to-transparent"
-                  aria-label="Open publishing menu"
+                  aria-label="Open publish menu"
                 >
                   <PublishingStatusIcon status={currentStatus()} size="large" />
-                  <span class="min-w-0 flex-1 truncate">Publishing</span>
+                  <span class="min-w-0 flex-1 truncate">Publish</span>
                 </button>
               </Show>
             )}

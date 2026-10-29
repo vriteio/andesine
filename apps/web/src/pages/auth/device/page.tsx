@@ -8,6 +8,7 @@ import { authClient, client } from "#web/lib/api";
 import { appendRedirectTo } from "#web/lib/navigation";
 import { toUserID } from "#web/lib/primitives";
 import { getRequestError, messages, normalizeUserCode, type DeviceRequestState } from "./state";
+import clsx from "clsx";
 
 const deviceSessionQuery = query(async () => {
   const result = await authClient.getSession();
@@ -136,7 +137,10 @@ const DevicePage: Component = () => {
                 account:
                 <Card
                   color="soft"
-                  class="mt-2 rounded-lg flex items-center gap-2 pt-1 pb-1.5 px-3 border-0 min-h-12"
+                  class={clsx(
+                    "mt-2 rounded-lg flex items-center gap-2 pt-1 pb-1.5 border-0 min-h-12",
+                    user().image ? "px-2" : "px-3"
+                  )}
                 >
                   <Show when={user().image}>
                     {(image) => (
