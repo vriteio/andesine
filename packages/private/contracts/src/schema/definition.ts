@@ -184,7 +184,15 @@ const schemaDefinitionType: z.ZodType<SchemaDefinition> = schemaDraftDefinitionT
 
 const createEmptySchemaDefinition = (): SchemaDefinition => ({ formatVersion: 1, fields: [] });
 
+const getEmptyPropertyValue = (property: Pick<SchemaProperty, "type">): SchemaPropertyValue => {
+  if (property.type === "checkbox") return false;
+  if (property.type === "multi-select") return [];
+
+  return "";
+};
+
 export {
+  getEmptyPropertyValue,
   MAX_SCHEMA_FIELD_LABEL_LENGTH,
   SCHEMA_BLOCK_TYPES,
   SCHEMA_FIELD_ID_ATTRIBUTE,

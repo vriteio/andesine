@@ -346,7 +346,6 @@ const createEntry = withAuthorization<CreateEntryInput, ResolvedCreateEntry, Cre
         const initialContent = initialDocument
           ? await prepareEntryContent(database, workspaceID, {
               authorization,
-              entryID: created.id,
               schemaRevisionID: activeRevision?.id ?? null,
               document: await applyContentOperations(initialDocument, fieldOperations)
             })

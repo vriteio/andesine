@@ -1,6 +1,4 @@
 import {
-  collectionSchemas,
-  collections,
   schemaDraftContributors,
   schemaVersionContributors,
   schemaVersions
@@ -10,11 +8,7 @@ import {
   hashSchemaDefinition,
   createEffectiveSchemaChange
 } from "@andesine/server/schema";
-import {
-  getUserAuthorization,
-  type ServiceResolveContext,
-  withAuthorization
-} from "#backend/lib/policy";
+import { getUserAuthorization, withAuthorization } from "#backend/lib/policy";
 import {
   type SchemaApplicationResult,
   schemaDefinitionType,
@@ -27,7 +21,8 @@ import {
   toUUID
 } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
-import { and, eq, isNotNull, isNull, max } from "drizzle-orm";
+import { and, eq, max } from "drizzle-orm";
+import { resolveEnabledSchema, type ResolvedEnabledSchema } from "../../resolve";
 
 interface PlanSchemaApplicationInput {
   schemaID: string;
@@ -35,48 +30,16 @@ interface PlanSchemaApplicationInput {
   definition: SchemaDefinition;
 }
 
-type ResolvedSchemaApplicationPlan = Awaited<ReturnType<typeof resolveSchemaApplicationPlan>>;
-
-const resolveSchemaApplicationPlan = async ({
-  database,
-  input,
-  workspaceID
-}: ServiceResolveContext<PlanSchemaApplicationInput>) => {
-  const [schema] = await database
-    .select({ id: collectionSchemas.id, collectionID: collectionSchemas.collectionID })
-    .from(collectionSchemas)
-    .innerJoin(
-      collections,
-      and(
-        eq(collections.workspaceID, collectionSchemas.workspaceID),
-        eq(collections.id, collectionSchemas.collectionID),
-        isNotNull(collections.parentID),
-        isNull(collections.deletedAt)
-      )
-    )
-    .where(
-      and(
-        eq(collectionSchemas.id, toUUID(input.schemaID)),
-        eq(collectionSchemas.workspaceID, workspaceID),
-        eq(collectionSchemas.enabled, true)
-      )
-    )
-    .for("update");
-
-  if (!schema) throw new ORPCError("NOT_FOUND", { message: "Schema not found" });
-
-  return schema;
-};
 const createSchemaApplicationPlan = withAuthorization<
   PlanSchemaApplicationInput,
-  ResolvedSchemaApplicationPlan,
+  ResolvedEnabledSchema,
   SchemaApplicationResult
 >(
   {
     actions: ({ resolved }) => ({
       collections: [{ action: "collection:update", collectionID: resolved.collectionID }]
     }),
-    resolve: resolveSchemaApplicationPlan,
+    resolve: resolveEnabledSchema,
     transaction: "locked-workspace"
   },
   async ({ auth, database, input, resolved, workspaceID }) => {

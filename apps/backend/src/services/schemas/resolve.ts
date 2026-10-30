@@ -49,5 +49,39 @@ const resolveLocalCollectionSchema = async (
   return { collection, schema: schema || null };
 };
 
-export { resolveLocalCollectionSchema, resolveSchemaCollection };
-export type { CollectionSchemaInput };
+/** The enabled schema of a live collection, locked if the caller has a transaction. */
+const resolveEnabledSchema = async ({
+  database,
+  input,
+  workspaceID
+}: ServiceResolveContext<{ schemaID: string }>) => {
+  const [schema] = await database
+    .select({ id: collectionSchemas.id, collectionID: collectionSchemas.collectionID })
+    .from(collectionSchemas)
+    .innerJoin(
+      collections,
+      and(
+        eq(collections.workspaceID, collectionSchemas.workspaceID),
+        eq(collections.id, collectionSchemas.collectionID),
+        isNotNull(collections.parentID),
+        isNull(collections.deletedAt)
+      )
+    )
+    .where(
+      and(
+        eq(collectionSchemas.id, toUUID(input.schemaID)),
+        eq(collectionSchemas.workspaceID, workspaceID),
+        eq(collectionSchemas.enabled, true)
+      )
+    )
+    .for("update");
+
+  if (!schema) throw new ORPCError("NOT_FOUND", { message: "Schema not found" });
+
+  return schema;
+};
+
+type ResolvedEnabledSchema = Awaited<ReturnType<typeof resolveEnabledSchema>>;
+
+export { resolveEnabledSchema, resolveLocalCollectionSchema, resolveSchemaCollection };
+export type { CollectionSchemaInput, ResolvedEnabledSchema };

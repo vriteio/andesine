@@ -1,6 +1,10 @@
 import { collectionSchemas, entries } from "@andesine/server/database";
 import { serializeContentDocument } from "@andesine/server/content";
-import { createSchemaDefinitionFromEditorDocument } from "@andesine/server/schema";
+import {
+  createSchemaDefinitionFromEditorDocument,
+  createSchemaEditorDocument,
+  hashSchemaDefinition
+} from "@andesine/server/schema";
 import type { ContentNode } from "@andesine/document";
 import { db } from "#backend/lib/adapters";
 import { toUUID } from "@andesine/contracts/primitives";
@@ -8,6 +12,7 @@ import { type SchemaDefinition } from "@andesine/contracts/schema";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
 import {
+  createContentState,
   getContentSnapshot,
   setDocumentTitle,
   updateContentDocument,
@@ -33,6 +38,10 @@ interface UpdateDocumentContentOptions {
 interface UpdateDocumentContentResult {
   applied: boolean;
   snapshot: ContentSnapshot;
+}
+interface UpdateSchemaDraftDocumentOptions {
+  contributorID?: string;
+  expectedHash?: string;
 }
 
 type ContentConnection = Awaited<ReturnType<typeof collab.openDirectConnection>>;
@@ -229,8 +238,61 @@ const getCurrentSchemaDefinition = async (
 
   return definition;
 };
+/** Rejects definitions the editor can't load, e.g. with an unknown mark in default content. */
+const assertSchemaDraftDocument = (definition: SchemaDefinition): void => {
+  try {
+    createContentState(createSchemaEditorDocument(definition));
+  } catch (error) {
+    if (!(error instanceof RangeError)) throw error;
+
+    throw new ORPCError("BAD_REQUEST", {
+      message: "Schema default content is invalid",
+      data: {
+        hints: [`Use only blocks and marks that the editor supports. Details: ${error.message}`]
+      }
+    });
+  }
+};
+/** Replaces the draft's own fields in the live document; returns the hash it had before. */
+const updateSchemaDraftDocument = async (
+  documentName: string,
+  workspaceID: string,
+  definition: SchemaDefinition,
+  options: UpdateSchemaDraftDocumentOptions
+): Promise<string> => {
+  const connection = await collab.openDirectConnection(documentName, {
+    workspaceID,
+    contributorID: options.contributorID
+  });
+  let hash: string | undefined;
+
+  try {
+    await connection.transact((document) => {
+      const current = serializeContentDocument(document);
+
+      hash = hashSchemaDefinition(createSchemaDefinitionFromEditorDocument(current));
+
+      if (options.expectedHash !== undefined && options.expectedHash !== hash) return;
+
+      const inheritedFields = (current.content || []).filter((node) => node.attrs?.inherited);
+      const draft = createSchemaEditorDocument(definition);
+
+      updateContentDocument(document, {
+        ...draft,
+        content: [...inheritedFields, ...(draft.content || [])]
+      });
+    });
+  } finally {
+    await connection.disconnect();
+  }
+
+  if (!hash) throw new Error("Failed to update schema collaboration document");
+
+  return hash;
+};
 
 export {
+  assertSchemaDraftDocument,
   getCurrentDocumentContent,
   getOpenDocumentContent,
   getCurrentSchemaDefinition,
@@ -239,6 +301,7 @@ export {
   readDocumentContent,
   setPersistedDocumentSchemaRevision,
   updateDocumentContent,
-  updateDocumentTitle
+  updateDocumentTitle,
+  updateSchemaDraftDocument
 };
 export type { ContentConnection, OpenDocumentContentConnectionOptions };

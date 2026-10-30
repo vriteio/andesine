@@ -29,7 +29,7 @@ const contentSchemaInvalidError = (
       issues,
       hints: [
         status === 409
-          ? "Correct the fields listed in issues before publishing. Saved versions must be corrected in a new version."
+          ? "Correct the content listed in issues. Saved versions must be corrected in a new version."
           : "Use the recorded schema revision and issue paths to inspect this content. Correct the source and publish a new version; historical content is not repaired on read."
       ]
     }

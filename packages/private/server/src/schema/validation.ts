@@ -108,7 +108,10 @@ const validateContentSchema = (
     if (kind === "title" && index === 0) return;
 
     if (kind !== "fragment" && kind !== "property") {
-      addIssue("invalid_structure", "Schema content must be inside its declared fields");
+      addIssue(
+        "invalid_structure",
+        "Schema content must be inside its declared fields; in MDX, use <Fragment> and <Property>"
+      );
       return;
     }
 
@@ -122,13 +125,17 @@ const validateContentSchema = (
     }
 
     if (seenFieldIDs.has(field.id)) {
-      addIssue("duplicate_field", "Schema field occurs more than once", SCHEMA_FIELD_ID_ATTRIBUTE);
+      addIssue(
+        "duplicate_field",
+        `Schema field "${field.label}" occurs more than once`,
+        SCHEMA_FIELD_ID_ATTRIBUTE
+      );
     }
 
     seenFieldIDs.add(field.id);
 
     if (kind !== field.kind) {
-      addIssue("field_kind_mismatch", `Schema field must be a ${field.kind}`);
+      addIssue("field_kind_mismatch", `Schema field "${field.label}" must be a ${field.kind}`);
       return;
     }
 
@@ -146,23 +153,31 @@ const validateContentSchema = (
 
     if (field.kind === "property") {
       if (node.attrs?.type !== field.type) {
-        addIssue("property_type_mismatch", `Property must have type "${field.type}"`, "type");
+        addIssue(
+          "property_type_mismatch",
+          `Property "${field.label}" must have type "${field.type}"`,
+          "type"
+        );
       }
 
       if (!isValidPropertyValue(field, node.attrs?.value)) {
-        addIssue("invalid_property_value", `Value does not match the ${field.type} field`, "value");
+        addIssue(
+          "invalid_property_value",
+          `Value of property "${field.label}" does not match its ${field.type} type`,
+          "value"
+        );
       }
 
       if (!hasSameOptions(node.attrs?.options, field.options)) {
         addIssue(
           "invalid_field_options",
-          "Property options do not match the recorded schema",
+          `Options of property "${field.label}" do not match the recorded schema`,
           "options"
         );
       }
 
       if (node.content?.length) {
-        addIssue("invalid_structure", "Properties cannot contain content blocks");
+        addIssue("invalid_structure", `Property "${field.label}" cannot contain content blocks`);
       }
 
       return;
@@ -171,7 +186,7 @@ const validateContentSchema = (
     if (!hasSameOptions(node.attrs?.allowedBlocks, field.allowedBlocks)) {
       addIssue(
         "invalid_allowed_blocks",
-        "Allowed blocks do not match the recorded schema",
+        `Allowed blocks of fragment "${field.label}" do not match the recorded schema`,
         "allowedBlocks"
       );
     }
@@ -179,7 +194,10 @@ const validateContentSchema = (
     const invalidBlock = findDisallowedElementBlock(node.content || [], field.allowedBlocks);
 
     if (invalidBlock) {
-      addIssue("invalid_fragment_content", `Fragment does not allow ${invalidBlock} blocks`);
+      addIssue(
+        "invalid_fragment_content",
+        `Fragment "${field.label}" does not allow ${invalidBlock} blocks`
+      );
     }
   });
 
@@ -187,7 +205,7 @@ const validateContentSchema = (
     if (!seenFieldIDs.has(field.id)) {
       issues.push({
         code: "missing_field",
-        message: `Required ${field.kind} field is missing`,
+        message: `Required ${field.kind} "${field.label}" is missing`,
         path: ["content"],
         fieldID: field.id
       });

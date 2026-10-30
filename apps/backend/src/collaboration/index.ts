@@ -1,4 +1,5 @@
 export {
+  assertSchemaDraftDocument,
   getCurrentDocumentContent,
   getOpenDocumentContent,
   getCurrentSchemaDefinition,
@@ -7,7 +8,8 @@ export {
   readDocumentContent,
   setPersistedDocumentSchemaRevision,
   updateDocumentContent,
-  updateDocumentTitle
+  updateDocumentTitle,
+  updateSchemaDraftDocument
 } from "./operations";
 export { collab, shutdownCollaboration } from "./server";
 export { createContentState, getContentSnapshot } from "./document";

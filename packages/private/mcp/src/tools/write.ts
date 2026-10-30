@@ -3,6 +3,7 @@ import * as z from "zod";
 import {
   collectionTarget,
   entryURL,
+  getMigrationSummary,
   resolveCollectionID,
   resolveEntryID,
   runTool,
@@ -53,7 +54,7 @@ const registerCreateEntry = (server: McpServer, context: ToolContext) => {
     {
       title: "Create an entry",
       description:
-        "Creates an entry. Give path (/Collection/Entry; missing collections are created) or collection and name. mdx sets the content (the H1 is the title); fields sets schema fields by name. Images must be asset: references here; add images by URL later with edit_entry.",
+        "Creates an entry. Give path (/Collection/Entry; missing collections are created) or collection and name. mdx sets the content (the H1 is the title); fields sets schema fields by name. In a collection with a schema, all content goes inside its fields, so use fields, or <Fragment> and <Property> in mdx. Images must be asset: references here; add images by URL later with edit_entry.",
       inputSchema: {
         path: z.string().optional().describe("Full path of the new entry"),
         collection: z.string().optional().describe("Existing parent collection ID or path"),
@@ -169,53 +170,77 @@ const registerWriteEntry = (server: McpServer, context: ToolContext) => {
     })
   );
 };
+/** The name is saved first, so a failed move must say that the name did change. */
+const moveAfterRename = async <Result>(renamed: boolean, move: () => Promise<Result>) => {
+  try {
+    return await move();
+  } catch (error) {
+    if (renamed && error instanceof Error) {
+      error.message = `The name was changed, but the move failed: ${error.message}`;
+    }
+
+    throw error;
+  }
+};
 const registerMove = (server: McpServer, context: ToolContext) => {
   server.registerTool(
     "move",
     {
       title: "Rename or move",
       description:
-        "Renames an entry or a collection, moves it to another collection (to; / is the top level), or both.",
+        "Renames an entry or a collection, moves it to another collection (to; / is the top level), or both. A move that changes the schema can start a migration of the moved content, which fails until confirmedDataLoss is true. The result then has the migration; follow it with get_migration.",
       inputSchema: {
         kind: kindSchema,
         target: z.string().describe("ID or path of the entry or collection"),
         name: z.string().optional().describe("New name"),
-        to: z.string().optional().describe("New parent collection ID or path")
+        to: z.string().optional().describe("New parent collection ID or path"),
+        confirmedDataLoss: z
+          .boolean()
+          .optional()
+          .describe(
+            "Accepts that a schema migration caused by the move can remove content. Set it only after reviewing the content and the target schema."
+          )
       },
       annotations: {
         title: "Rename or move",
         readOnlyHint: false,
-        destructiveHint: false,
+        destructiveHint: true,
         idempotentHint: true,
         openWorldHint: false
       }
     },
-    runTool(async ({ kind, target, name, to }) => {
+    runTool(async ({ kind, target, name, to, confirmedDataLoss }) => {
       if (kind === "entry") {
         const id = await resolveEntryID(context, target);
 
         if (name) await context.client.entries.update({ id, name });
-        if (to) await context.client.entries.move({ id, ...collectionTarget(to) });
+        if (!to) return { id, url: entryURL(context, id) };
 
-        return { id, url: entryURL(context, id) };
+        const moved = await moveAfterRename(Boolean(name), () => {
+          return context.client.entries.move({ id, ...collectionTarget(to), confirmedDataLoss });
+        });
+
+        return { id, url: entryURL(context, id), ...getMigrationSummary(moved) };
       }
 
       const id = await resolveCollectionID(context, target);
 
       if (name) await context.client.collections.update({ id, name });
 
-      if (to) {
-        const parent = collectionTarget(to);
+      if (!to) return { id };
 
-        await context.client.collections.move({
+      const parent = collectionTarget(to);
+      const moved = await moveAfterRename(Boolean(name), () => {
+        return context.client.collections.move({
           id,
           ...("collectionID" in parent
             ? { newParentID: parent.collectionID }
-            : { newParentPath: parent.collectionPath })
+            : { newParentPath: parent.collectionPath }),
+          confirmedDataLoss
         });
-      }
+      });
 
-      return { id };
+      return { id, ...getMigrationSummary(moved) };
     })
   );
 };
@@ -224,7 +249,7 @@ const registerDelete = (server: McpServer, context: ToolContext) => {
     "delete",
     {
       title: "Delete",
-      description: "Deletes an entry, or a collection with everything in it.",
+      description: "Deletes an entry, or a collection with everything in it. This can't be undone.",
       inputSchema: {
         kind: kindSchema,
         target: z.string().describe("ID or path of the entry or collection")
@@ -288,8 +313,16 @@ const registerRevertVersion = (server: McpServer, context: ToolContext) => {
     {
       title: "Restore a version",
       description:
-        "Restores an entry to a saved version. Unsaved current content is saved as a version first.",
-      inputSchema: { version: z.string().describe("Version ID (ver_...)") },
+        "Restores an entry to a saved version, or a collection's schema to a saved schema version. For an entry, unsaved current content is saved as a version first. For a schema, unapplied draft changes are saved as a version, and a migration can start; follow it with get_migration. This doesn't bring back content that entries lost in an earlier migration; restore that from the versions of each entry.",
+      inputSchema: {
+        version: z.string().describe("Entry version ID (ver_...) or schema version ID (schv_...)"),
+        confirmedDataLoss: z
+          .boolean()
+          .optional()
+          .describe(
+            "Needed for a schema version. Accepts that the change can remove content from entries. Set it only after reviewing the entries and the version."
+          )
+      },
       annotations: {
         title: "Restore a version",
         readOnlyHint: false,
@@ -298,7 +331,28 @@ const registerRevertVersion = (server: McpServer, context: ToolContext) => {
         openWorldHint: false
       }
     },
-    runTool(async ({ version }) => ({ ...(await context.client.versions.revert({ id: version })) }))
+    runTool(async ({ version, confirmedDataLoss }) => {
+      if (!version.startsWith("schv_")) {
+        return { ...(await context.client.versions.revert({ id: version })) };
+      }
+
+      if (!confirmedDataLoss) {
+        throw new Error(
+          "Restoring a schema version can remove content from entries. Review the version with get_schema, then set confirmedDataLoss."
+        );
+      }
+
+      const restored = await context.client.schemaVersions.revert({
+        id: version,
+        confirmedDataLoss: true
+      });
+
+      return {
+        changed: restored.changed,
+        schemaVersionID: restored.schemaVersionID,
+        ...getMigrationSummary(restored)
+      };
+    })
   );
 };
 

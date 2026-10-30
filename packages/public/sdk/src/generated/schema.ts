@@ -1367,6 +1367,28 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/schemas/{schemaID}/draft": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Update a schema draft
+     * @description Replaces the fields of the local schema draft. People editing the draft see the change live. Fields keep their content in entries by ID, so reuse the IDs from schemas.get. Inherited fields stay as they are; don't include them. Entries don't change until schemas.apply.
+     *
+     *     Required API key permissions: collections. Write permissions also grant read access for the same resource.
+     */
+    post: operations["schemas.updateDraft"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/schemas/{schemaID}/apply": {
     parameters: {
       query?: never;
@@ -1378,7 +1400,7 @@ export interface paths {
     put?: never;
     /**
      * Apply a schema draft
-     * @description Creates a schema version from the draft and starts any required migration of affected entry content. Review possible content removal before calling: confirmedDataLoss must be true. Use schemaMigrations.get to follow a returned migrationID.
+     * @description Creates a schema version from the draft, or from definition, and starts any required migration of affected entry content. With definition, the draft is replaced only if the apply succeeds. Review possible content removal before calling: confirmedDataLoss must be true. Use schemaMigrations.get to follow a returned migrationID.
      *
      *     Required API key permissions: collections. Write permissions also grant read access for the same resource.
      */
@@ -26137,6 +26159,336 @@ export interface operations {
       };
     };
   };
+  "schemas.updateDraft": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path: {
+        /** @example sch_example */
+        schemaID: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        /**
+         * @example {
+         *       "definition": {
+         *         "formatVersion": 1,
+         *         "fields": [
+         *           {
+         *             "id": "summary",
+         *             "kind": "property",
+         *             "label": "Summary",
+         *             "type": "text",
+         *             "defaultValue": "",
+         *             "options": []
+         *           }
+         *         ]
+         *       }
+         *     }
+         */
+        "application/json": {
+          /** @description The draft's own fields */
+          definition: {
+            /** @constant */
+            formatVersion: 1;
+            fields: (
+              | components["schemas"]["SchemaProperty"]
+              | {
+                  id: string;
+                  /** @constant */
+                  kind: "fragment";
+                  label: string;
+                  allowedBlocks: components["schemas"]["SchemaBlockType"][];
+                  defaultContent: components["schemas"]["ContentNodeInput"][];
+                }
+            )[];
+          };
+          /** @description Draft hash from schemas.get; the update fails if the draft changed since */
+          expectedHash?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LocalCollectionSchema"];
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SCHEMA_FIELD_KEY_CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default SCHEMA_FIELD_KEY_CONFLICT */
+                message: string;
+                data: components["schemas"]["SchemaFieldKeyConflictErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SCHEMA_MIGRATION_IN_PROGRESS";
+                /** @constant */
+                status: 409;
+                /** @default A schema migration is in progress for this collection */
+                message: string;
+                data: components["schemas"]["SchemaMigrationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_PRECONDITION_FAILED";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_PRECONDITION_FAILED */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Expected field that didn't match */
+                  field: string;
+                  /** @description Current value of the field */
+                  current: string | null;
+                };
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
   "schemas.apply": {
     parameters: {
       query?: never;
@@ -26166,6 +26518,24 @@ export interface operations {
           confirmedDataLoss: true;
           /** @description Optional version name */
           name?: string;
+          /** @description The fields to apply instead of the draft's; inherited fields stay as they are */
+          definition?: {
+            /** @constant */
+            formatVersion: 1;
+            fields: (
+              | components["schemas"]["SchemaProperty"]
+              | {
+                  id: string;
+                  /** @constant */
+                  kind: "fragment";
+                  label: string;
+                  allowedBlocks: components["schemas"]["SchemaBlockType"][];
+                  defaultContent: components["schemas"]["ContentNodeInput"][];
+                }
+            )[];
+          };
+          /** @description Draft hash from schemas.get; the apply fails if the draft changed since */
+          expectedHash?: string;
         };
       };
     };
@@ -26330,6 +26700,24 @@ export interface operations {
                 /** @default A schema migration is in progress for this collection */
                 message: string;
                 data: components["schemas"]["SchemaMigrationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONTENT_PRECONDITION_FAILED";
+                /** @constant */
+                status: 409;
+                /** @default CONTENT_PRECONDITION_FAILED */
+                message: string;
+                data: {
+                  /** @description Suggested next steps. Wording can change; use error codes and structured data for program logic. */
+                  hints?: string[];
+                  /** @description Expected field that didn't match */
+                  field: string;
+                  /** @description Current value of the field */
+                  current: string | null;
+                };
               }
             | {
                 /** @constant */

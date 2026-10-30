@@ -27,10 +27,17 @@ const PROPERTY_TYPES: PropertyType[] = [
   "select",
   "multi-select"
 ];
+const getContentFieldFallback = (kind: "fragment" | "property"): string => {
+  return kind === "fragment" ? "Content" : "Property";
+};
+const getContentFieldName = (kind: "fragment" | "property", label: unknown): string => {
+  return normalizeSourceName(label, getContentFieldFallback(kind));
+};
 const getContentFieldKey = (kind: "fragment" | "property", label: unknown): string => {
-  const fallback = kind === "fragment" ? "Content" : "Property";
-
-  return normalizeResourceName(normalizeSourceName(label, fallback), fallback.toLowerCase());
+  return normalizeResourceName(
+    getContentFieldName(kind, label),
+    getContentFieldFallback(kind).toLowerCase()
+  );
 };
 const getUniqueBlockName = (record: Record<string, unknown>, name: string): string => {
   let uniqueName = name;
@@ -113,5 +120,11 @@ const getContentTitle = (content: ContentNode): string => {
   return title ? getText(title).normalize("NFC").trim() || "Untitled" : "Untitled";
 };
 
-export { getContentBlocks, getContentFieldKey, getContentTitle, normalizePropertyType };
+export {
+  getContentBlocks,
+  getContentFieldKey,
+  getContentFieldName,
+  getContentTitle,
+  normalizePropertyType
+};
 export type { ContentBlocks, ContentFragment, ContentProperty, PropertyType, PropertyValue };

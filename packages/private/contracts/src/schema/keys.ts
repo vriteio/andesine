@@ -1,4 +1,4 @@
-import { getContentFieldKey } from "@andesine/document";
+import { getContentFieldKey, getContentFieldName } from "@andesine/document";
 import { type SchemaField } from "./definition";
 
 interface SchemaFieldKeyConflict {
@@ -7,6 +7,12 @@ interface SchemaFieldKeyConflict {
   fieldIDs: string[];
 }
 
+const getSchemaFieldKey = (field: Pick<SchemaField, "kind" | "label">): string => {
+  return getContentFieldKey(field.kind, field.label);
+};
+const getSchemaFieldName = (field: Pick<SchemaField, "kind" | "label">): string => {
+  return getContentFieldName(field.kind, field.label);
+};
 const getSchemaFieldKeyConflicts = (fields: Array<SchemaField>): SchemaFieldKeyConflict[] => {
   const namespaces = {
     fragment: new Map<string, string[]>(),
@@ -15,7 +21,7 @@ const getSchemaFieldKeyConflicts = (fields: Array<SchemaField>): SchemaFieldKeyC
   const conflicts: SchemaFieldKeyConflict[] = [];
 
   for (const field of fields) {
-    const key = getContentFieldKey(field.kind, field.label);
+    const key = getSchemaFieldKey(field);
     const fieldIDs = namespaces[field.kind].get(key) || [];
 
     fieldIDs.push(field.id);
@@ -31,5 +37,5 @@ const getSchemaFieldKeyConflicts = (fields: Array<SchemaField>): SchemaFieldKeyC
   return conflicts;
 };
 
-export { getSchemaFieldKeyConflicts };
+export { getSchemaFieldKey, getSchemaFieldKeyConflicts, getSchemaFieldName };
 export type { SchemaFieldKeyConflict };

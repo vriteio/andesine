@@ -1,6 +1,7 @@
 import { collectionSelectorShape, hasCollectionSelector } from "./schemas/paths";
 import { schemaRevisionType } from "../schema/recorded";
-import { schemaMigrationErrors } from "./errors";
+import { contentPreconditionErrors, schemaMigrationErrors } from "./errors";
+import { schemaDraftDefinitionType } from "../schema/definition";
 import {
   collectionSchemaDetailsType,
   localCollectionSchemaType,
@@ -85,12 +86,54 @@ const schemasContract = baseContract.router({
       })
     )
     .output(collectionSchemaDetailsType),
+  updateDraft: authenticatedContract
+    .errors(schemaMigrationErrors)
+    .errors(contentPreconditionErrors)
+    .route({
+      summary: "Update a schema draft",
+      description:
+        "Replaces the fields of the local schema draft. People editing the draft see the change live. Fields keep their content in entries by ID, so reuse the IDs from schemas.get. Inherited fields stay as they are; don't include them. Entries don't change until schemas.apply.",
+      tags: ["schemas"],
+      method: "POST",
+      path: "/schemas/{schemaID}/draft"
+    })
+    .meta({
+      example: {
+        schemaID: "sch_example",
+        definition: {
+          formatVersion: 1,
+          fields: [
+            {
+              id: "summary",
+              kind: "property",
+              label: "Summary",
+              type: "text",
+              defaultValue: "",
+              options: []
+            }
+          ]
+        }
+      }
+    })
+    .meta({ required: { session: true, key: ["collections"] } })
+    .input(
+      z.object({
+        schemaID: id().describe("ID of the local collection schema"),
+        definition: schemaDraftDefinitionType.describe("The draft's own fields"),
+        expectedHash: z
+          .string()
+          .optional()
+          .describe("Draft hash from schemas.get; the update fails if the draft changed since")
+      })
+    )
+    .output(localCollectionSchemaType),
   apply: authenticatedContract
     .errors(schemaMigrationErrors)
+    .errors(contentPreconditionErrors)
     .route({
       summary: "Apply a schema draft",
       description:
-        "Creates a schema version from the draft and starts any required migration of affected entry content. Review possible content removal before calling: confirmedDataLoss must be true. Use schemaMigrations.get to follow a returned migrationID.",
+        "Creates a schema version from the draft, or from definition, and starts any required migration of affected entry content. With definition, the draft is replaced only if the apply succeeds. Review possible content removal before calling: confirmedDataLoss must be true. Use schemaMigrations.get to follow a returned migrationID.",
       tags: ["schemas"],
       method: "POST",
       path: "/schemas/{schemaID}/apply"
@@ -105,7 +148,16 @@ const schemasContract = baseContract.router({
         confirmedDataLoss: z
           .literal(true)
           .describe("Confirmation that the migration can remove entry content"),
-        name: z.string().trim().min(1).max(100).optional().describe("Optional version name")
+        name: z.string().trim().min(1).max(100).optional().describe("Optional version name"),
+        definition: schemaDraftDefinitionType
+          .optional()
+          .describe(
+            "The fields to apply instead of the draft's; inherited fields stay as they are"
+          ),
+        expectedHash: z
+          .string()
+          .optional()
+          .describe("Draft hash from schemas.get; the apply fails if the draft changed since")
       })
     )
     .output(schemaApplicationResultType)

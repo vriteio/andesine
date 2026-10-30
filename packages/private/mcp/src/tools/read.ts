@@ -8,13 +8,18 @@ import {
   runTool,
   type ToolContext
 } from "../context";
+import { getSchemaFieldName, type ResolvedSchemaField } from "@andesine/contracts/schema";
+import { getHeadings, getSections } from "./sections";
 
 interface TreeCollection {
   id: string;
   name: string;
   path: string;
-  collections: TreeCollection[];
-  entries: Array<{ id: string; name: string; path: string }>;
+  // Missing when the schema state is unavailable, e.g. during a schema migration.
+  schemaEnabled?: boolean;
+  // Missing when the depth limit stopped the listing.
+  collections?: TreeCollection[];
+  entries?: Array<{ id: string; name: string; path: string }>;
 }
 
 type SearchResult = Awaited<
@@ -24,6 +29,8 @@ type SearchResult = Awaited<
 const MAX_TREE_DEPTH = 3;
 const MAX_TREE_ITEMS = 300;
 const PAGE_SIZE = 100;
+const MAX_SECTIONS = 20;
+const TREE_LEVEL_CONCURRENCY = 5;
 
 const scopeSchema = z
   .enum(["current", "published"])
@@ -89,17 +96,35 @@ const registerFetch = (server: McpServer, context: ToolContext) => {
     {
       title: "Read an entry",
       description:
-        "Reads an entry as MDX (default), ProseMirror JSON, or blocks. The result has the content hash for edits, the linked entries (references), and the schema. Use format blocks before edit_entry operations that need block IDs.",
+        "Reads an entry as MDX (default), ProseMirror JSON, or blocks. The result has the content hash for edits, the linked entries (references), and the schema. Use format blocks before edit_entry operations that need block IDs. For long current drafts, use format outline to list the headings, and section to read one or more parts as MDX or blocks; these partial reads return only the path and the hash as metadata.",
       inputSchema: {
         id: z.string().describe("Entry ID (ent_...) or path (/Collection/Entry)"),
         scope: scopeSchema,
         channel: channelSchema,
         version: z.string().optional().describe("Version ID (ver_...) to read instead"),
-        format: z.enum(["mdx", "json", "blocks"]).default("mdx")
+        format: z.enum(["mdx", "json", "blocks", "outline"]).default("mdx"),
+        section: z
+          .union([z.string().min(1), z.array(z.string().min(1)).min(1).max(MAX_SECTIONS)])
+          .optional()
+          .describe(
+            "One or more sections, each a heading's text, path (Parent > Child, as search returns it), or block ID. Each reads up to the next heading of the same or a higher level. Sections come in document order, and any unknown section fails the read."
+          )
       },
       annotations: { ...readAnnotations, title: "Read an entry" }
     },
-    runTool(async ({ id, scope, channel, version, format }) => {
+    runTool(async ({ id, scope, channel, version, format, section }) => {
+      const partial = format === "outline" || section !== undefined;
+      const readsOtherContent = version || scope === "published";
+      const needsCurrentDraft = partial || format === "blocks";
+
+      if (needsCurrentDraft && readsOtherContent) {
+        throw new Error("format blocks, format outline, and section only read the current draft");
+      }
+
+      if (format === "json" && section !== undefined) {
+        throw new Error("section reads MDX or blocks, not json");
+      }
+
       if (version) {
         const details = await context.client.versions.get({
           id: version,
@@ -138,28 +163,38 @@ const registerFetch = (server: McpServer, context: ToolContext) => {
 
       const entry = await context.client.entries.get({
         ...entrySelector(id),
-        contentFormat: format
+        contentFormat: partial ? "blocks" : format
       });
-      const text =
-        format === "json"
-          ? JSON.stringify(entry.content)
-          : format === "blocks"
-            ? (entry.blocks ?? []).map((block) => block.mdx).join("\n\n")
-            : (entry.mdx ?? "");
+      const allBlocks = entry.blocks ?? [];
+      const blocks = section ? getSections(allBlocks, [section].flat()) : allBlocks;
+      const base = { id: entry.id, title: entry.name, url: entryURL(context, entry.id) };
+      const metadata = {
+        path: entry.path,
+        slugPath: entry.slugPath,
+        hash: entry.hash,
+        ...(!partial && { references: entry.references, schema: entry.schema })
+      };
+
+      if (format === "outline") {
+        return {
+          ...base,
+          headings: getHeadings(blocks).map(({ id: headingID, level, text }) => {
+            return { id: headingID, level, text };
+          }),
+          metadata
+        };
+      }
+
+      if (format === "blocks") return { ...base, blocks, metadata };
 
       return {
-        id: entry.id,
-        title: entry.name,
-        text,
-        url: entryURL(context, entry.id),
-        ...(entry.blocks && { blocks: entry.blocks }),
-        metadata: {
-          path: entry.path,
-          slugPath: entry.slugPath,
-          hash: entry.hash,
-          references: entry.references,
-          schema: entry.schema
-        }
+        ...base,
+        text: section
+          ? blocks.map((block) => block.mdx).join("\n\n")
+          : format === "json"
+            ? JSON.stringify(entry.content)
+            : (entry.mdx ?? ""),
+        metadata
       };
     })
   );
@@ -188,7 +223,7 @@ const registerGetTree = (server: McpServer, context: ToolContext) => {
     {
       title: "List collections and entries",
       description:
-        "Lists the collections and entries under a collection path, to the given depth. Large trees are cut at 300 items; narrow the path to see more.",
+        "Lists the collections and entries under a collection path, to the given depth. schemaEnabled tells whether a collection has a schema, also an inherited one. A collection at the depth limit has no collections or entries fields, because they weren't listed. Large trees are cut at 300 items with truncated set; narrow the path to see more.",
       inputSchema: {
         path: z.string().default("/").describe("Collection path, or / for the top level"),
         depth: z.number().int().min(1).max(MAX_TREE_DEPTH).default(1)
@@ -196,53 +231,91 @@ const registerGetTree = (server: McpServer, context: ToolContext) => {
       annotations: { ...readAnnotations, title: "List collections and entries" }
     },
     runTool(async ({ path, depth }) => {
-      const base = path.replace(/\/+$/, "") || "/";
-      const baseDepth = base === "/" ? 0 : base.split("/").length - 1;
-      const listed = await listCollections(context, base);
-      const collections = listed.collections.filter((collection) => {
-        return collection.path.split("/").length - 1 - baseDepth <= depth;
-      });
-      const nodes = new Map<string, TreeCollection>(
-        collections.map(({ id, name, path: collectionPath }) => [
-          collectionPath,
-          { id, name, path: collectionPath, collections: [], entries: [] }
-        ])
-      );
-      const root: TreeCollection = { id: "", name: "", path: base, collections: [], entries: [] };
-      const parentOf = (node: TreeCollection) => {
-        return nodes.get(node.path.replace(/\/[^/]+$/, "") || "/") ?? root;
+      const root: TreeCollection = {
+        id: "",
+        name: "",
+        path: path.replace(/\/+$/, "") || "/",
+        collections: [],
+        entries: []
       };
 
+      const metadata = await context.client.typeMetadata
+        .getCurrent(root.path === "/" ? {} : { collections: [root.path] })
+        .catch(() => null);
+      const schemaEnabled = new Map(
+        (metadata?.collections ?? []).map(({ path: collectionPath, schemaRevisionIDs }) => {
+          return [collectionPath, schemaRevisionIDs.some(Boolean)];
+        })
+      );
+
+      let level = [root];
       let items = 0;
-      let truncated = listed.truncated;
+      let truncated = false;
 
-      for (const node of nodes.values()) parentOf(node).collections.push(node);
+      for (let nodeDepth = 0; nodeDepth < depth; nodeDepth += 1) {
+        for (let start = 0; start < level.length; start += TREE_LEVEL_CONCURRENCY) {
+          if (items >= MAX_TREE_ITEMS) {
+            truncated = true;
+            break;
+          }
 
-      for (const node of [root, ...nodes.values()]) {
-        const nodeDepth = node === root ? 0 : node.path.split("/").length - 1 - baseDepth;
+          await Promise.all(
+            level.slice(start, start + TREE_LEVEL_CONCURRENCY).map(async (node) => {
+              const [listed, page] = await Promise.all([
+                listCollections(context, node.path),
+                context.client.entries.list({ collectionPath: node.path, limit: PAGE_SIZE })
+              ]);
 
-        if (nodeDepth >= depth || items >= MAX_TREE_ITEMS) {
-          truncated ||= items >= MAX_TREE_ITEMS;
-          continue;
+              const listedCollections = listed.collections.slice(0, MAX_TREE_ITEMS - items);
+              const listedEntries = page.data.slice(
+                0,
+                MAX_TREE_ITEMS - items - listedCollections.length
+              );
+
+              node.collections = listedCollections.map(({ id, name, path: collectionPath }) => {
+                return {
+                  id,
+                  name,
+                  path: collectionPath,
+                  schemaEnabled: schemaEnabled.get(collectionPath)
+                };
+              });
+              node.entries = listedEntries.map(({ id, name, path: entryPath }) => {
+                return { id, name, path: entryPath };
+              });
+              items += node.collections.length + node.entries.length;
+              truncated ||=
+                listed.truncated ||
+                page.pagination.hasMore ||
+                listedCollections.length < listed.collections.length ||
+                listedEntries.length < page.data.length;
+            })
+          );
         }
 
-        const page = await context.client.entries.list({
-          collectionPath: node.path,
-          limit: PAGE_SIZE
-        });
-
-        node.entries = page.data.map(({ id, name, path: entryPath }) => ({
-          id,
-          name,
-          path: entryPath
-        }));
-        items += node.entries.length;
-        truncated ||= page.pagination.hasMore;
+        level = level.flatMap((node) => node.collections ?? []);
       }
 
-      return { path: base, collections: root.collections, entries: root.entries, truncated };
+      return { path: root.path, collections: root.collections, entries: root.entries, truncated };
     })
   );
+};
+const toFieldSummary = (field: ResolvedSchemaField) => {
+  const shared = {
+    id: field.id,
+    ...(field.source.inherited && { inherited: true }),
+    kind: field.kind,
+    name: getSchemaFieldName(field)
+  };
+
+  if (field.kind === "fragment") return { ...shared, allowedBlocks: field.allowedBlocks };
+
+  return {
+    ...shared,
+    type: field.type,
+    ...(field.options.length > 0 && { options: field.options }),
+    ...(field.defaultValue !== "" && { defaultValue: field.defaultValue })
+  };
 };
 const registerGetSchema = (server: McpServer, context: ToolContext) => {
   server.registerTool(
@@ -250,14 +323,73 @@ const registerGetSchema = (server: McpServer, context: ToolContext) => {
     {
       title: "Get a collection schema",
       description:
-        "Returns the schema fields of a collection: properties and fragments, with their types and whether they are required.",
+        "Returns the schema fields of a collection, also inherited ones: properties with their types, and fragments with their allowed blocks. Field names are the ones to use in MDX and create_entry fields. Use detail full for the drafts and default content, or version to read a saved schema version from list_versions.",
       inputSchema: {
-        collection: z.string().describe("Collection ID (coll_...) or path")
+        collection: z.string().optional().describe("Collection ID (coll_...) or path"),
+        detail: z.enum(["summary", "full"]).default("summary"),
+        version: z.string().optional().describe("Schema version ID (schv_...) to read instead")
       },
       annotations: { ...readAnnotations, title: "Get a collection schema" }
     },
-    runTool(async ({ collection }) => {
-      return { schema: await context.client.schemas.get(collectionTarget(collection)) };
+    runTool(async ({ collection, detail, version }) => {
+      if (version) {
+        const { document: _document, ...details } = await context.client.schemaVersions.get({
+          id: version
+        });
+
+        return { version: details };
+      }
+
+      if (!collection) throw new Error("Use collection or version");
+
+      const schema = await context.client.schemas.get(collectionTarget(collection));
+
+      if (detail === "full") return { schema };
+
+      return {
+        enabled: Boolean(schema.effective),
+        inherited: schema.effective?.inherited ?? false,
+        hasUnappliedChanges: Boolean(schema.local?.enabled && schema.local.hasUnappliedChanges),
+        fields: (schema.effective?.definition.fields ?? []).map(toFieldSummary)
+      };
+    })
+  );
+};
+const registerGetMigration = (server: McpServer, context: ToolContext) => {
+  server.registerTool(
+    "get_migration",
+    {
+      title: "Get a schema migration",
+      description:
+        "Returns the status and progress of a schema migration, by its ID. When it's completed, it also lists up to 100 entries that lost content; pass nextCursor as cursor for more.",
+      inputSchema: {
+        id: z.string().describe("Migration ID (smg_...)"),
+        cursor: z.string().optional().describe("nextCursor from the previous result")
+      },
+      annotations: { ...readAnnotations, title: "Get a schema migration" }
+    },
+    runTool(async ({ id, cursor }) => {
+      const migration = await context.client.schemaMigrations.get({ id });
+      const contentLoss =
+        migration.status === "completed"
+          ? await context.client.schemaMigrations.listContentLossEntries({
+              id,
+              cursor,
+              limit: PAGE_SIZE
+            })
+          : null;
+
+      return {
+        id: migration.id,
+        status: migration.status,
+        processedEntries: migration.processedEntries,
+        totalEntries: migration.totalEntries,
+        error: migration.error,
+        ...(contentLoss && {
+          contentLossEntries: contentLoss.data,
+          nextCursor: contentLoss.pagination.nextCursor
+        })
+      };
     })
   );
 };
@@ -265,17 +397,35 @@ const registerListVersions = (server: McpServer, context: ToolContext) => {
   server.registerTool(
     "list_versions",
     {
-      title: "List entry versions",
-      description: "Lists saved versions of an entry, newest first.",
+      title: "List versions",
+      description:
+        "Lists saved versions of an entry, or of a collection's own schema, newest first.",
       inputSchema: {
-        entry: z.string().describe("Entry ID (ent_...) or path"),
+        entry: z.string().optional().describe("Entry ID (ent_...) or path"),
+        collection: z.string().optional().describe("Collection ID (coll_...) or path"),
         cursor: z.string().optional().describe("Cursor from the previous page"),
         limit: z.number().int().min(1).max(100).default(20)
       },
-      annotations: { ...readAnnotations, title: "List entry versions" }
+      annotations: { ...readAnnotations, title: "List versions" }
     },
-    runTool(async ({ entry, cursor, limit }) => {
-      const entryID = await resolveEntryID(context, entry);
+    runTool(async ({ entry, collection, cursor, limit }) => {
+      if (Boolean(entry) === Boolean(collection)) throw new Error("Use entry or collection");
+
+      if (collection) {
+        const { local } = await context.client.schemas.get(collectionTarget(collection));
+
+        if (!local) {
+          throw new Error(
+            "The collection has no schema of its own. Inherited schemas have versions on the collection that defines them."
+          );
+        }
+
+        return {
+          ...(await context.client.schemaVersions.list({ schemaID: local.id, cursor, limit }))
+        };
+      }
+
+      const entryID = await resolveEntryID(context, entry!);
 
       return { ...(await context.client.versions.list({ entryID, cursor, limit })) };
     })
@@ -299,6 +449,7 @@ const readTools = {
   fetch: registerFetch,
   get_tree: registerGetTree,
   get_schema: registerGetSchema,
+  get_migration: registerGetMigration,
   list_versions: registerListVersions,
   list_channels: registerListChannels
 };

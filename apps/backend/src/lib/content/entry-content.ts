@@ -9,7 +9,8 @@ import { type AuthorizedCollectionTree } from "#backend/lib/policy";
 import { resolveEntryLinks, type ContentPaths } from "./links";
 
 interface PrepareEntryContentInput {
-  entryID: string;
+  /** Left out for an entry that isn't created yet, as errors must not reference it. */
+  entryID?: string;
   schemaRevisionID: string | null;
   document: ContentNode;
   /** The caller's access, for the entries that links point to. */

@@ -24,6 +24,7 @@ export { contentMarkType, contentNodeType } from "./validation";
 export {
   getContentBlocks,
   getContentFieldKey,
+  getContentFieldName,
   getContentTitle,
   normalizePropertyType
 } from "./blocks";

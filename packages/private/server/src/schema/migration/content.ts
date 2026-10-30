@@ -55,6 +55,7 @@ const createPropertyNode = (
       attrs: {
         // Keep attributes that are not owned by schema enforcement.
         ...existing?.node.attrs,
+        id: existing?.node.attrs?.id || crypto.randomUUID(),
         [SCHEMA_FIELD_ID_ATTRIBUTE]: property.id,
         label: property.label,
         options: [...property.options],
@@ -83,6 +84,7 @@ const createFragmentNode = (
     attrs: {
       // Keep attributes that are not owned by schema enforcement.
       ...existing?.node.attrs,
+      id: existing?.node.attrs?.id || crypto.randomUUID(),
       [SCHEMA_FIELD_ID_ATTRIBUTE]: fragment.id,
       allowedBlocks: [...fragment.allowedBlocks],
       name: fragment.label
@@ -138,8 +140,10 @@ const migrateContentToSchema = (
     if (existing.kind !== "property" || matchedExistingIndexes.has(existing.index)) continue;
 
     const type = getPropertyType(existing.node.attrs?.type);
+    const value = existing.node.attrs?.value;
+    const uncheckedCheckbox = type === "checkbox" && value === false;
 
-    contentLost ||= !isPropertyValueEmpty(type, existing.node.attrs?.value);
+    contentLost ||= !uncheckedCheckbox && !isPropertyValueEmpty(type, value);
   }
 
   (input.document.content || []).forEach((node, index) => {

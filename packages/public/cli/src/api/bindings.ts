@@ -191,6 +191,8 @@ const bindings: Record<
     client.schemas.get(input as OperationInput<"schemas.get">, options),
   "schemas.getRevision": (client, input, options) =>
     client.schemas.getRevision(input as OperationInput<"schemas.getRevision">, options),
+  "schemas.updateDraft": (client, input, options) =>
+    client.schemas.updateDraft(input as OperationInput<"schemas.updateDraft">, options),
   "schemaVersions.get": (client, input, options) =>
     client.schemaVersions.get(input as OperationInput<"schemaVersions.get">, options),
   "schemaVersions.list": (client, input, options) =>

@@ -1,4 +1,4 @@
-import { collectionSchemas, collections, schemaVersions } from "@andesine/server/database";
+import { collectionSchemas, schemaVersions } from "@andesine/server/database";
 import {
   createEffectiveSchemaChange,
   type EffectiveSchemaChangePlan
@@ -6,14 +6,14 @@ import {
 import {
   getUserAuthorization,
   withAuthorization,
-  type AuthorizedServiceInput,
-  type ServiceResolveContext
+  type AuthorizedServiceInput
 } from "#backend/lib/policy";
 import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
-import { and, eq, isNotNull, isNull } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { prepareSchemaMigrationConnections } from "#backend/collaboration";
 import { submitSchemaMigration } from "#backend/lib/queue";
+import { resolveEnabledSchema, type ResolvedEnabledSchema } from "./resolve";
 
 interface DeleteCollectionSchemaInput {
   confirmedDataLoss: boolean;
@@ -23,62 +23,28 @@ interface DeleteCollectionSchemaResult extends EffectiveSchemaChangePlan {
   collectionID: string;
   schemaID: string;
 }
-interface ResolvedCollectionSchemaDeletion {
-  collectionID: string;
-  schemaID: string;
-}
 
-const resolveCollectionSchemaDeletion = async ({
-  database,
-  input,
-  workspaceID
-}: ServiceResolveContext<DeleteCollectionSchemaInput>): Promise<ResolvedCollectionSchemaDeletion> => {
-  const [schema] = await database
-    .select({ schemaID: collectionSchemas.id, collectionID: collectionSchemas.collectionID })
-    .from(collectionSchemas)
-    .innerJoin(
-      collections,
-      and(
-        eq(collections.workspaceID, collectionSchemas.workspaceID),
-        eq(collections.id, collectionSchemas.collectionID),
-        isNotNull(collections.parentID),
-        isNull(collections.deletedAt)
-      )
-    )
-    .where(
-      and(
-        eq(collectionSchemas.id, toUUID(input.schemaID)),
-        eq(collectionSchemas.workspaceID, workspaceID),
-        eq(collectionSchemas.enabled, true)
-      )
-    )
-    .for("update");
-
-  if (!schema) throw new ORPCError("NOT_FOUND", { message: "Schema not found" });
-
-  return schema;
-};
 const planCollectionSchemaDeletion = withAuthorization<
   DeleteCollectionSchemaInput,
-  ResolvedCollectionSchemaDeletion,
+  ResolvedEnabledSchema,
   DeleteCollectionSchemaResult
 >(
   {
     actions: ({ resolved }) => ({
       collections: [{ action: "collection:update", collectionID: resolved.collectionID }]
     }),
-    resolve: resolveCollectionSchemaDeletion,
+    resolve: resolveEnabledSchema,
     transaction: "locked-workspace"
   },
   async ({ auth, database, input, resolved, workspaceID }) => {
     const plan = await createEffectiveSchemaChange({
       database,
-      excludedSchemaIDs: [resolved.schemaID],
+      excludedSchemaIDs: [resolved.id],
       initiatedBy: getUserAuthorization(auth)?.memberID
         ? toUUID(getUserAuthorization(auth)!.memberID)
         : null,
       rootCollectionIDs: [resolved.collectionID],
-      schemaID: resolved.schemaID,
+      schemaID: resolved.id,
       schemaVersionID: null,
       workspaceID
     });
@@ -99,19 +65,17 @@ const planCollectionSchemaDeletion = withAuthorization<
       await database
         .update(collectionSchemas)
         .set({ enabled: false, updatedAt: new Date() })
-        .where(eq(collectionSchemas.id, resolved.schemaID));
+        .where(eq(collectionSchemas.id, resolved.id));
       await database
         .update(schemaVersions)
         .set({ active: false, updatedAt: new Date() })
-        .where(
-          and(eq(schemaVersions.schemaID, resolved.schemaID), eq(schemaVersions.active, true))
-        );
+        .where(and(eq(schemaVersions.schemaID, resolved.id), eq(schemaVersions.active, true)));
     }
 
     return {
       ...plan,
       collectionID: resolved.collectionID,
-      schemaID: resolved.schemaID
+      schemaID: resolved.id
     };
   }
 );

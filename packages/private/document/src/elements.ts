@@ -46,7 +46,7 @@ const normalizeContentElements = (node: ContentNode): ContentNode => {
     const invalid = findDisallowedElementBlock(content || [], attrs.allowedBlocks);
 
     if (invalid) {
-      throw new Error(`Fragment does not allow ${invalid} blocks`);
+      throw new Error(`Fragment "${attrs.name}" does not allow ${invalid} blocks`);
     }
   }
 

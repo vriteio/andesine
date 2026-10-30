@@ -1061,6 +1061,9 @@ importers:
       '@andesine/contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@andesine/converters':
+        specifier: workspace:*
+        version: link:../../public/converters
       '@andesine/sdk':
         specifier: workspace:*
         version: link:../../public/sdk
@@ -1194,6 +1197,9 @@ importers:
 
   packages/public/cli:
     dependencies:
+      '@andesine/converters':
+        specifier: workspace:*
+        version: link:../converters
       '@andesine/sdk':
         specifier: workspace:*
         version: link:../sdk

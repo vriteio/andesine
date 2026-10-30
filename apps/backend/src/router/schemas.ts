@@ -70,12 +70,17 @@ const schemasRouter = handlers.router({
       collectionPath: input.collectionPath
     });
   }),
+  updateDraft: authorizedHandlers.updateDraft.handler(({ context, input }) => {
+    return Schema.updateDraft({ ...input, auth: context.auth });
+  }),
   apply: authorizedHandlers.apply.handler(async ({ context, input }) => {
     const result = await Schema.Migrations.apply({
       auth: context.auth,
       schemaID: input.schemaID,
       confirmedDataLoss: input.confirmedDataLoss,
-      name: input.name
+      name: input.name,
+      definition: input.definition,
+      expectedHash: input.expectedHash
     });
 
     if (result.changed) {

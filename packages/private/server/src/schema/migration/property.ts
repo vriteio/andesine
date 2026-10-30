@@ -1,5 +1,9 @@
 import type { PropertyType } from "@andesine/document";
-import { type SchemaProperty, type SchemaPropertyValue } from "@andesine/contracts/schema";
+import {
+  getEmptyPropertyValue,
+  type SchemaProperty,
+  type SchemaPropertyValue
+} from "@andesine/contracts/schema";
 
 interface PropertyMigrationResult {
   contentLost: boolean;
@@ -9,12 +13,6 @@ interface PropertyMigrationOptions {
   useDefault: boolean;
 }
 
-const getEmptyPropertyValue = (property: SchemaProperty): SchemaPropertyValue => {
-  if (property.type === "checkbox") return false;
-  if (property.type === "multi-select") return [];
-
-  return "";
-};
 const getFallbackValue = (
   property: SchemaProperty,
   contentLost: boolean,

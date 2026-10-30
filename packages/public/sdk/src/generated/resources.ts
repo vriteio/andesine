@@ -812,9 +812,35 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
      */
     get: Operation<"schemas.get", Workspace>;
     /**
+     * Update a schema draft
+     *
+     * Replaces the fields of the local schema draft. People editing the draft see the change live. Fields keep their content in entries by ID, so reuse the IDs from schemas.get. Inherited fields stay as they are; don't include them. Entries don't change until schemas.apply.
+     *
+     * Required API key permissions: collections. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.schemas.updateDraft({
+     *   "schemaID": "sch_example",
+     *   "definition": {
+     *     "formatVersion": 1,
+     *     "fields": [
+     *       {
+     *         "id": "summary",
+     *         "kind": "property",
+     *         "label": "Summary",
+     *         "type": "text",
+     *         "defaultValue": "",
+     *         "options": []
+     *       }
+     *     ]
+     *   }
+     * });
+     */
+    updateDraft: Operation<"schemas.updateDraft", Workspace>;
+    /**
      * Apply a schema draft
      *
-     * Creates a schema version from the draft and starts any required migration of affected entry content. Review possible content removal before calling: confirmedDataLoss must be true. Use schemaMigrations.get to follow a returned migrationID.
+     * Creates a schema version from the draft, or from definition, and starts any required migration of affected entry content. With definition, the draft is replaced only if the apply succeeds. Review possible content removal before calling: confirmedDataLoss must be true. Use schemaMigrations.get to follow a returned migrationID.
      *
      * Required API key permissions: collections. Write permissions also grant read access for the same resource.
      *
@@ -2178,6 +2204,16 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       pathParams: [],
       queryParams: ["collectionID", "collectionPath", "collectionSlugPath"],
       body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    updateDraft: operation<"schemas.updateDraft", Workspace>(request, {
+      method: "post",
+      path: "/schemas/{schemaID}/draft",
+      pathParams: ["schemaID"],
+      queryParams: [],
+      body: true,
       multipart: false,
       binary: false,
       anonymous: false

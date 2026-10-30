@@ -54,22 +54,38 @@ type ContentOperation =
   | DeleteBlocksOperation
   | SetFieldOperation;
 
+const operationError = (
+  index: number,
+  reason: "not_found" | "ambiguous",
+  message: string,
+  hint: string
+) => {
+  return new ORPCError("CONTENT_OPERATION_INVALID", {
+    status: 409,
+    message,
+    data: { index, reason, hints: [hint] }
+  });
+};
 const contentOperationError = (
   index: number,
   reason: "not_found" | "ambiguous",
   message: string
 ) => {
-  return new ORPCError("CONTENT_OPERATION_INVALID", {
-    status: 409,
-    message: `Operation ${index}: ${message}`,
-    data: {
-      index,
-      reason,
-      hints: [
-        "Read the entry again with contentFormat blocks, and use the current block IDs and text."
-      ]
-    }
-  });
+  return operationError(
+    index,
+    reason,
+    `Operation ${index}: ${message}`,
+    "Read the entry again with contentFormat blocks, and use the current block IDs and text."
+  );
+};
+// No operation number: the create fields also get here, and the message names the field.
+const fieldNotFoundError = (index: number, message: string) => {
+  return operationError(
+    index,
+    "not_found",
+    message,
+    "Use a field name or key from the schema of the entry's collection."
+  );
 };
 // Top-level blocks and the blocks of fragments; the title isn't a block.
 const listBlocks = (document: ContentNode): ContentBlock[] => {
@@ -154,7 +170,7 @@ const insertBlocks = async (
   const fragment = operation.fragment ? findField(document, operation.fragment) : undefined;
 
   if (operation.fragment && fragment?.type !== "fragment") {
-    throw contentOperationError(index, "not_found", `Fragment ${operation.fragment} not found`);
+    throw fieldNotFoundError(index, `Fragment ${operation.fragment} not found`);
   }
 
   const container = fragment ? (fragment.content ??= []) : (document.content ??= []);
@@ -170,7 +186,7 @@ const setField = async (
 ): Promise<void> => {
   const field = findField(document, operation.key);
 
-  if (!field) throw contentOperationError(index, "not_found", `Field ${operation.key} not found`);
+  if (!field) throw fieldNotFoundError(index, `Field ${operation.key} not found`);
 
   if (field.type === "property") {
     Object.assign(field, restoreProperty({ ...field, attrs: { value: operation.value } }, field));

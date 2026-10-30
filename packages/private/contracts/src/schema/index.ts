@@ -1,4 +1,5 @@
 export {
+  getEmptyPropertyValue,
   MAX_SCHEMA_FIELD_LABEL_LENGTH,
   SCHEMA_BLOCK_TYPES,
   SCHEMA_FIELD_ID_ATTRIBUTE,
@@ -19,7 +20,7 @@ export type {
   SchemaProperty,
   SchemaPropertyValue
 } from "./definition";
-export { getSchemaFieldKeyConflicts } from "./keys";
+export { getSchemaFieldKey, getSchemaFieldKeyConflicts, getSchemaFieldName } from "./keys";
 export type { SchemaFieldKeyConflict } from "./keys";
 export { contentSchemaMetadataType, schemaHashType, schemaRevisionType } from "./recorded";
 export type { ContentSchemaMetadata, SchemaRevision } from "./recorded";

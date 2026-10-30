@@ -53,6 +53,12 @@ const runTool = <Input>(handler: (input: Input) => Promise<Record<string, unknow
     }
   };
 };
+/** The migration a change started, as tool results report it. */
+const getMigrationSummary = (result: { migrationID: string | null; totalEntries: number }) => {
+  return result.migrationID
+    ? { migration: { id: result.migrationID, totalEntries: result.totalEntries } }
+    : {};
+};
 /** An entry by ID (`ent_...`) or name path (`/...`), as the `entry` parameter of tools takes it. */
 const entrySelector = (entry: string): { id: string } | { path: string } => {
   if (entry.startsWith("ent_")) return { id: entry };
@@ -131,6 +137,7 @@ export {
   entrySelector,
   entryURL,
   resolveCollectionID,
+  getMigrationSummary,
   resolveEntryID,
   runTool,
   saveCheckpoint,

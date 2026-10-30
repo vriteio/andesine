@@ -5535,7 +5535,7 @@ const commands: APICommand[] = [
     path: "/schemas/{schemaID}/apply",
     summary: "Apply a schema draft",
     description:
-      "Creates a schema version from the draft and starts any required migration of affected entry content. Review possible content removal before calling: confirmedDataLoss must be true. Use schemaMigrations.get to follow a returned migrationID.\n\nRequired API key permissions: collections. Write permissions also grant read access for the same resource.",
+      "Creates a schema version from the draft, or from definition, and starts any required migration of affected entry content. With definition, the draft is replaced only if the apply succeeds. Review possible content removal before calling: confirmedDataLoss must be true. Use schemaMigrations.get to follow a returned migrationID.\n\nRequired API key permissions: collections. Write permissions also grant read access for the same resource.",
     example: {
       schemaID: "sch_example",
       confirmedDataLoss: true,
@@ -5599,6 +5599,77 @@ const commands: APICommand[] = [
           description: "Optional version name"
         },
         flag: "name",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "definition",
+        location: "body",
+        required: false,
+        schema: {
+          type: "object",
+          properties: {
+            formatVersion: {
+              const: 1
+            },
+            fields: {
+              type: "array",
+              items: {
+                anyOf: [
+                  {
+                    $ref: "#/components/schemas/SchemaProperty"
+                  },
+                  {
+                    type: "object",
+                    properties: {
+                      id: {
+                        type: "string",
+                        minLength: 1
+                      },
+                      kind: {
+                        const: "fragment"
+                      },
+                      label: {
+                        type: "string",
+                        maxLength: 50
+                      },
+                      allowedBlocks: {
+                        type: "array",
+                        items: {
+                          $ref: "#/components/schemas/SchemaBlockType"
+                        }
+                      },
+                      defaultContent: {
+                        type: "array",
+                        minItems: 1,
+                        items: {
+                          $ref: "#/components/schemas/ContentNodeInput"
+                        }
+                      }
+                    },
+                    required: ["id", "kind", "label", "allowedBlocks", "defaultContent"]
+                  }
+                ]
+              }
+            }
+          },
+          required: ["formatVersion", "fields"],
+          description:
+            "The fields to apply instead of the draft's; inherited fields stay as they are"
+        },
+        flag: "definition",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "expectedHash",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Draft hash from schemas.get; the apply fails if the draft changed since"
+        },
+        flag: "expected-hash",
         kind: "string",
         nullable: false
       }
@@ -5841,6 +5912,140 @@ const commands: APICommand[] = [
             "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
         },
         flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "schemas.updateDraft",
+    group: "schemas",
+    command: "update-draft",
+    method: "post",
+    path: "/schemas/{schemaID}/draft",
+    summary: "Update a schema draft",
+    description:
+      "Replaces the fields of the local schema draft. People editing the draft see the change live. Fields keep their content in entries by ID, so reuse the IDs from schemas.get. Inherited fields stay as they are; don't include them. Entries don't change until schemas.apply.\n\nRequired API key permissions: collections. Write permissions also grant read access for the same resource.",
+    example: {
+      schemaID: "sch_example",
+      definition: {
+        formatVersion: 1,
+        fields: [
+          {
+            id: "summary",
+            kind: "property",
+            label: "Summary",
+            type: "text",
+            defaultValue: "",
+            options: []
+          }
+        ]
+      }
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "schemaID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
+          description: "ID of the local collection schema"
+        },
+        flag: "schema-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "definition",
+        location: "body",
+        required: true,
+        schema: {
+          type: "object",
+          properties: {
+            formatVersion: {
+              const: 1
+            },
+            fields: {
+              type: "array",
+              items: {
+                anyOf: [
+                  {
+                    $ref: "#/components/schemas/SchemaProperty"
+                  },
+                  {
+                    type: "object",
+                    properties: {
+                      id: {
+                        type: "string",
+                        minLength: 1
+                      },
+                      kind: {
+                        const: "fragment"
+                      },
+                      label: {
+                        type: "string",
+                        maxLength: 50
+                      },
+                      allowedBlocks: {
+                        type: "array",
+                        items: {
+                          $ref: "#/components/schemas/SchemaBlockType"
+                        }
+                      },
+                      defaultContent: {
+                        type: "array",
+                        minItems: 1,
+                        items: {
+                          $ref: "#/components/schemas/ContentNodeInput"
+                        }
+                      }
+                    },
+                    required: ["id", "kind", "label", "allowedBlocks", "defaultContent"]
+                  }
+                ]
+              }
+            }
+          },
+          required: ["formatVersion", "fields"],
+          description: "The draft's own fields"
+        },
+        flag: "definition",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "expectedHash",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Draft hash from schemas.get; the update fails if the draft changed since"
+        },
+        flag: "expected-hash",
         kind: "string",
         nullable: false
       }
@@ -9146,6 +9351,67 @@ const schemas: Record<string, JSONSchema> = {
       }
     },
     required: ["role", "content"]
+  },
+  SchemaProperty: {
+    type: "object",
+    properties: {
+      id: {
+        type: "string",
+        minLength: 1
+      },
+      kind: {
+        const: "property"
+      },
+      label: {
+        type: "string",
+        maxLength: 50
+      },
+      type: {
+        enum: ["text", "number", "checkbox", "date", "url", "select", "multi-select"],
+        type: "string"
+      },
+      defaultValue: {
+        $ref: "#/components/schemas/SchemaPropertyValue"
+      },
+      options: {
+        type: "array",
+        items: {
+          type: "string"
+        }
+      }
+    },
+    required: ["id", "kind", "label", "type", "defaultValue", "options"]
+  },
+  SchemaPropertyValue: {
+    anyOf: [
+      {
+        type: "boolean"
+      },
+      {
+        type: "string"
+      },
+      {
+        type: "array",
+        items: {
+          type: "string"
+        }
+      }
+    ]
+  },
+  SchemaBlockType: {
+    enum: [
+      "heading",
+      "blockquote",
+      "bulletList",
+      "orderedList",
+      "taskList",
+      "horizontalRule",
+      "codeBlock",
+      "table",
+      "element",
+      "image"
+    ],
+    type: "string"
   },
   PublishEntryTarget: {
     type: "object",
