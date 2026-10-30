@@ -392,7 +392,7 @@ const TableCellMenu = (props: TableCellMenuProps) => {
 
                   event.preventDefault();
                   event.stopPropagation();
-                  props.setAnchor({ x: rect.right, y: rect.bottom });
+                  props.setAnchor(props.anchor() ? null : { x: rect.right, y: rect.bottom });
                 }}
               />
             )}
