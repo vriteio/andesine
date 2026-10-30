@@ -214,11 +214,11 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
     <WorkspaceProvider>
       <PublishingProvider>
         <WorkspaceAnalytics />
-        {/* Fixed element to tint Safari's top UI to use bg-gray-50 color; above sheet backdrops,
-        so an open sheet doesn't change it */}
+        {/* Tint Safari's top and bottom bars; the bottom one stays below the toolbar's shadow */}
+        <div class="pointer-events-none fixed left-0 top-0 z-100 h-1.5 w-full bg-gray-50 md:hidden" />
         <div
-          data-safari-tint
-          class="pointer-events-none fixed left-0 top-0 z-100 h-3 w-full bg-gray-50 md:hidden"
+          data-safari-bottom-tint
+          class="pointer-events-none fixed bottom-0 left-0 z-10 h-1.5 w-full bg-gray-50 md:hidden"
         />
         <div class="flex h-full min-h-0 w-full">
           <aside class="hidden h-full shrink-0 py-3 md:flex">
@@ -270,18 +270,22 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
                 {props.children}
               </Suspense>
             </Card>
-            <nav
-              class="min-h-12 z-20 box-content grid shrink-0 grid-flow-col auto-cols-fr items-center border-t border-gray-200 bg-gray-100 pb-[env(safe-area-inset-bottom,0px)] md:hidden"
-              aria-label="Workspace navigation"
-            >
-              <Menu
-                activePanel={activePanel()}
-                openSearch={() => setSearchOpened(true)}
-                openPanel={openPanel}
-                bottomNavigation
-              />
-              <ProfileMenu class="h-full w-full p-0" compact />
-            </nav>
+            <div class="relative z-20 shrink-0 ml-[var(--mobile-floating-left)] mr-[var(--mobile-floating-right)] mb-[var(--mobile-floating-bottom)] md:hidden">
+              <div data-mobile-sheet-anchor="surface" class="absolute inset-0" />
+              <nav
+                data-mobile-sheet-anchor="content"
+                class="min-h-12 relative grid grid-flow-col auto-cols-fr items-center overflow-hidden rounded-2xl"
+                aria-label="Workspace navigation"
+              >
+                <Menu
+                  activePanel={activePanel()}
+                  openSearch={() => setSearchOpened(true)}
+                  openPanel={openPanel}
+                  bottomNavigation
+                />
+                <ProfileMenu class="h-full w-full p-0" compact />
+              </nav>
+            </div>
           </div>
           <WorkspaceRightSidePanel hidden={rightSidePanelHidden()} />
         </div>

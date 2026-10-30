@@ -290,7 +290,7 @@ const SettingsMenu: Component = () => {
     <div class="relative flex min-h-0 w-full md:flex-1">
       <div class="pointer-events-none absolute inset-y-0 left-0 right-3 overflow-hidden">
         <ScrollShadow
-          color="contrast"
+          color="panel"
           offset={{ top: "2.25rem" }}
           scrollableContainerRef={scrollableContainerRef}
         />

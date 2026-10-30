@@ -1,4 +1,4 @@
-import { type Accessor, createEffect, createSignal, type JSX } from "solid-js";
+import { type Accessor, createEffect, createMemo, createSignal, type JSX } from "solid-js";
 import { createRef } from "../../ref";
 
 interface MobileDropdownDragOptions {
@@ -10,13 +10,19 @@ interface MobileDropdownDragOptions {
 
 const DRAG_ACTIVATION_DISTANCE = 8;
 const SNAP_DISTANCE = 64;
-const MIN_SHEET_HEIGHT = 72;
+// Matches the mobile toolbar, which a sheet closes into
+const MIN_SHEET_HEIGHT_REM = 3;
+const SHEET_DURATION_PER_VIEWPORT = 250;
+const SHEET_BASE_DURATION = 150;
 const SCROLLABLE_OVERFLOW_VALUES = new Set(["auto", "scroll"]);
 
 const useMobileDropdownDrag = (options: MobileDropdownDragOptions) => {
   const [height, setHeight] = createSignal<number | null>(null);
   const [dragging, setDragging] = createSignal(false);
+  const [placing, setPlacing] = createSignal(false);
+  const [duration, setDuration] = createSignal(SHEET_BASE_DURATION + SHEET_DURATION_PER_VIEWPORT);
   const [dragOrigin, setDragOrigin] = createRef({ y: 0, height: 0 });
+  const [minHeight, setMinHeight] = createRef(0);
   const [gesturePending, setGesturePending] = createRef(false);
   const [scrollableElement, setScrollableElement] = createRef<HTMLElement | null>(null);
   const [clickSuppressed, setClickSuppressed] = createRef(false);
@@ -24,6 +30,13 @@ const useMobileDropdownDrag = (options: MobileDropdownDragOptions) => {
   const [heightCleanupPending, setHeightCleanupPending] = createRef(false);
   const [heightCleanupInterrupted, setHeightCleanupInterrupted] = createRef(false);
   const viewportHeight = () => window.visualViewport?.height || window.innerHeight;
+  const measureGesture = (sheetHeight: number) => {
+    const rootFontSize = parseFloat(window.getComputedStyle(document.documentElement).fontSize);
+    const viewportShare = Math.min(1, sheetHeight / viewportHeight());
+
+    setMinHeight(rootFontSize * MIN_SHEET_HEIGHT_REM);
+    setDuration(Math.round(SHEET_BASE_DURATION + SHEET_DURATION_PER_VIEWPORT * viewportShare));
+  };
   const dragDistance = (clientY: number) => dragOrigin().y - clientY;
   const cancelHeightCleanup = () => {
     setHeightCleanupPending(false);
@@ -43,6 +56,7 @@ const useMobileDropdownDrag = (options: MobileDropdownDragOptions) => {
     cancelHeightCleanup();
     setGesturePending(true);
     setDragOrigin({ y: clientY, height: sheet.getBoundingClientRect().height });
+    measureGesture(dragOrigin().height);
   };
   const updateGesture = (clientY: number, onActivate?: () => void) => {
     const distance = dragDistance(clientY);
@@ -59,9 +73,7 @@ const useMobileDropdownDrag = (options: MobileDropdownDragOptions) => {
       onActivate?.();
     }
 
-    setHeight(
-      Math.min(viewportHeight(), Math.max(MIN_SHEET_HEIGHT, dragOrigin().height + distance))
-    );
+    setHeight(Math.min(viewportHeight(), Math.max(minHeight(), dragOrigin().height + distance)));
 
     return true;
   };
@@ -144,6 +156,32 @@ const useMobileDropdownDrag = (options: MobileDropdownDragOptions) => {
     event.preventDefault();
     event.stopPropagation();
   };
+  // Opens like a drag released at the toolbar's height
+  const expandFromToolbar = (sheet: HTMLElement) => {
+    const restingHeight = sheet.getBoundingClientRect().height;
+
+    setDragOrigin({ y: 0, height: restingHeight });
+    measureGesture(restingHeight);
+    setPlacing(true);
+    setHeight(minHeight());
+    // Applies the start height, so the next change animates from it
+    void sheet.offsetHeight;
+    requestAnimationFrame(() => {
+      setPlacing(false);
+      setHeightCleanupPending(true);
+      setHeight(restingHeight);
+    });
+  };
+  const animated = () => !dragging() && !placing();
+  // From 0 at the resting height to 1 at the toolbar's
+  const closeProgress = createMemo(() => {
+    const currentHeight = height();
+    const restingHeight = dragOrigin().height;
+
+    if (currentHeight === null || currentHeight >= restingHeight) return 0;
+
+    return Math.min(1, (restingHeight - currentHeight) / (restingHeight - minHeight()));
+  });
   const onHeightTransitionEnd: JSX.EventHandler<HTMLElement, TransitionEvent> = (event) => {
     const isHeightTransition =
       event.target === event.currentTarget && event.propertyName === "height";
@@ -294,6 +332,10 @@ const useMobileDropdownDrag = (options: MobileDropdownDragOptions) => {
   return {
     height,
     dragging,
+    animated,
+    duration,
+    closeProgress,
+    expandFromToolbar,
     onHeightTransitionEnd,
     gestureProps,
     backdropGestureProps

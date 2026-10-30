@@ -16,6 +16,8 @@ html {
   html {
     // Upscale UI on mobile
     font-size: 18px;
+    // Safari paints this color outside the page, e.g. the foldable iPhone's side status bar
+    @apply bg-gray-50;
   }
 }
 
@@ -102,7 +104,15 @@ body {
   @apply hidden!;
 }
 
-// Safari top bar tint; matches an expanded mobile sheet
-body:has([data-dropdown-mobile-sheet][data-expanded]) [data-safari-tint] {
-  @apply bg-white;
+// Safari bottom bar tint; stays on top during the sheet morph
+[data-safari-bottom-tint] {
+  view-transition-name: safari-bottom-tint;
+}
+::view-transition-group(safari-bottom-tint) {
+  @apply z-3;
+  animation: none;
+}
+::view-transition-old(safari-bottom-tint),
+::view-transition-new(safari-bottom-tint) {
+  animation: none;
 }

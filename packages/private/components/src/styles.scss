@@ -34,6 +34,86 @@
   --color-tertiary: theme("colors.tertiary");
 }
 
+// Floating mobile toolbar and sheets
+:root {
+  --mobile-floating-left: calc(8px + env(safe-area-inset-left, 0px));
+  --mobile-floating-right: calc(8px + env(safe-area-inset-right, 0px));
+  --mobile-floating-bottom: calc(max(8px, env(safe-area-inset-bottom, 0px) - 12px) + 0.75dvh);
+  // Leaves room for the held sheet's vertical scale-up
+  --mobile-floating-top: calc(8px + 0.75dvh + env(safe-area-inset-top, 0px));
+  --mobile-sheet-easing: cubic-bezier(0.32, 0.72, 0, 1);
+  --mobile-sheet-duration: 400ms;
+}
+
+// Mobile sheet morph (view transition); a closing sheet turns into `data-mobile-sheet-anchor` elements
+@mixin mobile-sheet-surface {
+  border: 1px solid theme("colors.gray.200");
+  border-radius: 1rem;
+  background-color: theme("colors.white");
+  box-shadow: 0 1px 6px 0 rgb(17 24 39 / 0.08);
+}
+[data-mobile-sheet-surface],
+[data-mobile-sheet-anchor="surface"] {
+  @include mobile-sheet-surface;
+  view-transition-name: mobile-sheet-surface;
+}
+[data-mobile-sheet-content],
+[data-mobile-sheet-anchor="content"] {
+  view-transition-name: mobile-sheet-content;
+}
+[data-mobile-sheet-backdrop] {
+  view-transition-name: mobile-sheet-backdrop;
+}
+// Hidden under an open sheet, so page snapshots don't show a second box
+body:has([data-dropdown-mobile-sheet]) [data-mobile-sheet-anchor] {
+  view-transition-name: none;
+  visibility: hidden;
+}
+::view-transition-group(*),
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation-duration: var(--mobile-sheet-duration);
+  animation-timing-function: var(--mobile-sheet-easing);
+}
+// Page snapshots miss the backdrop's blur, so its group draws it
+::view-transition-group(mobile-sheet-backdrop) {
+  backdrop-filter: blur(4px);
+  animation-name: mobile-sheet-backdrop-out;
+}
+@keyframes mobile-sheet-backdrop-out {
+  from {
+    opacity: var(--mobile-sheet-backdrop-opacity, 1);
+  }
+  to {
+    opacity: 0;
+  }
+}
+// A styled box instead of snapshots, so the border and corners don't stretch
+::view-transition-group(mobile-sheet-surface) {
+  @include mobile-sheet-surface;
+  z-index: 1;
+  box-sizing: border-box;
+}
+::view-transition-old(mobile-sheet-surface),
+::view-transition-new(mobile-sheet-surface) {
+  display: none;
+}
+// The content moves with the surface, clipped to it
+::view-transition-group(mobile-sheet-content) {
+  z-index: 2;
+}
+::view-transition-image-pair(mobile-sheet-content) {
+  overflow: hidden;
+  border-radius: 0.75rem;
+}
+::view-transition-old(mobile-sheet-content) {
+  animation-duration: 100ms;
+}
+::view-transition-new(mobile-sheet-content) {
+  animation-delay: 60ms;
+  animation-duration: 180ms;
+}
+
 // Shared GitHub Light syntax colors
 :root {
   --syntax-tag: #116329;

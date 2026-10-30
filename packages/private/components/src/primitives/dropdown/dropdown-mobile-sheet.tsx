@@ -1,12 +1,12 @@
 import clsx from "clsx";
-import { type Component, createEffect, createSignal, type JSX, onCleanup, Show } from "solid-js";
+import { type Component, createEffect, createSignal, type JSX, Show, untrack } from "solid-js";
 import { Portal } from "solid-js/web";
 import { Menu } from "@ark-ui/solid/menu";
+import { createMediaQuery } from "@solid-primitives/media";
 import { Card } from "../card";
 import { createRef } from "../../ref";
 import { useMobileDropdownDrag } from "./use-dropdown-mobile-drag";
 import { useDropdownContext } from "./dropdown-context";
-import styles from "./styles.module.scss";
 
 interface DropdownMobileSheetProps {
   host: boolean;
@@ -18,10 +18,11 @@ interface DropdownMobileContentProps {
   opened: boolean;
 }
 
+const HANDLE_RELEASE_EVENTS = ["pointerup", "pointercancel", "touchend", "touchcancel"];
+
 const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
   const [backdropPressed, setBackdropPressed] = createRef(false);
-  const [sheet, setSheet] = createSignal<HTMLElement | null>(null);
-  const [filled, setFilled] = createSignal(false);
+  const [handleHeld, setHandleHeld] = createSignal(false);
   const {
     activeMobileDropdown,
     closeMobileDropdowns,
@@ -32,6 +33,7 @@ const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
     setMobileDropdownContentContainer,
     setMobileDropdownExpanded
   } = useDropdownContext();
+  const reducedMotion = createMediaQuery("(prefers-reduced-motion: reduce)");
   const opened = () => mobileDropdownStack().length > 0;
   const activeEntry = activeMobileDropdown;
   const previousTitle = () => {
@@ -46,32 +48,56 @@ const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
   };
   const cardProps = () => activeEntry()?.getCardProps();
   const dragFromContent = () => activeEntry()?.getDragFromContent() !== false;
+  const releaseHandle = () => {
+    setHandleHeld(false);
+    HANDLE_RELEASE_EVENTS.forEach((type) => window.removeEventListener(type, releaseHandle, true));
+  };
+  const holdHandle = () => {
+    setHandleHeld(true);
+    HANDLE_RELEASE_EVENTS.forEach((type) => window.addEventListener(type, releaseHandle, true));
+  };
+  // Runs before the first paint, so the sheet is first seen at the toolbar's height
+  const expandOnFirstLayout = (element: HTMLElement) => {
+    const observer = new ResizeObserver(() => {
+      observer.disconnect();
+      drag.expandFromToolbar(element);
+    });
+
+    if (!reducedMotion()) observer.observe(element);
+  };
+  const progressTransition = () => {
+    return drag.animated() ? `${drag.duration()}ms var(--mobile-sheet-easing)` : "0s";
+  };
+  const fadeStyle = () => {
+    return { opacity: 1 - drag.closeProgress(), transition: `opacity ${progressTransition()}` };
+  };
   const drag = useMobileDropdownDrag({
     expanded: mobileDropdownExpanded,
     opened,
     close: closeMobileDropdowns,
     setExpanded: setMobileDropdownExpanded
   });
-  // Long content can also make the sheet reach its max height without expanding it
-  const reachesTop = () => mobileDropdownExpanded() || filled();
-  // The top bar tint switches back as soon as the sheet leaves the top
-  const fullHeight = () => {
-    return reachesTop() && !drag.dragging() && !activeEntry()?.getClosing();
-  };
 
+  // Morphs the closing sheet into the `data-mobile-sheet-anchor` elements, e.g. a toolbar
   createEffect(() => {
-    const element = sheet();
+    const root = document.documentElement;
+    const closing = props.host && opened() && activeEntry()?.getClosing();
+    const morphAvailable = "startViewTransition" in document && !reducedMotion();
 
-    if (!element) return;
+    if (!closing) return;
 
-    const observer = new ResizeObserver(() => {
-      const maxHeight = parseFloat(window.getComputedStyle(element).maxHeight);
+    if (!morphAvailable) {
+      finishClosingMobileDropdowns();
 
-      setFilled(element.offsetHeight >= maxHeight - 1);
+      return;
+    }
+
+    root.style.setProperty("--mobile-sheet-backdrop-opacity", `${1 - untrack(drag.closeProgress)}`);
+    root.style.setProperty("--mobile-sheet-duration", `${untrack(drag.duration)}ms`);
+    void document.startViewTransition(finishClosingMobileDropdowns).finished.finally(() => {
+      root.style.removeProperty("--mobile-sheet-backdrop-opacity");
+      root.style.removeProperty("--mobile-sheet-duration");
     });
-
-    observer.observe(element);
-    onCleanup(() => observer.disconnect());
   });
 
   return (
@@ -80,12 +106,9 @@ const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
         <Menu.Positioner class="!fixed !inset-0 !z-50 !w-auto !min-w-0 !max-w-none !transform-none flex select-none items-end pointer-events-none">
           <div
             {...drag.backdropGestureProps}
-            class={clsx(
-              styles.backdrop,
-              "absolute inset-0 touch-none pointer-events-auto backdrop-blur-sm",
-              "bg-gradient-to-b from-transparent via-black via-opacity-10 to-black to-opacity-20",
-              activeEntry()?.getClosing() && styles.closing
-            )}
+            data-mobile-sheet-backdrop
+            class="absolute inset-0 touch-none pointer-events-auto backdrop-blur-sm"
+            style={fadeStyle()}
             onPointerDown={(event) => {
               setBackdropPressed(event.isPrimary && event.button === 0);
               drag.backdropGestureProps.onPointerDown(event);
@@ -104,50 +127,54 @@ const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
               if (shouldClose) closeMobileDropdowns();
             }}
           >
-            {/* Fades the blurred page into Safari's solid top bar, below the layout's 12px tint */}
-            <div class="pointer-events-none absolute inset-x-0 top-3 h-6 bg-gradient-to-b from-gray-50 to-transparent md:hidden" />
+            {/* Blends the blurred page into Safari's solid top bar */}
+            <div class="pointer-events-none absolute inset-x-0 top-1.5 h-6 bg-gradient-to-b from-gray-50 to-transparent md:hidden" />
           </div>
+          {/* Safari's bottom bar takes its color from here, not from the sheet */}
+          <div class="pointer-events-none absolute inset-x-0 bottom-0 h-1.5 bg-gray-50 md:hidden" />
           <Card
             {...(cardProps() || {})}
             data-dropdown-mobile-sheet
-            ref={setSheet}
-            data-expanded={fullHeight() || undefined}
-            shade
+            ref={expandOnFirstLayout}
             style={{
               ...(cardProps()?.style || {}),
               "height": drag.height() ? `${drag.height()}px` : "auto",
-              "max-height": "calc(100dvh - env(safe-area-inset-top, 0px))",
-              "transform-origin": "bottom center",
-              "transition": drag.dragging()
-                ? "none"
-                : "height 200ms ease, transform 200ms ease, opacity 200ms ease"
+              "min-height": drag.height() === null ? cardProps()?.style?.["min-height"] : "0px",
+              "max-height":
+                "calc(100dvh - var(--mobile-floating-top) - var(--mobile-floating-bottom))",
+              "transition": `height ${progressTransition()}`
             }}
             onTransitionEnd={drag.onHeightTransitionEnd}
-            onAnimationEnd={(event) => {
-              const sheetAnimationEnded = event.currentTarget === event.target;
-
-              if (sheetAnimationEnded && activeEntry()?.getClosing()) {
-                finishClosingMobileDropdowns();
-              }
-            }}
             class={clsx(
-              styles.sheet,
-              ":base-2: fixed bottom-0 left-0 z-50 flex !w-full min-w-0 max-w-full transform flex-col overflow-hidden select-none rounded-b-none !border-0 p-1 pb-[calc(0.25rem+env(safe-area-inset-bottom,0px))] pointer-events-auto shadow-gray-900/8 shadow-xl bg-white",
-              filled() ? ":base-2: rounded-t-none" : ":base-2: rounded-t-2xl",
-              activeEntry()?.getClosing() && styles.closing,
+              ":base-2: fixed left-[var(--mobile-floating-left)] right-[var(--mobile-floating-right)] bottom-[var(--mobile-floating-bottom)] z-50 flex !w-auto min-w-0 max-w-none flex-col select-none rounded-2xl !border-0 p-1 pointer-events-auto bg-transparent [&_*]:overscroll-none",
               cardProps()?.class
             )}
           >
             <div
+              data-mobile-sheet-surface
+              class={clsx(
+                "absolute inset-0 origin-bottom transition-transform duration-300 ease-[var(--mobile-sheet-easing)]",
+                (handleHeld() || drag.dragging()) && "scale-x-[1.015] scale-y-[1.0075]"
+              )}
+            />
+            <div
               {...(dragFromContent() ? drag.gestureProps : {})}
-              class="flex min-h-0 max-h-full w-full min-w-0 max-w-full flex-1 flex-col overflow-hidden"
+              data-mobile-sheet-content
+              class="relative flex min-h-0 max-h-full w-full min-w-0 max-w-full flex-1 flex-col overflow-hidden rounded-xl"
             >
               <div
                 {...(!dragFromContent() ? drag.gestureProps : {})}
                 aria-hidden="true"
+                on:pointerdown={holdHandle}
                 class="flex h-6 w-full shrink-0 touch-none cursor-ns-resize items-center justify-center outline-none"
               >
-                <span class="h-1.5 w-12 rounded-full bg-gray-200" />
+                <span
+                  class="h-1.5 w-12 rounded-full bg-gray-200"
+                  style={{
+                    transform: `translateY(${drag.closeProgress() * 0.5}rem)`,
+                    transition: `transform ${progressTransition()}`
+                  }}
+                />
               </div>
               <Show
                 when={
@@ -156,6 +183,7 @@ const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
               >
                 <button
                   type="button"
+                  style={fadeStyle()}
                   class="mb-0.5 flex min-h-7 w-full cursor-pointer items-center gap-1 rounded-md px-0.5 text-gray-700 outline-none @hover:bg-gray-100"
                   aria-label={navigationTitle() ? `Back to ${navigationTitle()}` : "Back"}
                   onClick={navigateMobileDropdownBack}
@@ -171,6 +199,7 @@ const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
               <div
                 class="min-h-0 w-full min-w-0 max-w-full flex-1 overflow-x-hidden overflow-y-auto scrollbar-sm flex flex-col [&>div]:contents"
                 data-dropdown-mobile-scroll
+                style={fadeStyle()}
                 ref={setMobileDropdownContentContainer}
               />
             </div>

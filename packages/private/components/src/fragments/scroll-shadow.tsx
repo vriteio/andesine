@@ -14,7 +14,7 @@ interface ScrollShadowProps {
   controller?: ScrollShadowController;
   direction?: "horizontal" | "vertical";
   /** The background the shadow fades from, e.g. `white` in a white card. */
-  color?: "contrast" | "base" | "white";
+  color?: "contrast" | "base" | "white" | "panel";
   offset?: string | { top?: string; right?: string; bottom?: string; left?: string };
   show?: boolean | { top?: boolean; right?: boolean; bottom?: boolean; left?: boolean };
   onScrollEnd?(): void;
@@ -37,7 +37,9 @@ const createScrollShadowController = (): ScrollShadowController => {
 const shadowColors = {
   contrast: "from-gray-100 to-gray-100/0",
   base: "from-gray-50 to-gray-50/0",
-  white: "from-white to-white/0"
+  white: "from-white to-white/0",
+  // Side panels are in white mobile sheets below `md`
+  panel: "from-white to-white/0 md:from-gray-100 md:to-gray-100/0"
 };
 const ScrollShadow: Component<ScrollShadowProps> = (props) => {
   const controller = props.controller || createScrollShadowController();

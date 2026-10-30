@@ -180,7 +180,7 @@ const MobileSlashMenuTrigger: Component<{
                 trigger={() => (
                   <IconButton
                     aria-label="Add block"
-                    class={focused() ? undefined : "hidden"}
+                    class={focused() || opened() ? undefined : "hidden"}
                     data-menu
                     icon="i-lucide:plus"
                     label="Add block"
@@ -192,6 +192,8 @@ const MobileSlashMenuTrigger: Component<{
                       event.stopPropagation();
                       captureRange();
                       setOpened(true);
+                      // Closes the virtual keyboard, so the menu sheet has room
+                      props.editor.view.dom.blur();
                     }}
                   />
                 )}
