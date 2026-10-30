@@ -39,6 +39,7 @@ interface CreateEffectiveSchemaChangeInput {
 interface EffectiveSchemaChangePlan {
   affectedCollectionIDs: string[];
   migrationID: string | null;
+  moveSourceCollectionID?: string | null;
   totalEntries: number;
 }
 interface PlannedCollectionRevision {

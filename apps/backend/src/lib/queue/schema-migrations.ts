@@ -74,6 +74,9 @@ const submitSchemaMigration = async (input: SubmitSchemaMigrationInput): Promise
   const collectionIDs = input.affectedCollectionIDs.map((collectionID) => {
     return toCollectionID(toUUID(collectionID));
   });
+  const moveSourceCollectionID = input.moveSourceCollectionID
+    ? toCollectionID(toUUID(input.moveSourceCollectionID))
+    : null;
 
   // Other instances prepare their open documents on this event; see `collaboration/events.ts`.
   emitSchemaMigrationEvent(workspaceID, {
@@ -82,6 +85,7 @@ const submitSchemaMigration = async (input: SubmitSchemaMigrationInput): Promise
       id: migrationID,
       schemaID: null,
       collectionIDs,
+      moveSourceCollectionID,
       status: "queued",
       totalEntries: input.totalEntries,
       processedEntries: 0
@@ -146,6 +150,7 @@ const submitSchemaMigration = async (input: SubmitSchemaMigrationInput): Promise
         id: migrationID,
         schemaID: null,
         collectionIDs,
+        moveSourceCollectionID,
         status: "failed",
         totalEntries: input.totalEntries,
         processedEntries: 0

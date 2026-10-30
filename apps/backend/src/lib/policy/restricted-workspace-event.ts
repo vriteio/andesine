@@ -183,7 +183,15 @@ const filterRestrictedWorkspaceEvent = async (
       return authorization.canAccessCollection(collectionID);
     });
 
-    return collectionIDs.length > 0 ? { ...event, data: { ...event.data, collectionIDs } } : null;
+    const moveSourceCollectionID =
+      event.data.moveSourceCollectionID &&
+      authorization.canAccessCollection(event.data.moveSourceCollectionID)
+        ? event.data.moveSourceCollectionID
+        : null;
+
+    return collectionIDs.length > 0
+      ? { ...event, data: { ...event.data, collectionIDs, moveSourceCollectionID } }
+      : null;
   }
 
   if (event.action === "publishing:collection-update") {

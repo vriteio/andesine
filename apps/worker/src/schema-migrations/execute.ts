@@ -38,6 +38,7 @@ interface SchemaMigrationDependencies {
 }
 interface MigrationStatusEventInput {
   collectionIDs: string[];
+  moveSourceCollectionID: string | null;
   migrationID: string;
   schemaID: string | null;
   processedEntries: number;
@@ -78,6 +79,13 @@ const publishSchemaDeletion = async (
     console.error("Failed to publish schema deletion", { error, migrationID: migration.id });
   }
 };
+const getMoveSourceCollectionID = (
+  migration: typeof schemaMigrations.$inferSelect
+): string | null => {
+  return (
+    migration.entryMove?.sourceCollectionID ?? migration.collectionMove?.sourceParentID ?? null
+  );
+};
 const publishMigrationStatus = async (
   input: MigrationStatusEventInput,
   publish: SchemaMigrationDependencies["publish"]
@@ -91,6 +99,9 @@ const publishMigrationStatus = async (
           id: toSchemaMigrationID(input.migrationID),
           schemaID: input.schemaID ? toSchemaID(input.schemaID) : null,
           collectionIDs: input.collectionIDs.map(toCollectionID),
+          moveSourceCollectionID: input.moveSourceCollectionID
+            ? toCollectionID(input.moveSourceCollectionID)
+            : null,
           status: input.status,
           totalEntries: input.totalEntries,
           processedEntries: input.processedEntries
@@ -152,6 +163,7 @@ const getChangedCompletedEntryIDs = async (migrationID: string): Promise<string[
 const failMigration = async (
   input: {
     collectionIDs: string[];
+    moveSourceCollectionID: string | null;
     entryID: string | null;
     error: unknown;
     migrationID: string;
@@ -189,6 +201,7 @@ const failMigration = async (
   await publishMigrationStatus(
     {
       collectionIDs: input.collectionIDs,
+      moveSourceCollectionID: input.moveSourceCollectionID,
       migrationID: input.migrationID,
       schemaID: input.schemaID,
       processedEntries: input.processedEntries,
@@ -308,6 +321,7 @@ const failMigration = async (
   await publishMigrationStatus(
     {
       collectionIDs: input.collectionIDs,
+      moveSourceCollectionID: input.moveSourceCollectionID,
       migrationID: input.migrationID,
       schemaID: input.schemaID,
       processedEntries: input.processedEntries,
@@ -361,6 +375,7 @@ const reconcileFailedSchemaMigrationJob = async (
   const rolledBackEntryIDs = await failMigration(
     {
       collectionIDs: collectionRows.map(({ collectionID }) => collectionID),
+      moveSourceCollectionID: getMoveSourceCollectionID(migration),
       entryID: null,
       error: input.error,
       migrationID,
@@ -411,6 +426,7 @@ const executeSchemaMigration = async (
     const rolledBackEntryIDs = await failMigration(
       {
         collectionIDs,
+        moveSourceCollectionID: getMoveSourceCollectionID(migration),
         entryID: null,
         error: new Error(migration.error || "Schema migration rollback was interrupted"),
         migrationID,
@@ -449,6 +465,7 @@ const executeSchemaMigration = async (
   await publishMigrationStatus(
     {
       collectionIDs,
+      moveSourceCollectionID: getMoveSourceCollectionID(migration),
       migrationID,
       schemaID: migration.schemaID,
       processedEntries: migration.processedEntries,
@@ -494,6 +511,7 @@ const executeSchemaMigration = async (
         await publishMigrationStatus(
           {
             collectionIDs,
+            moveSourceCollectionID: getMoveSourceCollectionID(migration),
             migrationID,
             schemaID: migration.schemaID,
             processedEntries,
@@ -515,6 +533,7 @@ const executeSchemaMigration = async (
     await publishMigrationStatus(
       {
         collectionIDs,
+        moveSourceCollectionID: getMoveSourceCollectionID(migration),
         migrationID,
         schemaID: migration.schemaID,
         processedEntries: migration.totalEntries,
@@ -530,6 +549,7 @@ const executeSchemaMigration = async (
     const rolledBackEntryIDs = await failMigration(
       {
         collectionIDs,
+        moveSourceCollectionID: getMoveSourceCollectionID(migration),
         entryID: currentEntryID,
         error,
         migrationID,

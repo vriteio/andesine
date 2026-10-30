@@ -322,8 +322,11 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, userID: Accessor<str
       });
   };
   const getSchemaMigration = (collectionID: string): SchemaMigrationProgress | null => {
-    const migrations = [...schemaMigrations().values()].filter(({ collectionIDs }) => {
-      return collectionIDs.includes(collectionID);
+    const migrations = [...schemaMigrations().values()].filter((migration) => {
+      return (
+        migration.collectionIDs.includes(collectionID) &&
+        migration.moveSourceCollectionID !== collectionID
+      );
     });
 
     return migrations.find(isSchemaMigrationActive) || migrations[migrations.length - 1] || null;

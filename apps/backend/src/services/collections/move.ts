@@ -329,6 +329,7 @@ const planCollectionMove = withAuthorization<
       schemaMigration.affectedCollectionIDs = [
         ...new Set([...schemaMigration.affectedCollectionIDs, collection.parentID])
       ];
+      schemaMigration.moveSourceCollectionID = collection.parentID;
     }
 
     await webhooks.record();

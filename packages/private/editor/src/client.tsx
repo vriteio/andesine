@@ -90,6 +90,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
   const [menuContainerRef, setMenuContainerRef] = createRef<HTMLElement | null>(null);
   const [editorContentElement, setEditorContentElement] = createSignal<HTMLElement | null>(null);
   const owner = getOwner();
+  const instances = new Set<Editor>();
   const collaborative = () => props.content === undefined;
   const provider = useEditorProvider({
     url: () => props.url,
@@ -110,6 +111,9 @@ const ClientEditor: Component<EditorProps> = (props) => {
     const currentProvider = provider();
     const content = props.content;
     const editorMode = props.mode || "entry";
+
+    // The element only ever holds the current instance, however often this runs before the effects.
+    contentElement?.replaceChildren();
 
     if (!contentElement || (collaborative() && !currentProvider)) {
       return null;
@@ -272,30 +276,36 @@ const ClientEditor: Component<EditorProps> = (props) => {
           ).toJSON()
         : content;
 
-    return new Editor({
-      content: initialContent,
-      element: contentElement,
-      editable: untrack(() => props.editable ?? true),
-      extensions,
-      editorProps: {
-        attributes: {
-          "class": `outline-none min-h-full`,
-          "data-editor-mode": editorMode
+    // Mounting renders node views, whose reads must not become dependencies of this memo.
+    return untrack(() => {
+      const instance = new Editor({
+        content: initialContent,
+        element: contentElement,
+        editable: props.editable ?? true,
+        extensions,
+        editorProps: {
+          attributes: {
+            "class": `outline-none min-h-full`,
+            "data-editor-mode": editorMode
+          }
+        },
+        onUpdate: ({ editor }) => {
+          // Keep title data out of the dependencies of whatever dispatches, e.g. an effect.
+          untrack(() => {
+            const titleNode = editor.state.doc.firstChild;
+
+            if (titleNode?.type.name !== "title") return;
+
+            const title = normalizeEntryTitle(titleNode.textContent);
+
+            if (!props.validateTitle?.(title)) props.onTitleChange?.(title);
+          });
         }
-      },
-      onUpdate: ({ editor }) => {
-        // Collaboration can emit updates during editor creation. Keep title data out of
-        // the editor memo's dependencies so typing does not recreate the editor.
-        untrack(() => {
-          const titleNode = editor.state.doc.firstChild;
+      });
 
-          if (titleNode?.type.name !== "title") return;
+      instances.add(instance);
 
-          const title = normalizeEntryTitle(titleNode.textContent);
-
-          if (!props.validateTitle?.(title)) props.onTitleChange?.(title);
-        });
-      }
+      return instance;
     });
   });
 
@@ -317,15 +327,16 @@ const ClientEditor: Component<EditorProps> = (props) => {
     });
   });
 
-  createEffect((previousEditor: Editor | null) => {
+  createEffect(() => {
     const currentEditor = editor();
 
-    if (previousEditor && previousEditor !== currentEditor) {
-      previousEditor.destroy();
-    }
+    for (const instance of instances) {
+      if (instance === currentEditor) continue;
 
-    return currentEditor;
-  }, null);
+      instance.destroy();
+      instances.delete(instance);
+    }
+  });
 
   createEffect(() => {
     const currentEditor = editor();
@@ -374,7 +385,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
   const editableEditor = () => (props.editable === false ? null : editor());
 
   onCleanup(() => {
-    editor()?.destroy();
+    instances.forEach((instance) => instance.destroy());
   });
 
   createEffect(() => {

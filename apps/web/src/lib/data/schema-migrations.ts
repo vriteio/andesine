@@ -1,6 +1,7 @@
 interface SchemaMigrationProgress {
   collectionIDs: string[];
   id: string;
+  moveSourceCollectionID: string | null;
   processedEntries: number;
   status: SchemaMigrationStatus;
   totalEntries: number;

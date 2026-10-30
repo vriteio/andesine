@@ -19,6 +19,7 @@ const explorerTreeType = z.object({
     z.object({
       id: id(),
       collectionIDs: z.array(id()),
+      moveSourceCollectionID: id().nullable(),
       processedEntries: z.number().int().nonnegative(),
       status: z.enum(["queued", "running", "rolling_back"]),
       totalEntries: z.number().int().nonnegative()

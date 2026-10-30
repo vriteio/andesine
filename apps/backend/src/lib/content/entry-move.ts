@@ -345,6 +345,7 @@ const planEntryMove = withAuthorization<MoveEntryInput, ResolvedMoveEntry, MoveE
         schemaMigration = {
           affectedCollectionIDs: revisionCollectionIDs,
           migrationID: migration.id,
+          moveSourceCollectionID: sourceCollectionID,
           totalEntries: 1
         };
       }

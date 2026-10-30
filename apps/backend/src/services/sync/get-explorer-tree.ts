@@ -38,6 +38,7 @@ interface ExplorerTree {
   activeSchemaMigrations: Array<{
     id: string;
     collectionIDs: string[];
+    moveSourceCollectionID: string | null;
     processedEntries: number;
     status: "queued" | "running" | "rolling_back";
     totalEntries: number;
@@ -83,6 +84,8 @@ const getExplorerTree = withAuthorization<GetExplorerTreeInput, undefined, Explo
         .select({
           id: schemaMigrations.id,
           collectionID: schemaMigrationCollections.collectionID,
+          collectionMove: schemaMigrations.collectionMove,
+          entryMove: schemaMigrations.entryMove,
           processedEntries: schemaMigrations.processedEntries,
           status: schemaMigrations.status,
           totalEntries: schemaMigrations.totalEntries
@@ -117,6 +120,7 @@ const getExplorerTree = withAuthorization<GetExplorerTreeInput, undefined, Explo
       string,
       {
         collectionIDs: string[];
+        moveSourceCollectionID: string | null;
         processedEntries: number;
         status: "queued" | "running" | "rolling_back";
         totalEntries: number;
@@ -135,9 +139,15 @@ const getExplorerTree = withAuthorization<GetExplorerTreeInput, undefined, Explo
       if (!authorization.canAccessCollection(collectionID)) continue;
 
       const current = migrationsByID.get(migration.id);
+      const moveSourceCollectionID =
+        migration.entryMove?.sourceCollectionID ?? migration.collectionMove?.sourceParentID;
+      const canAccessMoveSource =
+        moveSourceCollectionID &&
+        authorization.canAccessCollection(toCollectionID(moveSourceCollectionID));
 
       migrationsByID.set(migration.id, {
         collectionIDs: [...(current?.collectionIDs || []), collectionID],
+        moveSourceCollectionID: canAccessMoveSource ? toCollectionID(moveSourceCollectionID) : null,
         processedEntries: migration.processedEntries,
         status: migration.status as "queued" | "running" | "rolling_back",
         totalEntries: migration.totalEntries

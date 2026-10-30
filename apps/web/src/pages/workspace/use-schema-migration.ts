@@ -30,6 +30,7 @@ const useSchemaMigration = (options: UseSchemaMigrationOptions = {}) => {
     setMigration({
       collectionIDs: migration()?.collectionIDs || [],
       id: details.id,
+      moveSourceCollectionID: migration()?.moveSourceCollectionID ?? null,
       processedEntries: details.processedEntries,
       status: details.status,
       totalEntries: details.totalEntries
@@ -52,6 +53,7 @@ const useSchemaMigration = (options: UseSchemaMigrationOptions = {}) => {
     setMigration({
       collectionIDs: [],
       id: input.migrationID,
+      moveSourceCollectionID: null,
       processedEntries: 0,
       status: "queued",
       totalEntries: input.totalEntries

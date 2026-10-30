@@ -151,8 +151,8 @@ const hasMeaningfulContent = (nodes: ContentNode[]): boolean => {
   return nodes.some((node) => {
     if (node.type === "element") return true;
     if (node.type === "text") return Boolean(node.text);
-    if (node.type === "image") return Boolean(node.attrs?.assetID);
-    if (node.type === "horizontalRule" || node.type === "hardBreak") return true;
+    if (node.type === "image" || node.type === "horizontalRule") return true;
+    if (node.type === "hardBreak") return true;
     if (node.type === "taskItem" && node.attrs?.checked === true) return true;
 
     return hasMeaningfulContent(node.content || []);
