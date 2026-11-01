@@ -28,12 +28,13 @@ const createTableViewport = (editor: Editor, view: TableView, onLayout: () => vo
     const inset = rect.left - containerRect.left - container.clientLeft;
     const width = container.clientWidth;
     const contentWidth = dom.clientWidth;
-    const height = viewport.clientHeight - parseFloat(getComputedStyle(viewport).paddingBottom);
+    const height = view.dom.offsetHeight;
     const scrollStart = Math.max(0, 24 - inset);
     const atStart = viewport.scrollLeft <= Number(viewport.dataset.tableScrollStart || 0) + 1;
 
     viewport.style.width = `${width}px`;
     viewport.style.marginLeft = `${-inset}px`;
+    viewport.style.setProperty("--table-content-height", `${height}px`);
     shadows.style.left = `${-inset}px`;
     shadows.style.width = `${width}px`;
     shadows.style.height = `${height}px`;

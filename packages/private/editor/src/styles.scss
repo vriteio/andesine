@@ -111,8 +111,7 @@ header[data-type="title"] {
 }
 
 [data-table-scroll-container] {
-  @apply relative overflow-x-auto overflow-y-hidden;
-  overscroll-behavior-x: none;
+  @apply relative overflow-x-auto overflow-y-hidden overscroll-x-none;
 }
 
 :is(.block-selection-shade, .collaboration-block-selection-shade)[data-table-selection-shade] {
@@ -855,12 +854,25 @@ header:only-of-type.is-empty:first-child::before,
   @apply font-mono;
 }
 .prose-editor .code-block-node .cm-selectionBackground,
-.prose-editor .code-block-selection {
+.prose-editor .code-mixed-selection {
   @apply bg-tertiary/10!;
 }
+// A selection that continues outside a code block is painted from the editor state: natively, it'd
+// cover all the block with its line numbers, and Safari clamps it, moving its caret elsewhere.
+.prose-editor .code-block-node ::selection,
+.ProseMirror[data-code-mixed-selection] ::selection {
+  @apply bg-transparent!;
+}
+.ProseMirror[data-code-mixed-selection] {
+  @apply caret-transparent;
+
+  .cm-cursorLayer,
+  .cm-selectionLayer {
+    @apply hidden;
+  }
+}
 .prose-editor .code-block-node .cm-scroller {
-  @apply scrollbar-sm pr-6;
-  overscroll-behavior-x: none;
+  @apply scrollbar-sm pr-6 overscroll-x-none;
 }
 .prose-editor .code-block-node .cm-content {
   flex-grow: 0;
@@ -942,11 +954,23 @@ header:only-of-type.is-empty:first-child::before,
 
 /* Horizontal scrollbars */
 // Chromium doesn't repaint scrollbar pseudo-elements on hover, so toggle the scrollbar itself
-// The padding holds its height, so the content doesn't move
+// Safari doesn't add a scrollbar's height to the layout, so the scroller's height is fixed instead
 @media (hover: hover) and (pointer: fine) {
-  [data-table-scroll-container][data-overflowing]:not(:hover, :has(:focus-visible)),
-  .prose-editor .code-block-node .cm-scroller[data-overflowing]:not(:hover, :has(:focus-visible)) {
-    @apply overflow-x-hidden pb-3;
+  [data-table-scroll-container][data-overflowing] {
+    height: calc(var(--table-content-height) + 0.75rem);
+
+    &:not(:hover, :has(:focus-visible)) {
+      @apply overflow-x-hidden;
+    }
+  }
+
+  .prose-editor .code-block-node .cm-scroller[data-overflowing] {
+    @apply overflow-y-hidden;
+    height: calc(var(--code-content-height) + 0.75rem);
+
+    &:not(:hover, :has(:focus-visible)) {
+      @apply overflow-x-hidden;
+    }
   }
 }
 

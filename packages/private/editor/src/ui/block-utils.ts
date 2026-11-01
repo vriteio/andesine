@@ -40,6 +40,17 @@ const rangeContainsInheritedField = (doc: ProseMirrorNode, from: number, to: num
 
   return inherited;
 };
+const rangeContainsCode = (doc: ProseMirrorNode, from: number, to: number): boolean => {
+  let found = false;
+
+  doc.nodesBetween(from, to, (node) => {
+    found ||= node.type.name === "codeBlock";
+
+    return !found && !node.inlineContent;
+  });
+
+  return found;
+};
 const selectionCoversNode = (
   node: ProseMirrorNode,
   pos: number,
@@ -89,6 +100,7 @@ export {
   forEachSelectedBlock,
   isEditorBlock,
   isPositionInInheritedField,
+  rangeContainsCode,
   rangeContainsInheritedField,
   selectionCoversNode
 };

@@ -1,7 +1,8 @@
-import { codeViews, type CodeBlockBridge } from "./navigation";
+import { codeViews, crossingDrags, type CodeBlockBridge } from "./navigation";
 import { leaveCodeBlock } from "#editor/extensions/nodes/code-block";
 import {
   Compartment,
+  EditorSelection,
   EditorState,
   StateEffect,
   StateField,
@@ -16,7 +17,9 @@ import {
   EditorView,
   keymap,
   drawSelection,
+  layer,
   lineNumbers,
+  RectangleMarker,
   type DecorationSet,
   type ViewUpdate
 } from "@codemirror/view";
@@ -36,6 +39,10 @@ import { createCodeBlockViewport } from "./viewport";
 import { codeBlockFoldGutter, codeBlockIndentGuides } from "./guides";
 import { formatCodeBlock, getCodeFormatParser } from "../../../lib/code-format";
 
+interface MixedRange {
+  from: number;
+  to: number;
+}
 interface CodeBlockViewOptions {
   awareness: HocuspocusProvider["awareness"];
   editable(): boolean;
@@ -51,6 +58,38 @@ const shades = StateField.define<DecorationSet>({
     return effect ? effect.value : value.map(transaction.changes);
   },
   provide: (field) => EditorView.decorations.from(field)
+});
+const setMixedRange = StateEffect.define<MixedRange | null>();
+const mixedRange = StateField.define<MixedRange | null>({
+  create: () => null,
+  update(value, transaction) {
+    const effect = transaction.effects.find((effect) => effect.is(setMixedRange));
+
+    return effect ? effect.value : value;
+  }
+});
+// Draws a selection that continues outside the block: changing this view's selection would also
+// move the browser's selection into it, away from the rest.
+const mixedRangeLayer = layer({
+  above: false,
+  update: (update) => {
+    return (
+      update.docChanged ||
+      update.viewportChanged ||
+      update.startState.field(mixedRange) !== update.state.field(mixedRange)
+    );
+  },
+  markers: (view) => {
+    const range = view.state.field(mixedRange);
+
+    if (!range) return [];
+
+    return RectangleMarker.forRange(
+      view,
+      "cm-selectionBackground",
+      EditorSelection.range(range.from, range.to)
+    );
+  }
 });
 const createCodeBlockViewRenderer =
   (options: CodeBlockViewOptions): NodeViewRenderer =>
@@ -82,6 +121,13 @@ const createCodeBlockViewRenderer =
         typeof pos === "number" &&
         !isPositionInInheritedField(editor.state.doc, pos)
       );
+    };
+    // The DOM range of a selection that leaves the block covers all of it, so ProseMirror copies it.
+    const selectionLeavesBlock = () => {
+      const pos = getPos();
+      const { from, to, empty } = editor.state.selection;
+
+      return typeof pos === "number" && !empty && (from <= pos || to >= pos + node.nodeSize);
     };
     const forwardUpdate = (update: ViewUpdate) => {
       if (
@@ -180,6 +226,8 @@ const createCodeBlockViewRenderer =
           bracketMatching(),
           closeBrackets(),
           drawSelection(),
+          mixedRange,
+          mixedRangeLayer,
           lineNumbers(),
           codeBlockFoldGutter,
           codeBlockIndentGuides,
@@ -191,6 +239,11 @@ const createCodeBlockViewRenderer =
             "spellcheck": "false"
           }),
           EditorView.updateListener.of(forwardUpdate),
+          EditorView.domEventHandlers({
+            copy: selectionLeavesBlock,
+            cut: selectionLeavesBlock,
+            keydown: selectionLeavesBlock
+          }),
           keymap.of([
             {
               key: "Mod-Shift-f",
@@ -286,7 +339,8 @@ const createCodeBlockViewRenderer =
             "&": { fontSize: "inherit", backgroundColor: "transparent", color: "#24292e" },
             "&.cm-focused": { outline: "none" },
             ".cm-scroller": { fontFamily: "inherit", overflowX: "auto" },
-            ".cm-content": { padding: "0", minHeight: "1.25rem", lineHeight: "1.25rem" },
+            // Room for the caret at the start of a line, which the gutter would cover.
+            ".cm-content": { padding: "0 0 0 2px", minHeight: "1.25rem", lineHeight: "1.25rem" },
             ".cm-line": { padding: "0" },
             ".cm-cursor": { borderLeftColor: "currentColor" }
           })
@@ -320,7 +374,11 @@ const createCodeBlockViewRenderer =
       const end = start + text.length;
       const inside =
         selection instanceof TextSelection && selection.from >= start && selection.to <= end;
-      const editable = canEdit();
+      const crossing = crossingDrags.has(editor);
+      const coversPart = !inside && selection.from < end && selection.to > start;
+      const continuesOutside = coversPart && selection instanceof TextSelection;
+      // Not editable meanwhile, or the browser's selection in it moves focus here and is clamped.
+      const editable = canEdit() && !crossing && !coversPart;
       const effects: StateEffect<unknown>[] = [];
       const decorations: Array<Range<Decoration>> = getCodePresence(
         editor,
@@ -350,19 +408,6 @@ const createCodeBlockViewRenderer =
           ])
         );
       }
-      if (
-        selection instanceof TextSelection &&
-        !inside &&
-        selection.from < end &&
-        selection.to > start
-      ) {
-        const from = Math.max(0, selection.from - start);
-        const to = Math.min(text.length, selection.to - start);
-
-        if (from < to) {
-          decorations.push(Decoration.mark({ class: "code-block-selection" }).range(from, to));
-        }
-      }
       for (const change of options.diff?.changes || []) {
         const from = Math.max(0, change.from - start);
         const to = Math.min(text.length, change.to - start);
@@ -376,14 +421,27 @@ const createCodeBlockViewRenderer =
       }
       const nextShades = Decoration.set(decorations, true);
       const main = code.state.selection.main;
+      const currentRange = code.state.field(mixedRange);
+      const nextRange = continuesOutside
+        ? {
+            from: Math.max(0, selection.from - start),
+            to: Math.min(text.length, selection.to - start)
+          }
+        : null;
       const nextSelection = inside
         ? { anchor: selection.anchor - start, head: selection.head - start }
-        : { anchor: Math.min(main.head, text.length), head: Math.min(main.head, text.length) };
+        : {
+            anchor: Math.min(continuesOutside ? main.anchor : main.head, text.length),
+            head: Math.min(main.head, text.length)
+          };
       const selectionChanged =
         main.anchor !== nextSelection.anchor || main.head !== nextSelection.head;
 
       if (changes || !RangeSet.eq([code.state.field(shades)], [nextShades])) {
         effects.push(setShades.of(nextShades));
+      }
+      if (currentRange?.from !== nextRange?.from || currentRange?.to !== nextRange?.to) {
+        effects.push(setMixedRange.of(nextRange));
       }
       updating = true;
       try {
@@ -393,13 +451,20 @@ const createCodeBlockViewRenderer =
             effects,
             selection: nextSelection
           });
-        if (inside && focusRequested) {
-          code.focus();
-          code.dispatch({
-            effects: EditorView.scrollIntoView(selection.head - start, { y: "nearest" })
-          });
+        // A crossing drag keeps the request for its end, as a block that's not editable can't focus.
+        if (!crossing) {
+          if (inside && focusRequested) {
+            code.focus();
+            code.dispatch({
+              effects: EditorView.scrollIntoView(selection.head - start, { y: "nearest" })
+            });
+          }
+
+          focusRequested = false;
+
+          // A selection elsewhere, e.g. a block selection from a right click, takes the keys along.
+          if (!inside && code.hasFocus) editor.view.focus();
         }
-        focusRequested = false;
       } finally {
         updating = false;
       }
@@ -459,7 +524,8 @@ const createCodeBlockViewRenderer =
         focusRequested = true;
         scheduleSync();
       },
-      stopEvent: () => true,
+      stopEvent: (event) =>
+        !((event.type === "copy" || event.type === "cut") && selectionLeavesBlock()),
       ignoreMutation: () => true,
       destroy() {
         destroyed = true;

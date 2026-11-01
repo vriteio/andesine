@@ -18,6 +18,7 @@ declare module "@tiptap/core" {
   }
 }
 
+const SCROLL_SHADOW_HEIGHT = 64;
 const mapNodeRange = NodeRangeSelection.prototype.map;
 const nodeRangePrototype: Pick<Selection, "map"> = NodeRangeSelection.prototype;
 
@@ -101,6 +102,26 @@ const setBlockSelectionAtCoords = (
 
   return true;
 };
+const centerSelectionEnd = ({ view, state }: Editor) => {
+  const container = view.dom.closest<HTMLElement>("[data-editor-scrollable-container]");
+
+  if (!container) return;
+
+  const { top, bottom } = container.getBoundingClientRect();
+  const end = view.coordsAtPos(state.selection.head, 1).top;
+  const isClearOfShadows = end > top + SCROLL_SHADOW_HEIGHT && end < bottom - SCROLL_SHADOW_HEIGHT;
+
+  if (!isClearOfShadows) container.scrollTop += end - (top + bottom) / 2;
+};
+const scrollAfter = (shortcut: KeyboardShortcutCommand): KeyboardShortcutCommand => {
+  return (props) => {
+    const handled = shortcut(props);
+
+    if (handled) centerSelectionEnd(props.editor);
+
+    return handled;
+  };
+};
 const BlockSelectionExtension = NodeRange.extend({
   name: "blockSelection",
   priority: 1000,
@@ -176,6 +197,8 @@ const BlockSelectionExtension = NodeRange.extend({
 
     return {
       ...parentShortcuts,
+      "Shift-ArrowUp": scrollAfter(parentShortcuts["Shift-ArrowUp"]),
+      "Shift-ArrowDown": scrollAfter(parentShortcuts["Shift-ArrowDown"]),
       "Mod-a": ({ editor }: Parameters<KeyboardShortcutCommand>[0]) => {
         const { state } = editor;
         const { selection, doc } = state;

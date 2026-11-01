@@ -65,3 +65,4 @@ const createVerticalAutoScroll = (
 };
 
 export { createVerticalAutoScroll };
+export type { ClientPosition };
