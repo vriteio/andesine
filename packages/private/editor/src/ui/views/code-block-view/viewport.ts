@@ -44,7 +44,7 @@ const createCodeBlockViewport = (editor: Editor, dom: HTMLElement, code: EditorV
     const leftSpace = `${Math.max(24, inset)}px`;
     // At the scroll's end, the content ends at the column's edge, by the block controls.
     const rightSpace = `${Math.max(24, Math.floor(container.clientWidth - inset - dom.clientWidth + padding))}px`;
-    const contentWidth = `${Math.max(0, dom.clientWidth - padding - (gutters?.clientWidth || 0))}px`;
+    const contentWidth = `${Math.max(0, dom.clientWidth - padding - Math.ceil(gutters?.getBoundingClientRect().width || 0))}px`;
     const changed =
       code.dom.style.width !== width ||
       code.dom.style.marginLeft !== margin ||

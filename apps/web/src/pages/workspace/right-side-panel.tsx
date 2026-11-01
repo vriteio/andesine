@@ -54,13 +54,9 @@ const VersionHistoryPanelFallback: Component = () => {
 /** Whether the route has no right panel: settings, or a collection's access page. */
 const useRightSidePanelHidden = () => {
   const location = useLocation();
-  const params = useParams<{ workspaceID?: string; slug?: string }>();
+  const params = useParams<{ workspaceID?: string }>();
 
-  return () => {
-    const isSettingsRoute = location.pathname.startsWith(`/${params.workspaceID || ""}/settings`);
-
-    return isSettingsRoute || Boolean(params.slug?.startsWith("coll_"));
-  };
+  return () => location.pathname.startsWith(`/${params.workspaceID || ""}/settings`);
 };
 /** Whether the panels may still change, e.g. while the publishing state and extensions load. */
 const useRightSidePanelLoading = () => {
@@ -94,7 +90,7 @@ const useRightSidePanelOptions = () => {
     const currentDeletedEntry = deletedEntry();
     const status = currentEntry ? content.getEntryPublishingStatus(currentEntry.id) : null;
     const publishedRoot = publishing.getPublishedEntryRoot(params.slug || "");
-    // Collection pages and collection-bound extension pages show their collection's publishing.
+    // Collection and schema pages and collection-bound extension pages show their collection's.
     const collectionID = currentEntry || currentDeletedEntry ? null : panelContext().collectionID;
     const publishingCollectionID = collectionID && content.getPublishingCollectionID(collectionID);
 
@@ -110,10 +106,9 @@ const useRightSidePanelOptions = () => {
     );
   });
   const publishingAvailabilityResolved = usePublishingResolved();
-  // Extensions get only context IDs: the panel's entry and collection, or the schema's collection.
+  // Extensions get only context IDs: the panel's entry and collection.
   const context = createMemo((): Record<string, string> => {
-    const { entryID, collectionID: panelCollectionID } = panelContext();
-    const collectionID = panelCollectionID || (entryID ? null : schema()?.collectionID);
+    const { entryID, collectionID } = panelContext();
     // The nearest collection with publishing on, e.g. a docs site's root for a nested entry.
     const publishingCollectionID = collectionID && content.getPublishingCollectionID(collectionID);
 
@@ -177,20 +172,6 @@ const useRightSidePanelOptions = () => {
       }
     },
     {
-      id: PUBLISHING_PANEL_ID,
-      label: "Publishing",
-      icon: "i-lucide:radio",
-      component: PublishingPanel,
-      fallback: PublishingPanelFallback,
-      available: () => {
-        return (
-          publishingAvailable() ||
-          (searchParams[RIGHT_SIDE_PANEL_PARAM] === PUBLISHING_PANEL_ID &&
-            !publishingAvailabilityResolved())
-        );
-      }
-    },
-    {
       id: "schema-versions",
       label: "Versions",
       icon: "i-lucide:history",
@@ -203,6 +184,20 @@ const useRightSidePanelOptions = () => {
           currentSchema &&
           currentWorkspace() &&
           content.canCollection(currentSchema.collectionID, "collection:read")
+        );
+      }
+    },
+    {
+      id: PUBLISHING_PANEL_ID,
+      label: "Publishing",
+      icon: "i-lucide:radio",
+      component: PublishingPanel,
+      fallback: PublishingPanelFallback,
+      available: () => {
+        return (
+          publishingAvailable() ||
+          (searchParams[RIGHT_SIDE_PANEL_PARAM] === PUBLISHING_PANEL_ID &&
+            !publishingAvailabilityResolved())
         );
       }
     }

@@ -23,6 +23,10 @@ const usePanelContext = () => {
     if (entry) return { entryID: entry.id, collectionID: entry.collectionID || undefined };
     if (params.slug?.startsWith("coll_")) return { collectionID: params.slug };
 
+    const schema = content.schemasCollection().findOne({ id: params.slug || "" });
+
+    if (schema) return { collectionID: schema.collectionID };
+
     return { collectionID: pageContext.collectionID };
   };
 };

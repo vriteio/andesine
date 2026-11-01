@@ -235,10 +235,14 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
             .chain()
             .focus()
             .deleteRange(range)
-            .insertContent({
-              type: "property",
-              attrs: { type: propertyType.type, value: propertyType.value }
-            })
+            .insertContent([
+              {
+                type: "property",
+                attrs: { type: propertyType.type, value: propertyType.value }
+              },
+              // The cursor stays in it, to add more properties.
+              { type: "paragraph" }
+            ])
             .run();
         }
       };
