@@ -1,12 +1,12 @@
 // Reusable checkbox control
 @mixin checkbox {
-  @apply h-5 w-5 shrink-0 cursor-pointer appearance-none rounded-md bg-transparent outline outline-2 -outline-offset-2 outline-gray-400 disabled:pointer-events-none disabled:opacity-70;
+  @apply h-5 w-5 shrink-0 cursor-pointer appearance-none rounded-md bg-transparent outline outline-2 -outline-offset-2 outline-gray-400 disabled:pointer-events-none disabled:opacity-70 disabled:shadow-none;
 
   &:checked {
     background-image:
       url("data:image/svg+xml,%3csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M20 6 9 17l-5-5'/%3e%3c/svg%3e"),
       linear-gradient(to top right, var(--un-gradient-stops));
-    @apply bg-center bg-no-repeat outline-transparent;
+    @apply bg-center bg-no-repeat outline-transparent shadow-md shadow-tertiary/25;
     background-size:
       1rem 1rem,
       100% 100%;

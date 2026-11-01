@@ -260,6 +260,7 @@ const SchemaVersionHistoryPanel: Component<SchemaVersionHistoryPanelProps> = (pr
         loading={historyResponse() === undefined}
         loadingMore={loadingMore()}
         nextCursor={nextCursor()}
+        ownerID={schemaID()}
         versions={versions()}
         onCompare={(version) => {
           refreshSchemaDraft();

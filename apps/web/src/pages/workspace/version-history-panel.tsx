@@ -259,6 +259,7 @@ const VersionHistoryPanel: Component<VersionHistoryPanelProps> = (props) => {
         loadingMore={loadingMore()}
         nextCursor={nextCursor()}
         options={options()}
+        ownerID={entryID()}
         versions={versions()}
         onAssign={(version, channel) => {
           const entryVersion = versions().find(({ id }) => id === version.id);

@@ -31,12 +31,15 @@ interface VersionHistoryItemProps {
   canManage: boolean;
   canManagePublishing?: boolean;
   contributorNames: string[];
+  expanded?: boolean;
   onAssign?(channel: string): void;
   onCompare?(): void;
   onOpen(): void;
   onRename(name: string): void;
   onRevert?(): void;
+  onToggleTimeframe?(): void;
   onUnpublish?(channel: string): void;
+  timeframe?: string;
   version: VersionHistoryVersion;
   fallbackLabel?: string;
 }
@@ -60,6 +63,24 @@ const VersionHistoryItem: Component<VersionHistoryItemProps> = (props) => {
   const publishedToCurrentChannel = () => {
     return assignedChannels().includes(publishing.channel());
   };
+  const timeframeToggleLabel = () => `${props.expanded ? "Hide" : "Show"} ${props.timeframe}`;
+  const versionIcon = () => (
+    <div
+      class={clsx(
+        "h-5 w-5",
+        props.version.reason === "auto" && "i-lucide:circle-dot-dashed",
+        props.version.reason === "manual" && "i-lucide:circle-dot",
+        props.version.reason === "revert" && "i-lucide:refresh-ccw-dot",
+        props.version.reason === "schema-migration" && "i-lucide:database-backup",
+        props.version.reason === "import" && "i-lucide:import",
+        props.active || (props.expanded && props.onToggleTimeframe)
+          ? "bg-gradient-to-tr from-secondary via-primary to-secondary"
+          : publishedToCurrentChannel()
+            ? "text-green-500"
+            : "text-gray-400 media-mouse:group-hover/version-icon:text-gray-600"
+      )}
+    />
+  );
   const startRenaming = () => {
     setMenuOpened(false);
     queueMicrotask(() => setRenaming(props.version.id));
@@ -98,6 +119,16 @@ const VersionHistoryItem: Component<VersionHistoryItemProps> = (props) => {
 
     const groups: Array<MenuItem[]> = [itemOptions];
 
+    if (props.onToggleTimeframe) {
+      groups.unshift([
+        {
+          label: timeframeToggleLabel(),
+          icon: props.expanded ? "i-lucide:chevrons-down-up" : "i-lucide:chevrons-up-down",
+          onClick: props.onToggleTimeframe
+        }
+      ]);
+    }
+
     if (props.canManagePublishing && props.onAssign && props.onUnpublish) {
       const channel = publishing.channel();
       const published = assignedChannels().includes(channel);
@@ -135,23 +166,35 @@ const VersionHistoryItem: Component<VersionHistoryItemProps> = (props) => {
         selectable
         highlighted={props.active}
         icon={
-          <div class="h-6 w-6 flex justify-center items-center">
-            <div
-              class={clsx(
-                "h-5 w-5",
-                props.version.reason === "auto" && "i-lucide:circle-dot-dashed",
-                props.version.reason === "manual" && "i-lucide:circle-dot",
-                props.version.reason === "revert" && "i-lucide:refresh-ccw-dot",
-                props.version.reason === "schema-migration" && "i-lucide:database-backup",
-                props.version.reason === "import" && "i-lucide:import",
-                props.active
-                  ? "bg-gradient-to-tr"
-                  : publishedToCurrentChannel()
-                    ? "text-green-500"
-                    : "text-gray-400"
-              )}
-            />
-          </div>
+          <Show
+            when={props.onToggleTimeframe}
+            fallback={<div class="h-6 w-6 flex justify-center items-center">{versionIcon()}</div>}
+          >
+            {(onToggle) => (
+              <button
+                type="button"
+                aria-label={timeframeToggleLabel()}
+                title={timeframeToggleLabel()}
+                class="group/version-icon absolute inset-y-0 left-0 flex w-7 items-start pl-0.5 pt-0.5"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onToggle()();
+                }}
+              >
+                <div class="relative h-6 w-6 flex justify-center items-center">
+                  {versionIcon()}
+                  <div class="absolute -bottom-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-[0.1875rem] bg-gray-200 media-mouse:group-hover:bg-gray-300">
+                    <div
+                      class={clsx(
+                        "h-2.5 w-2.5 text-gray-500",
+                        props.expanded ? "i-lucide:chevron-down" : "i-lucide:chevron-right"
+                      )}
+                    />
+                  </div>
+                </div>
+              </button>
+            )}
+          </Show>
         }
         iconClass="self-start mt-0.5"
         onClick={() => navigate(props.onOpen)}

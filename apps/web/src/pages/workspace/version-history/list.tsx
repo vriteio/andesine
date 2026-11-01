@@ -7,8 +7,9 @@ import {
   type MenuItem,
   ScrollShadow
 } from "@andesine/components";
-import { type Component, createMemo, For, Show } from "solid-js";
+import { type Component, createEffect, createMemo, createSignal, For, on, Show } from "solid-js";
 import { TREE_ROOT_ID, Tree, type TreeMap } from "#web/components/tree";
+import { groupVersions, type VersionHistoryGroup } from "./groups";
 import { VersionHistoryItem, type VersionHistoryVersion } from "./item";
 import { VERSION_ITEM_HEIGHT, VersionHistorySkeleton } from "./skeleton";
 import clsx from "clsx";
@@ -36,6 +37,7 @@ interface VersionHistoryListProps {
   onRevert?(version: VersionHistoryVersion): void;
   onUnpublish?(version: VersionHistoryVersion, channel: string): void;
   options?: MenuItem[];
+  ownerID: string;
   versions: VersionHistoryVersion[];
 }
 
@@ -63,15 +65,62 @@ const VersionHistoryList: Component<VersionHistoryListProps> = (props) => {
     );
   });
   const options = () => props.options || [];
+  const [expandedGroups, setExpandedGroups] = createSignal<ReadonlySet<string>>(new Set());
   const versionsByID = createMemo(() => {
     return new Map(props.versions.map((version) => [version.id, version]));
   });
+  const groups = createMemo(() => {
+    return groupVersions(props.versions, (version) => {
+      return Boolean(props.assignedChannels?.(version).length);
+    });
+  });
+  const groupsByVersionID = createMemo(() => {
+    const entries = groups().flatMap((group) => {
+      return group.versions.map((version) => [version.id, group] as const);
+    });
+
+    return new Map(entries);
+  });
+  const activeNestedGroup = createMemo(() => {
+    const group = groupsByVersionID().get(props.activeVersionID);
+
+    return group && group.versions[0].id !== props.activeVersionID ? group.key : null;
+  });
   const tree = createMemo<TreeMap>(() => ({
     [TREE_ROOT_ID]: {
-      items: props.versions.map((version) => version.id),
+      items: groups().flatMap((group) => {
+        const versions = expandedGroups().has(group.key)
+          ? group.versions
+          : group.versions.slice(0, 1);
+
+        return versions.map((version) => version.id);
+      }),
       levels: []
     }
   }));
+  const toggleGroup = (group: VersionHistoryGroup) => {
+    setExpandedGroups((expanded) => {
+      const next = new Set(expanded);
+
+      if (!next.delete(group.key)) next.add(group.key);
+
+      return next;
+    });
+  };
+
+  // A previewed version stays visible, e.g. when opened from a link.
+  createEffect(
+    on(
+      () => props.ownerID,
+      () => setExpandedGroups(new Set<string>()),
+      { defer: true }
+    )
+  );
+  createEffect(
+    on([() => props.ownerID, activeNestedGroup], ([, key]) => {
+      if (key) setExpandedGroups((expanded) => new Set(expanded).add(key));
+    })
+  );
 
   return (
     <DropdownArea>
@@ -161,36 +210,57 @@ const VersionHistoryList: Component<VersionHistoryListProps> = (props) => {
 
                     if (!version) return null;
 
+                    const group = () => groupsByVersionID().get(versionID);
+                    const isGroupHead = () => {
+                      return group()?.versions[0].id === versionID && group()!.versions.length > 1;
+                    };
+                    const continuesGuide = () => {
+                      const versions = group()?.versions ?? [];
+                      const isExpanded = expandedGroups().has(group()?.key ?? "");
+
+                      return isExpanded && versions.at(-1)?.id !== versionID;
+                    };
+
                     return (
-                      <VersionHistoryItem
-                        version={version}
-                        fallbackLabel={props.fallbackLabel?.(version)}
-                        active={props.activeVersionID === version.id}
-                        assignedChannels={props.assignedChannels?.(version)}
-                        contributorNames={version.contributorIDs.map((id) => {
-                          return contributorNamesByID().get(id) || "Name unavailable";
-                        })}
-                        canManage={props.canManage}
-                        canManagePublishing={props.canManagePublishing}
-                        onAssign={
-                          props.onAssign
-                            ? (channel) => props.onAssign?.(version, channel)
-                            : undefined
-                        }
-                        onCompare={props.onCompare ? () => props.onCompare?.(version) : undefined}
-                        onOpen={() => props.onOpen(version)}
-                        onRename={(name) => props.onRename(version, name)}
-                        onRevert={
-                          props.onRevert && (!props.canRevert || props.canRevert(version))
-                            ? () => props.onRevert?.(version)
-                            : undefined
-                        }
-                        onUnpublish={
-                          props.onUnpublish
-                            ? (channel) => props.onUnpublish?.(version, channel)
-                            : undefined
-                        }
-                      />
+                      <div class="relative">
+                        <VersionHistoryItem
+                          version={version}
+                          expanded={expandedGroups().has(group()?.key ?? "")}
+                          timeframe={group()?.label}
+                          onToggleTimeframe={
+                            isGroupHead() ? () => toggleGroup(group()!) : undefined
+                          }
+                          fallbackLabel={props.fallbackLabel?.(version)}
+                          active={props.activeVersionID === version.id}
+                          assignedChannels={props.assignedChannels?.(version)}
+                          contributorNames={version.contributorIDs.map((id) => {
+                            return contributorNamesByID().get(id) || "Name unavailable";
+                          })}
+                          canManage={props.canManage}
+                          canManagePublishing={props.canManagePublishing}
+                          onAssign={
+                            props.onAssign
+                              ? (channel) => props.onAssign?.(version, channel)
+                              : undefined
+                          }
+                          onCompare={props.onCompare ? () => props.onCompare?.(version) : undefined}
+                          onOpen={() => props.onOpen(version)}
+                          onRename={(name) => props.onRename(version, name)}
+                          onRevert={
+                            props.onRevert && (!props.canRevert || props.canRevert(version))
+                              ? () => props.onRevert?.(version)
+                              : undefined
+                          }
+                          onUnpublish={
+                            props.onUnpublish
+                              ? (channel) => props.onUnpublish?.(version, channel)
+                              : undefined
+                          }
+                        />
+                        <Show when={continuesGuide()}>
+                          <div class="pointer-events-none absolute left-3.25 top-6 -bottom-1.5 w-px rounded-full bg-gray-300" />
+                        </Show>
+                      </div>
                     );
                   }}
                 />
