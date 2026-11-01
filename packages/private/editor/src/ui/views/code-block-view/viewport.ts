@@ -42,17 +42,21 @@ const createCodeBlockViewport = (editor: Editor, dom: HTMLElement, code: EditorV
     const width = `${container.clientWidth}px`;
     const margin = `${-inset}px`;
     const leftSpace = `${Math.max(24, inset)}px`;
+    // At the scroll's end, the content ends at the column's edge, by the block controls.
+    const rightSpace = `${Math.max(24, Math.floor(container.clientWidth - inset - dom.clientWidth + padding))}px`;
     const contentWidth = `${Math.max(0, dom.clientWidth - padding - (gutters?.clientWidth || 0))}px`;
     const changed =
       code.dom.style.width !== width ||
       code.dom.style.marginLeft !== margin ||
       code.dom.style.getPropertyValue("--code-left-space") !== leftSpace ||
+      code.dom.style.getPropertyValue("--code-right-space") !== rightSpace ||
       code.dom.style.getPropertyValue("--code-content-width") !== contentWidth;
 
     if (changed) {
       code.dom.style.width = width;
       code.dom.style.marginLeft = margin;
       code.dom.style.setProperty("--code-left-space", leftSpace);
+      code.dom.style.setProperty("--code-right-space", rightSpace);
       code.dom.style.setProperty("--code-content-width", contentWidth);
       invalidateBlockControlLayout(editor);
       code.requestMeasure();

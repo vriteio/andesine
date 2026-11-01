@@ -14,7 +14,8 @@ import {
   onCleanup,
   untrack,
   type JSX,
-  type ParentComponent
+  type ParentComponent,
+  Show
 } from "solid-js";
 import { useBlockMenuContext } from "./context";
 import { sourceElements } from "#editor/ui/views/element-view/source-mode";
@@ -39,7 +40,7 @@ import {
 import { isPositionInInheritedField } from "#editor/ui/block-utils";
 import { createTableMenuItems } from "./table";
 import { createTurnIntoMenuItem } from "./turn-into";
-import { doesTableExtendPastContent } from "#editor/ui/views/table-view/scroll";
+import { isBlockAtScrollEnd } from "#editor/ui/block-scroll";
 
 interface BlockMenuProps {
   menuID: string;
@@ -76,6 +77,8 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
   const [contextMenuMode, setContextMenuMode] = createSignal(false);
   // Menus of block actions, which open in the menu's place, keep the trigger like the open menu.
   const [triggerHolds, setTriggerHolds] = createSignal(0);
+  const [blockLayoutVersion, setBlockLayoutVersion] = createSignal(0);
+  const [hoverAreaInert, setHoverAreaInert] = createSignal(false);
   const [imageItems, setImageItems] = createSignal<BlockMenuItems>([]);
   const [codeItems, setCodeItems] = createSignal<BlockMenuItems>([]);
   const [elementItems, setElementItems] = createSignal<BlockMenuItems>([]);
@@ -184,13 +187,16 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
   const triggerVisible = () => {
     const target = getCurrentTarget();
 
+    // The block's scroll position and width aren't reactive.
+    blockLayoutVersion();
+
     // Hide the trigger when the menu was opened via 'right click' or when there's a text menu opened within the block area
     if (
       !triggerAvailable() ||
       !props.editor ||
       !target ||
       isPositionInInheritedField(props.editor.state.doc, target.pos) ||
-      (target.node.type.name === "table" && doesTableExtendPastContent(props.editor, target.dom))
+      !isBlockAtScrollEnd(target.dom)
     ) {
       return false;
     }
@@ -334,6 +340,7 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
         left: menuLeft - scrollContainerRect.left + scrollContainer.scrollLeft
       });
       setHoverAreaHeight(blockRect.height);
+      setHoverAreaInert(["codeBlock", "table"].includes(target.node.type.name));
       hideTrigger.clear();
       setTriggerAvailable(true);
     };
@@ -366,15 +373,10 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
           pointerTarget && selectionTarget && isTargetInBlockSelection(editor, pointerTarget)
             ? selectionTarget
             : pointerTarget;
-        const tableExtendsPastContent = Boolean(
-          target?.node.type.name === "table" && doesTableExtendPastContent(editor, target.dom)
-        );
-
         // Only show the trigger when the pointer is over a block area
         if (
           !pointerTarget ||
           !target ||
-          tableExtendsPastContent ||
           !isPointInBlockControlArea(editor, pointerTarget, {
             x: event.clientX,
             y: event.clientY,
@@ -409,6 +411,10 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
         hideTrigger();
       }
     };
+    const updateBlockLayout = () => setBlockLayoutVersion((version) => version + 1);
+    const updateDocLayout = ({ transaction }: EditorEvents["transaction"]) => {
+      if (transaction.docChanged) requestAnimationFrame(updateBlockLayout);
+    };
     const scrollContainer = getEditorScrollContainer(editor);
     const unregisterSelectionHandler = registerSelectionControlHiding(editor, () => {
       hideTrigger.clear();
@@ -418,11 +424,15 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
 
     scrollContainer?.addEventListener("pointermove", updatePosition);
     scrollContainer?.addEventListener("pointerleave", handlePointerLeave);
+    editor.view.dom.addEventListener("scroll", updateBlockLayout, true);
+    editor.on("transaction", updateDocLayout);
     onCleanup(() => {
       hideTrigger.clear();
       moveTrigger.clear();
       scrollContainer?.removeEventListener("pointermove", updatePosition);
       scrollContainer?.removeEventListener("pointerleave", handlePointerLeave);
+      editor.view.dom.removeEventListener("scroll", updateBlockLayout, true);
+      editor.off("transaction", updateDocLayout);
       unregisterSelectionHandler();
     });
   });
@@ -446,17 +456,20 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
             visibility: triggerVisible() ? "visible" : "hidden"
           }}
         >
-          <div
-            class="absolute -left-2 top-0 w-2 pointer-events-auto"
-            style={{ height: `${hoverAreaHeight()}px` }}
-          />
-          <div
-            class="absolute left-0 w-full pointer-events-auto"
-            style={{
-              height: `${Math.max(0, hoverAreaHeight() - BLOCK_CONTROL_SIZE)}px`,
-              top: `${BLOCK_CONTROL_SIZE}px`
-            }}
-          />
+          {/* Over these blocks, it would take the hover from their scrollbars and handles. */}
+          <Show when={!hoverAreaInert()}>
+            <div
+              class="absolute -left-2 top-0 w-2 pointer-events-auto"
+              style={{ height: `${hoverAreaHeight()}px` }}
+            />
+            <div
+              class="absolute left-0 w-full pointer-events-auto"
+              style={{
+                height: `${Math.max(0, hoverAreaHeight() - BLOCK_CONTROL_SIZE)}px`,
+                top: `${BLOCK_CONTROL_SIZE}px`
+              }}
+            />
+          </Show>
           <IconButton
             icon="i-lucide:ellipsis"
             onClick={(event) => {
@@ -481,7 +494,7 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
               ) {
                 props.editor
                   .chain()
-                  .focus()
+                  .focus(undefined, { scrollIntoView: false })
                   .setBlockSelection({
                     from: currentNodePos(),
                     to: currentNodePos() + target.node.nodeSize,

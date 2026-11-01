@@ -150,11 +150,12 @@ const getFirstLineRect = (editor: Editor, element: HTMLElement): DOMRect => {
   const elementRect = getCachedElementRect(editor, element);
   const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
-      const caret = node.parentElement?.closest(
-        ".collaboration-caret, .collaboration-caret__label"
+      // CodeMirror's announcements for screen readers are off-screen.
+      const ignored = node.parentElement?.closest(
+        ".collaboration-caret, .collaboration-caret__label, .cm-announced"
       );
 
-      return node.textContent?.trim() && !caret
+      return node.textContent?.trim() && !ignored
         ? NodeFilter.FILTER_ACCEPT
         : NodeFilter.FILTER_REJECT;
     }

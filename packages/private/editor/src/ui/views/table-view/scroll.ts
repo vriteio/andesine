@@ -1,6 +1,3 @@
-import type { Editor } from "@tiptap/core";
-import { getCachedElementRect } from "#editor/ui/block-control-sizing";
-
 const getTableNodeView = (element: HTMLElement): HTMLElement | null => {
   return element.matches("[data-table-node-view]")
     ? element
@@ -18,29 +15,4 @@ const getTableContentWidth = (element: HTMLElement): number => {
   return getTableNodeView(element)?.clientWidth || 0;
 };
 
-const doesTableExtendPastContent = (editor: Editor, element: HTMLElement): boolean => {
-  const table = getTableElement(element);
-  const tableNodeView = getTableNodeView(element);
-
-  return Boolean(
-    table && tableNodeView && getCachedElementRect(editor, table).width > tableNodeView.clientWidth
-  );
-};
-
-const isTableAtScrollStart = (element: HTMLElement): boolean => {
-  const container = getTableScrollContainer(element);
-
-  if (!container || container.scrollWidth <= container.clientWidth) return true;
-
-  const start = Number.parseFloat(container.dataset.tableScrollStart || "0");
-
-  return container.scrollLeft <= start + 1;
-};
-
-export {
-  doesTableExtendPastContent,
-  getTableContentWidth,
-  getTableElement,
-  getTableScrollContainer,
-  isTableAtScrollStart
-};
+export { getTableContentWidth, getTableElement, getTableScrollContainer };

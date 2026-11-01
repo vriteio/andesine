@@ -123,7 +123,7 @@ header[data-type="title"] {
   width: max-content;
   // One default column width (80px) of extra space on the right, to drag the "+" handle into.
   // The bottom space also fits the shadow of the row "+" button, which the scroll container clips.
-  padding: 24px calc(104px + var(--table-preview-width, 0px))
+  padding: 24px calc(var(--table-right-space, 104px) + var(--table-preview-width, 0px))
     calc(32px + var(--table-preview-height, 0px)) var(--table-left-space, 24px);
 }
 
@@ -872,7 +872,8 @@ header:only-of-type.is-empty:first-child::before,
   }
 }
 .prose-editor .code-block-node .cm-scroller {
-  @apply scrollbar-sm pr-6 overscroll-x-none;
+  @apply scrollbar-sm overscroll-x-none;
+  padding-right: var(--code-right-space, 1.5rem);
 }
 .prose-editor .code-block-node .cm-content {
   flex-grow: 0;

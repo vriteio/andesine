@@ -40,6 +40,14 @@ const createTableViewport = (editor: Editor, view: TableView, onLayout: () => vo
     shadows.style.height = `${height}px`;
     view.dom.style.setProperty("--table-content-width", `${contentWidth}px`);
     view.dom.style.setProperty("--table-left-space", `${Math.max(24, inset)}px`);
+    // At the scroll's end, the column "+" button and its spacing end at the column's edge, by the
+    // block controls: 6px on each side of the button, which `extend.tsx` sizes by the same query.
+    const addColumnSpace = window.matchMedia("(min-width: 1024px)").matches ? 24 : 28;
+
+    view.dom.style.setProperty(
+      "--table-right-space",
+      `${Math.max(104, Math.floor(width - inset - contentWidth) + addColumnSpace)}px`
+    );
 
     viewport.dataset.tableScrollStart = String(scrollStart);
     if (!initialized || atStart) viewport.scrollLeft = scrollStart;

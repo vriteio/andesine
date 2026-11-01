@@ -21,7 +21,7 @@ import { createDragHandlePlugin, dragHandlePluginKey } from "./drag-handle-plugi
 import { createListItemTargetResolver } from "./list-item-target";
 import { DragHandleTargetPlugin, dragHandleTargetPluginKey } from "./drag-handle-target-plugin";
 import { isPositionInInheritedField } from "#editor/ui/block-utils";
-import { isTableAtScrollStart } from "#editor/ui/views/table-view/scroll";
+import { isBlockAtScrollStart, isBlockScrollable } from "#editor/ui/block-scroll";
 import { getElementIssue, getElementViews } from "#editor/lib/element-content";
 import { useBlockMenuContext } from "#editor/ui/menus/block-menu/context";
 
@@ -38,12 +38,13 @@ const shouldShowDragHandle = (
 ): boolean =>
   dragging ||
   Boolean(
-    available &&
-    target &&
-    target.node.type.name !== "title" &&
-    (target.node.type.name !== "table" || isTableAtScrollStart(target.dom))
+    available && target && target.node.type.name !== "title" && isBlockAtScrollStart(target.dom)
   );
 
+// The handle's area over a scrollable block would block scrolling it.
+const isScrollableTarget = (target: BlockControlTarget | null): boolean => {
+  return Boolean(target && (target.node.type.name === "table" || isBlockScrollable(target.dom)));
+};
 const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
   const { openMenu, menuOpened } = useBlockMenuContext();
 
@@ -77,7 +78,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       });
     }
 
-    chain.focus().run();
+    chain.focus(undefined, { scrollIntoView: false }).run();
     openMenu(event.currentTarget);
   };
 
@@ -123,11 +124,11 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
     };
     const updateDragHandleVisibility = () => {
       const visible = shouldShowDragHandle(dragHandleAvailable, isDragging(), currentControlTarget);
-      const tableTarget = currentControlTarget?.node.type.name === "table";
+      const scrollableTarget = isScrollableTarget(currentControlTarget);
 
       wrapperRef.style.visibility = visible ? "visible" : "hidden";
       wrapperRef.style.opacity = visible ? "1" : "0";
-      wrapperRef.style.pointerEvents = visible && !tableTarget ? "auto" : "none";
+      wrapperRef.style.pointerEvents = visible && !scrollableTarget ? "auto" : "none";
       updateHeadingIndicator(visible);
       updateWarning();
     };
@@ -204,7 +205,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       if (hoverAreaRef) {
         hoverAreaRef.style.top = `${wrapperRef.offsetHeight}px`;
         hoverAreaRef.style.height = `${Math.max(0, nodeRect.height - wrapperRef.offsetHeight)}px`;
-        hoverAreaRef.style.pointerEvents = target.node.type.name === "table" ? "none" : "auto";
+        hoverAreaRef.style.pointerEvents = isScrollableTarget(target) ? "none" : "auto";
       }
 
       hideDragHandle.clear();
