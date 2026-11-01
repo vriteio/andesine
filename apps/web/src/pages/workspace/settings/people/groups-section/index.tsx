@@ -152,7 +152,7 @@ const GroupsSection: Component = () => {
       </Suspense>
       <Setting
         label="Workspace groups"
-        description="Group members and assign roles at restricted collection boundaries"
+        description="Group members and give them roles in restricted collections"
         fade={false}
       >
         <Show when={canManage()}>

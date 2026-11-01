@@ -37,11 +37,7 @@ const BrowserAccessSection: Component<BrowserAccessSectionProps> = (props) => {
           setScope={props.setCollections}
         />
       </Setting>
-      <Setting
-        label="Allowed origins"
-        description="Sites that can use the key. Localhost is always allowed"
-        fade={false}
-      >
+      <Setting label="Allowed origins" description="Sites that can use this key" fade={false}>
         <TagInput
           inputClass="bg-white"
           tagListClass="justify-end"

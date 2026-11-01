@@ -48,7 +48,7 @@ const TestEventSetting: Component<TestEventSettingProps> = (props) => {
       description={
         props.source.target.extensionID
           ? "Send a sample of a selected event to the development backend"
-          : "Send a signed sample of a selected event. Works while the webhook is disabled"
+          : "Send a sample of a selected event"
       }
       fade={false}
     >

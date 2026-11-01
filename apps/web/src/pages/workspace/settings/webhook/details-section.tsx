@@ -13,11 +13,7 @@ interface DetailsSectionProps {
 
 const DetailsSection: Component<DetailsSectionProps> = (props) => (
   <SettingsSection label="Details">
-    <Setting
-      label="Name"
-      description="A clear label, such as “Production site rebuild”"
-      fade={false}
-    >
+    <Setting label="Name" description="A clear name for this webhook" fade={false}>
       <Input
         placeholder="My webhook"
         value={props.draft.name}
@@ -27,11 +23,7 @@ const DetailsSection: Component<DetailsSectionProps> = (props) => (
         class="w-full max-w-md"
       />
     </Setting>
-    <Setting
-      label="URL"
-      description="Andesine sends signed HTTPS POST requests to this address"
-      fade={false}
-    >
+    <Setting label="URL" description="The address that receives this webhook’s events" fade={false}>
       <Input
         placeholder="https://example.com/webhooks/andesine"
         type="url"

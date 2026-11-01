@@ -173,7 +173,7 @@ const InstalledSection: Component = () => {
       <div class="flex flex-col">
         <Setting
           label="Extensions"
-          description="Extensions add views, actions, and panels, and can run their own backends"
+          description="The extensions already installed in your workspace"
         />
         <div class="relative flex w-full flex-col">
           <ErrorBoundary fallback={(_, reset) => <LoadError onRetry={() => refresh(reset)} />}>

@@ -208,11 +208,7 @@ const RoleSettingsPage: Component = () => {
     <>
       <div class="flex min-w-0 flex-col">
         <SettingsSection label="Role details">
-          <Setting
-            label="Name"
-            description="A clear name workspace members will recognize"
-            fade={false}
-          >
+          <Setting label="Name" description="A clear name for this role" fade={false}>
             <Input
               maxlength={50}
               placeholder="Content manager"

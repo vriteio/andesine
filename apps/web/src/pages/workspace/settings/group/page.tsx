@@ -144,11 +144,7 @@ const GroupSettingsPage: Component = () => {
   return (
     <div class="flex min-w-0 flex-col">
       <SettingsSection label="Group details">
-        <Setting
-          label="Name"
-          description="A clear name workspace members will recognize"
-          fade={false}
-        >
+        <Setting label="Name" description="A clear name for this group" fade={false}>
           <Input
             maxlength={50}
             placeholder="Editors"

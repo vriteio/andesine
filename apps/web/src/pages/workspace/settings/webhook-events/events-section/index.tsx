@@ -128,11 +128,7 @@ const EventsSection: Component<EventsSectionProps> = (props) => {
         <Show when={props.source.canTest && props.source.endpoint}>
           <TestEventSetting source={props.source} />
         </Show>
-        <Setting
-          label="Event deliveries"
-          description="Events sent to this webhook, newest first. Each is kept until it expires"
-          fade={false}
-        >
+        <Setting label="Event deliveries" description="Events sent to this webhook" fade={false}>
           <ToggleGroup
             value={filter()}
             setValue={(value) => changeFilter(value as EventFilter)}

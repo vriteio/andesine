@@ -72,7 +72,11 @@ const ProfileForm: Component = () => {
 const ProfileSection: Component = () => (
   <SettingsSection label="Profile">
     <ImageSetting target="user" />
-    <Setting label="Full name" description="Your full name" fade={false}>
+    <Setting
+      label="Full name"
+      description="Public name identifying you across all workspaces"
+      fade={false}
+    >
       <Suspense fallback={<Skeleton class="h-9 w-full max-w-md rounded-lg" />}>
         <ProfileForm />
       </Suspense>

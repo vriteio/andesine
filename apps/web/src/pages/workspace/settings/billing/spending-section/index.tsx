@@ -24,8 +24,8 @@ const SpendingSection: Component = () => {
     const limit = spending()?.limit ?? null;
 
     return limit === null
-      ? "No limit set. Usage over the included amounts is billed in full."
-      : `API and AI features stop at ${formatCents(limit, currency())} of usage charges a month.`;
+      ? "No limit set. Extra usage is billed in full"
+      : `API and AI features stop at ${formatCents(limit, currency())} of usage charges a month`;
   };
   const updateLimitMutation = createMutation(() => ({
     onSuccess: (_, { spendingLimit }) => {

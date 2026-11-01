@@ -89,7 +89,11 @@ const ImageSetting: Component<ImageSettingProps> = (props) => {
   return (
     <Setting
       label={props.target === "workspace" ? "Workspace logo" : "Profile image"}
-      description="Public image. JPEG, PNG, or static WebP; resized to fit 512 × 512."
+      description={
+        props.target === "workspace"
+          ? "Public image identifying the workspace"
+          : "Public image identifying you across all workspaces"
+      }
       fade={false}
     >
       <div class="flex w-full items-center justify-end gap-2">

@@ -218,7 +218,7 @@ const KeySettingsPage: Component = () => {
       />
       <div class="flex min-w-0 flex-col">
         <SettingsSection label="Key details">
-          <Setting label="Name" description="Descriptive name for this key" fade={false}>
+          <Setting label="Name" description="A clear name for this key" fade={false}>
             <Input
               placeholder={publishable() ? "Docs site" : "My API key"}
               value={keyName()}

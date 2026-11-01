@@ -103,7 +103,7 @@ const CatalogSection: Component = () => {
       <div class="flex flex-col">
         <Setting
           label="Available extensions"
-          description="Reviewed extensions from the registry; they update automatically"
+          description="Extend your workspace with more features and integrations"
         />
         <div class="relative flex w-full flex-col">
           <ErrorBoundary fallback={(_, reset) => <LoadError onRetry={() => refresh(reset)} />}>

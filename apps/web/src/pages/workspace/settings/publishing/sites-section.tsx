@@ -16,7 +16,7 @@ const SitesSection: Component = () => {
       <SettingsSection label="Sites">
         <Setting
           label="Publishable keys"
-          description="Read and search published content from a site's browser code, e.g. a docs site"
+          description="Read and search published content from browsers, e.g. on a docs site"
           fade={false}
         >
           <IconButton
