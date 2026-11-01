@@ -136,17 +136,15 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
             ],
             userWorkspaces.map((ws) => ({
               label: ws.name,
-              icon: () => (
-                <Show when={ws.logo} fallback={<div class="i-lucide:hexagon h-full w-full" />}>
-                  {(logo) => (
+              icon: ws.logo
+                ? () => (
                     <img
-                      src={logo()}
-                      alt={`${ws.logo} logo`}
+                      src={ws.logo!}
+                      alt={`${ws.name} logo`}
                       class="h-full w-full rounded object-contain"
                     />
-                  )}
-                </Show>
-              ),
+                  )
+                : "i-lucide:hexagon",
               selected: ws.id === currentWorkspace()?.id,
               onClick() {
                 return switchWorkspace(ws.id);
@@ -172,17 +170,15 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
       // Fallback: simple workspace list
       const workspaceOptions: Array<MenuItem | (() => JSX.Element)> = workspaceList.map((ws) => ({
         label: ws.name,
-        icon: () => (
-          <Show when={ws.logo} fallback={<div class="i-lucide:hexagon h-full w-full" />}>
-            {(logo) => (
+        icon: ws.logo
+          ? () => (
               <img
-                src={logo()}
+                src={ws.logo!}
                 alt={`${ws.name} logo`}
                 class="h-full w-full rounded-md object-contain"
               />
-            )}
-          </Show>
-        ),
+            )
+          : "i-lucide:hexagon",
         selected: ws.id === currentWorkspace()?.id,
         onClick() {
           return switchWorkspace(ws.id);
