@@ -18,7 +18,7 @@ const getActiveDragRange = (selection: Selection): ActiveDragRange | null => {
 
   return {
     anchorPos: selection.from,
-    depth: selection.depth ?? 0,
+    depth: selection.depth ?? selection.$from.depth,
     nodeCount: selection.ranges.length
   };
 };

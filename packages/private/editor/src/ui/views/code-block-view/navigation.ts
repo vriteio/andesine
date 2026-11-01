@@ -364,7 +364,25 @@ const createCodeBlockNavigation = (editor: Editor) => {
           event.stopImmediatePropagation();
         }
       };
+      // A click's cursor comes with `selectionchange`, which a fast key would be ahead of.
+      const syncClickedCursor = () => {
+        const { doc, selection, tr } = view.state;
+        const native = document.getSelection();
+        const isCursorSelection = isBlockSelection(selection) || selection instanceof TextSelection;
+
+        if (document.activeElement !== view.dom || !isCursorSelection) return;
+        if (!native?.isCollapsed || !native.focusNode || !view.dom.contains(native.focusNode))
+          return;
+
+        const cursor = Selection.near(
+          doc.resolve(view.posAtDOM(native.focusNode, native.focusOffset))
+        );
+
+        if (!cursor.eq(selection)) view.dispatch(tr.setSelection(cursor));
+      };
       const endKeepSelection = (event: PointerEvent | KeyboardEvent) => {
+        if (event instanceof KeyboardEvent && !keyboardInput) syncClickedCursor();
+
         keyboardInput = event instanceof KeyboardEvent;
 
         if (!keepSelection) return;

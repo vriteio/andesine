@@ -235,9 +235,16 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
           const isInEditor = view.dom.contains(event.target as Node);
           const isTouch = event instanceof PointerEvent && event.pointerType !== "mouse";
           const overTableCell = event.target instanceof Element && event.target.closest("td, th");
+          const overFragmentHeader =
+            event.target instanceof Element && event.target.closest("[data-fragment-header]");
 
           // Table cells open their own menu on long press, like on right click.
           if (isTouch && overTableCell) return false;
+
+          // The editor doesn't get events from a fragment's header, as it's in a node view.
+          if (event.type === "contextmenu" && overFragmentHeader) {
+            setBlockSelectionAtCoords(props.editor, { left: event.clientX, top: event.clientY });
+          }
 
           // Where a context menu opens, so block action menus can open in its place.
           if (isInEditor) setContextMenuPoint({ x: event.clientX, y: event.clientY });

@@ -37,6 +37,7 @@ interface MarqueeNode {
   closingRect?: RectBounds;
   /** Shown by a view: covering all its children selects only them, its own selectable UI it. */
   view?: boolean;
+  fragment?: boolean;
   fragmentPos?: number;
   fragmentRoot?: boolean;
   pos: number;
@@ -124,8 +125,9 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
       const selectedChildren = children.filter(
         (child) => directSelection.has(child.pos) || fullySelectedFragments.has(child.pos)
       ).length;
+      // A fragment's blocks stay selected on their own, until the selection leaves the fragment.
       const allChildrenSelected =
-        !node.view && children.length > 0 && selectedChildren === children.length;
+        !node.view && !node.fragment && children.length > 0 && selectedChildren === children.length;
       const crossesSelectionContext =
         selectedChildren > 0 && (firstHit < node.pos || lastHit >= node.pos + node.size);
       if (directSelection.has(node.pos) || allChildrenSelected || crossesSelectionContext)
@@ -300,6 +302,7 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
             ? dom.querySelector<HTMLElement>(':scope > [data-element-tag="closing"]')
             : null;
         const marqueeNode: MarqueeNode = {
+          fragment: node.type.name === "fragment",
           fragmentPos: options.fragmentPos,
           fragmentRoot: container,
           size: node.nodeSize,

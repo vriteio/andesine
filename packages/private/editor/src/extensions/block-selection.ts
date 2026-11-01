@@ -19,6 +19,7 @@ declare module "@tiptap/core" {
 }
 
 const SCROLL_SHADOW_HEIGHT = 64;
+const LIST_TYPES = ["bulletList", "orderedList", "taskList"];
 const mapNodeRange = NodeRangeSelection.prototype.map;
 const nodeRangePrototype: Pick<Selection, "map"> = NodeRangeSelection.prototype;
 
@@ -41,7 +42,8 @@ const createBlockRangeSelection = (
   return new BlockSelection(doc.resolve(position.from), doc.resolve(position.to), position.depth);
 };
 const isFragmentChildBlockSelection = (selection: Selection): boolean => {
-  return isBlockSelection(selection) && selection.depth === 1;
+  // By position, as the selection has no `depth` when made with Shift+arrows.
+  return isBlockSelection(selection) && selection.$from.depth === 1;
 };
 const isSameBlockSelection = (selection: Selection, nextSelection: NodeRangeSelection): boolean => {
   return (
@@ -89,6 +91,52 @@ const setBlockSelectionAtCoords = (
     }
     return true;
   }
+  const headerFragment = document
+    .elementFromPoint(coords.left, coords.top)
+    ?.closest("[data-fragment-header]")
+    ?.closest<HTMLElement>("[data-fragment-node-view]");
+
+  if (headerFragment) {
+    const $fragment = doc.resolve(editor.view.posAtDOM(headerFragment, 0));
+    const fragmentFrom = $fragment.depth ? $fragment.before(1) : $fragment.pos;
+    const fragment = doc.nodeAt(fragmentFrom);
+
+    if (fragment) {
+      editor.commands.setBlockSelection({
+        from: fragmentFrom,
+        to: fragmentFrom + fragment.nodeSize,
+        depth: 0
+      });
+
+      return true;
+    }
+  }
+
+  // In a fragment, its block, as at the top level; the fragment's own controls are on its header.
+  if (resolvedPos.depth > 0 && resolvedPos.node(1).type.name === "fragment") {
+    const childFrom =
+      resolvedPos.depth > 1
+        ? resolvedPos.before(2)
+        : resolvedPos.nodeAfter
+          ? pos
+          : pos - (resolvedPos.nodeBefore?.nodeSize ?? 0);
+    const child = doc.nodeAt(childFrom);
+
+    if (child) {
+      const childTo = childFrom + child.nodeSize;
+
+      if (!(
+        isBlockSelection(selection) &&
+        selection.from <= childFrom &&
+        selection.to >= childTo
+      )) {
+        editor.commands.setBlockSelection({ from: childFrom, to: childTo, depth: 1 });
+      }
+
+      return true;
+    }
+  }
+
   const node = resolvedPos.node(1) || resolvedPos.nodeAfter;
 
   if (!node) return false;
@@ -113,9 +161,81 @@ const centerSelectionEnd = ({ view, state }: Editor) => {
 
   if (!isClearOfShadows) container.scrollTop += end - (top + bottom) / 2;
 };
-const scrollAfter = (shortcut: KeyboardShortcutCommand): KeyboardShortcutCommand => {
+/** From text in a list, selects the whole list, and the next press leaves it, as for other blocks. */
+const selectParentList = (editor: Editor, backward: boolean): boolean => {
+  const { doc, selection } = editor.state;
+
+  if (isBlockSelection(selection)) return false;
+
+  for (let depth = 1; depth <= selection.$head.depth; depth += 1) {
+    if (!LIST_TYPES.includes(selection.$head.node(depth).type.name)) continue;
+
+    // Just inside the list's edges: the range then is the list, and leaves its items when extended.
+    const start = doc.resolve(selection.$head.start(depth));
+    const end = doc.resolve(selection.$head.end(depth));
+
+    editor.view.dispatch(
+      editor.state.tr.setSelection(
+        new BlockSelection(backward ? end : start, backward ? start : end)
+      )
+    );
+
+    return true;
+  }
+
+  return false;
+};
+/** Keeps the selection's level, and moves up to the parent only at the parent's edge. */
+const getExtendedBlockSelection = (
+  selection: NodeRangeSelection,
+  backward: boolean
+): NodeRangeSelection | null => {
+  const { $from, $to, ranges } = selection;
+  const doc = $from.doc;
+  const level = $from.depth;
+  const isShrinking =
+    ranges.length > 1 && (backward ? selection.isForwards : selection.isBackwards);
+
+  if (isShrinking) {
+    const kept = backward ? ranges.slice(0, -1) : ranges.slice(1);
+    const $start = kept[0].$from;
+    const $end = kept[kept.length - 1].$to;
+
+    return new BlockSelection(backward ? $start : $end, backward ? $end : $start, level);
+  }
+
+  const sibling = backward ? $from.nodeBefore : $to.nodeAfter;
+
+  if (sibling) {
+    const $edge = doc.resolve(backward ? $from.pos - sibling.nodeSize : $to.pos + sibling.nodeSize);
+
+    return new BlockSelection(backward ? $to : $from, $edge, level);
+  }
+
+  if (level === 0) return null;
+
+  const $start = doc.resolve($from.before(level));
+  const $end = doc.resolve($from.after(level));
+
+  return new BlockSelection(backward ? $end : $start, backward ? $start : $end, level - 1);
+};
+const extendSelection = (
+  shortcut: KeyboardShortcutCommand,
+  backward: boolean
+): KeyboardShortcutCommand => {
   return (props) => {
-    const handled = shortcut(props);
+    const { selection, tr } = props.editor.state;
+
+    if (isBlockSelection(selection)) {
+      const extended = getExtendedBlockSelection(selection, backward);
+
+      if (extended) props.editor.view.dispatch(tr.setSelection(extended));
+
+      centerSelectionEnd(props.editor);
+      return true;
+    }
+
+    const handled = selectParentList(props.editor, backward) || shortcut(props);
 
     if (handled) centerSelectionEnd(props.editor);
 
@@ -197,8 +317,8 @@ const BlockSelectionExtension = NodeRange.extend({
 
     return {
       ...parentShortcuts,
-      "Shift-ArrowUp": scrollAfter(parentShortcuts["Shift-ArrowUp"]),
-      "Shift-ArrowDown": scrollAfter(parentShortcuts["Shift-ArrowDown"]),
+      "Shift-ArrowUp": extendSelection(parentShortcuts["Shift-ArrowUp"], true),
+      "Shift-ArrowDown": extendSelection(parentShortcuts["Shift-ArrowDown"], false),
       "Mod-a": ({ editor }: Parameters<KeyboardShortcutCommand>[0]) => {
         const { state } = editor;
         const { selection, doc } = state;

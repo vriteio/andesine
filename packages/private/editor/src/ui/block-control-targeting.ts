@@ -299,7 +299,7 @@ const getBlockControlHitAtY = (
 
   if (!listItemSpecific) {
     for (let depth = $pos.depth; depth > 1; depth -= 1) {
-      if ($pos.node(depth - 1).type.name === "element")
+      if (["fragment", "element"].includes($pos.node(depth - 1).type.name))
         return { ...structureHit, target: getBlockControlTargetAtPos(editor, $pos.before(depth)) };
     }
     const pos = $pos.depth ? $pos.before(1) : position.inside >= 0 ? position.inside : $pos.pos;
