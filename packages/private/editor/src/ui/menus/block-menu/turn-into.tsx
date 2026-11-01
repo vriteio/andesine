@@ -29,16 +29,13 @@ const textOptions: ConversionOption[] = [
   })),
   { name: "blockquote", label: "Blockquote", icon: "i-lucide:text-quote" }
 ];
-const getSelectedBlock = (editor: Editor) => {
+const getSelectedBlocks = (editor: Editor) => {
   const { doc, selection } = editor.state;
-  const node = doc.nodeAt(selection.from);
 
   if (
     !editor.isEditable ||
     !isBlockSelection(selection) ||
-    selection.ranges.length !== 1 ||
-    !node ||
-    selection.to !== selection.from + node.nodeSize ||
+    !selection.$from.sameParent(selection.$to) ||
     (selection.$from.parent !== doc &&
       !["fragment", "element"].includes(selection.$from.parent.type.name)) ||
     isPositionInInheritedField(doc, selection.from)
@@ -46,7 +43,38 @@ const getSelectedBlock = (editor: Editor) => {
     return null;
   }
 
-  return { node, selection };
+  const nodes: ProseMirrorNode[] = [];
+
+  doc.nodesBetween(selection.from, selection.to, (node, pos) => {
+    if (pos < selection.from) return true;
+
+    nodes.push(node);
+
+    return false;
+  });
+
+  return nodes.length ? { nodes, selection } : null;
+};
+const isListName = (name: string): boolean => listOptions.some((option) => option.name === name);
+const isOptionAllowed = (node: ProseMirrorNode, option: ConversionOption): boolean => {
+  if (isListName(node.type.name)) return isListName(option.name) || option.name === "paragraph";
+  if (node.type.name === "paragraph") return true;
+
+  return textOptions.some(({ name }) => name === node.type.name) && textOptions.includes(option);
+};
+const getListBlocks = (list: ProseMirrorNode): ProseMirrorNode[] => {
+  const blocks: ProseMirrorNode[] = [];
+
+  list.forEach((item) => {
+    item.forEach((child) => {
+      blocks.push(...(isListName(child.type.name) ? getListBlocks(child) : [child]));
+    });
+  });
+
+  return blocks;
+};
+const isConverted = (node: ProseMirrorNode, option: ConversionOption): boolean => {
+  return node.type.name === option.name && (!option.level || node.attrs.level === option.level);
 };
 const getConvertedContent = (
   editor: Editor,
@@ -58,7 +86,20 @@ const getConvertedContent = (
 
   if (!type) return null;
 
-  if (listOptions.some(({ name }) => name === node.type.name)) {
+  if (option.name === "paragraph" && isListName(node.type.name)) {
+    return Fragment.from(getListBlocks(node));
+  }
+
+  if (isListName(option.name) && !isListName(node.type.name)) {
+    const itemType = editor.schema.nodes[option.name === "taskList" ? "taskItem" : "listItem"];
+    const item = itemType?.create(null, node);
+
+    return item && type.validContent(Fragment.from(item))
+      ? Fragment.from(type.create(null, item))
+      : null;
+  }
+
+  if (isListName(node.type.name)) {
     const itemType = editor.schema.nodes[option.name === "taskList" ? "taskItem" : "listItem"];
 
     if (!itemType) return null;
@@ -100,17 +141,40 @@ const getConvertedContent = (
     ? Fragment.from(children)
     : null;
 };
+const getConvertedBlocks = (
+  editor: Editor,
+  nodes: ProseMirrorNode[],
+  option: ConversionOption
+): Fragment | null => {
+  const blocks: ProseMirrorNode[] = [];
+
+  for (const node of nodes) {
+    const content = isConverted(node, option)
+      ? Fragment.from(node)
+      : getConvertedContent(editor, node, option);
+
+    if (!content) return null;
+
+    content.forEach((block) => blocks.push(block));
+  }
+
+  if (!isListName(option.name)) return Fragment.from(blocks);
+
+  // A set of blocks becomes one list, not a list for each block.
+  const items = blocks.flatMap((block) => block.content.content);
+
+  return Fragment.from(blocks[0].type.create(blocks[0].attrs, Fragment.from(items)));
+};
 const createTurnIntoMenuItem = (editor: Editor): NonNullable<MenuItem["items"]> => {
-  const block = getSelectedBlock(editor);
+  const blocks = getSelectedBlocks(editor);
 
-  if (!block) return [];
+  if (!blocks) return [];
 
-  const { node, selection } = block;
-  const options = listOptions.some(({ name }) => name === node.type.name)
-    ? listOptions
-    : textOptions.some(({ name }) => name === node.type.name)
-      ? textOptions
-      : [];
+  const { nodes, selection } = blocks;
+  const { doc } = editor.state;
+  const options = [...textOptions, ...listOptions].filter((option) => {
+    return nodes.every((node) => isOptionAllowed(node, option));
+  });
 
   const elementViews = getElementViews(editor);
   // The parent element's content rules, e.g. only `Tab` elements in `Tabs`.
@@ -133,9 +197,8 @@ const createTurnIntoMenuItem = (editor: Editor): NonNullable<MenuItem["items"]> 
   }
 
   const items = options.flatMap((option): MenuItem[] => {
-    const selected =
-      node.type.name === option.name && (!option.level || node.attrs.level === option.level);
-    const content = selected ? Fragment.from(node) : getConvertedContent(editor, node, option);
+    const selected = nodes.every((node) => isConverted(node, option));
+    const content = getConvertedBlocks(editor, nodes, option);
     const parent = selection.$from.parent;
     const enabledLevels = editor.extensionManager.extensions.find(({ name }) => name === "heading")
       ?.options.enabledLevels;
@@ -160,9 +223,7 @@ const createTurnIntoMenuItem = (editor: Editor): NonNullable<MenuItem["items"]> 
         onClick: () => {
           if (selected || editor.isDestroyed) return;
 
-          const current = getSelectedBlock(editor);
-
-          if (!current || current.node !== node || !current.selection.eq(selection)) return;
+          if (editor.state.doc !== doc || !editor.state.selection.eq(selection)) return;
 
           editor
             .chain()
@@ -181,7 +242,9 @@ const createTurnIntoMenuItem = (editor: Editor): NonNullable<MenuItem["items"]> 
     ];
   });
 
-  return items.length > 1 ? [{ label: "Turn into", icon: "i-lucide:repeat", items }] : [];
+  return items.some(({ selected }) => !selected)
+    ? [{ label: "Turn into", icon: "i-lucide:repeat", items }]
+    : [];
 };
 
 export { createTurnIntoMenuItem };

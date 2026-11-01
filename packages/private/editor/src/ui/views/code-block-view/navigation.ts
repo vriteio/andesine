@@ -183,8 +183,8 @@ const handleNavigationKey = (editor: Editor, view: ProseMirrorView, event: Keybo
   return true;
 };
 const createCodeBlockNavigation = (editor: Editor) => {
-  // From a drag across a code block's edge or a block selection until the next input: Safari moves
-  // a native selection into a code block, and reading it back would replace the selection.
+  // From a drag across a code block's edge or a block selection from the keyboard until the next
+  // input: Safari moves a native selection into a code block, and reading it back would replace it.
   let keepSelection = false;
 
   return new Plugin({
@@ -226,6 +226,7 @@ const createCodeBlockNavigation = (editor: Editor) => {
     view(view) {
       let anchor: number | null = null;
       let origin: CodeBlockBridge | undefined;
+      let keyboardInput = false;
 
       const getContainer = () => {
         return view.dom.closest<HTMLElement>("[data-editor-scrollable-container]");
@@ -364,6 +365,8 @@ const createCodeBlockNavigation = (editor: Editor) => {
         }
       };
       const endKeepSelection = (event: PointerEvent | KeyboardEvent) => {
+        keyboardInput = event instanceof KeyboardEvent;
+
         if (!keepSelection) return;
 
         const keepsSelection =
@@ -401,7 +404,7 @@ const createCodeBlockNavigation = (editor: Editor) => {
       document.addEventListener("mouseup", up, true);
       return {
         update() {
-          if (isBlockSelection(view.state.selection)) keepSelection = true;
+          if (keyboardInput && isBlockSelection(view.state.selection)) keepSelection = true;
         },
         destroy() {
           autoScroll.stop();
