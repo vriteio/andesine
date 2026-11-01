@@ -83,6 +83,29 @@ body {
     @apply bg-gray-200 shadow-inner border-2 border-solid border-gray-100 rounded-lg;
   }
 }
+// Side panels are `gray-100` on desktop, and white sheets on mobile, as are search dialogs
+// `scrollbar-nested` follows the side panel it's in, e.g. in extension views
+.scrollbar-panel,
+.scrollbar-panel .scrollbar-nested {
+  &::-webkit-scrollbar {
+    @apply bg-gray-100;
+  }
+  &::-webkit-scrollbar-thumb {
+    @apply bg-gray-200 shadow-inner border-2 border-solid border-gray-100 rounded-lg;
+  }
+}
+@screen lt-md {
+  .scrollbar-panel,
+  .scrollbar-panel .scrollbar-nested,
+  .scrollbar-sheet {
+    &::-webkit-scrollbar {
+      @apply bg-white;
+    }
+    &::-webkit-scrollbar-thumb {
+      @apply bg-gray-100 shadow-inner border-2 border-solid border-white rounded-lg;
+    }
+  }
+}
 ::-webkit-scrollbar-thumb:horizontal {
   box-shadow: inset 2px 0 4px 0 rgb(0 0 0 / 5%);
 }

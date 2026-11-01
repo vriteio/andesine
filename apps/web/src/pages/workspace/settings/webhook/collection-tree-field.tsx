@@ -365,7 +365,7 @@ const CollectionTreeField: Component<CollectionTreeFieldProps> = (props) => {
             setOpened={setOpened}
             disabled={props.disabled}
             sameWidth
-            cardProps={{ class: "max-h-96 overflow-y-auto bg-white p-1 scrollbar-sm" }}
+            cardProps={{ class: "max-h-96 overflow-y-auto bg-white p-1 scrollbar-sm scrollbar-white" }}
             trigger={() => (
               <Button
                 class="flex w-full items-center px-2"

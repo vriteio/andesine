@@ -263,7 +263,7 @@ interface EditorProps {
   staticTitle?: string;
   diff?: EditorDiff;
   providerAttempt?: number;
-  notify?(type: "success" | "error", text: string): void;
+  notify?(type: "success" | "error" | "info", text: string): void;
   collaborationUser?: { name: string; color: string };
   beforeProviderAttach?: EditorProviderSetup;
   onProvider?(provider: EditorProvider): EditorCleanup;

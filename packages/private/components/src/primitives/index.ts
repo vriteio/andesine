@@ -23,4 +23,3 @@ export * from "./tag-list";
 export * from "./date-picker";
 export * from "./color-picker";
 export * from "./dialog";
-export * from "./scroll-area";

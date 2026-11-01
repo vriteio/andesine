@@ -24,7 +24,7 @@ const scrollbarClass =
   ":base: z-10 flex media-touch:hidden opacity-0 transition-opacity duration-200 data-[hover]:opacity-100 data-[scrolling]:opacity-100";
 // A transparent border insets the thumb on any background.
 const thumbClass =
-  ":base: rounded-lg border-2 border-solid border-transparent bg-gray-200 bg-clip-padding shadow-inner";
+  ":base: rounded-lg border-2 border-solid border-transparent bg-gray-100 bg-clip-padding shadow-inner";
 
 /**
  * Scrolls its content in one direction, with an overlay scrollbar.

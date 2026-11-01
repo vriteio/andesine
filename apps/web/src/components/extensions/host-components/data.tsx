@@ -246,8 +246,8 @@ const dataComponents: Pick<
           class={clsx(
             "font-mono text-xs",
             props.props.log
-              ? "max-h-[60vh] overflow-auto whitespace-pre scrollbar-sm"
-              : "overflow-x-auto rounded-lg bg-gray-100 p-3"
+              ? "max-h-[60vh] overflow-auto whitespace-pre scrollbar-sm scrollbar-nested"
+              : "overflow-x-auto rounded-lg bg-gray-100 p-3 scrollbar-contrast"
           )}
         >
           <code>{props.props.code}</code>

@@ -197,7 +197,7 @@ const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
                 </button>
               </Show>
               <div
-                class="min-h-0 w-full min-w-0 max-w-full flex-1 overflow-x-hidden overflow-y-auto scrollbar-sm flex flex-col [&>div]:contents"
+                class="min-h-0 w-full min-w-0 max-w-full flex-1 overflow-x-hidden overflow-y-auto scrollbar-sm scrollbar-white flex flex-col [&>div]:contents"
                 data-dropdown-mobile-scroll
                 style={fadeStyle()}
                 ref={setMobileDropdownContentContainer}

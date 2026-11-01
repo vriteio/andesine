@@ -50,7 +50,7 @@ const ExtensionPanelView: Component<ExtensionPanelViewProps> = (props) => {
           </div>
           <div
             ref={setScrollableContainerRef}
-            class="min-h-0 w-full flex-1 scrollbar-contrast scrollbar-hover overflow-y-auto"
+            class="min-h-0 w-full flex-1 scrollbar-panel scrollbar-hover overflow-y-auto"
           >
             <ExtensionView host={host} viewID={viewID} class="w-full px-1 pb-2" />
           </div>

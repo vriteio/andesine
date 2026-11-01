@@ -201,7 +201,7 @@ const MobileMenuItems = <O extends MenuItem>(props: MobileMenuItemsProps<O>) => 
   });
 
   return (
-    <div class="flex w-full min-w-0 max-w-full flex-col gap-0.5 overflow-y-auto overscroll-contain scrollbar-sm">
+    <div class="flex w-full min-w-0 max-w-full flex-col gap-0.5 overflow-y-auto overscroll-contain scrollbar-sm scrollbar-white">
       <For each={currentPage().items}>
         {(optionOrSeparator) => {
           const jsxFactory = isJSXFactory(optionOrSeparator) ? optionOrSeparator : null;

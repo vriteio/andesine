@@ -20,7 +20,7 @@ import {
 } from "@andesine/document/tiptap";
 import { TitleValidation, titleValidationKey } from "./extensions/title-validation";
 import { createCodeBlockNavigation } from "./ui/views/code-block-view/navigation";
-import { formatCodeBlock, getCodeFormatParser } from "./lib/code-format";
+import { findFormattableCodeBlock, formatCodeBlock } from "./lib/code-format";
 import { Element } from "#editor/extensions/nodes/element";
 import { Elements } from "./extensions/elements";
 import { Images } from "./extensions/images";
@@ -208,18 +208,9 @@ const ClientEditor: Component<EditorProps> = (props) => {
           return {
             ...this.parent?.(),
             "Mod-Shift-f": () => {
-              const { selection, doc } = this.editor.state;
-              const pos =
-                selection.$from.parent.type.name === "codeBlock"
-                  ? selection.$from.before()
-                  : selection.from;
-              const node = doc.nodeAt(pos);
+              const pos = findFormattableCodeBlock(this.editor);
 
-              if (
-                node?.type.name !== "codeBlock" ||
-                !getCodeFormatParser(String(node.attrs.language || ""))
-              )
-                return false;
+              if (pos === null) return false;
               void formatCodeBlock(this.editor, pos, props.notify);
               return true;
             }
@@ -419,6 +410,33 @@ const ClientEditor: Component<EditorProps> = (props) => {
       document.removeEventListener("pointerdown", onDown);
       document.removeEventListener("pointerup", onUp);
     });
+  });
+
+  // In code block editors too, as those keep their keys from ProseMirror.
+  createEffect(() => {
+    const currentEditor = editableEditor();
+    const handleSaveShortcut = (event: KeyboardEvent) => {
+      const isSaveShortcut =
+        (event.metaKey || event.ctrlKey) &&
+        !event.shiftKey &&
+        !event.altKey &&
+        event.key.toLowerCase() === "s";
+      const insideEditor =
+        event.target === document.body ||
+        (event.target instanceof Node && scrollableContainerRef()?.contains(event.target));
+
+      if (!currentEditor || !isSaveShortcut || !insideEditor) return;
+
+      const pos = findFormattableCodeBlock(currentEditor);
+
+      event.preventDefault();
+
+      if (pos === null) props.notify?.("info", "Andesine saves your content automatically");
+      else void formatCodeBlock(currentEditor, pos, props.notify);
+    };
+
+    window.addEventListener("keydown", handleSaveShortcut, true);
+    onCleanup(() => window.removeEventListener("keydown", handleSaveShortcut, true));
   });
 
   return (

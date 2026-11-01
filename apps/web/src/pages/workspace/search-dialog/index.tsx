@@ -372,7 +372,7 @@ const SearchDialog: Component<SearchDialogProps> = (props) => {
 
             setFollowAnswer(remaining < 48);
           }}
-          class="relative z-0 flex min-h-0 w-full flex-1 flex-col overflow-y-auto px-1 pb-1 md:max-h-[min(60dvh,32rem)]"
+          class="relative z-0 flex min-h-0 w-full flex-1 flex-col overflow-y-auto scrollbar-sheet px-1 pb-1 md:max-h-[min(60dvh,32rem)]"
         >
           <Switch>
             <Match when={showingAnswer()}>

@@ -63,7 +63,7 @@ html::-webkit-scrollbar {
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-200 shadow-inner border-2 border-solid border-gray-50 rounded-lg;
+  @apply bg-gray-100 shadow-inner border-2 border-solid border-gray-50 rounded-lg;
 }
 
 ::-webkit-scrollbar-thumb:horizontal {

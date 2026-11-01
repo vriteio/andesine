@@ -41,7 +41,7 @@ const PayloadView: Component<PayloadViewProps> = (props) => {
         }
       >
         <div class="group/payload relative">
-          <div class="max-h-[60vh] overflow-auto whitespace-pre font-mono text-xs scrollbar-contrast">
+          <div class="max-h-[60vh] overflow-auto whitespace-pre font-mono text-xs">
             <For each={tokens.latest} fallback={source()}>
               {(token) => <span class={tokenColors[token.kind]}>{token.text}</span>}
             </For>

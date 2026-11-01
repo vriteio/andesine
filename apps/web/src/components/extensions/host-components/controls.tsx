@@ -123,7 +123,7 @@ const controlComponents: Pick<
       </Show>
       <textarea
         class={clsx(
-          "w-full resize-y rounded-lg bg-white px-2 py-1 text-[16px] text-gray-700 shadow-md shadow-gray-900/8 disabled:shadow-none outline outline-1 -outline-offset-1 outline-gray-200 ring-offset-1 placeholder:opacity-50 focus:bg-gray-100 focus:outline-1",
+          "w-full resize-y rounded-lg bg-white scrollbar-white px-2 py-1 text-[16px] text-gray-700 shadow-md shadow-gray-900/8 disabled:shadow-none outline outline-1 -outline-offset-1 outline-gray-200 ring-offset-1 placeholder:opacity-50 focus:bg-gray-100 focus:outline-1",
           props.props.code ? CODE_FIELD_CLASS : "md:text-sm"
         )}
         value={props.props.value ?? ""}

@@ -1,4 +1,4 @@
-import { Button, IconButton, ScrollArea, Tooltip } from "@andesine/components";
+import { Button, IconButton, Tooltip } from "@andesine/components";
 import clsx from "clsx";
 import { SettingsSection } from "#web/pages/workspace/settings/settings-section";
 import { type HostComponents, gapClasses } from "./types";
@@ -104,9 +104,14 @@ const layoutComponents: Pick<
   ),
   Divider: () => <div role="separator" class="h-px w-full shrink-0 bg-gray-200" />,
   ScrollArea: (props) => (
-    <ScrollArea viewportClass={maxHeightClasses[props.props.maxHeight ?? "medium"]}>
+    <div
+      class={clsx(
+        "w-full min-w-0 overflow-y-auto scrollbar-nested",
+        maxHeightClasses[props.props.maxHeight ?? "medium"]
+      )}
+    >
       {props.children}
-    </ScrollArea>
+    </div>
   )
 };
 

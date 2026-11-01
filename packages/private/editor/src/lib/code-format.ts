@@ -25,6 +25,19 @@ const getCodeFormatParser = (language: string): string | undefined => {
 
   return Object.hasOwn(parsers, name) ? parsers[name] : undefined;
 };
+/** The code block with the selection, when it can be formatted. */
+const findFormattableCodeBlock = (editor: Editor): number | null => {
+  const { selection, doc } = editor.state;
+  const pos =
+    selection.$from.parent.type.name === "codeBlock" ? selection.$from.before() : selection.from;
+  const node = doc.nodeAt(pos);
+  const formattable =
+    node?.type.name === "codeBlock" &&
+    getCodeFormatParser(String(node.attrs.language || "")) &&
+    !isPositionInInheritedField(doc, pos);
+
+  return formattable ? pos : null;
+};
 const formatCode = (request: CodeFormatRequest): Promise<string> => {
   return new Promise((resolve, reject) => {
     const worker = new CodeFormatWorker();
@@ -118,4 +131,4 @@ const formatCodeBlock = async (
   }
 };
 
-export { getCodeFormatParser, formatCodeBlock };
+export { findFormattableCodeBlock, getCodeFormatParser, formatCodeBlock };

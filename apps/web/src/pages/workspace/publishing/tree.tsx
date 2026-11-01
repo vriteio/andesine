@@ -489,7 +489,7 @@ const PublishingPanelTree: Component<PublishingPanelTreeProps> = (props) => {
             <div
               ref={setScrollableContainerRef}
               data-tree-marquee
-              class="relative flex min-h-0 w-full flex-1 flex-col scrollbar-contrast scrollbar-hover overflow-y-auto px-1"
+              class="relative flex min-h-0 w-full flex-1 flex-col scrollbar-panel scrollbar-hover overflow-y-auto px-1"
             >
               {treeContent}
             </div>

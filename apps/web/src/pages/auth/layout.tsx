@@ -30,7 +30,7 @@ const AuthLayout: Component<RouteSectionProps> = (props) => {
     <div class="flex flex-row h-full w-full">
       <DotsBackground class="absolute mask-edge-fading-16" />
       <Logo class="top-4 left-4 absolute" />
-      <div class="flex-1 relative flex overflow-y-auto">
+      <div class="flex-1 relative flex overflow-y-auto scrollbar-contrast">
         <div class="p-4 lg:p-24 relative m-auto">
           <div class="absolute h-full w-full top-0 left-0 mask-edge-fading-4 lg:mask-edge-fading-24 bg-gray-100 rounded-2xl" />
           <div class="relative flex flex-col w-80 max-w-full">

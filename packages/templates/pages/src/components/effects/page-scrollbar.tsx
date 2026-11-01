@@ -22,7 +22,7 @@ const PageScrollbar: Component = () => {
     >
       <div
         {...scrollbar.thumbHandlers}
-        class="absolute inset-x-0 cursor-default rounded-lg border-2 border-solid border-transparent bg-gray-200 bg-clip-padding shadow-inner"
+        class="absolute inset-x-0 cursor-default rounded-lg border-2 border-solid border-transparent bg-gray-100 bg-clip-padding shadow-inner"
         style={{
           top: `${scrollbar.thumb()?.top ?? 0}px`,
           height: `${scrollbar.thumb()?.height ?? 0}px`

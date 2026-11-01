@@ -35,8 +35,11 @@ const Notification: Component<NotificationProps> = (props) => (
     color="contrast"
     class="flex p-0 justify-center items-center w-full rounded-xl transition-shadow duration-250 shadow-lg"
   >
-    <div class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center w-full p-1 rounded-xl shadow-inner shadow-gray-900/8">
-      <Show when={props.type !== "loading"} fallback={<Spinner class="h-6 w-6" color="primary" />}>
+    <div class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start w-full p-1 rounded-xl shadow-inner shadow-gray-900/8">
+      <Show
+        when={props.type !== "loading"}
+        fallback={<Spinner class="h-6 w-6 m-0.5" color="primary" />}
+      >
         <div class="p-1 flex justify-center items-center">
           <div
             class={clsx(
@@ -49,7 +52,10 @@ const Notification: Component<NotificationProps> = (props) => (
         </div>
       </Show>
       <span
-        class={clsx("px-1 min-w-0 text-[16px] md:text-base", props.description && "font-medium")}
+        class={clsx(
+          "px-1 py-0.5 min-w-0 text-[16px] leading-6 md:text-base",
+          props.description && "font-medium"
+        )}
       >
         {props.text}
       </span>

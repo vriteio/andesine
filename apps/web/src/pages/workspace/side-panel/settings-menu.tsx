@@ -297,7 +297,7 @@ const SettingsMenu: Component = () => {
       </div>
       <div
         ref={setScrollableContainerRef}
-        class="relative flex min-h-0 w-full flex-col scrollbar-contrast scrollbar-hover overflow-y-auto px-1 pb-1 md:flex-1"
+        class="relative flex min-h-0 w-full flex-col scrollbar-panel scrollbar-hover overflow-y-auto px-1 pb-1 md:flex-1"
       >
         <div class="sticky top-0 z-20 -mx-1 flex h-9 shrink-0 items-center px-1 bg-white md:bg-gray-100">
           <h2 class="min-w-0 truncate text-2xl font-semibold">Settings</h2>

@@ -49,7 +49,7 @@ const MobileRightSidePanelMenu: Component<MobileRightSidePanelMenuProps> = (prop
         class="md:hidden"
       >
         <Show when={opened()}>
-          <div class="flex min-h-0 w-full flex-col overflow-y-auto px-1 pb-1 scrollbar-sm">
+          <div class="flex min-h-0 w-full flex-col overflow-y-auto px-1 pb-1 scrollbar-sm scrollbar-white">
             <h2 class="my-0.5 truncate text-2xl font-semibold">{title()}</h2>
             <div class="flex flex-col gap-3">
               <Show when={publishingAvailable() ? props.entryID : undefined} keyed>

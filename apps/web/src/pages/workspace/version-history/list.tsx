@@ -85,7 +85,7 @@ const VersionHistoryList: Component<VersionHistoryListProps> = (props) => {
         </div>
         <div
           ref={setScrollableContainerRef}
-          class="relative flex min-h-0 w-full flex-1 flex-col scrollbar-contrast scrollbar-hover overflow-y-auto px-1"
+          class="relative flex min-h-0 w-full flex-1 flex-col scrollbar-panel scrollbar-hover overflow-y-auto px-1"
         >
           <div class="group/version-header sticky top-0 z-20 -mx-1 flex h-9 shrink-0 items-center gap-2 bg-white px-1 md:bg-gray-100">
             <h2 class="flex-1 text-2xl font-semibold">Versions</h2>
