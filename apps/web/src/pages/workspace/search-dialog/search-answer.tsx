@@ -148,7 +148,7 @@ const SearchAnswer: Component<SearchAnswerProps> = (props) => {
                     onClick={() => props.openResult(group.sources[0])}
                   />
                 </div>
-                <div class="flex max-w-1/2 shrink-0 flex-wrap justify-end gap-1 pr-1 py-1 ">
+                <div class="flex max-w-1/2 shrink-0 flex-wrap justify-end gap-x-1 py-1 pr-1">
                   <For each={group.sources}>
                     {(source) => {
                       const section = source.headingPath.join(" › ") || "Entry content";
@@ -158,7 +158,7 @@ const SearchAnswer: Component<SearchAnswerProps> = (props) => {
                           href={`#ask-ai-source-${source.id}`}
                           title={section}
                           aria-label={`Reference ${source.id}: ${source.title || "Untitled"}, ${section}`}
-                          class="font-mono text-xs text-gray-400 media-mouse:hover:text-gray-600 media-mouse:hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                          class="font-mono text-xs leading-4.5 text-gray-400 media-mouse:hover:text-gray-600 media-mouse:hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                           onClick={(event) => {
                             event.preventDefault();
                             props.openResult(source);

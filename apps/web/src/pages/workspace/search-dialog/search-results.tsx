@@ -132,7 +132,7 @@ const SearchResultContent: Component<SearchResultContentProps> = (props) => (
       </Show>
     </div>
     <div class="flex min-w-0 flex-1 flex-col leading-tight">
-      <span class="line-clamp-1">{props.label}</span>
+      <span class="line-clamp-1 leading-4.5">{props.label}</span>
       <span class="max-w-4/5 line-clamp-2 text-xs font-normal leading-tight text-gray-400">
         <Show when={props.sublabel} fallback={"..."} keyed>
           {(sublabel) => (
