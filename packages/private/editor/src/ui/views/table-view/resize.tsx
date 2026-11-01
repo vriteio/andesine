@@ -151,6 +151,12 @@ const TableResizeControls = (props: TableResizeControlsProps) => {
   const movePointer = (event: PointerEvent) => {
     if (resize()?.pointerID !== event.pointerId) return;
 
+    // Chrome can send this before `pointerup`, or it's a release outside the window.
+    if (!event.buttons) {
+      finish(event);
+      return;
+    }
+
     event.preventDefault();
     setResize((current) => current && { ...current, x: event.clientX });
   };
@@ -202,15 +208,16 @@ const TableResizeControls = (props: TableResizeControlsProps) => {
     if (current && (node !== current.node || !enabled)) untrack(stop);
   });
   onMount(() => {
+    // Pointer capture can be lost during a drag, so it stays active until release or cancellation.
     window.addEventListener("pointermove", movePointer, { passive: false });
-    window.addEventListener("pointerup", finish);
+    window.addEventListener("pointerup", finish, true);
     window.addEventListener("pointercancel", cancel);
     window.addEventListener("blur", cancel);
     window.addEventListener("keydown", cancelKey, true);
     onCleanup(() => {
       stop(false);
       window.removeEventListener("pointermove", movePointer);
-      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointerup", finish, true);
       window.removeEventListener("pointercancel", cancel);
       window.removeEventListener("blur", cancel);
       window.removeEventListener("keydown", cancelKey, true);
@@ -242,7 +249,6 @@ const TableResizeControls = (props: TableResizeControlsProps) => {
           onBlur={() => setHovered(null)}
           onPointerDown={(event) => start(event, index)}
           onKeyDown={(event) => resizeWithKeyboard(event, index)}
-          onLostPointerCapture={cancel}
         >
           <span
             data-table-indicator="column"

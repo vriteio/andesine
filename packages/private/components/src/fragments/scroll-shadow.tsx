@@ -49,6 +49,8 @@ const ScrollShadow: Component<ScrollShadowProps> = (props) => {
     onScrollEnd.clear();
 
     if (props.direction === "horizontal") {
+      element.toggleAttribute("data-overflowing", element.clientWidth < element.scrollWidth);
+
       if (element.clientWidth >= element.scrollWidth) {
         setScrollState("none");
       } else if (element.scrollLeft === 0) {

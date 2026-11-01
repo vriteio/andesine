@@ -28,7 +28,7 @@ const createTableViewport = (editor: Editor, view: TableView, onLayout: () => vo
     const inset = rect.left - containerRect.left - container.clientLeft;
     const width = container.clientWidth;
     const contentWidth = dom.clientWidth;
-    const height = viewport.clientHeight;
+    const height = viewport.clientHeight - parseFloat(getComputedStyle(viewport).paddingBottom);
     const scrollStart = Math.max(0, 24 - inset);
     const atStart = viewport.scrollLeft <= Number(viewport.dataset.tableScrollStart || 0) + 1;
 

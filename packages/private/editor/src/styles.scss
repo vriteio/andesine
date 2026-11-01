@@ -112,7 +112,7 @@ header[data-type="title"] {
 
 [data-table-scroll-container] {
   @apply relative overflow-x-auto overflow-y-hidden;
-  overscroll-behavior-x: contain;
+  overscroll-behavior-x: none;
 }
 
 :is(.block-selection-shade, .collaboration-block-selection-shade)[data-table-selection-shade] {
@@ -860,6 +860,7 @@ header:only-of-type.is-empty:first-child::before,
 }
 .prose-editor .code-block-node .cm-scroller {
   @apply scrollbar-sm pr-6;
+  overscroll-behavior-x: none;
 }
 .prose-editor .code-block-node .cm-content {
   flex-grow: 0;
@@ -937,6 +938,16 @@ header:only-of-type.is-empty:first-child::before,
 .prose-editor .code-block-node .cm-foldGutter .cm-gutterElement {
   @apply flex items-center justify-center px-0.5;
   line-height: 1.25rem;
+}
+
+/* Horizontal scrollbars */
+// Chromium doesn't repaint scrollbar pseudo-elements on hover, so toggle the scrollbar itself
+// The padding holds its height, so the content doesn't move
+@media (hover: hover) and (pointer: fine) {
+  [data-table-scroll-container][data-overflowing]:not(:hover, :has(:focus-visible)),
+  .prose-editor .code-block-node .cm-scroller[data-overflowing]:not(:hover, :has(:focus-visible)) {
+    @apply overflow-x-hidden pb-3;
+  }
 }
 
 /* Mobile code blocks */

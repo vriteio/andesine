@@ -179,6 +179,12 @@ const TableExtensionControls = (props: TableExtensionControlsProps) => {
   const movePointer = (event: PointerEvent) => {
     if (extension()?.pointerID !== event.pointerId) return;
 
+    // Chrome can send this before `pointerup`, or it's a release outside the window.
+    if (!event.buttons) {
+      finish(event);
+      return;
+    }
+
     event.preventDefault();
     preview(event.clientX, event.clientY);
   };
@@ -306,7 +312,6 @@ const TableExtensionControls = (props: TableExtensionControlsProps) => {
                         }
                   }
                   onPointerDown={(event) => start(event, axis)}
-                  onLostPointerCapture={stop}
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();

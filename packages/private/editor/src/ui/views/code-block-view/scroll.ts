@@ -40,7 +40,8 @@ const codeBlockScrollShadows = ViewPlugin.fromClass(
             left: (gutters?.right ?? scrollBounds.left) - bounds.left,
             right: bounds.right - scrollBounds.left - scroller.clientWidth,
             top: scrollBounds.top - bounds.top,
-            height: scroller.clientHeight,
+            height: scroller.clientHeight - parseFloat(getComputedStyle(scroller).paddingBottom),
+            overflowing: scroller.clientWidth < scroller.scrollWidth,
             backgroundLeft,
             visibleLeft: bounds.left - (nodeBounds?.left ?? bounds.left) + backgroundLeft,
             backgroundWidth: Math.max(0, backgroundRight - backgroundLeft),
@@ -49,6 +50,7 @@ const codeBlockScrollShadows = ViewPlugin.fromClass(
           };
         },
         write: (state) => {
+          this.view.scrollDOM.toggleAttribute("data-overflowing", state.overflowing);
           this.view.dom.style.setProperty("--code-background-left", `${state.backgroundLeft}px`);
           this.view.dom.style.setProperty("--code-background-width", `${state.backgroundWidth}px`);
           this.view.dom.parentElement?.style.setProperty(

@@ -187,6 +187,12 @@ const TableControls = (props: TableControlsProps) => {
 
     if (!current || current.pointerID !== event.pointerId) return;
 
+    // Chrome can send this before `pointerup`, or it's a release outside the window.
+    if (!event.buttons) {
+      releasePointer(event);
+      return;
+    }
+
     const active =
       current.active ||
       Math.hypot(event.clientX - current.startX, event.clientY - current.startY) >= 4;
@@ -357,7 +363,6 @@ const TableControls = (props: TableControlsProps) => {
                       title={`Click for ${axis} actions. Drag to move it.`}
                       class="rounded-[0.25rem] opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 cursor-grab active:cursor-grabbing touch-none"
                       onPointerDown={(event) => startDrag(event, axis, index)}
-                      onLostPointerCapture={stopDrag}
                       onKeyDown={(event) => moveWithKeyboard(event, axis, index)}
                       onClick={(event) => {
                         event.preventDefault();
