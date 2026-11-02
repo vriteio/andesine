@@ -1,9 +1,11 @@
 import type { MenuItem } from "@andesine/components";
 import type { Editor } from "@tiptap/core";
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import type { BlockActionOrigin, BlockActions, BlockMenuPlacement } from "#editor/client-types";
 import { EDITOR_MENU_Z_INDEX } from "#editor/ui/constants";
 import { createBlockActionTarget, getSelectedBlocks } from "#editor/lib/block-action-target";
 import { isPositionInInheritedField } from "#editor/ui/block-utils";
+import { isRequiredEntryField } from "#editor/lib/optional-fields";
 
 /** The block menu's state that block actions open their menus against. */
 interface BlockMenuControls {
@@ -81,4 +83,15 @@ const createExtensionActionMenuItems = (
   }));
 };
 
-export { createExtensionActionMenuItems };
+/** A required property in an entry has only the extensions' actions; without them, no menu. */
+const hasBlockMenuItems = (
+  editor: Editor,
+  node: ProseMirrorNode,
+  blockActions?: BlockActions
+): boolean => {
+  if (node.type.name !== "property" || !isRequiredEntryField(editor, node)) return true;
+
+  return Boolean(blockActions?.get(["property"]).length);
+};
+
+export { createExtensionActionMenuItems, hasBlockMenuItems };

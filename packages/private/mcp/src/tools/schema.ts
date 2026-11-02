@@ -16,14 +16,15 @@ import { getMigrationSummary, resolveCollectionID, runTool, type ToolContext } f
 
 const fieldInputShape = {
   id: z.string().optional().describe("ID from get_schema"),
-  name: z.string()
+  name: z.string(),
+  optional: z.boolean().optional().describe("Entries can leave out the field (default: required)")
 };
 const propertyInputSchema = z.object({
   ...fieldInputShape,
   kind: z.literal("property"),
   type: entryPropertyKindType,
   options: z.array(z.string()).optional().describe("Choices of select and multi-select"),
-  defaultValue: schemaPropertyValueType.optional()
+  initialValue: schemaPropertyValueType.optional()
 });
 const fragmentInputSchema = z.object({
   ...fieldInputShape,
@@ -32,7 +33,7 @@ const fragmentInputSchema = z.object({
     .array(schemaBlockType)
     .optional()
     .describe("Allowed blocks besides paragraphs (default: all)"),
-  defaultContent: z
+  initialContent: z
     .string()
     .optional()
     .describe("MDX that the fragment starts with in new entries; no images. Empty clears it.")
@@ -41,11 +42,11 @@ const fieldInputSchema = z.discriminatedUnion("kind", [propertyInputSchema, frag
 
 type FieldInput = z.infer<typeof fieldInputSchema>;
 
-const decodeDefaultContent = async (mdx: string) => {
+const decodeInitialContent = async (mdx: string) => {
   const document = await fromMDX(mdx, {
     document: "fragment",
     imageAssetID: () => {
-      throw new Error("Upload images in entries, not schema defaults");
+      throw new Error("Upload images in entries, not initial content");
     }
   });
 
@@ -69,9 +70,10 @@ const toSchemaField = async (
     current?.kind === field.kind && getSchemaFieldName(current) === field.name
       ? current.label
       : field.name;
+  const optional = field.optional ?? current?.optional;
 
   if (field.kind === "property") {
-    // A default value and options only fit the type they were set for.
+    // An initial value and options only fit the type they were set for.
     const kept = current?.kind === "property" && current.type === field.type ? current : undefined;
 
     return {
@@ -80,24 +82,26 @@ const toSchemaField = async (
       label,
       type: field.type,
       options: field.options ?? kept?.options ?? [],
-      defaultValue: field.defaultValue ?? kept?.defaultValue ?? getEmptyPropertyValue(field)
+      initialValue: field.initialValue ?? kept?.initialValue ?? getEmptyPropertyValue(field),
+      ...(optional && { optional })
     };
   }
 
   const kept = current?.kind === "fragment" ? current : undefined;
-  const defaultContent =
-    field.defaultContent === undefined
-      ? kept?.defaultContent
-      : await decodeDefaultContent(field.defaultContent);
+  const initialContent =
+    field.initialContent === undefined
+      ? kept?.initialContent
+      : await decodeInitialContent(field.initialContent);
 
   return {
     id,
     kind: "fragment",
     label,
     allowedBlocks: field.allowedBlocks ?? kept?.allowedBlocks ?? [...SCHEMA_BLOCK_TYPES],
-    defaultContent: defaultContent?.length
-      ? defaultContent
-      : [{ type: "paragraph", attrs: { id: crypto.randomUUID() } }]
+    initialContent: initialContent?.length
+      ? initialContent
+      : [{ type: "paragraph", attrs: { id: crypto.randomUUID() } }],
+    ...(optional && { optional })
   };
 };
 const registerSetSchema = (server: McpServer, context: ToolContext) => {

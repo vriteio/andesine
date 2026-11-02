@@ -33,6 +33,7 @@ export type {
   EditorDiffChange,
   EditorInstance,
   EditorMode,
+  EditorSchemaField,
   EditorProps,
   EditorProvider,
   EditorProviderSetup,

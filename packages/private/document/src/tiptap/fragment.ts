@@ -4,6 +4,7 @@ import { mergeAttributes, Node } from "@tiptap/core";
 const Fragment = Node.create({
   name: "fragment",
   content: `(paragraph | ${FRAGMENT_BLOCK_TYPES.join(" | ")})+`,
+  isolating: true,
   selectable: false,
   addAttributes() {
     return {

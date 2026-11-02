@@ -5,6 +5,7 @@ import {
   SCHEMA_FIELD_ID_ATTRIBUTE,
   schemaDefinitionType,
   type SchemaDefinition,
+  type SchemaField,
   type SchemaFragment,
   type SchemaProperty
 } from "@andesine/contracts/schema";
@@ -20,7 +21,7 @@ import {
 import { getEmptyPropertyValue, isPropertyValueEmpty, migratePropertyValue } from "./property";
 
 interface SchemaContentMigrationInput {
-  defaultMode?: SchemaContentDefaultMode;
+  initialMode?: SchemaContentInitialMode;
   document: ContentNode;
   schema: SchemaDefinition;
 }
@@ -30,22 +31,22 @@ interface SchemaContentMigrationResult {
   document: ContentNode;
 }
 
-type SchemaContentDefaultMode = "migration" | "new-entry" | "none";
+type SchemaContentInitialMode = "migration" | "new-entry" | "none";
 
 const createPropertyNode = (
   property: SchemaProperty,
-  defaultMode: SchemaContentDefaultMode,
+  initialMode: SchemaContentInitialMode,
   existing?: ExistingSchemaField
 ): { contentLost: boolean; node: ContentNode } => {
   const sourceType = getPropertyType(existing?.node.attrs?.type);
   const sourceValue = existing?.node.attrs?.value;
   const migration = existing
     ? migratePropertyValue(property, sourceType, sourceValue, {
-        useDefault: defaultMode === "migration"
+        useInitial: initialMode === "migration"
       })
     : {
         contentLost: false,
-        value: defaultMode === "none" ? getEmptyPropertyValue(property) : property.defaultValue
+        value: initialMode === "none" ? getEmptyPropertyValue(property) : property.initialValue
       };
 
   return {
@@ -68,16 +69,16 @@ const createPropertyNode = (
 const createFragmentNode = (
   fragment: SchemaFragment,
   content: ContentNode[],
-  defaultMode: SchemaContentDefaultMode,
+  initialMode: SchemaContentInitialMode,
   existing?: ExistingSchemaField
 ): ContentNode => {
   const fragmentContent = hasMeaningfulContent(content)
     ? content
-    : defaultMode === "none"
+    : initialMode === "none"
       ? content.length > 0
         ? content
-        : createEmptyContentNodes(fragment.defaultContent)
-      : cloneContentNodes(fragment.defaultContent);
+        : createEmptyContentNodes(fragment.initialContent)
+      : cloneContentNodes(fragment.initialContent);
 
   return {
     type: "fragment",
@@ -103,7 +104,7 @@ const getFirstCompatibleFragment = (
 const migrateContentToSchema = (
   input: SchemaContentMigrationInput
 ): SchemaContentMigrationResult => {
-  const defaultMode = input.defaultMode || "migration";
+  const initialMode = input.initialMode || "migration";
   const schema = schemaDefinitionType.parse(input.schema);
   const existingFields = getExistingSchemaFields(input.document);
   const matches = matchSchemaFields(schema.fields, existingFields);
@@ -117,6 +118,13 @@ const migrateContentToSchema = (
   const fragmentContent = new Map<string, ContentNode[]>(
     fragments.map((fragment) => [fragment.id, []])
   );
+  const isAbsentOptionalField = (field: SchemaField) => {
+    return Boolean(field.optional) && !matches.has(field.id);
+  };
+  // Blocks without a field go to an absent optional fragment only as the last option.
+  const targetFragments = [...fragments].sort((first, second) => {
+    return Number(isAbsentOptionalField(first)) - Number(isAbsentOptionalField(second));
+  });
   const matchedExistingIndexes = new Set(
     [...matches.values()].map((existingField) => existingField.index)
   );
@@ -129,8 +137,10 @@ const migrateContentToSchema = (
   let contentLost = false;
 
   for (const property of properties) {
+    if (isAbsentOptionalField(property)) continue;
+
     const existing = matches.get(property.id);
-    const migrated = createPropertyNode(property, defaultMode, existing);
+    const migrated = createPropertyNode(property, initialMode, existing);
 
     contentLost ||= migrated.contentLost;
     propertyNodes.set(property.id, migrated.node);
@@ -160,7 +170,7 @@ const migrateContentToSchema = (
       const targetFragment =
         matchedFragment && !findDisallowedElementBlock([block], matchedFragment.allowedBlocks)
           ? matchedFragment
-          : getFirstCompatibleFragment(fragments, block);
+          : getFirstCompatibleFragment(targetFragments, block);
 
       if (!targetFragment) {
         contentLost ||= hasMeaningfulContent([block]);
@@ -171,20 +181,20 @@ const migrateContentToSchema = (
     }
   });
 
-  const migratedFields = schema.fields.map((field) => {
-    if (field.kind === "property") return propertyNodes.get(field.id)!;
+  const migratedFields = schema.fields.flatMap((field) => {
+    if (field.kind === "property") return propertyNodes.get(field.id) ?? [];
 
-    return createFragmentNode(
-      field,
-      fragmentContent.get(field.id) || [],
-      defaultMode,
-      matches.get(field.id)
-    );
+    const content = fragmentContent.get(field.id) || [];
+
+    if (isAbsentOptionalField(field) && !content.length) return [];
+
+    return createFragmentNode(field, content, initialMode, matches.get(field.id));
   });
   const document: ContentNode = {
     ...input.document,
     type: "doc",
-    content: [title, ...migratedFields]
+    // The document schema needs a block after the title, when all fields are absent.
+    content: [title, ...(migratedFields.length ? migratedFields : [{ type: "paragraph" }])]
   };
 
   return {
@@ -194,6 +204,30 @@ const migrateContentToSchema = (
   };
 };
 
+/** Adds an absent optional field before the fields that follow it in the schema. */
+const addOptionalField = (
+  document: ContentNode,
+  schema: SchemaDefinition,
+  field: SchemaField
+): ContentNode => {
+  const content = (document.content ??= []);
+  const order = schema.fields.map(({ id }) => id);
+  const fieldOrder = order.indexOf(field.id);
+  const nextIndex = content.findIndex((node) => {
+    return (
+      node.type === "paragraph" ||
+      order.indexOf(String(node.attrs?.[SCHEMA_FIELD_ID_ATTRIBUTE])) > fieldOrder
+    );
+  });
+  const node =
+    field.kind === "property"
+      ? createPropertyNode(field, "new-entry").node
+      : createFragmentNode(field, [], "new-entry");
+
+  content.splice(nextIndex < 0 ? content.length : nextIndex, 0, node);
+
+  return node;
+};
 const removeContentSchema = (document: ContentNode): SchemaContentMigrationResult => {
   const content = document.content?.map((node) => {
     if (node.type !== "property" && node.type !== "fragment") return node;
@@ -221,5 +255,5 @@ const removeContentSchema = (document: ContentNode): SchemaContentMigrationResul
   };
 };
 
-export { migrateContentToSchema, removeContentSchema };
-export type { SchemaContentDefaultMode, SchemaContentMigrationInput, SchemaContentMigrationResult };
+export { addOptionalField, migrateContentToSchema, removeContentSchema };
+export type { SchemaContentInitialMode, SchemaContentMigrationInput, SchemaContentMigrationResult };

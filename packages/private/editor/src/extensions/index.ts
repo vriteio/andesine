@@ -8,6 +8,7 @@ export * from "./collaboration-caret";
 export * from "./separator";
 export * from "./resource-name-tracker";
 export * from "./schema-constraints";
+export * from "./field-keyboard";
 export * from "./version-diff";
 export * from "./collaboration";
 export { NodeRange } from "@tiptap/extension-node-range";

@@ -38,14 +38,14 @@ const createPropertyDefinition = (node: ContentNode): SchemaProperty => {
     : "text";
   const options = normalizeStringArray(node.attrs?.options);
   const rawValue = node.attrs?.value;
-  let defaultValue: boolean | string | string[] = "";
+  let initialValue: boolean | string | string[] = "";
 
   if (type === "checkbox") {
-    defaultValue = rawValue === true;
+    initialValue = rawValue === true;
   } else if (type === "multi-select") {
-    defaultValue = normalizeStringArray(rawValue).filter((value) => options.includes(value));
+    initialValue = normalizeStringArray(rawValue).filter((value) => options.includes(value));
   } else if (typeof rawValue === "string") {
-    defaultValue = type === "select" && !options.includes(rawValue) ? "" : rawValue;
+    initialValue = type === "select" && !options.includes(rawValue) ? "" : rawValue;
   }
 
   return {
@@ -53,8 +53,9 @@ const createPropertyDefinition = (node: ContentNode): SchemaProperty => {
     kind: "property",
     label: typeof node.attrs?.label === "string" ? node.attrs.label : "",
     type,
-    defaultValue,
-    options
+    initialValue,
+    options,
+    ...(node.attrs?.optional === true && { optional: true })
   };
 };
 const createFragmentDefinition = (node: ContentNode): SchemaFragment => {
@@ -64,7 +65,7 @@ const createFragmentDefinition = (node: ContentNode): SchemaFragment => {
   const allowedBlocks = Array.isArray(node.attrs?.allowedBlocks)
     ? configuredBlocks
     : [...SCHEMA_BLOCK_TYPES];
-  const defaultContent = (node.content || []).filter((block) => {
+  const initialContent = (node.content || []).filter((block) => {
     return !findDisallowedElementBlock([block], allowedBlocks);
   });
 
@@ -73,10 +74,11 @@ const createFragmentDefinition = (node: ContentNode): SchemaFragment => {
     kind: "fragment",
     label: typeof node.attrs?.name === "string" ? node.attrs.name : "",
     allowedBlocks,
-    defaultContent:
-      defaultContent.length > 0
-        ? defaultContent.map(normalizeContentElements)
-        : [{ type: "paragraph" }]
+    initialContent:
+      initialContent.length > 0
+        ? initialContent.map(normalizeContentElements)
+        : [{ type: "paragraph" }],
+    ...(node.attrs?.optional === true && { optional: true })
   };
 };
 
@@ -89,6 +91,7 @@ const createSchemaEditorFieldNode = (
     id: field.id,
     [SCHEMA_FIELD_ID_ATTRIBUTE]: field.id,
     inherited: inherited || source?.inherited || false,
+    optional: field.optional ?? false,
     sourceCollectionID: source?.collectionID
   };
 
@@ -99,7 +102,7 @@ const createSchemaEditorFieldNode = (
         ...sharedAttributes,
         label: field.label,
         type: field.type,
-        value: field.defaultValue,
+        value: field.initialValue,
         options: field.options
       }
     };
@@ -112,7 +115,7 @@ const createSchemaEditorFieldNode = (
       name: field.label,
       allowedBlocks: field.allowedBlocks
     },
-    content: field.defaultContent
+    content: field.initialContent
   };
 };
 const createSchemaEditorDocument = (

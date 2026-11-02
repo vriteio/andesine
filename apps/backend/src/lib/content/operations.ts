@@ -1,4 +1,6 @@
 import { getContentFieldKey, type ContentNode } from "@andesine/document";
+import { type SchemaDefinition } from "@andesine/contracts/schema";
+import { addOptionalField } from "@andesine/server/schema";
 import { ORPCError } from "@orpc/server";
 import {
   decodeBlocksMDX,
@@ -111,10 +113,19 @@ const findBlock = (document: ContentNode, id: string, index: number): ContentBlo
 
   return block;
 };
-const findField = (document: ContentNode, key: string): ContentNode | undefined => {
+/** Finds a field by its key, and adds it if it's an absent optional field of the schema. */
+const findField = (
+  document: ContentNode,
+  key: string,
+  schema?: SchemaDefinition
+): ContentNode | undefined => {
   const keys = [getContentFieldKey("property", key), getContentFieldKey("fragment", key)];
+  const field = document.content?.find((node) => keys.includes(getFieldKey(node) ?? ""));
+  const optionalField = schema?.fields.find(({ kind, label, optional }) => {
+    return optional && keys.includes(getContentFieldKey(kind, label));
+  });
 
-  return document.content?.find((node) => keys.includes(getFieldKey(node) ?? ""));
+  return field ?? (optionalField && addOptionalField(document, schema!, optionalField));
 };
 const replaceText = async (
   document: ContentNode,
@@ -154,7 +165,8 @@ const insertBlocks = async (
   document: ContentNode,
   operation: InsertBlocksOperation,
   index: number,
-  imageAssetIDs?: ImageAssetIDs
+  imageAssetIDs?: ImageAssetIDs,
+  schema?: SchemaDefinition
 ): Promise<void> => {
   const nodes = await decodeBlocksMDX(operation.mdx, [], imageAssetIDs);
   const anchorID = operation.before ?? operation.after;
@@ -167,7 +179,7 @@ const insertBlocks = async (
     return;
   }
 
-  const fragment = operation.fragment ? findField(document, operation.fragment) : undefined;
+  const fragment = operation.fragment ? findField(document, operation.fragment, schema) : undefined;
 
   if (operation.fragment && fragment?.type !== "fragment") {
     throw fieldNotFoundError(index, `Fragment ${operation.fragment} not found`);
@@ -182,11 +194,24 @@ const setField = async (
   document: ContentNode,
   operation: SetFieldOperation,
   index: number,
-  imageAssetIDs?: ImageAssetIDs
+  imageAssetIDs?: ImageAssetIDs,
+  schema?: SchemaDefinition
 ): Promise<void> => {
-  const field = findField(document, operation.key);
+  const field = findField(document, operation.key, schema);
+  const removesOptionalField =
+    operation.value === null &&
+    schema?.fields.some(({ id, optional }) => optional && id === field?.attrs?.schemaFieldID);
 
   if (!field) throw fieldNotFoundError(index, `Field ${operation.key} not found`);
+
+  if (removesOptionalField) {
+    document.content!.splice(document.content!.indexOf(field), 1);
+
+    // The document schema needs a block after the title.
+    if (document.content!.length === 1) document.content!.push({ type: "paragraph" });
+
+    return;
+  }
 
   if (field.type === "property") {
     Object.assign(field, restoreProperty({ ...field, attrs: { value: operation.value } }, field));
@@ -208,7 +233,8 @@ const setField = async (
 const applyContentOperations = async (
   document: ContentNode,
   operations: ContentOperation[],
-  imageAssetIDs?: ImageAssetIDs
+  imageAssetIDs?: ImageAssetIDs,
+  schema?: SchemaDefinition
 ): Promise<ContentNode> => {
   const result = structuredClone(document);
 
@@ -224,7 +250,7 @@ const applyContentOperations = async (
         ...(await decodeBlocksMDX(operation.mdx, [node], imageAssetIDs))
       );
     } else if (operation.type === "insertBlocks") {
-      await insertBlocks(result, operation, index, imageAssetIDs);
+      await insertBlocks(result, operation, index, imageAssetIDs, schema);
     } else if (operation.type === "deleteBlocks") {
       for (const id of operation.ids) {
         const { container, node } = findBlock(result, id, index);
@@ -232,7 +258,7 @@ const applyContentOperations = async (
         container.splice(container.indexOf(node), 1);
       }
     } else {
-      await setField(result, operation, index, imageAssetIDs);
+      await setField(result, operation, index, imageAssetIDs, schema);
     }
   }
 

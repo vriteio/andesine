@@ -3,6 +3,7 @@ import {
   Title,
   EntryDocument,
   CollectionSchemaDocument,
+  SchemaFieldOptional,
   Text,
   Paragraph,
   HardBreak,
@@ -47,6 +48,7 @@ import {
   createEffect,
   createMemo,
   createSignal,
+  on,
   onCleanup,
   Show,
   untrack
@@ -60,6 +62,7 @@ import clsx from "clsx";
 import {
   ResourceNameTracker,
   SchemaConstraints,
+  FieldKeyboard,
   Separator,
   TrailingNode,
   Collaboration,
@@ -133,7 +136,10 @@ const ClientEditor: Component<EditorProps> = (props) => {
         ]
       : [];
     const diffExtensions = props.diff ? [VersionDiff.configure({ ...props.diff, owner })] : [];
-    const schemaExtensions = [SchemaConstraints.configure({ mode: editorMode })];
+    const schemaExtensions = [
+      SchemaConstraints.configure({ mode: editorMode, fields: () => props.schemaFields ?? [] }),
+      ...(editorMode === "schema" ? [SchemaFieldOptional] : [])
+    ];
     const titleExtensions =
       editorMode === "entry"
         ? [
@@ -251,6 +257,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
       DocumentIDs,
       UniqueID,
       Gapcursor,
+      FieldKeyboard,
       Dropcursor,
       BlockSelection,
       ...diffExtensions,
@@ -335,6 +342,8 @@ const ClientEditor: Component<EditorProps> = (props) => {
     if (!currentEditor) return;
 
     currentEditor.setEditable(props.editable ?? true);
+    // Plugins like the trailing node skip read-only editors, so they run again here.
+    currentEditor.view.dispatch(currentEditor.state.tr);
   });
 
   // Entry links show their entries' current titles, e.g. after a rename.
@@ -411,6 +420,19 @@ const ClientEditor: Component<EditorProps> = (props) => {
       document.removeEventListener("pointerup", onUp);
     });
   });
+
+  // The trailing paragraph for optional fields depends on them.
+  createEffect(
+    on(
+      () => props.schemaFields,
+      () => {
+        const currentEditor = editor();
+
+        if (currentEditor) currentEditor.view.dispatch(currentEditor.state.tr);
+      },
+      { defer: true }
+    )
+  );
 
   // In code block editors too, as those keep their keys from ProseMirror.
   createEffect(() => {

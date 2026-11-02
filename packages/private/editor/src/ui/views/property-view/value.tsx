@@ -17,7 +17,7 @@ import { PlainTextInput } from "./plain-text-input";
 
 interface PropertyValueProps {
   attrs: PropertyAttrs;
-  defaultValue?: boolean;
+  initialValue?: boolean;
   selected: boolean;
   selectProperty(): void;
   updateAttributes(attributes: Partial<PropertyAttrs>, options?: UpdateAttributesOptions): void;
@@ -75,14 +75,14 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
         <PlainTextInput
           class={!props.selected ? RESTING_INPUT_OVERRIDES : undefined}
           value={stringValue()}
-          placeholder={props.defaultValue ? "Default text" : undefined}
+          placeholder={props.initialValue ? "Initial text" : undefined}
           onConfirm={(value) => props.updateAttributes({ value })}
         />
       </Match>
       <Match when={props.attrs.type === "number"}>
         <Input
           type="number"
-          placeholder={props.defaultValue ? "Default number" : "Enter number"}
+          placeholder={props.initialValue ? "Initial number" : "Enter number"}
           class={clsx("w-full min-w-0", !props.selected && RESTING_INPUT_OVERRIDES)}
           value={inputValue()}
           setValue={setInputValue}
@@ -120,7 +120,7 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
       <Match when={props.attrs.type === "url"}>
         <Input
           type="url"
-          placeholder={props.defaultValue ? "Default URL" : "https://example.com"}
+          placeholder={props.initialValue ? "Initial URL" : "https://example.com"}
           class={clsx("w-full min-w-0", !props.selected && RESTING_INPUT_OVERRIDES)}
           value={inputValue()}
           setValue={setInputValue}
@@ -132,7 +132,7 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
           class="w-full"
           triggerClass={!props.selected ? RESTING_CONTROL_OVERRIDES : undefined}
           title="Select property value"
-          placeholder={props.defaultValue ? "Select default" : "Select"}
+          placeholder={props.initialValue ? "Select initial value" : "Select"}
           options={props.attrs.options.map((option) => ({ label: option, value: option }))}
           portal={false}
           positioningStrategy="absolute"
@@ -190,7 +190,7 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
                         ? undefined
                         : () => (
                             <span class="px-0.5 text-sm">
-                              {props.defaultValue ? "Add default" : "Add value"}
+                              {props.initialValue ? "Add initial value" : "Add value"}
                             </span>
                           )
                     }
@@ -213,10 +213,10 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
               <Combobox
                 class="w-full min-w-0 md:[&>label]:hidden"
                 inlineOptions
-                label={props.defaultValue ? "Add default" : "Add value"}
+                label={props.initialValue ? "Add initial value" : "Add value"}
                 options={availableMultiSelectOptions()}
                 optionsPlacement={md() ? multiSelectOptionsPlacement() : "bottom"}
-                placeholder={props.defaultValue ? "Select default" : "Select value"}
+                placeholder={props.initialValue ? "Select initial value" : "Select value"}
                 portal={false}
                 surfaceClass="!bg-gray-50 md:!bg-white"
                 setValue={addMultiSelectValue}

@@ -10,7 +10,7 @@ interface PropertyMigrationResult {
   value: SchemaPropertyValue;
 }
 interface PropertyMigrationOptions {
-  useDefault: boolean;
+  useInitial: boolean;
 }
 
 const getFallbackValue = (
@@ -20,7 +20,7 @@ const getFallbackValue = (
 ): PropertyMigrationResult => {
   return {
     contentLost,
-    value: options.useDefault ? property.defaultValue : getEmptyPropertyValue(property)
+    value: options.useInitial ? property.initialValue : getEmptyPropertyValue(property)
   };
 };
 const isPropertyValueEmpty = (type: PropertyType, value: unknown): boolean => {

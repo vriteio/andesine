@@ -3,6 +3,7 @@ import type { Editor } from "@tiptap/core";
 import clsx from "clsx";
 import { createEffect, createSignal, onCleanup, onMount, Show, type JSX } from "solid-js";
 import { getResourceNameDetails } from "#editor/extensions/resource-name-tracker";
+import { createRequiredMenuItem } from "#editor/ui/views/required-menu-item";
 import { MAX_PROPERTY_NAME_LENGTH } from "@andesine/document";
 
 interface PropertyAttrs {
@@ -10,6 +11,7 @@ interface PropertyAttrs {
   label: string;
   value: string | boolean | string[];
   options: string[];
+  optional?: boolean;
   inherited?: boolean;
   schemaFieldID?: string | null;
   sourceCollectionID?: string | null;
@@ -18,6 +20,9 @@ interface PropertyMenuProps {
   attrs: PropertyAttrs;
   editor: Editor;
   getPos(): number | undefined;
+  schemaMode: boolean;
+  /** Entry field from the schema; only its removal is allowed. */
+  schemaEnforced: boolean;
   selected: boolean;
   deleteProperty(): void;
   selectProperty(): void;
@@ -87,7 +92,16 @@ const PropertyMenu = (props: PropertyMenuProps): JSX.Element => {
     onClick: () => setType(type)
   });
   const menuItems = (): Array<Array<MenuItem | (() => JSX.Element)>> => {
-    const configurationItems: Array<(() => JSX.Element)[]> = [
+    const deleteItem: MenuItem = {
+      icon: "i-lucide:trash-2",
+      label: "Delete property",
+      color: "danger",
+      onClick: props.deleteProperty
+    };
+
+    if (props.schemaEnforced) return [[deleteItem]];
+
+    const configurationItems: Array<Array<MenuItem | (() => JSX.Element)>> = [
       [
         () => (
           <div class="flex w-full min-w-0 flex-col gap-1 p-1 md:min-w-60" data-property-menu-input>
@@ -131,6 +145,14 @@ const PropertyMenu = (props: PropertyMenuProps): JSX.Element => {
       ]
     ];
 
+    if (props.schemaMode) {
+      configurationItems.push([
+        createRequiredMenuItem(!props.attrs.optional, (required) => {
+          props.updateAttributes({ optional: !required });
+        })
+      ]);
+    }
+
     if (["select", "multi-select"].includes(props.attrs.type)) {
       configurationItems.push([
         () => (
@@ -163,14 +185,7 @@ const PropertyMenu = (props: PropertyMenuProps): JSX.Element => {
           ]
         }
       ],
-      [
-        {
-          icon: "i-lucide:trash-2",
-          label: "Delete property",
-          color: "danger",
-          onClick: props.deleteProperty
-        }
-      ]
+      [deleteItem]
     ];
   };
 
@@ -192,9 +207,12 @@ const PropertyMenu = (props: PropertyMenuProps): JSX.Element => {
       title="Property settings"
       opened={opened()}
       setOpened={(nextOpened) => {
-        if (!opened() && nextOpened) setNameInputTabIndex(0);
+        if (!opened() && nextOpened) {
+          setNameInputTabIndex(0);
+          props.selectProperty();
+        }
 
-        if (opened() && !nextOpened) commitConfiguration();
+        if (opened() && !nextOpened && !props.schemaEnforced) commitConfiguration();
 
         setOpened(nextOpened);
       }}
@@ -226,6 +244,14 @@ const PropertyMenu = (props: PropertyMenuProps): JSX.Element => {
           >
             {props.attrs.label || "Property"}
           </span>
+          <Show when={props.schemaMode && !props.attrs.optional}>
+            <span
+              class="-ml-0.5 mb-1 shrink-0 font-mono text-xs text-red-500"
+              aria-label="Required"
+            >
+              *
+            </span>
+          </Show>
           <span
             data-node-selection-line
             class={clsx(

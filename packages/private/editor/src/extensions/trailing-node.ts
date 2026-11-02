@@ -2,6 +2,7 @@ import { Extension } from "@tiptap/core";
 import { type NodeType, type Node as ProsemirrorNode } from "@tiptap/pm/model";
 import { PluginKey, Plugin } from "@tiptap/pm/state";
 import type { EditorMode } from "#editor/client-types";
+import { getSchemaFields, getUnusedOptionalFields } from "#editor/lib/optional-fields";
 
 const nodeEqualsType = (node: ProsemirrorNode, types: NodeType | NodeType[]): boolean => {
   return Array.isArray(types) ? types.includes(node.type) : node.type === types;
@@ -31,11 +32,12 @@ const hasSchemaFields = (document: ProsemirrorNode): boolean => {
 const getTrailingNodeAction = (
   document: ProsemirrorNode,
   disabledNodes: NodeType[],
-  mode: EditorMode
+  mode: EditorMode,
+  addsOptionalFields: boolean
 ): TrailingNodeAction => {
   const lastNode = document.lastChild;
 
-  if (mode === "schema") {
+  if (mode === "schema" || addsOptionalFields) {
     return lastNode?.type.name === "paragraph" ? null : "insert";
   }
 
@@ -59,6 +61,7 @@ const TrailingNode = Extension.create<TrailingNodeOptions>({
 
   addProseMirrorPlugins() {
     const plugin = new PluginKey(this.name);
+    const { editor, options } = this;
     const disabledNodes = Object.entries(this.editor.schema.nodes)
       .map(([, value]) => value)
       .filter((node) => this.options.notAfter.includes(node.name));
@@ -66,11 +69,24 @@ const TrailingNode = Extension.create<TrailingNodeOptions>({
     return [
       new Plugin({
         key: plugin,
+        // Also after an empty transaction, as the optional fields can load after the document.
         appendTransaction: (_trs, _oldState, state) => {
           const { doc, tr, schema } = state;
-          const action = plugin.getState(state) as TrailingNodeAction;
+
+          // Read-only clients have no optional fields, so they'd undo the editors' paragraph.
+          if (!editor.isEditable) return;
+
+          const addsOptionalFields =
+            options.mode === "entry" &&
+            getUnusedOptionalFields(getSchemaFields(editor), doc).length > 0;
+          const action = getTrailingNodeAction(
+            doc,
+            disabledNodes,
+            options.mode,
+            addsOptionalFields
+          );
           const endPosition = doc.content.size;
-          const type = schema.nodes[this.options.node];
+          const type = schema.nodes[options.node];
 
           if (action === "insert") {
             return tr.insert(endPosition, type.createAndFill()!);
@@ -81,15 +97,6 @@ const TrailingNode = Extension.create<TrailingNodeOptions>({
           }
 
           return;
-        },
-        state: {
-          init: (_config, state) =>
-            getTrailingNodeAction(state.doc, disabledNodes, this.options.mode),
-          apply: (tr, value) => {
-            if (!tr.docChanged) return value;
-
-            return getTrailingNodeAction(tr.doc, disabledNodes, this.options.mode);
-          }
         }
       })
     ];

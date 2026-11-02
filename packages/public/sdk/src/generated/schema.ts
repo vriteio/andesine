@@ -3909,8 +3909,9 @@ export interface components {
       label: string;
       /** @enum {string} */
       type: "text" | "number" | "checkbox" | "date" | "url" | "select" | "multi-select";
-      defaultValue: components["schemas"]["SchemaPropertyValue"];
+      initialValue: components["schemas"]["SchemaPropertyValue"];
       options: string[];
+      optional?: boolean;
     };
     SchemaPropertyValue: boolean | string | string[];
     SchemaFragment: {
@@ -3919,7 +3920,8 @@ export interface components {
       kind: "fragment";
       label: string;
       allowedBlocks: components["schemas"]["SchemaBlockType"][];
-      defaultContent: components["schemas"]["ContentNode"][];
+      initialContent: components["schemas"]["ContentNode"][];
+      optional?: boolean;
     };
     /** @enum {string} */
     SchemaBlockType:
@@ -26184,7 +26186,7 @@ export interface operations {
          *             "kind": "property",
          *             "label": "Summary",
          *             "type": "text",
-         *             "defaultValue": "",
+         *             "initialValue": "",
          *             "options": []
          *           }
          *         ]
@@ -26204,7 +26206,8 @@ export interface operations {
                   kind: "fragment";
                   label: string;
                   allowedBlocks: components["schemas"]["SchemaBlockType"][];
-                  defaultContent: components["schemas"]["ContentNodeInput"][];
+                  initialContent: components["schemas"]["ContentNodeInput"][];
+                  optional?: boolean;
                 }
             )[];
           };
@@ -26530,7 +26533,8 @@ export interface operations {
                   kind: "fragment";
                   label: string;
                   allowedBlocks: components["schemas"]["SchemaBlockType"][];
-                  defaultContent: components["schemas"]["ContentNodeInput"][];
+                  initialContent: components["schemas"]["ContentNodeInput"][];
+                  optional?: boolean;
                 }
             )[];
           };

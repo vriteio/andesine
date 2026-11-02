@@ -13,6 +13,7 @@ import {
   type ContentNode,
   contentNodeType
 } from "@andesine/document";
+import { isFieldPromptParagraph } from "../content/document";
 import { normalizePropertyDate } from "../content/properties";
 
 const hasSameOptions = (value: unknown, expected: string[]): boolean => {
@@ -106,6 +107,7 @@ const validateContentSchema = (
     };
 
     if (kind === "title" && index === 0) return;
+    if (index === document.content!.length - 1 && isFieldPromptParagraph(node)) return;
 
     if (kind !== "fragment" && kind !== "property") {
       addIssue(
@@ -202,7 +204,7 @@ const validateContentSchema = (
   });
 
   for (const field of schema.fields) {
-    if (!seenFieldIDs.has(field.id)) {
+    if (!seenFieldIDs.has(field.id) && !field.optional) {
       issues.push({
         code: "missing_field",
         message: `Required ${field.kind} "${field.label}" is missing`,

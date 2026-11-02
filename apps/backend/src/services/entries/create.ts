@@ -230,13 +230,14 @@ const createEntry = withAuthorization<CreateEntryInput, ResolvedCreateEntry, Cre
           )
           .limit(1)
       : [];
+    const activeSchema = activeRevision && getResolvedSchemaDefinition(activeRevision.definition);
     const createSchemaContent = (title: string) => {
-      if (!activeRevision) return null;
+      if (!activeSchema) return null;
 
       return migrateSchemaContentState({
-        defaultMode: "new-entry",
+        initialMode: "new-entry",
         document: createInitialDocument(title),
-        schema: getResolvedSchemaDefinition(activeRevision.definition),
+        schema: activeSchema,
         state: null
       });
     };
@@ -246,7 +247,9 @@ const createEntry = withAuthorization<CreateEntryInput, ResolvedCreateEntry, Cre
         ? input.document
         : await decodeEntryMDX(
             input.mdx,
-            createSchemaContent("")?.document ?? createInitialDocument("")
+            createSchemaContent("")?.document ?? createInitialDocument(""),
+            undefined,
+            activeSchema
           );
     const name = pathTarget
       ? pathTarget.name
@@ -347,7 +350,12 @@ const createEntry = withAuthorization<CreateEntryInput, ResolvedCreateEntry, Cre
           ? await prepareEntryContent(database, workspaceID, {
               authorization,
               schemaRevisionID: activeRevision?.id ?? null,
-              document: await applyContentOperations(initialDocument, fieldOperations)
+              document: await applyContentOperations(
+                initialDocument,
+                fieldOperations,
+                undefined,
+                activeSchema
+              )
             })
           : // Without content, store what a live document starts with, so reads and writes agree.
             (createSchemaContent(created.name) ??

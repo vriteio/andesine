@@ -7,6 +7,7 @@ import {
 } from "#editor/lib";
 import { PropertyMenu, propertyTypeDetails, type PropertyAttrs } from "./menu";
 import { PropertyValue } from "./value";
+import { isOptionalField } from "#editor/lib/optional-fields";
 import { InheritedSchemaFieldBadge } from "#editor/ui/inherited-schema-field-badge";
 import clsx from "clsx";
 
@@ -34,6 +35,15 @@ const PropertyView: Component<PropertyViewProps> = (props) => {
 
     props.select();
   };
+  // Back to the editor, to go on with the arrow keys; open dropdowns close first.
+  const selectOnEscape = (event: KeyboardEvent) => {
+    if (event.key !== "Escape" || event.defaultPrevented) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    props.editor.view.focus();
+    props.select();
+  };
   const readonlyValue = () => {
     const value = attrs().value;
 
@@ -43,7 +53,10 @@ const PropertyView: Component<PropertyViewProps> = (props) => {
     return value || "—";
   };
   const editable = () => props.editable() && !attrs().inherited;
-  const configurable = () => props.schemaMode || !attrs().schemaFieldID;
+  const schemaEnforced = () => !props.schemaMode && Boolean(attrs().schemaFieldID);
+  const configurable = () => {
+    return !schemaEnforced() || isOptionalField(props.editor, attrs().schemaFieldID);
+  };
 
   return (
     <Show
@@ -61,6 +74,14 @@ const PropertyView: Component<PropertyViewProps> = (props) => {
           <div class="flex h-9 w-full min-w-0 items-center gap-1 text-sm font-medium md:w-48">
             <div class={`h-4.5 w-4.5 shrink-0 text-gray-300 ${propertyTypeDetails[type()].icon}`} />
             <span class="min-w-0 truncate text-gray-500">{attrs().label || "Property"}</span>
+            <Show when={props.schemaMode && !attrs().optional}>
+              <span
+                class="-ml-0.5 mb-1 shrink-0 font-mono text-xs text-red-500"
+                aria-label="Required"
+              >
+                *
+              </span>
+            </Show>
           </div>
           <div class="flex min-h-9 min-w-0 flex-1 items-center text-sm text-gray-700">
             {readonlyValue()}
@@ -86,6 +107,8 @@ const PropertyView: Component<PropertyViewProps> = (props) => {
                 attrs={attrs()}
                 editor={props.editor}
                 getPos={props.getPos}
+                schemaMode={props.schemaMode}
+                schemaEnforced={schemaEnforced()}
                 selected={props.selected()}
                 selectProperty={props.select}
                 updateAttributes={updateAttributes}
@@ -101,10 +124,11 @@ const PropertyView: Component<PropertyViewProps> = (props) => {
           })}
           data-property-value
           onFocusIn={selectOnFocus}
+          onKeyDown={selectOnEscape}
         >
           <PropertyValue
             attrs={attrs()}
-            defaultValue={props.schemaMode}
+            initialValue={props.schemaMode}
             selected={props.selected()}
             selectProperty={props.select}
             updateAttributes={updateAttributes}

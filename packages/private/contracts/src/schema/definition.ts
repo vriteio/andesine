@@ -12,15 +12,17 @@ interface SchemaProperty {
   kind: "property";
   label: string;
   type: PropertyType;
-  defaultValue: SchemaPropertyValue;
+  initialValue: SchemaPropertyValue;
   options: string[];
+  optional?: boolean;
 }
 interface SchemaFragment {
   id: string;
   kind: "fragment";
   label: string;
   allowedBlocks: SchemaBlockType[];
-  defaultContent: ContentNode[];
+  initialContent: ContentNode[];
+  optional?: boolean;
 }
 interface SchemaDefinition {
   formatVersion: 1;
@@ -53,25 +55,26 @@ const schemaPropertyType: z.ZodType<SchemaProperty> = z
     kind: z.literal("property"),
     label: z.string().max(MAX_SCHEMA_FIELD_LABEL_LENGTH),
     type: z.enum(["text", "number", "checkbox", "date", "url", "select", "multi-select"]),
-    defaultValue: schemaPropertyValueType,
-    options: z.array(z.string())
+    initialValue: schemaPropertyValueType,
+    options: z.array(z.string()),
+    optional: z.boolean().optional()
   })
   .superRefine((property, context) => {
-    const value = property.defaultValue;
+    const value = property.initialValue;
 
     if (property.type === "checkbox" && typeof value !== "boolean") {
       context.addIssue({
         code: "custom",
-        message: "Checkbox defaults must be boolean values",
-        path: ["defaultValue"]
+        message: "Checkbox initial values must be boolean",
+        path: ["initialValue"]
       });
     }
 
     if (property.type === "multi-select" && !Array.isArray(value)) {
       context.addIssue({
         code: "custom",
-        message: "Multi-select defaults must be string arrays",
-        path: ["defaultValue"]
+        message: "Multi-select initial values must be string arrays",
+        path: ["initialValue"]
       });
     }
 
@@ -82,16 +85,16 @@ const schemaPropertyType: z.ZodType<SchemaProperty> = z
     ) {
       context.addIssue({
         code: "custom",
-        message: `${property.type} defaults must be string values`,
-        path: ["defaultValue"]
+        message: `${property.type} initial values must be strings`,
+        path: ["initialValue"]
       });
     }
 
     if (property.type === "select" && value && !property.options.includes(String(value))) {
       context.addIssue({
         code: "custom",
-        message: "Select defaults must match an available option",
-        path: ["defaultValue"]
+        message: "Select initial values must match an available option",
+        path: ["initialValue"]
       });
     }
 
@@ -102,8 +105,8 @@ const schemaPropertyType: z.ZodType<SchemaProperty> = z
     ) {
       context.addIssue({
         code: "custom",
-        message: "Multi-select defaults must match available options",
-        path: ["defaultValue"]
+        message: "Multi-select initial values must match available options",
+        path: ["initialValue"]
       });
     }
   });
@@ -113,7 +116,8 @@ const schemaFragmentType: z.ZodType<SchemaFragment> = z
     kind: z.literal("fragment"),
     label: z.string().max(MAX_SCHEMA_FIELD_LABEL_LENGTH),
     allowedBlocks: z.array(schemaBlockType),
-    defaultContent: z.array(contentNodeType).min(1)
+    initialContent: z.array(contentNodeType).min(1),
+    optional: z.boolean().optional()
   })
   .superRefine((fragment, context) => {
     const allowedBlocks = new Set(fragment.allowedBlocks);
@@ -123,20 +127,20 @@ const schemaFragmentType: z.ZodType<SchemaFragment> = z
       );
     };
 
-    if (fragment.defaultContent.some(containsAsset)) {
+    if (fragment.initialContent.some(containsAsset)) {
       context.addIssue({
         code: "custom",
-        message: "Upload images in entries, not schema defaults",
-        path: ["defaultContent"]
+        message: "Upload images in entries, not initial content",
+        path: ["initialContent"]
       });
     }
 
-    fragment.defaultContent.forEach((node, index) => {
+    fragment.initialContent.forEach((node, index) => {
       if (findDisallowedElementBlock([node], [...allowedBlocks])) {
         context.addIssue({
           code: "custom",
-          message: `Default content uses unsupported block type "${node.type}"`,
-          path: ["defaultContent", index]
+          message: `Initial content uses unsupported block type "${node.type}"`,
+          path: ["initialContent", index]
         });
       }
     });

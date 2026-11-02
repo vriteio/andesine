@@ -1,6 +1,7 @@
 import { DropdownArea } from "@andesine/components";
 import { type Component, Show } from "solid-js";
 import { createNodeViewRenderer, type NodeViewComponentProps } from "#editor/lib";
+import { isOptionalField } from "#editor/lib/optional-fields";
 import { InheritedSchemaFieldBadge } from "#editor/ui/inherited-schema-field-badge";
 import { FragmentMenu, type FragmentAttrs } from "./menu";
 
@@ -9,8 +10,11 @@ interface FragmentViewProps extends NodeViewComponentProps<FragmentAttrs> {
 }
 const FragmentView: Component<FragmentViewProps> = (props) => {
   const attrs = () => props.node().attrs as FragmentAttrs;
+  const schemaEnforced = () => !props.schemaMode && Boolean(attrs().schemaFieldID);
   const editable = () => {
-    return props.editable() && !attrs().inherited && (props.schemaMode || !attrs().schemaFieldID);
+    const configurable = !schemaEnforced() || isOptionalField(props.editor, attrs().schemaFieldID);
+
+    return props.editable() && !attrs().inherited && configurable;
   };
 
   return (
@@ -33,6 +37,14 @@ const FragmentView: Component<FragmentViewProps> = (props) => {
           >
             <span class="i-lucide:letter-text h-4.5 w-4.5 shrink-0 text-gray-300" />
             <span class="min-w-0 truncate text-gray-500 mr-1">{attrs().name || "Content"}</span>
+            <Show when={props.schemaMode && !attrs().optional}>
+              <span
+                class="-ml-2 mr-1 mb-1 shrink-0 font-mono text-xs text-red-500"
+                aria-label="Required"
+              >
+                *
+              </span>
+            </Show>
             <span class="h-px flex-1 rounded-full bg-gray-200" />
           </div>
         }
@@ -43,7 +55,9 @@ const FragmentView: Component<FragmentViewProps> = (props) => {
             editor={props.editor}
             getPos={props.getPos}
             schemaMode={props.schemaMode}
+            schemaEnforced={schemaEnforced()}
             selected={props.selected()}
+            deleteFragment={props.deleteNode}
             selectFragment={props.select}
             updateAttributes={props.updateAttributes}
           />

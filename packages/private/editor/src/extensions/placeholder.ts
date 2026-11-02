@@ -2,6 +2,7 @@ import { Extension, isNodeEmpty } from "@tiptap/core";
 import { Plugin } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import type { EditorMode } from "#editor/client-types";
+import { getSchemaFields } from "#editor/lib/optional-fields";
 
 interface PlaceholderOptions {
   mode: EditorMode;
@@ -13,7 +14,7 @@ const getPlaceholder = (mode: EditorMode, insideFragment: boolean): string => {
   }
 
   if (insideFragment) {
-    return "Add default content, type / to add blocks";
+    return "Add initial content, type / to add blocks";
   }
 
   return "Type / to add schema properties and fragments";
@@ -75,13 +76,22 @@ const Placeholder = Extension.create<PlaceholderOptions>({
 
               if (insideInheritedField) return true;
 
+              const addsFields =
+                this.options.mode === "entry" &&
+                resolvedPosition.depth === 0 &&
+                node.type.name === "paragraph" &&
+                getSchemaFields(editor).length > 0;
+
               decorations.push(
                 Decoration.node(pos, pos + node.nodeSize, {
                   "class": emptyDocument ? "is-empty is-editor-empty" : "is-empty",
+                  ...(addsFields && { "data-field-prompt": "" }),
                   "data-placeholder":
                     node.type.name === "title"
                       ? "New entry"
-                      : getPlaceholder(this.options.mode, insideFragment)
+                      : addsFields
+                        ? "Type / to add optional fields"
+                        : getPlaceholder(this.options.mode, insideFragment)
                 })
               );
 

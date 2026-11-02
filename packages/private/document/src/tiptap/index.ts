@@ -12,7 +12,12 @@ import { ListItem } from "./blocks/lists/list-item";
 import { TaskItem } from "./blocks/lists/task-item";
 import { DocumentIDs, DOCUMENT_ID_NODE_TYPES } from "./ids";
 import { toLinkHref, validateURL } from "./validate-url";
-import { entryDocumentSchema, normalizeEntryDocument } from "./entry-schema";
+import {
+  entryDocumentSchema,
+  normalizeEntryDocument,
+  schemaDraftDocumentSchema,
+  SchemaFieldOptional
+} from "./entry-schema";
 import { Blockquote } from "@tiptap/extension-blockquote";
 import { Paragraph } from "@tiptap/extension-paragraph";
 import { Text } from "@tiptap/extension-text";
@@ -51,6 +56,8 @@ export {
   validateURL,
   entryDocumentSchema,
   normalizeEntryDocument,
+  schemaDraftDocumentSchema,
+  SchemaFieldOptional,
   Blockquote,
   Paragraph,
   Text,

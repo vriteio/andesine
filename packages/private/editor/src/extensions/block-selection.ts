@@ -91,13 +91,15 @@ const setBlockSelectionAtCoords = (
     }
     return true;
   }
-  const headerFragment = document
-    .elementFromPoint(coords.left, coords.top)
-    ?.closest("[data-fragment-header]")
-    ?.closest<HTMLElement>("[data-fragment-node-view]");
+  const pointElement = document.elementFromPoint(coords.left, coords.top);
+  const schemaField =
+    pointElement
+      ?.closest("[data-fragment-header]")
+      ?.closest<HTMLElement>("[data-fragment-node-view]") ||
+    pointElement?.closest<HTMLElement>("[data-property-node-view]");
 
-  if (headerFragment) {
-    const $fragment = doc.resolve(editor.view.posAtDOM(headerFragment, 0));
+  if (schemaField) {
+    const $fragment = doc.resolve(editor.view.posAtDOM(schemaField, 0));
     const fragmentFrom = $fragment.depth ? $fragment.before(1) : $fragment.pos;
     const fragment = doc.nodeAt(fragmentFrom);
 

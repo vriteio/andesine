@@ -3942,10 +3942,11 @@
             "enum": ["text", "number", "checkbox", "date", "url", "select", "multi-select"],
             "type": "string"
           },
-          "defaultValue": { "$ref": "#/components/schemas/SchemaPropertyValue" },
-          "options": { "type": "array", "items": { "type": "string" } }
+          "initialValue": { "$ref": "#/components/schemas/SchemaPropertyValue" },
+          "options": { "type": "array", "items": { "type": "string" } },
+          "optional": { "type": "boolean" }
         },
-        "required": ["id", "kind", "label", "type", "defaultValue", "options"]
+        "required": ["id", "kind", "label", "type", "initialValue", "options"]
       },
       "SchemaPropertyValue": {
         "anyOf": [
@@ -3964,13 +3965,14 @@
             "type": "array",
             "items": { "$ref": "#/components/schemas/SchemaBlockType" }
           },
-          "defaultContent": {
+          "initialContent": {
             "type": "array",
             "minItems": 1,
             "items": { "$ref": "#/components/schemas/ContentNode" }
-          }
+          },
+          "optional": { "type": "boolean" }
         },
-        "required": ["id", "kind", "label", "allowedBlocks", "defaultContent"]
+        "required": ["id", "kind", "label", "allowedBlocks", "initialContent"]
       },
       "SchemaBlockType": {
         "enum": [
@@ -34042,13 +34044,14 @@
                                   "type": "array",
                                   "items": { "$ref": "#/components/schemas/SchemaBlockType" }
                                 },
-                                "defaultContent": {
+                                "initialContent": {
                                   "type": "array",
                                   "minItems": 1,
                                   "items": { "$ref": "#/components/schemas/ContentNodeInput" }
-                                }
+                                },
+                                "optional": { "type": "boolean" }
                               },
-                              "required": ["id", "kind", "label", "allowedBlocks", "defaultContent"]
+                              "required": ["id", "kind", "label", "allowedBlocks", "initialContent"]
                             }
                           ]
                         }
@@ -34073,7 +34076,7 @@
                       "kind": "property",
                       "label": "Summary",
                       "type": "text",
-                      "defaultValue": "",
+                      "initialValue": "",
                       "options": []
                     }
                   ]
@@ -34420,7 +34423,7 @@
                 "kind": "property",
                 "label": "Summary",
                 "type": "text",
-                "defaultValue": "",
+                "initialValue": "",
                 "options": []
               }
             ]
@@ -34490,13 +34493,14 @@
                                   "type": "array",
                                   "items": { "$ref": "#/components/schemas/SchemaBlockType" }
                                 },
-                                "defaultContent": {
+                                "initialContent": {
                                   "type": "array",
                                   "minItems": 1,
                                   "items": { "$ref": "#/components/schemas/ContentNodeInput" }
-                                }
+                                },
+                                "optional": { "type": "boolean" }
                               },
-                              "required": ["id", "kind", "label", "allowedBlocks", "defaultContent"]
+                              "required": ["id", "kind", "label", "allowedBlocks", "initialContent"]
                             }
                           ]
                         }

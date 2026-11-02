@@ -2,6 +2,7 @@ import { isBlockSelection, setBlockSelectionAtCoords } from "#editor/extensions"
 import type { BlockActions, EditorIcons, EditorLinks, ElementViews } from "#editor/client-types";
 import { DropdownArea, useShortcuts } from "@andesine/components";
 import { type Editor, type EditorEvents, isTextSelection } from "@tiptap/core";
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import {
   type Accessor,
   createEffect,
@@ -13,6 +14,7 @@ import {
 } from "solid-js";
 import { Portal } from "solid-js/web";
 import { BlockMenu } from "./block-menu";
+import { hasBlockMenuItems } from "./extension-actions";
 import { BlockMenuContextProvider } from "./context";
 import type { BlockControlRange } from "#editor/ui/block-control-targeting";
 import { rangeContainsInheritedField } from "#editor/ui/block-utils";
@@ -75,6 +77,9 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
     if (rangeContainsInheritedField(editor.state.doc, from, to)) return false;
 
     return editor.chain().focus().deleteSelection().run();
+  };
+  const hasMenuItems = (node: ProseMirrorNode) => {
+    return !props.editor || hasBlockMenuItems(props.editor, node, props.blockActions);
   };
   const openMenu = (reference?: HTMLElement) => {
     if (reference) {
@@ -174,6 +179,7 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
         handleCopy,
         handleDelete,
         openMenu,
+        hasMenuItems,
         menuOpened,
         setTextMenuSelectionRange
       }}
@@ -235,14 +241,21 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
           const isInEditor = view.dom.contains(event.target as Node);
           const isTouch = event instanceof PointerEvent && event.pointerType !== "mouse";
           const overTableCell = event.target instanceof Element && event.target.closest("td, th");
-          const overFragmentHeader =
-            event.target instanceof Element && event.target.closest("[data-fragment-header]");
+          const overFieldHeader =
+            event.target instanceof Element &&
+            event.target.closest("[data-fragment-header], [data-property-node-view]");
+          const property =
+            event.target instanceof Element &&
+            event.target.closest<HTMLElement>("[data-property-node-view]");
+          const propertyNode = property ? state.doc.nodeAt(view.posAtDOM(property, 0)) : null;
 
           // Table cells open their own menu on long press, like on right click.
           if (isTouch && overTableCell) return false;
 
-          // The editor doesn't get events from a fragment's header, as it's in a node view.
-          if (event.type === "contextmenu" && overFragmentHeader) {
+          if (propertyNode && !hasMenuItems(propertyNode)) return false;
+
+          // The editor doesn't get events from fragment headers and properties, as they're node views.
+          if (event.type === "contextmenu" && overFieldHeader) {
             setBlockSelectionAtCoords(props.editor, { left: event.clientX, top: event.clientY });
           }
 

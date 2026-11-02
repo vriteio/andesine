@@ -7,6 +7,13 @@ import { Queue, createNodeRedisClient } from "bullmq";
 import { createClient } from "redis";
 
 const queueRedisClient = createClient({ url: config.QUEUE_REDIS_URL });
+
+queueRedisClient.on("error", (error) => {
+  console.error("Background job Redis client error", { error });
+});
+// BullMQ can't recover when its first connection attempt fails, e.g. before Redis starts.
+await queueRedisClient.connect();
+
 const queueRedisConnection = createNodeRedisClient(queueRedisClient);
 const searchIndexingQueue = new Queue(SEARCH_INDEXING_QUEUE_NAME, {
   connection: queueRedisConnection,
@@ -21,9 +28,6 @@ const closeQueues = async (): Promise<void> => {
   }
 };
 
-queueRedisClient.on("error", (error) => {
-  console.error("Background job Redis client error", { error });
-});
 searchIndexingQueue.on("error", (error) => {
   console.error("Search indexing queue error", { error });
 });

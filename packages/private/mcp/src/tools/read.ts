@@ -305,7 +305,8 @@ const toFieldSummary = (field: ResolvedSchemaField) => {
     id: field.id,
     ...(field.source.inherited && { inherited: true }),
     kind: field.kind,
-    name: getSchemaFieldName(field)
+    name: getSchemaFieldName(field),
+    ...(field.optional && { optional: true })
   };
 
   if (field.kind === "fragment") return { ...shared, allowedBlocks: field.allowedBlocks };
@@ -314,7 +315,7 @@ const toFieldSummary = (field: ResolvedSchemaField) => {
     ...shared,
     type: field.type,
     ...(field.options.length > 0 && { options: field.options }),
-    ...(field.defaultValue !== "" && { defaultValue: field.defaultValue })
+    ...(field.initialValue !== "" && { initialValue: field.initialValue })
   };
 };
 const registerGetSchema = (server: McpServer, context: ToolContext) => {
@@ -323,7 +324,7 @@ const registerGetSchema = (server: McpServer, context: ToolContext) => {
     {
       title: "Get a collection schema",
       description:
-        "Returns the schema fields of a collection, also inherited ones: properties with their types, and fragments with their allowed blocks. Field names are the ones to use in MDX and create_entry fields. Use detail full for the drafts and default content, or version to read a saved schema version from list_versions.",
+        "Returns the schema fields of a collection, also inherited ones: properties with their types, and fragments with their allowed blocks. Fields are required unless optional is true; entries can leave out optional fields. Field names are the ones to use in MDX and create_entry fields. Use detail full for the drafts and initial content, or version to read a saved schema version from list_versions.",
       inputSchema: {
         collection: z.string().optional().describe("Collection ID (coll_...) or path"),
         detail: z.enum(["summary", "full"]).default("summary"),

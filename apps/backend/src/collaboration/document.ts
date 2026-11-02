@@ -68,8 +68,12 @@ const setDocumentTitle = (document: Doc, title: string): void => {
 };
 
 /** Changes only the differing nodes, keeping concurrent edits; throws RangeError on schema mismatch. */
-const updateContentDocument = (document: Doc, content: ContentNode): void => {
-  const node = entryDocumentSchema.nodeFromJSON(normalizeContentElements(content));
+const updateContentDocument = (
+  document: Doc,
+  content: ContentNode,
+  schema = entryDocumentSchema
+): void => {
+  const node = schema.nodeFromJSON(normalizeContentElements(content));
 
   updateYFragment(document, document.getXmlFragment("default"), node, {
     mapping: new Map(),
@@ -87,11 +91,11 @@ const writeContentDocument = (document: Doc, content: ContentNode): void => {
   }
 };
 // Stored as live documents store it, so hashes match live drafts.
-const createContentState = (content: ContentNode): ContentState => {
+const createContentState = (content: ContentNode, schema = entryDocumentSchema): ContentState => {
   const document = new Doc();
 
   try {
-    updateContentDocument(document, content);
+    updateContentDocument(document, content, schema);
 
     return {
       ...getContentSnapshot(document),

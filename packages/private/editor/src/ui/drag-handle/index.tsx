@@ -46,7 +46,7 @@ const isScrollableTarget = (target: BlockControlTarget | null): boolean => {
   return Boolean(target && (target.node.type.name === "table" || isBlockScrollable(target.dom)));
 };
 const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
-  const { openMenu, menuOpened } = useBlockMenuContext();
+  const { openMenu, menuOpened, hasMenuItems } = useBlockMenuContext();
 
   let wrapperRef: HTMLDivElement | undefined;
   let hoverAreaRef: HTMLDivElement | undefined;
@@ -270,6 +270,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
         if (
           !target ||
           isPositionInInheritedField(props.editor.state.doc, target.pos) ||
+          !hasMenuItems(target.node) ||
           (!pointerInSelectionArea && !isPointerTargetAvailable(effectivePointerTarget))
         ) {
           moveDragHandle.clear();

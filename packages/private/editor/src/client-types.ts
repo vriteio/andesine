@@ -1,3 +1,4 @@
+import type { ContentNode, PropertyType } from "@andesine/document";
 import type { Accessor, JSX } from "solid-js";
 import type { HocuspocusProvider } from "@hocuspocus/provider";
 import type { Editor as EditorInstance, JSONContent } from "@tiptap/core";
@@ -248,6 +249,25 @@ interface EditorImages {
   ): Promise<EditorImageAsset | null>;
   attach(assetIDs: string[], signal: AbortSignal): Promise<void>;
 }
+/** A property of the entry's schema, for adding it to the entry. */
+interface EditorSchemaProperty {
+  id: string;
+  kind: "property";
+  label: string;
+  type: PropertyType;
+  initialValue: boolean | string | string[];
+  options: string[];
+  optional?: boolean;
+}
+/** A fragment of the entry's schema, for adding it to the entry. */
+interface EditorSchemaFragment {
+  id: string;
+  kind: "fragment";
+  label: string;
+  allowedBlocks: string[];
+  initialContent: ContentNode[];
+  optional?: boolean;
+}
 interface EditorProps {
   images?: EditorImages;
   links?: EditorLinks;
@@ -258,6 +278,8 @@ interface EditorProps {
   doc?: string;
   editable?: boolean;
   mode?: EditorMode;
+  /** The fields of the entry's schema, in order. */
+  schemaFields?: EditorSchemaField[];
   elementViews?: ElementViews;
   blockActions?: BlockActions;
   staticTitle?: string;
@@ -282,6 +304,7 @@ interface EditorProps {
 type ElementPropsSchema = ElementPropField[];
 type BlockMenuPlacement = `${"top" | "bottom" | "left" | "right"}${"" | "-start" | "-end"}`;
 type EditorMode = "entry" | "schema";
+type EditorSchemaField = EditorSchemaFragment | EditorSchemaProperty;
 type EditorProvider = HocuspocusProvider;
 type EditorCleanup = (() => void) | void;
 type EditorProviderSetup = (
@@ -300,6 +323,7 @@ export type {
   EditorDiffChange,
   EditorInstance,
   EditorMode,
+  EditorSchemaField,
   EditorProps,
   EditorProvider,
   EditorProviderSetup,

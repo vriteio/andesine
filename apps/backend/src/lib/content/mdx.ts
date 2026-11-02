@@ -1,5 +1,7 @@
 import { ConversionError, type ContentNode } from "@andesine/converters";
 import { fromMDX, toMDX, type MDXOptions } from "@andesine/converters/mdx";
+import { type SchemaDefinition } from "@andesine/contracts/schema";
+import { addOptionalField } from "@andesine/server/schema";
 import {
   FRAGMENT_ELEMENT_NAME,
   getContentFieldKey,
@@ -156,10 +158,25 @@ const restoreProperty = (node: ContentNode, base: ContentNode): ContentNode => {
  * Rebuilds what MDX doesn't hold from the base document: field attributes by key, schema fields
  * left out of the MDX, and the IDs and attributes of unchanged blocks.
  */
-const restoreContent = async (document: ContentNode, base: ContentNode): Promise<ContentNode> => {
+const restoreContent = async (
+  document: ContentNode,
+  initialBase: ContentNode,
+  schema?: SchemaDefinition
+): Promise<ContentNode> => {
   const [title, ...nodes] = document.content || [];
-  const baseNodes = (base.content || []).filter((node) => node.type !== "title");
   const fields = new Map(nodes.filter(getFieldKey).map((node) => [getFieldKey(node)!, node]));
+  const baseWithFields = { ...initialBase, content: [...(initialBase.content || [])] };
+
+  for (const field of schema?.fields ?? []) {
+    const key = getContentFieldKey(field.kind, field.label);
+    const absent = !baseWithFields.content.some((node) => getFieldKey(node) === key);
+
+    if (field.optional && absent && fields.has(key)) {
+      addOptionalField(baseWithFields, schema!, field);
+    }
+  }
+
+  const baseNodes = baseWithFields.content.filter((node) => node.type !== "title");
   const schemaFields = baseNodes.filter(isSchemaField);
 
   if (!schemaFields.length) {
@@ -243,7 +260,8 @@ const encodeEntryMDX = (
 const decodeEntryMDX = async (
   source: string,
   base: ContentNode,
-  imageAssetIDs?: ImageAssetIDs
+  imageAssetIDs?: ImageAssetIDs,
+  schema?: SchemaDefinition
 ): Promise<ContentNode> => {
   let document: ContentNode;
 
@@ -256,7 +274,7 @@ const decodeEntryMDX = async (
     throw contentFormatInvalidError(error);
   }
 
-  return restoreContent(document, base);
+  return restoreContent(document, base, schema);
 };
 
 /**

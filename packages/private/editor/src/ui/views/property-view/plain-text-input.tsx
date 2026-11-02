@@ -96,7 +96,8 @@ const PlainTextInput: Component<PlainTextInputProps> = (props) => {
       }}
       onBlur={(event) => props.onConfirm?.(normalizeContent(event.currentTarget))}
       onKeyDown={(event) => {
-        event.stopPropagation();
+        // Escape goes on to the property, which selects itself.
+        if (event.key !== "Escape") event.stopPropagation();
 
         if (event.key === "Enter") {
           event.preventDefault();

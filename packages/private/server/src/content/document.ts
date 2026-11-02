@@ -59,8 +59,17 @@ const serializeNode = (item: unknown): ContentNode[] => {
 
   return [node];
 };
+/** An editor's empty or slash command paragraph for adding schema fields; not content. */
+const isFieldPromptParagraph = (node: ContentNode | undefined): boolean => {
+  const text = node?.content?.[0]?.text;
+
+  return node?.type === "paragraph" && (!node.content?.length || Boolean(text?.startsWith("/")));
+};
 const serializeContentDocument = (document: Doc): ContentNode => {
   const content = document.getXmlFragment("default").toArray().flatMap(serializeNode);
+  const hasSchemaFields = content.some((node) => typeof node.attrs?.schemaFieldID === "string");
+
+  if (hasSchemaFields && isFieldPromptParagraph(content[content.length - 1])) content.pop();
 
   return { type: "doc", content };
 };
@@ -70,4 +79,4 @@ const hashContentDocument = (document: ContentNode): string => {
   return createHash("sha256").update(JSON.stringify(normalizedDocument)).digest("hex");
 };
 
-export { hashContentDocument, serializeContentDocument };
+export { hashContentDocument, isFieldPromptParagraph, serializeContentDocument };

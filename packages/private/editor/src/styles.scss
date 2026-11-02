@@ -484,6 +484,7 @@ header:only-of-type.is-empty:first-child::before,
   header:only-of-type
   + p:only-of-type.is-empty::before,
 .ProseMirror[data-editor-mode="schema"] > p.is-empty::before,
+.ProseMirror > p.is-empty[data-field-prompt]::before,
 .ProseMirror [data-fragment-node-view] p.is-empty::before {
   @apply float-left h-0 pointer-events-none text-gray-300;
   content: attr(data-placeholder);
@@ -493,6 +494,7 @@ header:only-of-type.is-empty:first-child::before,
   header:only-of-type.is-empty:first-child::before,
   #editor-container header:only-of-type + p:only-of-type.is-empty::before,
   .ProseMirror[data-editor-mode="schema"] > p.is-empty::before,
+  .ProseMirror > p.is-empty[data-field-prompt]::before,
   .ProseMirror [data-fragment-node-view] p.is-empty::before {
     @apply hidden;
   }
@@ -648,8 +650,14 @@ header:only-of-type.is-empty:first-child::before,
       @apply my-2;
     }
 
-    & > [data-property-node-view] + [data-fragment-node-view] {
+    & > [data-property-node-view] + [data-fragment-node-view],
+    & > [data-property-node-view] + .ProseMirror-gapcursor + [data-fragment-node-view] {
       @apply my-0!;
+    }
+
+    // Blocks after properties have no margin to center the cursor in.
+    & > [data-property-node-view] + .ProseMirror-gapcursor::after {
+      top: -1px !important;
     }
   }
 

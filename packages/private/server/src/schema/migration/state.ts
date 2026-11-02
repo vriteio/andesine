@@ -6,10 +6,10 @@ import {
 } from "../../content/index";
 import { applyUpdate, Doc, encodeStateAsUpdate } from "yjs";
 import { type SchemaDefinition } from "@andesine/contracts/schema";
-import { migrateContentToSchema, type SchemaContentDefaultMode } from "./content";
+import { migrateContentToSchema, type SchemaContentInitialMode } from "./content";
 
 interface MigrateSchemaContentStateInput {
-  defaultMode?: SchemaContentDefaultMode;
+  initialMode?: SchemaContentInitialMode;
   document: ContentNode;
   schema: SchemaDefinition;
   state: Buffer | null;
@@ -41,7 +41,7 @@ const migrateSchemaContentState = (
 
   const currentDocument = serializeContentDocument(yDocument);
   const migration = migrateContentToSchema({
-    defaultMode: input.defaultMode,
+    initialMode: input.initialMode,
     document: currentDocument,
     schema: input.schema
   });

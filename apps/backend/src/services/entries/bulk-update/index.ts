@@ -1,6 +1,8 @@
 import { contents, entries, entryVersions } from "@andesine/server/database";
 import { assertContentNameAvailable, loadCurrentContentPaths } from "@andesine/server/content";
 import { createWebhookOperation } from "@andesine/server/webhooks/recording";
+import { loadRecordedSchema } from "@andesine/server/schema";
+import { type SchemaDefinition } from "@andesine/contracts/schema";
 import {
   applyContentOperations,
   assertExpectedValue,
@@ -89,12 +91,18 @@ const MAX_ATTEMPTS = 3;
 const getUpdatedDocument = async (
   item: BulkUpdateItem,
   previous: ContentNode,
-  imageAssetIDs?: ImageAssetIDs
+  imageAssetIDs?: ImageAssetIDs,
+  schema?: SchemaDefinition
 ): Promise<ContentNode> => {
   if (item.document) return item.document;
-  if (item.mdx !== undefined) return decodeEntryMDX(item.mdx, previous, imageAssetIDs);
+  if (item.mdx !== undefined) return decodeEntryMDX(item.mdx, previous, imageAssetIDs, schema);
 
-  const document = await applyContentOperations(previous, item.operations ?? [], imageAssetIDs);
+  const document = await applyContentOperations(
+    previous,
+    item.operations ?? [],
+    imageAssetIDs,
+    schema
+  );
 
   return item.name === undefined ? document : setContentTitle(document, item.name);
 };
@@ -126,10 +134,17 @@ const prepareItem = async (
     authorization,
     paths
   );
+  const revision = await loadRecordedSchema(
+    database,
+    workspaceID,
+    { entryID: item.id, schemaRevisionID: entry.schemaRevisionID },
+    409
+  );
   const document = await getUpdatedDocument(
     item,
     withEntryLinkPaths(previous.document, references),
-    input.imageAssetIDs[index]
+    input.imageAssetIDs[index],
+    revision?.definition
   );
   const content = await prepareEntryContent(database, workspaceID, {
     authorization,

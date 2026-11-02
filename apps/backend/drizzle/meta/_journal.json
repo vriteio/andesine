@@ -337,6 +337,13 @@
       "when": 1793183276936,
       "tag": "0047_add-analytics-usage",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1793183336936,
+      "tag": "0048_rename_schema_defaults_to_initial",
+      "breakpoints": true
     }
   ]
 }

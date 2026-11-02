@@ -42,6 +42,13 @@ import {
 const MAINTENANCE_QUEUE_NAME = "maintenance";
 const MAINTENANCE_INTERVAL_MS = 60_000;
 const queueRedisClient = createClient({ url: config.QUEUE_REDIS_URL });
+
+queueRedisClient.on("error", (error) => {
+  console.error("Worker Redis client error", { error });
+});
+// BullMQ can't recover when its first connection attempt fails, e.g. before Redis starts.
+await queueRedisClient.connect();
+
 const queueRedisConnection = createNodeRedisClient(queueRedisClient);
 const eventsRedisClient = createClient({ url: config.REDIS_URL });
 const searchIndexingQueue = new Queue(SEARCH_INDEXING_QUEUE_NAME, {
@@ -119,9 +126,6 @@ const maintenanceWorker = new Worker(
   { autorun: false, connection: queueRedisConnection, concurrency: 1 }
 );
 
-queueRedisClient.on("error", (error) => {
-  console.error("Worker Redis client error", { error });
-});
 eventsRedisClient.on("error", (error) => {
   console.error("Worker event Redis client error", { error });
 });

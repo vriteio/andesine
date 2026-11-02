@@ -5639,15 +5639,18 @@ const commands: APICommand[] = [
                           $ref: "#/components/schemas/SchemaBlockType"
                         }
                       },
-                      defaultContent: {
+                      initialContent: {
                         type: "array",
                         minItems: 1,
                         items: {
                           $ref: "#/components/schemas/ContentNodeInput"
                         }
+                      },
+                      optional: {
+                        type: "boolean"
                       }
                     },
-                    required: ["id", "kind", "label", "allowedBlocks", "defaultContent"]
+                    required: ["id", "kind", "label", "allowedBlocks", "initialContent"]
                   }
                 ]
               }
@@ -5938,7 +5941,7 @@ const commands: APICommand[] = [
             kind: "property",
             label: "Summary",
             type: "text",
-            defaultValue: "",
+            initialValue: "",
             options: []
           }
         ]
@@ -6016,15 +6019,18 @@ const commands: APICommand[] = [
                           $ref: "#/components/schemas/SchemaBlockType"
                         }
                       },
-                      defaultContent: {
+                      initialContent: {
                         type: "array",
                         minItems: 1,
                         items: {
                           $ref: "#/components/schemas/ContentNodeInput"
                         }
+                      },
+                      optional: {
+                        type: "boolean"
                       }
                     },
-                    required: ["id", "kind", "label", "allowedBlocks", "defaultContent"]
+                    required: ["id", "kind", "label", "allowedBlocks", "initialContent"]
                   }
                 ]
               }
@@ -9370,7 +9376,7 @@ const schemas: Record<string, JSONSchema> = {
         enum: ["text", "number", "checkbox", "date", "url", "select", "multi-select"],
         type: "string"
       },
-      defaultValue: {
+      initialValue: {
         $ref: "#/components/schemas/SchemaPropertyValue"
       },
       options: {
@@ -9378,9 +9384,12 @@ const schemas: Record<string, JSONSchema> = {
         items: {
           type: "string"
         }
+      },
+      optional: {
+        type: "boolean"
       }
     },
-    required: ["id", "kind", "label", "type", "defaultValue", "options"]
+    required: ["id", "kind", "label", "type", "initialValue", "options"]
   },
   SchemaPropertyValue: {
     anyOf: [

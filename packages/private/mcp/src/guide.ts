@@ -30,7 +30,7 @@ Collections can have a schema with fields. Read it with get_schema or the \`ande
 
 - Properties: \`<Property name="Field name" value={...} />\`, where the value is static JSON of the field type, for example \`value="Draft"\`, \`value={3}\`, \`value={true}\`, or \`value={["a", "b"]}\`.
 - Fragments: \`<Fragment name="Field name">\` with MDX content, closed with \`</Fragment>\`.
-- Keep the field names of the schema. Required fields must have a value.
+- Keep the field names of the schema. Entries must keep required fields. Leave out optional fields that don't apply; to remove one from an entry, set its field to null with edit_entry.
 
 ## Custom elements
 

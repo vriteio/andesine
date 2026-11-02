@@ -1,4 +1,5 @@
 import { collectionSchemas, entries } from "@andesine/server/database";
+import { schemaDraftDocumentSchema } from "@andesine/document/tiptap";
 import { serializeContentDocument } from "@andesine/server/content";
 import {
   createSchemaDefinitionFromEditorDocument,
@@ -238,7 +239,7 @@ const getCurrentSchemaDefinition = async (
 
   return definition;
 };
-/** Rejects definitions the editor can't load, e.g. with an unknown mark in default content. */
+/** Rejects definitions the editor can't load, e.g. with an unknown mark in initial content. */
 const assertSchemaDraftDocument = (definition: SchemaDefinition): void => {
   try {
     createContentState(createSchemaEditorDocument(definition));
@@ -246,7 +247,7 @@ const assertSchemaDraftDocument = (definition: SchemaDefinition): void => {
     if (!(error instanceof RangeError)) throw error;
 
     throw new ORPCError("BAD_REQUEST", {
-      message: "Schema default content is invalid",
+      message: "Schema initial content is invalid",
       data: {
         hints: [`Use only blocks and marks that the editor supports. Details: ${error.message}`]
       }
@@ -277,10 +278,11 @@ const updateSchemaDraftDocument = async (
       const inheritedFields = (current.content || []).filter((node) => node.attrs?.inherited);
       const draft = createSchemaEditorDocument(definition);
 
-      updateContentDocument(document, {
-        ...draft,
-        content: [...inheritedFields, ...(draft.content || [])]
-      });
+      updateContentDocument(
+        document,
+        { ...draft, content: [...inheritedFields, ...(draft.content || [])] },
+        schemaDraftDocumentSchema
+      );
     });
   } finally {
     await connection.disconnect();

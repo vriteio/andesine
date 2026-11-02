@@ -2,6 +2,12 @@ import { createRef } from "@andesine/components";
 import type { ElementViewOption, EditorMode } from "#editor/client-types";
 import { acceptsType, getAccepts, getElementViews } from "#editor/lib/element-content";
 import { capitalize, normalizeCategory } from "#editor/lib/labels";
+import {
+  getSchemaFields,
+  getUnusedOptionalFields,
+  insertOptionalField
+} from "#editor/lib/optional-fields";
+import { propertyTypeDetails } from "#editor/ui/views/property-view/menu";
 import type { Editor } from "@tiptap/core";
 import type { ResolvedPos } from "@tiptap/pm/model";
 import type { EditorState } from "@tiptap/pm/state";
@@ -58,20 +64,6 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
     "i-lucide:heading-5",
     "i-lucide:heading-6"
   ];
-  const propertyTypes = [
-    { type: "text", label: "Text", icon: "i-lucide:text", value: "" },
-    { type: "number", label: "Number", icon: "i-lucide:hash", value: "" },
-    { type: "checkbox", label: "Checkbox", icon: "i-lucide:square-check", value: false },
-    { type: "date", label: "Date", icon: "i-lucide:calendar", value: "" },
-    { type: "url", label: "URL", icon: "i-lucide:link", value: "" },
-    { type: "select", label: "Select", icon: "i-lucide:circle-chevron-down", value: "" },
-    {
-      type: "multi-select",
-      label: "Multi-select",
-      icon: "i-lucide:list-collapse",
-      value: []
-    }
-  ] as const;
 
   return [
     ...headingLevels.map((headingLevel): SlashMenuItem => ({
@@ -88,7 +80,7 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
       }
     })),
     {
-      label: "Bullet List",
+      label: "Bullet list",
       group: "Lists",
       markdown: "- ",
       shortcut: "$mod+shift+8",
@@ -101,7 +93,7 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
       }
     },
     {
-      label: "Ordered List",
+      label: "Ordered list",
       icon: "i-lucide:list-ordered",
       group: "Lists",
       markdown: "1. ",
@@ -114,7 +106,7 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
       }
     },
     {
-      label: "Task List",
+      label: "Task list",
       icon: "i-lucide:list-checks",
       group: "Lists",
       markdown: "[] ",
@@ -140,7 +132,7 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
       }
     },
     {
-      label: "Horizontal Rule",
+      label: "Horizontal rule",
       icon: "i-lucide:minus",
       group: "Blocks",
       schemaKind: "block",
@@ -220,12 +212,12 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
           .run();
       }
     },
-    ...propertyTypes.map((propertyType): SlashMenuItem => {
+    ...Object.entries(propertyTypeDetails).map(([type, details]): SlashMenuItem => {
       return {
-        label: propertyType.label,
+        label: details.label,
         group: "Property",
         markdown: "",
-        icon: propertyType.icon,
+        icon: details.icon,
         schemaKind: "structure",
         ref: createRef<HTMLElement | null>(null),
         command({ editor, range }) {
@@ -238,7 +230,7 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
             .insertContent([
               {
                 type: "property",
-                attrs: { type: propertyType.type, value: propertyType.value }
+                attrs: { type, value: details.value }
               },
               // The cursor stays in it, to add more properties.
               { type: "paragraph" }
@@ -250,6 +242,37 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
   ];
 };
 
+const createOptionalFieldItems = (editor: Editor, state: EditorState): SlashMenuItem[] => {
+  const fields = getSchemaFields(editor);
+
+  if (state.selection.$from.parent.type.name !== "paragraph") return [];
+
+  return getUnusedOptionalFields(fields, state.doc).map((field): SlashMenuItem => {
+    const typeLabel =
+      field.kind === "fragment" ? "Fragment" : `${propertyTypeDetails[field.type].label} property`;
+
+    return {
+      label: field.label || typeLabel,
+      group: "Optional fields",
+      icon:
+        field.kind === "fragment" ? "i-lucide:letter-text" : propertyTypeDetails[field.type].icon,
+      schemaKind: "structure",
+      ref: createRef<HTMLElement | null>(null),
+      command({ editor, range }) {
+        return editor
+          .chain()
+          .focus()
+          .deleteRange(range)
+          .command(({ tr }) => {
+            insertOptionalField(tr, fields, field);
+
+            return true;
+          })
+          .run();
+      }
+    };
+  });
+};
 /** Matches the nearest enclosing root, like element views. */
 const isInsideRoot = (editor: Editor, roots: Set<string>, name: string): boolean => {
   const { $from } = editor.state.selection;
@@ -320,6 +343,15 @@ const withElementItems = (
 
   return [...items.slice(0, index), ...elementItems, ...items.slice(index)];
 };
+const isSchemaControlled = (editor: Editor, state: EditorState): boolean => {
+  let hasSchemaFields = getSchemaFields(editor).length > 0;
+
+  state.doc.forEach((node) => {
+    hasSchemaFields ||= typeof node.attrs.schemaFieldID === "string";
+  });
+
+  return hasSchemaFields;
+};
 const getAvailableSlashMenuItems = (
   items: SlashMenuItem[],
   editor: Editor,
@@ -371,6 +403,10 @@ const getAvailableSlashMenuItems = (
   }
 
   if (fragmentDepth === -1) {
+    if (mode === "entry" && isSchemaControlled(editor, state)) {
+      return createOptionalFieldItems(editor, state);
+    }
+
     if (mode === "entry") {
       return availableItems.filter((item) => item.schemaKind === "block" || $from.depth <= 1);
     }

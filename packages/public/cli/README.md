@@ -466,10 +466,10 @@ such as `TutorialsCollection`, `TutorialsCollectionContent`, and
 and content type. Names use stable suffixes when collection names conflict after
 conversion to TypeScript identifiers. Field keys keep the API's derived spelling.
 
-All declared schema fields are required. Numbers use `number | null`, selects
+Optional schema fields use optional keys, and other fields are required. Numbers use `number | null`, selects
 include `""`, and multi-selects use arrays of allowed values. Fragment types narrow
 allowed block kinds. Custom element names and properties remain general because
-schemas do not define them. Defaults are not treated as value constraints.
+schemas do not define them. Initial values are not treated as value constraints.
 Empty and schema-free collections use general content types without warnings.
 
 `--include-entry-paths` emits both name-path and slug-path bindings, plus named

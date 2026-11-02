@@ -829,7 +829,7 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
      *         "kind": "property",
      *         "label": "Summary",
      *         "type": "text",
-     *         "defaultValue": "",
+     *         "initialValue": "",
      *         "options": []
      *       }
      *     ]

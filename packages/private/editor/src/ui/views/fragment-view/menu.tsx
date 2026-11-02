@@ -16,10 +16,12 @@ import type { Editor } from "@tiptap/core";
 import clsx from "clsx";
 import { createEffect, createSignal, onCleanup, onMount, Show, type JSX } from "solid-js";
 import { getResourceNameDetails } from "#editor/extensions/resource-name-tracker";
+import { createRequiredMenuItem } from "#editor/ui/views/required-menu-item";
 
 interface FragmentAttrs {
   name: string;
   allowedBlocks: FragmentBlockType[];
+  optional?: boolean;
   inherited?: boolean;
   schemaFieldID?: string | null;
   sourceCollectionID?: string | null;
@@ -30,7 +32,10 @@ interface FragmentMenuProps {
   editor: Editor;
   getPos(): number | undefined;
   schemaMode: boolean;
+  /** Entry field from the schema; only its removal is allowed. */
+  schemaEnforced: boolean;
   selected: boolean;
+  deleteFragment(): void;
   selectFragment(): void;
   updateAttributes(attributes: Partial<FragmentAttrs>): void;
 }
@@ -105,6 +110,19 @@ const FragmentMenu = (props: FragmentMenuProps): JSX.Element => {
     });
   };
   const menuItems = (): Array<Array<MenuItem | (() => JSX.Element)>> => {
+    if (props.schemaEnforced) {
+      return [
+        [
+          {
+            icon: "i-lucide:trash-2",
+            label: "Delete fragment",
+            color: "danger",
+            onClick: props.deleteFragment
+          }
+        ]
+      ];
+    }
+
     const items: Array<Array<MenuItem | (() => JSX.Element)>> = [
       [
         () => (
@@ -150,6 +168,11 @@ const FragmentMenu = (props: FragmentMenuProps): JSX.Element => {
     ];
 
     if (props.schemaMode) {
+      items.push([
+        createRequiredMenuItem(!props.attrs.optional, (required) => {
+          props.updateAttributes({ optional: !required });
+        })
+      ]);
       items.push([
         () => (
           <div class="flex w-full min-w-0 flex-col gap-1 p-1 md:max-w-60" data-fragment-menu-input>
@@ -204,9 +227,12 @@ const FragmentMenu = (props: FragmentMenuProps): JSX.Element => {
       title="Fragment settings"
       opened={opened()}
       setOpened={(nextOpened) => {
-        if (!opened() && nextOpened) setNameInputTabIndex(0);
+        if (!opened() && nextOpened) {
+          setNameInputTabIndex(0);
+          props.selectFragment();
+        }
 
-        if (opened() && !nextOpened) commitName();
+        if (opened() && !nextOpened && !props.schemaEnforced) commitName();
 
         setOpened(nextOpened);
       }}
@@ -245,6 +271,14 @@ const FragmentMenu = (props: FragmentMenuProps): JSX.Element => {
             >
               {props.attrs.name || "Content"}
             </span>
+            <Show when={props.schemaMode && !props.attrs.optional}>
+              <span
+                class="-ml-0.5 mb-1 shrink-0 font-mono text-xs text-red-500"
+                aria-label="Required"
+              >
+                *
+              </span>
+            </Show>
           </span>
           <span
             data-node-selection-line

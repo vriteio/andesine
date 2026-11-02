@@ -14,7 +14,7 @@ const createExampleSchema = (): SchemaDefinition => ({
       kind: "property",
       label: "Topic",
       type: "select",
-      defaultValue: "Basics",
+      initialValue: "Basics",
       options: ["Basics", "Content", "Publishing", "Integrations"]
     },
     {
@@ -22,7 +22,7 @@ const createExampleSchema = (): SchemaDefinition => ({
       kind: "property",
       label: "Reading time",
       type: "number",
-      defaultValue: "",
+      initialValue: "",
       options: []
     },
     {
@@ -30,7 +30,7 @@ const createExampleSchema = (): SchemaDefinition => ({
       kind: "property",
       label: "Featured",
       type: "checkbox",
-      defaultValue: false,
+      initialValue: false,
       options: []
     },
     {
@@ -38,7 +38,7 @@ const createExampleSchema = (): SchemaDefinition => ({
       kind: "fragment",
       label: "Summary",
       allowedBlocks: [],
-      defaultContent: [
+      initialContent: [
         {
           type: "paragraph",
           content: [{ type: "text", text: "A short summary for cards and search results." }]
@@ -50,7 +50,7 @@ const createExampleSchema = (): SchemaDefinition => ({
       kind: "fragment",
       label: "Content",
       allowedBlocks: [...SCHEMA_BLOCK_TYPES],
-      defaultContent: [{ type: "paragraph" }]
+      initialContent: [{ type: "paragraph" }]
     }
   ]
 });

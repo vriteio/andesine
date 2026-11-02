@@ -1,13 +1,14 @@
 import { createRef, IconButton } from "@andesine/components";
-import type { EditorInstance } from "@andesine/editor";
-import { useLocation, useNavigate, useParams } from "@solidjs/router";
-import { type Component, createEffect, createMemo, Show } from "solid-js";
+import type { EditorInstance, EditorSchemaField } from "@andesine/editor";
+import { createAsync, revalidate, useLocation, useNavigate, useParams } from "@solidjs/router";
+import { type Component, createEffect, createMemo, createSignal, on, Show } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
 import {
   getSearchNavigationTarget,
   scrollToSearchTarget,
   type SearchNavigationTarget
 } from "#web/lib/search-navigation";
+import { schemaDraftQuery } from "#web/lib/data/schema-versions";
 import { CollaborativeEditorPane } from "../editor/collaborative-editor-pane";
 import type { DocumentLoadState } from "../editor/document-load-state";
 
@@ -22,6 +23,7 @@ const EditorPane: Component = () => {
     null
   );
   const [openedEntryID, setOpenedEntryID] = createRef<string | null>(null);
+  const [schemaFields, setSchemaFields] = createSignal<EditorSchemaField[]>();
   const selectedEntryID = () => params.slug;
   const availableEntryID = createMemo(() => {
     const entryID = selectedEntryID();
@@ -30,14 +32,24 @@ const EditorPane: Component = () => {
 
     return content.entriesCollection().findOne({ id: entryID })?.id ?? null;
   });
-  const editable = createMemo(() => {
-    const entry = content.entries.get({ entryID: availableEntryID() || "" });
-    const collectionID = entry?.collectionID || null;
+  const collectionID = createMemo(() => {
+    return content.entries.get({ entryID: availableEntryID() || "" })?.collectionID || null;
+  });
+  const schemaDetails = createAsync(async () => {
+    const currentCollectionID = collectionID();
 
+    if (!currentCollectionID) return null;
+
+    return {
+      collectionID: currentCollectionID,
+      ...(await schemaDraftQuery({ collectionID: currentCollectionID }))
+    };
+  });
+  const editable = createMemo(() => {
     return (
       !content.syncing() &&
-      !content.hasActiveSchemaMigration(collectionID) &&
-      content.canEntry(collectionID, "entry:update")
+      !content.hasActiveSchemaMigration(collectionID()) &&
+      content.canEntry(collectionID(), "entry:update")
     );
   });
   const workspaceID = () => params.workspaceID || currentWorkspace()?.id || "unknown";
@@ -47,6 +59,26 @@ const EditorPane: Component = () => {
     return !loading() && !content.offline() && content.entriesCollection().find().count() === 0;
   };
 
+  // Read in an effect, so that loading the schema doesn't suspend the editor.
+  // Until another collection's schema loads, the previous one is still returned.
+  createEffect(() => {
+    const details = schemaDetails();
+    const current = details?.collectionID === collectionID();
+
+    setSchemaFields(current ? details?.result?.effective?.definition.fields : undefined);
+  });
+  createEffect(
+    on(
+      () => content.hasActiveSchemaMigration(collectionID()),
+      (active, wasActive) => {
+        const currentCollectionID = collectionID();
+
+        if (wasActive && !active && currentCollectionID) {
+          void revalidate(schemaDraftQuery.keyFor({ collectionID: currentCollectionID }));
+        }
+      }
+    )
+  );
   createEffect(() => {
     const selectedID = selectedEntryID();
     const availableID = availableEntryID();
@@ -87,6 +119,7 @@ const EditorPane: Component = () => {
       documentID={selectedEntryID()}
       availableDocumentID={availableEntryID()}
       editable={editable()}
+      schemaFields={schemaFields()}
       loading={loading()}
       workspaceID={workspaceID()}
       user={currentSession()?.user}

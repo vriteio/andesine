@@ -44,7 +44,7 @@ const registerDraftEntry = (server: McpServer, context: ToolContext) => {
         `Put it in the collection ${collection}.`,
         "",
         "1. Search for related entries and read two or three of them, to match their structure, tone, and terms.",
-        `2. Read the schema of ${collection} with get_schema, and fill the required fields.`,
+        `2. Read the schema of ${collection} with get_schema, and fill the required fields. Add optional fields only where they apply.`,
         "3. Link to related entries with entry: links, and don't repeat what they already explain.",
         "4. Create the entry with create_entry. Don't publish it.",
         "5. Reply with the entry path and link, and list anything that I must check."

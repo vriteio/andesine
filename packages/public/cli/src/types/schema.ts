@@ -42,11 +42,11 @@ const fieldMap = (fields: Map<string, string>): string => {
   const sorted = [...fields].sort(([a], [b]) => compare(a, b));
 
   return sorted.length
-    ? `{\n${sorted.map(([key, value]) => `    ${literal(key)}: ${value};`).join("\n")}\n  }`
+    ? `{\n${sorted.map(([key, value]) => `    ${key}: ${value};`).join("\n")}\n  }`
     : "Record<never, never>";
 };
 
-/** Render effective fields only. Defaults are content, not constraints on field values. */
+/** Render effective fields only. Initial values are content, not constraints on field values. */
 const schemaFields = (revision: SchemaRevision): string => {
   const groups = { property: new Map<string, string>(), fragment: new Map<string, string>() };
 
@@ -54,10 +54,10 @@ const schemaFields = (revision: SchemaRevision): string => {
     throw new Error("Unsupported schema format version.");
 
   for (const field of revision.definition.fields) {
-    const key = fieldKey(field);
+    const key = `${literal(fieldKey(field))}${field.optional ? "?" : ""}`;
     const group = groups[field.kind];
 
-    if (group.has(key)) throw new Error(`Duplicate ${field.kind} key ${literal(key)}.`);
+    if (group.has(key)) throw new Error(`Duplicate ${field.kind} key ${literal(fieldKey(field))}.`);
 
     group.set(
       key,

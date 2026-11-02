@@ -4,7 +4,12 @@ import { ICON_PICKER_SETS, loadIconSet } from "#web/lib/extensions/icon-masks";
 import { pruneCachedImages } from "#web/context/workspace/image-cache";
 import { getWorkspaceDatabaseName } from "#web/context/workspace/indexeddb";
 import { IconButton } from "@andesine/components";
-import { Editor, type EditorInstance, type EditorMode } from "@andesine/editor";
+import {
+  Editor,
+  type EditorInstance,
+  type EditorMode,
+  type EditorSchemaField
+} from "@andesine/editor";
 import clsx from "clsx";
 import { type Component, createEffect, createMemo, type JSX, Show } from "solid-js";
 import { useNotify } from "#web/context/notifications";
@@ -30,6 +35,7 @@ interface CollaborativeEditorPaneProps {
   emptyDescription: string;
   loading: boolean;
   mode?: EditorMode;
+  schemaFields?: EditorSchemaField[];
   notFoundTitle: string;
   notFoundDescription: string;
   resourceLabel: string;
@@ -216,6 +222,7 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
                   providerAttempt={providerAttempt()}
                   editable={editable()}
                   mode={props.mode}
+                  schemaFields={editable() ? props.schemaFields : undefined}
                   elementViews={elementViews}
                   blockActions={extensionActions?.blockActions}
                   staticTitle={props.staticTitle}

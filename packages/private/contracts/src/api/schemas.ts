@@ -108,7 +108,7 @@ const schemasContract = baseContract.router({
               kind: "property",
               label: "Summary",
               type: "text",
-              defaultValue: "",
+              initialValue: "",
               options: []
             }
           ]

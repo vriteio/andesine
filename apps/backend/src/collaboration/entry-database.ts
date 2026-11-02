@@ -287,7 +287,7 @@ const storeEntryDocument = async ({
       ? { changed: false, document: submittedDocument }
       : activeRevision
         ? migrateContentToSchema({
-            defaultMode: "none",
+            initialMode: "none",
             document: submittedDocument,
             schema: getResolvedSchemaDefinition(activeRevision.definition)
           })

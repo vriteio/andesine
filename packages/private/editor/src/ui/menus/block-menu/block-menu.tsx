@@ -7,6 +7,7 @@ import { isBlockSelection } from "#editor/extensions/block-selection";
 import { DropdownMenu, IconButton, type MenuItem } from "@andesine/components";
 import { debounce } from "@solid-primitives/scheduled";
 import { type Editor, type EditorEvents } from "@tiptap/core";
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import {
   createEffect,
   createSignal,
@@ -38,6 +39,7 @@ import {
   EDITOR_MENU_Z_INDEX
 } from "#editor/ui/constants";
 import { isPositionInInheritedField } from "#editor/ui/block-utils";
+import { getSelectedRequiredFields } from "#editor/lib/optional-fields";
 import { createTableMenuItems } from "./table";
 import { createTurnIntoMenuItem } from "./turn-into";
 import { isBlockAtScrollEnd } from "#editor/ui/block-scroll";
@@ -69,7 +71,7 @@ const getMenuGroups = (items: BlockMenuItems): BlockMenuItem[][] => {
 };
 
 const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
-  const { handleCopy, handleDelete } = useBlockMenuContext();
+  const { handleCopy, handleDelete, hasMenuItems } = useBlockMenuContext();
   const [currentNodePos, setCurrentNodePos] = createSignal(-1);
   const [coords, setCoords] = createSignal({ top: -10000, left: -10000 });
   const [hoverAreaHeight, setHoverAreaHeight] = createSignal(0);
@@ -85,41 +87,46 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
   const [tableItems, setTableItems] = createSignal<BlockMenuItems>([]);
   const [turnIntoItems, setTurnIntoItems] = createSignal<BlockMenuItems>([]);
   const [extensionItems, setExtensionItems] = createSignal<BlockMenuItems>([]);
+  const [requiredFields, setRequiredFields] = createSignal<ProseMirrorNode[]>([]);
 
   let trigger: HTMLDivElement | undefined;
 
   const menuItems = (): BlockMenuItem[][] => {
     const tableActions = tableItems();
-
+    // Required entry fields can't be removed, and a property's copy is of no use.
+    const copyable = !requiredFields().some(({ type }) => type.name === "property");
+    const deletable = !requiredFields().length;
     const items: MenuItem[] = [
-      {
-        label: "Copy",
-        icon: "i-lucide:copy",
-        onClick: handleCopy,
-        shortcut: "$mod+c"
-      },
-
-      {
-        label: "Delete",
-        icon: "i-lucide:trash",
-        onClick: handleDelete,
-        color: "danger",
-        shortcut: "$mod+backspace"
-      }
+      ...(copyable
+        ? [{ label: "Copy", icon: "i-lucide:copy", onClick: handleCopy, shortcut: "$mod+c" }]
+        : []),
+      ...(deletable
+        ? [
+            {
+              label: "Delete",
+              icon: "i-lucide:trash",
+              onClick: handleDelete,
+              color: "danger" as const,
+              shortcut: "$mod+backspace"
+            }
+          ]
+        : [])
     ];
 
-    if (tableActions.length > 0)
+    if (tableActions.length > 0) {
       return [...getMenuGroups(tableActions), ...getMenuGroups(elementItems()), items];
+    }
 
-    if (imageItems().length)
+    if (imageItems().length) {
       return [...getMenuGroups(imageItems()), ...getMenuGroups(elementItems()), items];
+    }
 
     return [
       ...getMenuGroups(codeItems()),
       ...getMenuGroups(turnIntoItems()),
       ...getMenuGroups(elementItems()),
       ...getMenuGroups(extensionItems()),
-      items
+      ...getMenuGroups(items)
     ];
   };
   const hasElementForm = () => elementItems().some((item) => Array.isArray(item));
@@ -196,6 +203,7 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
       !props.editor ||
       !target ||
       isPositionInInheritedField(props.editor.state.doc, target.pos) ||
+      !hasMenuItems(target.node) ||
       !isBlockAtScrollEnd(target.dom)
     ) {
       return false;
@@ -246,6 +254,7 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
 
       setTableItems(editor && !editor.isDestroyed ? createTableMenuItems(editor) : []);
       setTurnIntoItems(editor && !editor.isDestroyed ? createTurnIntoMenuItem(editor) : []);
+      setRequiredFields(editor && !editor.isDestroyed ? getSelectedRequiredFields(editor) : []);
       setExtensionItems(
         editor && !editor.isDestroyed && props.blockActions
           ? createExtensionActionMenuItems(editor, props.blockActions, props.menuID, {

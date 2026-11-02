@@ -6,6 +6,7 @@ import {
   entryVersionContributors,
   entryVersions
 } from "@andesine/server/database";
+import { loadRecordedSchema } from "@andesine/server/schema";
 import { storeVersionProperties } from "@andesine/server/versioning";
 import { retainVersionAssets } from "@andesine/server/assets";
 import { getContentTitle, type ContentNode } from "@andesine/document";
@@ -226,11 +227,17 @@ const commitContentVersion = withAuthorization<
       storedBase,
       await loadEntryReferences(database, workspaceID, storedBase, authorization)
     );
+    const revision = await loadRecordedSchema(
+      database,
+      workspaceID,
+      { entryID: input.entryID, schemaRevisionID: resolved.schemaRevisionID },
+      409
+    );
     const { state: _state, ...snapshot } = await prepareEntryContent(database, workspaceID, {
       authorization,
       entryID: input.entryID,
       schemaRevisionID: resolved.schemaRevisionID,
-      document: document ?? (await decodeEntryMDX(mdx!, base, imageAssetIDs))
+      document: document ?? (await decodeEntryMDX(mdx!, base, imageAssetIDs, revision?.definition))
     });
 
     await Asset.grantContent({

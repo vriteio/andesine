@@ -1,4 +1,4 @@
-import { getSchema } from "@tiptap/core";
+import { Extension, getSchema } from "@tiptap/core";
 import type { ContentNode } from "../types";
 import { Blockquote } from "@tiptap/extension-blockquote";
 import { BulletList } from "@tiptap/extension-bullet-list";
@@ -30,7 +30,25 @@ import { Property } from "./property";
 import { Title } from "./title";
 
 const ID_NODE_TYPES = new Set<string>(DOCUMENT_ID_NODE_TYPES);
-const entryDocumentSchema = getSchema([
+/** Marks schema fields as optional in schema drafts; entries don't hold it. */
+const SchemaFieldOptional = Extension.create({
+  name: "schemaFieldOptional",
+  addGlobalAttributes() {
+    return [
+      {
+        types: ["property", "fragment"],
+        attributes: {
+          optional: {
+            default: false,
+            parseHTML: (element) => element.getAttribute("data-optional") === "true",
+            renderHTML: (attributes) => ({ "data-optional": String(attributes.optional) })
+          }
+        }
+      }
+    ];
+  }
+});
+const documentExtensions = [
   EntryDocument,
   Title,
   Property,
@@ -62,7 +80,9 @@ const entryDocumentSchema = getSchema([
   Link,
   Subscript,
   Superscript
-]);
+];
+const entryDocumentSchema = getSchema(documentExtensions);
+const schemaDraftDocumentSchema = getSchema([...documentExtensions, SchemaFieldOptional]);
 
 /**
  * Checks an entry document against the editor schema and applies the editor's own
@@ -109,4 +129,9 @@ const normalizeEntryDocument = (content: ContentNode): ContentNode => {
   return { ...document, content: blocks };
 };
 
-export { entryDocumentSchema, normalizeEntryDocument };
+export {
+  entryDocumentSchema,
+  normalizeEntryDocument,
+  schemaDraftDocumentSchema,
+  SchemaFieldOptional
+};
