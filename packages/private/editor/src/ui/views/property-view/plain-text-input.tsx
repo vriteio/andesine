@@ -3,6 +3,7 @@ import { type Component, createEffect } from "solid-js";
 
 interface PlainTextInputProps {
   class?: string;
+  disabled?: boolean;
   placeholder?: string;
   value: string;
   onConfirm?(value: string): void;
@@ -71,7 +72,8 @@ const PlainTextInput: Component<PlainTextInputProps> = (props) => {
       ref={inputRef}
       aria-label="Text property value"
       aria-multiline="false"
-      contentEditable="plaintext-only"
+      contentEditable={props.disabled ? false : "plaintext-only"}
+      aria-disabled={props.disabled}
       data-placeholder={props.placeholder || "Enter text"}
       role="textbox"
       class={clsx(

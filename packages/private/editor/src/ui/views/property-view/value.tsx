@@ -17,6 +17,7 @@ import { PlainTextInput } from "./plain-text-input";
 
 interface PropertyValueProps {
   attrs: PropertyAttrs;
+  disabled?: boolean;
   initialValue?: boolean;
   selected: boolean;
   selectProperty(): void;
@@ -35,9 +36,10 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
   >("bottom");
   const md = createMediaQuery("(min-width: 768px)");
   const stringValue = (): string => {
-    const value = props.attrs.value;
+    // Content from the API, e.g. in versions, can hold numbers.
+    const value: unknown = props.attrs.value;
 
-    return typeof value === "string" ? value : "";
+    return typeof value === "string" || typeof value === "number" ? String(value) : "";
   };
   const multiSelectValues = (): string[] => {
     const value = props.attrs.value;
@@ -75,6 +77,7 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
         <PlainTextInput
           class={!props.selected ? RESTING_INPUT_OVERRIDES : undefined}
           value={stringValue()}
+          disabled={props.disabled}
           placeholder={props.initialValue ? "Initial text" : undefined}
           onConfirm={(value) => props.updateAttributes({ value })}
         />
@@ -83,6 +86,7 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
         <Input
           type="number"
           placeholder={props.initialValue ? "Initial number" : "Enter number"}
+          disabled={props.disabled}
           class={clsx("w-full min-w-0", !props.selected && RESTING_INPUT_OVERRIDES)}
           value={inputValue()}
           setValue={setInputValue}
@@ -91,7 +95,10 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
       </Match>
       <Match when={props.attrs.type === "checkbox"}>
         <div
-          class="group/property-value relative flex items-center w-full cursor-pointer rounded-lg px-1.5 py-1.25 focus-visible:outline-none"
+          class={clsx(
+            "group/property-value relative flex items-center w-full cursor-pointer rounded-lg px-1.5 py-1.25 focus-visible:outline-none",
+            props.disabled && "pointer-events-none"
+          )}
           data-property-checkbox-value
           onClick={toggleCheckbox}
           onPointerDown={(event) => {
@@ -103,6 +110,7 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
           <span class="relative z-1">
             <Checkbox
               checked={props.attrs.value === true}
+              disabled={props.disabled}
               setChecked={(value) => props.updateAttributes({ value }, { select: true })}
             />
           </span>
@@ -112,6 +120,7 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
         <DatePicker
           class="w-full"
           showCalendarIcon={false}
+          disabled={props.disabled}
           triggerClass={!props.selected ? RESTING_CONTROL_OVERRIDES : undefined}
           value={stringValue()}
           setValue={(value) => props.updateAttributes({ value })}
@@ -121,6 +130,7 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
         <Input
           type="url"
           placeholder={props.initialValue ? "Initial URL" : "https://example.com"}
+          disabled={props.disabled}
           class={clsx("w-full min-w-0", !props.selected && RESTING_INPUT_OVERRIDES)}
           value={inputValue()}
           setValue={setInputValue}
@@ -132,6 +142,7 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
           class="w-full"
           triggerClass={!props.selected ? RESTING_CONTROL_OVERRIDES : undefined}
           title="Select property value"
+          disabled={props.disabled}
           placeholder={props.initialValue ? "Select initial value" : "Select"}
           options={props.attrs.options.map((option) => ({ label: option, value: option }))}
           portal={false}
@@ -150,6 +161,7 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
             portal={false}
             positioningStrategy="absolute"
             sameWidth
+            disabled={props.disabled}
             cardProps={{
               class:
                 "w-full md:w-[calc(100%-0.875rem)] md:border-0 md:!bg-transparent md:p-0 md:!shadow-none md:[&>div]:overflow-visible"
@@ -157,8 +169,12 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
             trigger={(dropdown) => (
               <div
                 role="button"
-                tabindex="0"
-                class="group/property-value relative flex w-full min-w-0 cursor-pointer items-start gap-1 rounded-lg py-1.25 px-1.5 focus-visible:bg-gray-100 focus-visible:outline-none"
+                tabindex={props.disabled ? -1 : 0}
+                aria-disabled={props.disabled}
+                class={clsx(
+                  "group/property-value relative flex w-full min-w-0 cursor-pointer items-start gap-1 rounded-lg py-1.25 px-1.5 focus-visible:bg-gray-100 focus-visible:outline-none",
+                  props.disabled && "pointer-events-none"
+                )}
                 onClick={props.selectProperty}
                 onKeyDown={(event) => {
                   if (["Enter", " "].includes(event.key)) {
@@ -175,6 +191,7 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
                 />
                 <TagList
                   class="relative z-1 flex-1"
+                  disabled={props.disabled}
                   values={multiSelectValues()}
                   setValues={(value) => props.updateAttributes({ value })}
                 >
@@ -184,6 +201,7 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
                       multiSelectValues().length > 0 ? "p-0.75" : "py-0.5 px-0.75"
                     )}
                     icon="i-lucide:plus"
+                    disabled={props.disabled}
                     iconProps={{ class: "h-4.5 w-4.5" }}
                     label={
                       multiSelectValues().length > 0

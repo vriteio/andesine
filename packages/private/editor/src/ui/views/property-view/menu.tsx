@@ -23,6 +23,7 @@ interface PropertyMenuProps {
   schemaMode: boolean;
   /** Entry field from the schema; only its removal is allowed. */
   schemaEnforced: boolean;
+  disabled?: boolean;
   selected: boolean;
   deleteProperty(): void;
   selectProperty(): void;
@@ -205,6 +206,7 @@ const PropertyMenu = (props: PropertyMenuProps): JSX.Element => {
   return (
     <DropdownMenu
       title="Property settings"
+      disabled={props.disabled}
       opened={opened()}
       setOpened={(nextOpened) => {
         if (!opened() && nextOpened) {
@@ -219,8 +221,9 @@ const PropertyMenu = (props: PropertyMenuProps): JSX.Element => {
       trigger={() => (
         <button
           type="button"
-          class="relative flex my-1 h-7 md:my-0 md:h-9 w-full min-w-0 cursor-pointer items-center gap-1 text-sm font-medium md:min-w-48"
+          class="relative flex my-1 h-7 md:my-0 md:h-9 w-full min-w-0 cursor-pointer items-center gap-1 text-sm font-medium md:min-w-48 disabled:cursor-default"
           aria-label="Configure property"
+          disabled={props.disabled}
           data-block-control-anchor
           onClick={props.selectProperty}
         >

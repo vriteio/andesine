@@ -44,98 +44,72 @@ const PropertyView: Component<PropertyViewProps> = (props) => {
     props.editor.view.focus();
     props.select();
   };
-  const readonlyValue = () => {
-    const value = attrs().value;
-
-    if (Array.isArray(value)) return value.join(", ") || "—";
-    if (typeof value === "boolean") return value ? "Yes" : "No";
-
-    return value || "—";
-  };
   const editable = () => props.editable() && !attrs().inherited;
   const schemaEnforced = () => !props.schemaMode && Boolean(attrs().schemaFieldID);
   const configurable = () => {
     return !schemaEnforced() || isOptionalField(props.editor, attrs().schemaFieldID);
   };
 
+  const menu = () => (
+    <PropertyMenu
+      attrs={attrs()}
+      editor={props.editor}
+      getPos={props.getPos}
+      schemaMode={props.schemaMode}
+      schemaEnforced={schemaEnforced()}
+      disabled={!editable()}
+      selected={props.selected()}
+      selectProperty={props.select}
+      updateAttributes={updateAttributes}
+      deleteProperty={props.deleteNode}
+    />
+  );
+
   return (
-    <Show
-      when={editable()}
-      fallback={
-        <div
-          class="relative flex min-h-9 w-full select-none flex-col items-start md:flex-row md:gap-4"
-          data-inherited-schema-field={attrs().inherited ? "" : undefined}
-          contentEditable={false}
-          aria-readonly={attrs().inherited ? "true" : undefined}
-        >
-          <Show when={attrs().inherited}>
-            <InheritedSchemaFieldBadge />
-          </Show>
-          <div class="flex h-9 w-full min-w-0 items-center gap-1 text-sm font-medium md:w-48">
-            <div class={`h-4.5 w-4.5 shrink-0 text-gray-300 ${propertyTypeDetails[type()].icon}`} />
-            <span class="min-w-0 truncate text-gray-500">{attrs().label || "Property"}</span>
-            <Show when={props.schemaMode && !attrs().optional}>
-              <span
-                class="-ml-0.5 mb-1 shrink-0 font-mono text-xs text-red-500"
-                aria-label="Required"
-              >
-                *
-              </span>
-            </Show>
-          </div>
-          <div class="flex min-h-9 min-w-0 flex-1 items-center text-sm text-gray-700">
-            {readonlyValue()}
-          </div>
-        </div>
-      }
+    <div
+      class="relative flex min-h-9 w-full flex-col items-start md:flex-row md:gap-4"
+      data-inherited-schema-field={attrs().inherited ? "" : undefined}
+      aria-readonly={editable() ? undefined : "true"}
     >
-      <div class="flex min-h-9 w-full flex-col items-start md:flex-row md:gap-4">
-        <div class="w-full md:w-auto">
-          <Show
-            when={configurable()}
-            fallback={
-              <div class="flex h-9 w-full min-w-0 items-center gap-1 text-sm font-medium md:w-48">
-                <div
-                  class={`h-4.5 w-4.5 shrink-0 text-gray-300 ${propertyTypeDetails[type()].icon}`}
-                />
-                <span class="min-w-0 truncate text-gray-500">{attrs().label || "Property"}</span>
-              </div>
-            }
-          >
-            <DropdownArea>
-              <PropertyMenu
-                attrs={attrs()}
-                editor={props.editor}
-                getPos={props.getPos}
-                schemaMode={props.schemaMode}
-                schemaEnforced={schemaEnforced()}
-                selected={props.selected()}
-                selectProperty={props.select}
-                updateAttributes={updateAttributes}
-                deleteProperty={props.deleteNode}
+      <Show when={attrs().inherited}>
+        <InheritedSchemaFieldBadge />
+      </Show>
+      <div class="w-full md:w-auto">
+        <Show
+          when={configurable()}
+          fallback={
+            <div class="flex h-9 w-full min-w-0 items-center gap-1 text-sm font-medium md:w-48">
+              <div
+                class={`h-4.5 w-4.5 shrink-0 text-gray-300 ${propertyTypeDetails[type()].icon}`}
               />
-            </DropdownArea>
-          </Show>
-        </div>
-        <div
-          class={clsx("h-full flex items-center min-h-9 w-full min-w-0 flex-1", {
-            "py-1": isInput(),
-            "py-0.5": !isInput() && !isMultiSelect()
-          })}
-          data-property-value
-          onFocusIn={selectOnFocus}
-          onKeyDown={selectOnEscape}
+              <span class="min-w-0 truncate text-gray-500">{attrs().label || "Property"}</span>
+            </div>
+          }
         >
-          <PropertyValue
-            attrs={attrs()}
-            initialValue={props.schemaMode}
-            selected={props.selected()}
-            selectProperty={props.select}
-            updateAttributes={updateAttributes}
-          />
-        </div>
+          <Show when={editable()} fallback={menu()}>
+            <DropdownArea>{menu()}</DropdownArea>
+          </Show>
+        </Show>
       </div>
-    </Show>
+      <div
+        class={clsx("h-full flex items-center min-h-9 w-full min-w-0 flex-1", {
+          "py-1": isInput(),
+          "py-0.5": !isInput() && !isMultiSelect()
+        })}
+        data-property-value
+        onFocusIn={selectOnFocus}
+        onKeyDown={selectOnEscape}
+      >
+        <PropertyValue
+          attrs={attrs()}
+          disabled={!editable()}
+          initialValue={props.schemaMode}
+          selected={props.selected()}
+          selectProperty={props.select}
+          updateAttributes={updateAttributes}
+        />
+      </div>
+    </div>
   );
 };
 const createPropertyViewRenderer = (
