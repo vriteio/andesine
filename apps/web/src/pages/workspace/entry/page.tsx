@@ -44,9 +44,11 @@ const EntryPage: Component = () => {
   });
   createEffect(() => {
     const entryID = params.slug;
-    const snapshotPreview = typeof searchParams.snapshotID === "string";
+    // A version preview of an entry that's gone, also from publishing, has nothing to go back to.
+    const versionPreview =
+      typeof searchParams.version === "string" || typeof searchParams.snapshotID === "string";
 
-    if (!entryID || !snapshotPreview) return;
+    if (!entryID || !versionPreview) return;
     if (content.loading() || publishing.explorerOverlayLoading()) return;
     if (publishing.entryOverlaysError()) return;
 
