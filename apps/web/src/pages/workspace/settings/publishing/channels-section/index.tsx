@@ -166,7 +166,7 @@ const ChannelsSection: Component = () => {
       id: channel.code,
       icon: "i-lucide:radio",
       label: channel.name,
-      detail: `${channel.assignmentCount || 0} assigned entries · ${channel.code}`
+      detail: `${channel.assignmentCount || 0} assigned entries`
     }));
   };
   const deletionDescription = () => {

@@ -190,8 +190,8 @@ const getFilterSummary = (filter: PropertyFilterDraft): string => {
   const name = filter.name.trim() || getPropertyTypeOption(filter.kind).label;
   const value = filter.kind === "text" ? filter.values.join(", ") : filter.value;
 
-  if (filter.kind === "boolean") return `${name} · ${getConditionOption(filter).label}`;
-  if (value) return `${name} · ${getConditionOption(filter).label} ${value}`;
+  if (filter.kind === "boolean") return `${name}, ${getConditionOption(filter).label}`;
+  if (value) return `${name}, ${getConditionOption(filter).label} ${value}`;
 
   return name;
 };

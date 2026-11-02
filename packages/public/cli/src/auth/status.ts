@@ -5,7 +5,7 @@ import { authenticatedClient, identity } from "./client";
 const status = async (context: CommandContext): Promise<void> => {
   const { output } = context;
 
-  await output.heading("Andesine · Authentication");
+  await output.heading("Andesine: Authentication");
 
   const { account, source, workspaces } = await output.progress(
     "Checking authentication",

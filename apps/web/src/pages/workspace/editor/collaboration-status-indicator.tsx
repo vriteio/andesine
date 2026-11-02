@@ -81,7 +81,7 @@ const CollaborationStatusIndicator: Component<CollaborationStatusIndicatorProps>
           {props.status === "read-only" && "Read-only"}
           {props.status === "schema-reset" && `Applying schema changes`}
           {props.status === "offline-changes" && "Offline changes saved locally"}
-          {props.status === "offline" && "Offline · Saved on this device"}
+          {props.status === "offline" && "Offline, saved on this device"}
           {props.status === "unauthorized" && "Access lost"}
           {props.status === "failed" && "Sync failed"}
         </span>

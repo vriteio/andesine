@@ -121,7 +121,7 @@ const login = async (
     );
   }
 
-  await output.heading("Andesine · Sign in");
+  await output.heading("Andesine: Sign in");
   await output.note("Login", { Instance: config.baseURL, Profile: name });
 
   const storage = await selectStore(context, options.credentialStore);

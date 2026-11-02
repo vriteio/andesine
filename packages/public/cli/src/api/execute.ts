@@ -139,7 +139,7 @@ const executeAPI = async (
 
   const request: RequestOptions = { signal, timeout, retries: 0, headers };
 
-  await output.heading(`Andesine · ${command.summary}`);
+  await output.heading(`Andesine: ${command.summary}`);
 
   try {
     const anonymous =

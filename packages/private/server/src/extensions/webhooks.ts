@@ -63,7 +63,7 @@ const getManagedConfiguration = (
   enabled: boolean
 ): OutboundConfiguration => {
   return outboundConfigurationType.parse({
-    name: `${extension.name} · ${webhookID}`.slice(0, 100),
+    name: `${extension.name}: ${webhookID}`.slice(0, 100),
     url: `${extension.backendURL!.replace(/\/+$/, "")}${webhook.path}`,
     enabled,
     eventTypes: webhook.events,

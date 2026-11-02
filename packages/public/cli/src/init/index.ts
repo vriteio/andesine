@@ -166,7 +166,7 @@ const init = async (options: InitOptions, signal: AbortSignal): Promise<void> =>
   const original = await readProjectFile(file);
   const previous = await readConfigFile(file, projectConfigSchema, true);
 
-  await context.output.heading("Andesine · Initialize project");
+  await context.output.heading("Andesine: Initialize project");
 
   const needsLogin =
     process.env.ANDESINE_API_KEY === undefined && !context.config.profile?.credentialRef;

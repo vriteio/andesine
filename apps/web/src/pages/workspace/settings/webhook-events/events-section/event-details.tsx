@@ -74,24 +74,30 @@ const lateOutcomeLabels: Record<LateOutcome, string> = {
 const badgeClass =
   "flex h-6 max-w-full items-center gap-1 rounded-lg bg-white px-1.5 text-sm text-gray-500 shadow-md shadow-gray-900/8 outline outline-1 -outline-offset-1 outline-gray-200";
 
+// Separates parts of a tooltip's line.
+const TooltipSeparator: Component = () => <span class="h-3 w-px shrink-0 bg-current opacity-30" />;
 const AttemptBadge: Component<AttemptBadgeProps> = (props) => {
   const summary = () =>
     getWebhookFailureSummary(props.attempt.httpStatus, props.attempt.failureCategory);
-  const details = () => {
-    const duration = formatDuration(props.attempt.durationMs);
-
-    return [summary(), duration].filter(Boolean).join(" · ");
-  };
+  const duration = () => formatDuration(props.attempt.durationMs);
 
   return (
     <Tooltip
       content={
         <div class="flex flex-col items-start justify-center gap-px">
-          <span class="mb-0.5 font-mono text-[80%] opacity-50">
-            Attempt {props.attempt.number} · {runTriggerLabels[props.run.trigger]}
+          <span class="mb-0.5 flex items-center gap-1.5 font-mono text-[80%] opacity-50">
+            Attempt {props.attempt.number}
+            <TooltipSeparator />
+            {runTriggerLabels[props.run.trigger]}
           </span>
           <span class="mb-0.5">{formatDateTime(props.attempt.startedAt)}</span>
-          <span>{details()}</span>
+          <span class="flex items-center gap-1.5">
+            {summary()}
+            <Show when={summary() && duration()}>
+              <TooltipSeparator />
+            </Show>
+            {duration()}
+          </span>
           <Show when={props.attempt.lateResult}>
             {(late) => <span>Later {lateOutcomeLabels[late().outcome]}</span>}
           </Show>
@@ -114,8 +120,10 @@ const RunBadge: Component<RunBadgeProps> = (props) => (
   <Tooltip
     content={
       <div class="flex flex-col items-start justify-center gap-px">
-        <span class="mb-0.5 font-mono text-[80%] opacity-50">
-          Run {props.run.number} · {runTriggerLabels[props.run.trigger]}
+        <span class="mb-0.5 flex items-center gap-1.5 font-mono text-[80%] opacity-50">
+          Run {props.run.number}
+          <TooltipSeparator />
+          {runTriggerLabels[props.run.trigger]}
         </span>
         <span>{formatDateTime(props.run.createdAt)}</span>
         <Show when={props.run.stopReason}>

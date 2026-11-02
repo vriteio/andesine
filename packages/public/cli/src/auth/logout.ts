@@ -10,7 +10,7 @@ const logout = async (context: CommandContext): Promise<void> => {
   const { config, signal, output } = context;
   const reference = config.profile?.credentialRef;
 
-  await output.heading("Andesine · Sign out");
+  await output.heading("Andesine: Sign out");
 
   if (process.env.ANDESINE_API_KEY !== undefined) {
     await output.warning(

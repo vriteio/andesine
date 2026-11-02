@@ -41,7 +41,7 @@ const SEARCH_FIELD_WEIGHTS = "8,6,4,3,2,1";
 const SEARCH_RESULT_MULTIPLIER = 4;
 const SEARCH_SNIPPET_LENGTH = 360;
 const getSnippet = (document: SearchDocument, query: string): string => {
-  const content = document.content || document.propertyText.join(" · ");
+  const content = document.content || document.propertyText.join("; ");
   const normalizedQueryWords = query
     .toLocaleLowerCase()
     .split(/\s+/)

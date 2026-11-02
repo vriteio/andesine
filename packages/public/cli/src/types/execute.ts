@@ -71,7 +71,7 @@ const executeTypes = async (
   };
 
   await output.heading(
-    `Andesine · ${options.check ? "Check" : options.watch ? "Watch" : "Generate"} content types`
+    `Andesine: ${options.check ? "Check" : options.watch ? "Watch" : "Generate"} content types`
   );
   await output.note("Type generation", {
     Source: JSON.stringify(types.source),
