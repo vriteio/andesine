@@ -79,14 +79,23 @@ const getDeletion = (state: EditorState, forward: boolean): Transaction | null =
 
   return tr.setSelection(NodeSelection.create(state.doc, field.pos));
 };
+/** A gap cursor at a fragment's start or end next to an element, the only place to add content there. */
+const getEdgeGap = (document: ProseMirrorNode, pos: number): GapCursor | null => {
+  const $pos = document.resolve(pos);
+  const block = $pos.nodeBefore ?? $pos.nodeAfter;
+  const closed = Boolean(block && (block.isAtom || block.type.spec.isolating));
+
+  return closed ? new GapCursor($pos) : null;
+};
 /** The start of a selected fragment's content. */
 const getFragmentEntry = (selection: Selection): Selection | null => {
+  const { from, $from } = selection;
   const selectedFragment =
     selection instanceof NodeSelection && selection.node.type.name === "fragment";
 
-  return selectedFragment
-    ? Selection.findFrom(selection.$from.doc.resolve(selection.from + 1), 1)
-    : null;
+  if (!selectedFragment) return null;
+
+  return getEdgeGap($from.doc, from + 1) ?? Selection.findFrom($from.doc.resolve(from + 1), 1);
 };
 /**
  * Where an arrow key moves onto, past or into a top-level field; null leaves it to the editor.
@@ -109,13 +118,22 @@ const getArrowSelection = (view: EditorView, direction: ArrowDirection): Selecti
   if (selectedField) {
     boundary = forward ? selection.to : selection.from;
   } else if (selection instanceof GapCursor) {
-    boundary = $head.depth === 0 ? $head.pos : null;
+    const inFragment = $head.depth === 1 && $head.parent.type.name === "fragment";
+    const leavesFragmentEnd = inFragment && forward && !$head.nodeAfter;
+    const leavesFragmentTop = inFragment && !forward && !$head.nodeBefore;
+
+    if (leavesFragmentTop) return NodeSelection.create(doc, $head.before(1));
+    if ($head.depth === 0) boundary = $head.pos;
+    if (leavesFragmentEnd) boundary = $head.after(1);
   } else if (empty && $head.parent.isTextblock && view.endOfTextblock(direction)) {
     const next = Selection.findFrom(doc.resolve(forward ? $head.after() : $head.before()), bias);
     const leavesBlock = !next || next.$head.index(0) !== $head.index(0);
-    const leavesFragmentTop = leavesBlock && !forward && $head.node(1).type.name === "fragment";
+    const inFragment = $head.node(1).type.name === "fragment";
+    const edgeGap =
+      leavesBlock && inFragment ? getEdgeGap(doc, forward ? $head.end(1) : $head.start(1)) : null;
 
-    if (leavesFragmentTop) return NodeSelection.create(doc, $head.before(1));
+    if (edgeGap) return edgeGap;
+    if (leavesBlock && inFragment && !forward) return NodeSelection.create(doc, $head.before(1));
     if (leavesBlock) boundary = forward ? $head.after(1) : $head.before(1);
   }
 
@@ -125,7 +143,10 @@ const getArrowSelection = (view: EditorView, direction: ArrowDirection): Selecti
   const entersFragmentEnd = !forward && field?.node.type.name === "fragment";
 
   if (field?.node.attrs.inherited) return null;
-  if (entersFragmentEnd) return Selection.findFrom(doc.resolve(boundary), -1);
+
+  if (entersFragmentEnd) {
+    return getEdgeGap(doc, boundary - 1) ?? Selection.findFrom(doc.resolve(boundary), -1);
+  }
   if (field) return NodeSelection.create(doc, field.pos);
 
   return selectedField ? Selection.findFrom(doc.resolve(boundary), bias) : null;
