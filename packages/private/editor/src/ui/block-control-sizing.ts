@@ -225,7 +225,7 @@ const getBlockControlAnchorRect = (editor: Editor, target: BlockControlTarget): 
     const content = isBlockArea(target)
       ? topLine
       : tag && !tag.hidden
-        ? getCachedElementRect(editor, tag)
+        ? getFirstLineRect(editor, tag)
         : isElement
           ? topLine
           : getBlockContentRect(editor, target);
