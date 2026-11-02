@@ -273,7 +273,14 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                     trigger={() => (
                       <Show
                         when={selection().length <= 1}
-                        fallback={<div class={schemaMigration() ? "w-20" : undefined} />}
+                        fallback={
+                          <div
+                            class={clsx(
+                              "shrink-0",
+                              schemaMigration() ? "w-20" : collectionEditorOpened() && "w-7"
+                            )}
+                          />
+                        }
                       >
                         <div
                           class={clsx(

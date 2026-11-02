@@ -166,7 +166,10 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
                 setOpened={setMenuOpened}
                 onClick={(event) => event.stopPropagation()}
                 trigger={() => (
-                  <Show when={selection().length <= 1} fallback={<div />}>
+                  <Show
+                    when={selection().length <= 1}
+                    fallback={<div class={clsx("shrink-0", opened() && "w-7")} />}
+                  >
                     <div
                       class={clsx(
                         "shrink-0",
