@@ -86,8 +86,8 @@ const NewWorkspacePage: Component = () => {
           </div>
         </AnimatedGradientCard>
       </div>
-      <div class="flex-1 relative flex justify-center items-center">
-        <div class="p-4 lg:p-24 relative">
+      <div class="flex-1 relative flex justify-center items-center min-w-0">
+        <div class="p-4 lg:p-24 relative min-w-0">
           <div class="absolute h-full w-full top-0 left-0 mask-edge-fading-4 lg:mask-edge-fading-24 bg-gray-100 rounded-2xl" />
           <div class="relative flex flex-col w-80 max-w-full">
             <div>

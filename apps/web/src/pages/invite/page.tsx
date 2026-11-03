@@ -112,9 +112,9 @@ const InvitePage: Component = () => {
     <main class="relative flex h-full w-full items-center justify-center">
       <Title>Workspace invitation | Andesine</Title>
       <DotsBackground class="absolute mask-edge-fading-16" />
-      <div class="relative p-4 lg:p-24">
+      <div class="relative min-w-0 p-4 lg:p-24">
         <div class="absolute left-0 top-0 h-full w-full rounded-2xl bg-gray-100 mask-edge-fading-4 lg:mask-edge-fading-24" />
-        <div class="relative flex w-72 flex-col gap-4">
+        <div class="relative flex w-72 max-w-full flex-col gap-4">
           <Switch>
             <Match when={status() === "loading"}>
               <div>
