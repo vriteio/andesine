@@ -4,6 +4,7 @@ import { useTree } from "#web/components/tree";
 import { useNavigate, useSearchParams } from "@solidjs/router";
 import { usePublishing } from "#web/context/publishing";
 import { getOverlayEntryPath } from "./overlay-entry";
+import { markCreated } from "./created-items";
 import { withWorkspacePanelParams } from "../../panel-navigation";
 
 const useExplorerActions = () => {
@@ -62,12 +63,12 @@ const useExplorerActions = () => {
   const createEntry = (collectionID?: string) => {
     if (!ensureEntryAction(collectionID || null, "entry:create")) return;
 
-    tree.setRenaming(content.entries.create({ collectionID })?.id ?? "");
+    tree.setRenaming(markCreated(content.entries.create({ collectionID })?.id));
   };
   const createCollection = (collectionID?: string) => {
     if (!ensureCollectionAction(collectionID || null, "collection:create-child")) return;
 
-    tree.setRenaming(content.collections.create({ parentID: collectionID })?.id ?? "");
+    tree.setRenaming(markCreated(content.collections.create({ parentID: collectionID })?.id));
   };
   const createForCommandTarget = (type: "entry" | "collection") => {
     const targetID = getCommandTargetID();
@@ -98,7 +99,7 @@ const useExplorerActions = () => {
       });
     }
 
-    tree.setRenaming(created?.id ?? "");
+    tree.setRenaming(markCreated(created?.id));
     return true;
   };
   const deleteTarget = () => {

@@ -3,7 +3,7 @@ import { useTree } from "#web/components/tree";
 import { useWorkspace } from "#web/context/workspace";
 import { usePublishing } from "#web/context/publishing";
 import { type Entry } from "#web/lib/api";
-import { createSignal, onCleanup, onMount } from "solid-js";
+import { createEffect, createSignal, on, onCleanup, onMount } from "solid-js";
 import { useNavigate, useParams, useSearchParams } from "@solidjs/router";
 import { useExtensionPageHighlight } from "#web/lib/navigation/extension-page-highlight";
 import {
@@ -25,6 +25,7 @@ import {
 } from "./explorer-dnd";
 import { useEntryMenu } from "./use-entry-menu";
 import { useExplorerItemSwipe } from "./use-explorer-item-swipe";
+import { takeCreated } from "./created-items";
 import { withWorkspacePanelParams } from "../../panel-navigation";
 
 interface ExplorerEntryProps {
@@ -39,7 +40,7 @@ const useExplorerEntry = (props: ExplorerEntryProps) => {
   const [searchParams] = useSearchParams();
   const { workspaceID, content } = useWorkspace();
   const publishing = usePublishing();
-  const [{ isSelected, selection, flattenedOrder }, { setSelection }] = useTree();
+  const [{ isRenaming, isSelected, selection, flattenedOrder }, { setSelection }] = useTree();
   const { dropdownOptions, menuOpened, setMenuOpened } = useEntryMenu(props.entry.id);
   const swipe = useExplorerItemSwipe({
     enabled: () => selection().length <= 1 && !publishing.isEntryReverting(props.entry.id),
@@ -228,6 +229,15 @@ const useExplorerEntry = (props: ExplorerEntryProps) => {
   const handleClick = () => {
     navigate(withWorkspacePanelParams(`/${workspaceID()}/${props.entry.id}`, searchParams));
   };
+
+  createEffect(
+    on(
+      () => isRenaming(props.entry.id),
+      (renaming, wasRenaming) => {
+        if (wasRenaming && !renaming && takeCreated(props.entry.id)) handleClick();
+      }
+    )
+  );
 
   return {
     closestEdge,

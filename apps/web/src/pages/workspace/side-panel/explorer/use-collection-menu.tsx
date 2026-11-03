@@ -10,6 +10,7 @@ import { useExtensionPageItems } from "#web/components/extensions/page-menu-item
 import { usePublishingActions } from "./publishing-actions";
 import { useSchemaActions } from "./schema-actions";
 import { ExplorerSchemaMigrationMenu } from "./explorer-schema-migration";
+import { markCreated } from "./created-items";
 
 const useCollectionMenu = (collectionID: string) => {
   const { copyText } = useClipboard();
@@ -222,7 +223,7 @@ const useCollectionMenu = (collectionID: string) => {
 
             const entry = content.entries.create({ collectionID });
 
-            startRenaming(entry?.id || "");
+            startRenaming(markCreated(entry?.id));
             setExpanded((prev) => {
               return prev.includes(collectionID) ? prev : [...prev, collectionID];
             });
@@ -243,7 +244,7 @@ const useCollectionMenu = (collectionID: string) => {
 
             const newCollection = content.collections.create({ parentID: collectionID });
 
-            startRenaming(newCollection?.id || "");
+            startRenaming(markCreated(newCollection?.id));
             setExpanded((prev) => {
               return prev.includes(collectionID) ? prev : [...prev, collectionID];
             });

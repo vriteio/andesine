@@ -1,6 +1,14 @@
 import { createRef } from "@andesine/components";
 import { type TreeMap, useTree } from "#web/components/tree";
-import { type Component, createMemo, createSignal, onCleanup, onMount } from "solid-js";
+import {
+  type Component,
+  createEffect,
+  createMemo,
+  createSignal,
+  on,
+  onCleanup,
+  onMount
+} from "solid-js";
 import { type Collection } from "#web/lib/api";
 import {
   draggable,
@@ -10,6 +18,7 @@ import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/el
 import { type DragLocationHistory } from "@atlaskit/pragmatic-drag-and-drop/types";
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 import { useWorkspace } from "#web/context/workspace";
+import { takeCreated } from "./created-items";
 import { usePublishing } from "#web/context/publishing";
 import {
   attachClosestEdge,
@@ -42,7 +51,7 @@ const COLLECTION_AUTO_EXPAND_DELAY = 700;
 
 const useExplorerCollection = (props: ExplorerCollectionProps) => {
   const [
-    { isSelected, isExpanded, selection, flattenedOrder },
+    { isRenaming, isSelected, isExpanded, selection, flattenedOrder },
     { toggleExpanded, setExpanded, setSelection }
   ] = useTree();
   const { content } = useWorkspace();
@@ -401,6 +410,17 @@ const useExplorerCollection = (props: ExplorerCollectionProps) => {
       cleanup();
     });
   });
+
+  createEffect(
+    on(
+      () => isRenaming(props.collection.id),
+      (renaming, wasRenaming) => {
+        if (wasRenaming && !renaming && takeCreated(props.collection.id)) {
+          setExpanded((expanded) => [...expanded, props.collection.id]);
+        }
+      }
+    )
+  );
 
   return {
     BoundaryDropTarget,
