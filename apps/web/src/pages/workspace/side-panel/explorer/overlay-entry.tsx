@@ -70,33 +70,44 @@ const OverlayEntry: Component<OverlayEntryProps> = (props) => {
       entry && params.slug === entry.entryID && searchParams.snapshotID === entry.snapshotID
     );
   };
+  // A selection of deleted entries acts as one, as working entries do.
+  const getTargetEntries = (entry: PublishingEntryOverlay) => {
+    const selected = selection().includes(overlayID()) ? selection() : [];
+    const entries = selected.flatMap((id) => publishing.getEntryOverlay(id) ?? []);
+
+    return entries.length > 1 && entries.length === selected.length ? entries : [entry];
+  };
   const dropdownOptions = (): MenuItem[][] => {
     const entry = confirmedEntry();
     const options: MenuItem[] = [];
-    const revertTarget = { ids: [overlayID()], type: "entry" as const };
 
     if (!entry) return [];
 
+    const targetEntries = getTargetEntries(entry);
+    const count = targetEntries.length;
+    const revertTarget = {
+      ids: targetEntries.map(getPublishingEntryOverlayID),
+      type: "entry" as const
+    };
+    const unpublishTarget = {
+      ids: [...new Set(targetEntries.map(({ entryID }) => entryID))],
+      type: "entry" as const
+    };
+
     if (publishingActions.canRevert(revertTarget)) {
       options.push({
-        label: "Revert pending changes",
+        label: count > 1 ? `Revert pending changes for ${count} entries` : "Revert pending changes",
         icon: "i-lucide:undo-2",
         disabled: publishingActions.revertPending(),
         onClick: () => publishingActions.openRevert(revertTarget)
       });
     }
 
-    if (entry.canUnpublish) {
+    if (targetEntries.every(({ canUnpublish }) => canUnpublish)) {
       options.push({
-        label: "Unpublish",
+        label: count > 1 ? `Unpublish ${count} entries` : "Unpublish",
         icon: "i-material-symbols:unpublished-outline-rounded",
-        onClick: () => {
-          publishingActions.open(
-            "unpublish",
-            { ids: [entry.entryID], type: "entry" },
-            entry.channel
-          );
-        }
+        onClick: () => publishingActions.open("unpublish", unpublishTarget, entry.channel)
       });
     }
 

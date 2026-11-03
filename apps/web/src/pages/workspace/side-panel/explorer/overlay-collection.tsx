@@ -77,36 +77,43 @@ const OverlayCollection: Component<OverlayCollectionProps> = (props) => {
       }
     };
   });
+  // A selection of deleted collections acts as one, as working collections do.
+  const getTargetCollections = (collection: PublishingCollectionOverlay) => {
+    const selected = selection().includes(collection.collectionID) ? selection() : [];
+    const collections = selected.flatMap((id) => publishing.getCollectionOverlay(id) ?? []);
+
+    return collections.length > 1 && collections.length === selected.length
+      ? collections
+      : [collection];
+  };
   const dropdownOptions = (): MenuItem[][] => {
     const collection = confirmedCollection();
     const options: MenuItem[] = [];
-    const revertTarget = {
-      ids: [props.collection.collectionID],
-      type: "collection" as const
-    };
 
     if (!collection) return [];
 
-    if (publishingActions.canRevert(revertTarget)) {
+    const targetCollections = getTargetCollections(collection);
+    const count = targetCollections.length;
+    const target = {
+      ids: targetCollections.map(({ collectionID }) => collectionID),
+      type: "collection" as const
+    };
+
+    if (publishingActions.canRevert(target)) {
       options.push({
-        label: "Revert pending changes",
+        label:
+          count > 1 ? `Revert pending changes for ${count} collections` : "Revert pending changes",
         icon: "i-lucide:undo-2",
         disabled: publishingActions.revertPending(),
-        onClick: () => publishingActions.openRevert(revertTarget)
+        onClick: () => publishingActions.openRevert(target)
       });
     }
 
-    if (collection.canUnpublish) {
+    if (targetCollections.every(({ canUnpublish }) => canUnpublish)) {
       options.push({
-        label: "Unpublish",
+        label: count > 1 ? `Unpublish ${count} collections` : "Unpublish",
         icon: "i-material-symbols:unpublished-outline-rounded",
-        onClick: () => {
-          publishingActions.open(
-            "unpublish",
-            { ids: [collection.collectionID], type: "collection" },
-            collection.channel
-          );
-        }
+        onClick: () => publishingActions.open("unpublish", target, collection.channel)
       });
     }
 

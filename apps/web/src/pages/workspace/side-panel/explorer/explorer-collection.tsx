@@ -48,6 +48,10 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
   const publishingEnabledRoot = createMemo(() => {
     return content.isCollectionPublishingRoot(props.collection.id);
   });
+  // Counts include publishing roots below, which a collection without publishing doesn't show.
+  const publishingEnabled = createMemo(() => {
+    return content.isCollectionPublishingEnabled(props.collection.id);
+  });
   const schema = createMemo(() => content.schemas.get(props.collection.id));
   // Without a slug, e.g. on extension pages, nothing is open; collections may have no schema.
   const schemaOpened = () => Boolean(params.slug) && params.slug === schema()?.id;
@@ -180,10 +184,11 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                   />
                   <Show
                     when={
-                      publishingEnabledRoot() ||
-                      publishing.statusError() ||
-                      unpublishedCount() > 0 ||
-                      hasUnpublishedStructure()
+                      publishingEnabled() &&
+                      (publishingEnabledRoot() ||
+                        publishing.statusError() ||
+                        unpublishedCount() > 0 ||
+                        hasUnpublishedStructure())
                     }
                   >
                     <Tooltip
