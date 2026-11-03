@@ -19,6 +19,9 @@ const syncRouter = handlers.router({
       includePublishing: true
     });
   }),
+  getEntryStates: authorizedHandlers.getEntryStates.handler(({ context, input }) => {
+    return Sync.getEntryStates({ auth: context.auth, entries: input.entries });
+  }),
   getExplorerOverlay: authorizedHandlers.getExplorerOverlay.handler(({ context, input }) => {
     return Sync.getExplorerOverlay({
       auth: context.auth,

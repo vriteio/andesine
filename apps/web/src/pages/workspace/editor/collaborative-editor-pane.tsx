@@ -91,6 +91,8 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
       !state.resettingSchemaContent
     );
   };
+  // Read in editor transactions; a ternary in the prop would create a memo outside a root.
+  const schemaFields = () => (editable() ? props.schemaFields : undefined);
   const links = useEditorLinks(() => props.workspaceID);
   const images = createMemo(() => {
     const entryID = props.documentID;
@@ -222,7 +224,7 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
                   providerAttempt={providerAttempt()}
                   editable={editable()}
                   mode={props.mode}
-                  schemaFields={editable() ? props.schemaFields : undefined}
+                  schemaFields={schemaFields()}
                   elementViews={elementViews}
                   blockActions={extensionActions?.blockActions}
                   staticTitle={props.staticTitle}

@@ -2,6 +2,7 @@ import type { IDBPDatabase, IDBPObjectStore } from "idb";
 import * as Y from "yjs";
 import {
   WORKSPACE_ENTRY_ID_INDEX_NAME,
+  WORKSPACE_ENTRY_STATES_STORE_NAME,
   WORKSPACE_UPDATES_STORE_NAME,
   openWorkspaceDatabase
 } from "./indexeddb";
@@ -47,13 +48,19 @@ const clearDocument = async (name: string, entryID: string): Promise<void> => {
   );
 
   const database = await openPersistenceDatabase(name);
-  const transaction = database.transaction(WORKSPACE_UPDATES_STORE_NAME, "readwrite");
+  const transaction = database.transaction(
+    [WORKSPACE_UPDATES_STORE_NAME, WORKSPACE_ENTRY_STATES_STORE_NAME],
+    "readwrite"
+  );
   const updatesStore = transaction.objectStore(WORKSPACE_UPDATES_STORE_NAME);
   const updateKeys = await updatesStore.index(WORKSPACE_ENTRY_ID_INDEX_NAME).getAllKeys(entryID);
 
   for (const updateKey of updateKeys) {
     void updatesStore.delete(updateKey);
   }
+
+  // Without it, the entry's preloaded state would count as cached.
+  void transaction.objectStore(WORKSPACE_ENTRY_STATES_STORE_NAME).delete(entryID);
 
   try {
     await transaction.done;
@@ -75,8 +82,14 @@ const pruneDocuments = async (
   const database = await openPersistenceDatabase(name);
 
   try {
-    const transaction = database.transaction(WORKSPACE_UPDATES_STORE_NAME, "readwrite");
-    let cursor = await transaction.store.openCursor();
+    const transaction = database.transaction(
+      [WORKSPACE_UPDATES_STORE_NAME, WORKSPACE_ENTRY_STATES_STORE_NAME],
+      "readwrite"
+    );
+    let cursor = await transaction.objectStore(WORKSPACE_UPDATES_STORE_NAME).openCursor();
+    let statesCursor = await transaction
+      .objectStore(WORKSPACE_ENTRY_STATES_STORE_NAME)
+      .openCursor();
 
     while (cursor) {
       if (!hasDocument((cursor.value as PersistedUpdate).entryID)) {
@@ -84,6 +97,14 @@ const pruneDocuments = async (
       }
 
       cursor = await cursor.continue();
+    }
+
+    while (statesCursor) {
+      if (typeof statesCursor.key === "string" && !hasDocument(statesCursor.key)) {
+        await statesCursor.delete();
+      }
+
+      statesCursor = await statesCursor.continue();
     }
 
     await transaction.done;
@@ -307,3 +328,4 @@ class WorkspaceIndexedDBPersistence {
 }
 
 export { WorkspaceIndexedDBPersistence, clearDocument, pruneDocuments };
+export type { PersistedUpdate };

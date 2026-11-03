@@ -26,6 +26,7 @@ import { EXPLORER_GESTURE_PROPS } from "./explorer-dnd";
 import { ExplorerEntry } from "./explorer-entry";
 import { ExplorerSyncStatusIndicator } from "./explorer-sync-status-indicator";
 import { useExplorerActions } from "./use-explorer-actions";
+import { useEntryPreload } from "./use-entry-preload";
 import { useExplorerDrop } from "./use-explorer-drop";
 import { isExplorerMenuElement, useExplorerKeyboard } from "./use-explorer-keyboard";
 import clsx from "clsx";
@@ -63,6 +64,7 @@ const Explorer = () => {
   };
 
   onMount(() => setMounted(true));
+  useEntryPreload();
   const { dialogs: moveDialogs, isDraggedOver } = useExplorerDrop(dropRef);
   const marquee = useTreeMarquee(scrollableContainerRef, contentContainerRef, getSelectionGroup);
   const scrollItemIntoView = (id: string) => {

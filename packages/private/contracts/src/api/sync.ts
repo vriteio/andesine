@@ -84,6 +84,30 @@ const syncContract = baseContract.router({
     )
     .output(z.void()),
   getExplorerTree: sessionContract.output(explorerTreeType),
+  getEntryStates: sessionContract
+    .input(
+      z.object({
+        entries: z
+          .array(
+            z.object({
+              id: id().describe("ID of the entry"),
+              hash: z.string().length(64).optional().describe("Hash of the state the client has")
+            })
+          )
+          .max(200)
+      })
+    )
+    .output(
+      z.object({
+        entries: z.array(
+          z.object({
+            id: id(),
+            hash: z.string().length(64),
+            state: z.string().describe("Stored Yjs state, in Base64")
+          })
+        )
+      })
+    ),
   getExplorerOverlay: sessionContract
     .input(z.object({ channel: publishingChannelCodeType }))
     .output(publishingExplorerOverlayType),

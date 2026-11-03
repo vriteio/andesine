@@ -16,6 +16,7 @@ const WORKSPACE_COLLECTIONS_STORE_NAME = "collections";
 const WORKSPACE_SCHEMAS_STORE_NAME = "schemas";
 const WORKSPACE_UPDATES_STORE_NAME = "entry-updates";
 const WORKSPACE_ENTRY_ID_INDEX_NAME = "entryID";
+const WORKSPACE_ENTRY_STATES_STORE_NAME = "entry-states";
 const workspaceDatabaseSetupPromises = new Map<string, Promise<void>>();
 
 const isIndexedDBAvailable = () => {
@@ -26,6 +27,7 @@ const hasWorkspaceDatabaseSchema = (database: IDBPDatabase): boolean => {
   const hasCollectionsStore = database.objectStoreNames.contains(WORKSPACE_COLLECTIONS_STORE_NAME);
   const hasSchemasStore = database.objectStoreNames.contains(WORKSPACE_SCHEMAS_STORE_NAME);
   const hasUpdatesStore = database.objectStoreNames.contains(WORKSPACE_UPDATES_STORE_NAME);
+  const hasEntryStatesStore = database.objectStoreNames.contains(WORKSPACE_ENTRY_STATES_STORE_NAME);
 
   if (
     !database.objectStoreNames.contains(WORKSPACE_IMAGE_FILES_STORE_NAME) ||
@@ -33,8 +35,15 @@ const hasWorkspaceDatabaseSchema = (database: IDBPDatabase): boolean => {
   )
     return false;
 
-  if (!hasEntriesStore || !hasCollectionsStore || !hasSchemasStore || !hasUpdatesStore)
+  if (
+    !hasEntriesStore ||
+    !hasCollectionsStore ||
+    !hasSchemasStore ||
+    !hasUpdatesStore ||
+    !hasEntryStatesStore
+  ) {
     return false;
+  }
 
   const transaction = database.transaction(WORKSPACE_UPDATES_STORE_NAME, "readonly");
 
@@ -61,6 +70,10 @@ const createMissingWorkspaceDatabaseSchema = (
 
   if (!database.objectStoreNames.contains(WORKSPACE_SCHEMAS_STORE_NAME)) {
     database.createObjectStore(WORKSPACE_SCHEMAS_STORE_NAME, { keyPath: "id" });
+  }
+
+  if (!database.objectStoreNames.contains(WORKSPACE_ENTRY_STATES_STORE_NAME)) {
+    database.createObjectStore(WORKSPACE_ENTRY_STATES_STORE_NAME, { keyPath: "id" });
   }
 
   const updatesStore = database.objectStoreNames.contains(WORKSPACE_UPDATES_STORE_NAME)
@@ -188,6 +201,7 @@ export {
   WORKSPACE_ENTRIES_STORE_NAME,
   WORKSPACE_SCHEMAS_STORE_NAME,
   WORKSPACE_ENTRY_ID_INDEX_NAME,
+  WORKSPACE_ENTRY_STATES_STORE_NAME,
   WORKSPACE_UPDATES_STORE_NAME,
   clearPersistenceData,
   clearWorkspaceData,
