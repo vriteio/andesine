@@ -49,10 +49,10 @@ const nodeInputRule = (config: {
         tr.insertText(lastChar, start + match[0].length - 1);
         tr.replaceWith(matchStart - 1, end, newNode);
       } else if (match[0]) {
-        tr.replaceWith(start, end, config.type.create(attributes)).delete(
-          tr.mapping.map(start),
-          tr.mapping.map(end)
-        );
+        // A block goes before its paragraph; replacing the text with it, the delete removed it.
+        const insertionStart = config.type.isInline ? start : start - 1;
+
+        tr.insert(insertionStart, newNode).delete(tr.mapping.map(start), tr.mapping.map(end));
       }
 
       config.appendTransaction?.({
