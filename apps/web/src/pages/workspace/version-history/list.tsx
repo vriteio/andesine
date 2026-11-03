@@ -66,6 +66,9 @@ const VersionHistoryList: Component<VersionHistoryListProps> = (props) => {
   });
   const options = () => props.options || [];
   const [expandedGroups, setExpandedGroups] = createSignal<ReadonlySet<string>>(new Set());
+
+  let groupCountBeforeLoad: number | null = null;
+
   const versionsByID = createMemo(() => {
     return new Map(props.versions.map((version) => [version.id, version]));
   });
@@ -98,6 +101,10 @@ const VersionHistoryList: Component<VersionHistoryListProps> = (props) => {
       levels: []
     }
   }));
+  const loadMore = () => {
+    groupCountBeforeLoad = groups().length;
+    props.onLoadMore();
+  };
   const toggleGroup = (group: VersionHistoryGroup) => {
     setExpandedGroups((expanded) => {
       const next = new Set(expanded);
@@ -108,6 +115,22 @@ const VersionHistoryList: Component<VersionHistoryListProps> = (props) => {
     });
   };
 
+  // Loaded versions that only joined the last group would leave the list as it was; they show.
+  createEffect(
+    on(
+      () => props.loadingMore,
+      (loading, wasLoading) => {
+        const lastGroup = groups().at(-1);
+        const joinedLastGroup = groups().length === groupCountBeforeLoad && lastGroup;
+
+        if (!wasLoading || loading) return;
+
+        if (joinedLastGroup) setExpandedGroups((expanded) => new Set(expanded).add(lastGroup.key));
+
+        groupCountBeforeLoad = null;
+      }
+    )
+  );
   // A previewed version stays visible, e.g. when opened from a link.
   createEffect(
     on(
@@ -270,7 +293,7 @@ const VersionHistoryList: Component<VersionHistoryListProps> = (props) => {
                     variant="ghost"
                     text="softer"
                     loading={props.loadingMore}
-                    onClick={props.onLoadMore}
+                    onClick={loadMore}
                   >
                     Load more
                   </Button>

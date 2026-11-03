@@ -160,10 +160,11 @@ const SchemaVersionHistoryPanel: Component<SchemaVersionHistoryPanelProps> = (pr
   const storedVersions = createMemo(() => {
     return [...(historyResult()?.data ?? []), ...additionalPages().flatMap((page) => page.data)];
   });
+  // The last loaded page's cursor; null there is the end, not a reason to use the first page's.
   const nextCursor = () => {
-    const pages = additionalPages();
+    const lastPage = additionalPages().at(-1) ?? historyResult();
 
-    return pages.at(-1)?.pagination.nextCursor ?? historyResult()?.pagination.nextCursor ?? null;
+    return lastPage?.pagination.nextCursor ?? null;
   };
   const versions = createMemo(() => {
     const variables = renameVersionMutation.variables;
