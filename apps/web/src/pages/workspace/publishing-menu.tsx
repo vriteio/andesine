@@ -236,7 +236,8 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
         }
         enabled={menuOpened()}
         placement="right"
-        wrapperClass="w-full"
+        // No width of its own, so a long name truncates at the menu's width.
+        wrapperClass="w-0 min-w-full"
       >
         <div
           class="flex min-h-10 w-full cursor-pointer items-start gap-1 rounded-md px-1 py-0.5 text-left focus:outline-none @hover:bg-gray-100 md:min-h-0"
