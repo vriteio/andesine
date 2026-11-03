@@ -690,6 +690,11 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, userID: Accessor<str
         const { id, ...updates } = event.data;
 
         contentOperations.sync.collections.applyUpdate({ collectionID: id, updates });
+
+        // A restriction change changes access, e.g. "Manage access" is only on a restriction root.
+        if (event.accessByCollectionID) {
+          setAccessByCollectionID((current) => ({ ...current, ...event.accessByCollectionID }));
+        }
         break;
       }
       case "collection:reorder":

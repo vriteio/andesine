@@ -91,6 +91,10 @@ const filterRestrictedWorkspaceEvent = async (
   if (event.action === "collection:update" || event.action === "collection:move") {
     if (!authorization.canAccessCollection(event.data.id)) return null;
 
+    if (event.action === "collection:update" && event.data.restricted !== undefined) {
+      return { ...event, accessByCollectionID: authorization.toAccessRecord() };
+    }
+
     if (event.action === "collection:update" && event.data.descendants) {
       const descendants = event.data.descendants.filter((id) => {
         return authorization.canAccessCollection(id);

@@ -23,6 +23,8 @@ const collectionEventType = z.union([
   z.object({
     action: z.literal("collection:update"),
     memberID: id().optional(),
+    /** The receiver's access after a restriction change. */
+    accessByCollectionID: z.record(id(), collectionAccessType).optional(),
     data: z.object({
       ...collectionType.pick({ id: true }).shape,
       ...collectionType.omit({ id: true }).partial().shape
