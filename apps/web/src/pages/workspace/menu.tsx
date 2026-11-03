@@ -46,7 +46,7 @@ const IconScope: Component<IconScopeProps> = (props) => (
 );
 const Menu: Component<MenuProps> = (props) => {
   const { layout } = useLayout();
-  const { currentWorkspace, content } = useWorkspace();
+  const { currentEntryID, content } = useWorkspace();
   const md = createMediaQuery("(min-width: 768px)");
   const navigate = useNavigate();
   const location = useLocation();
@@ -73,7 +73,7 @@ const Menu: Component<MenuProps> = (props) => {
         return props.activePanel === "explorer";
       },
       onClick() {
-        props.openPanel("explorer", currentWorkspace()?.currentEntryID);
+        props.openPanel("explorer", currentEntryID());
       }
     },
     {

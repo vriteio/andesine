@@ -1,6 +1,7 @@
 import {
   createContext,
   createEffect,
+  createSignal,
   on,
   onCleanup,
   type ParentComponent,
@@ -30,6 +31,10 @@ interface WorkspaceInfo {
   billingEnabled: boolean;
 }
 
+interface OpenedEntry {
+  workspaceID: string;
+  entryID: string;
+}
 interface SessionInfo {
   user: {
     id: string;
@@ -46,6 +51,9 @@ interface WorkspaceContextValue {
   workspaces(): WorkspaceInfo[];
   refreshWorkspaces(): Promise<void>;
   workspaceID(): string;
+  /** The last opened entry; the workspace list has it only from its last load. */
+  currentEntryID(): string | undefined;
+  setCurrentEntry(entryID: string): void;
   sessions(): SessionInfo[];
   hasPermission(required: Permission): boolean;
   subscribeToUpdates(listener: (event: WorkspaceEvent) => void): () => void;
@@ -114,6 +122,7 @@ const WorkspaceProvider: ParentComponent = (props) => {
   const updateListeners = new Set<(event: WorkspaceEvent) => void>();
   const sessions = createAsync(() => listSessionsQuery());
   const workspaces = createAsync(() => listWorkspacesQuery());
+  const [openedEntry, setOpenedEntry] = createSignal<OpenedEntry | null>(null);
   const refreshWorkspaces = () => revalidate("workspaces");
   const switchWorkspaceMutation = createMutation(() => ({
     mutationFn: async (input: {
@@ -154,6 +163,21 @@ const WorkspaceProvider: ParentComponent = (props) => {
     const id = workspaceID();
 
     return workspaceList.find((workspace) => workspace.id === id);
+  };
+  const currentEntryID = () => {
+    const entry = openedEntry();
+
+    return entry?.workspaceID === workspaceID()
+      ? entry.entryID
+      : currentWorkspace()?.currentEntryID;
+  };
+  const setCurrentEntry = (entryID: string) => {
+    const entry = openedEntry();
+
+    if (entry?.workspaceID === workspaceID() && entry.entryID === entryID) return;
+
+    setOpenedEntry({ workspaceID: workspaceID(), entryID });
+    void client.sync.setCurrentEntry({ entryID }).catch(() => {});
   };
   const currentSession = () => {
     const sessionList = sessions() ?? [];
@@ -338,6 +362,8 @@ const WorkspaceProvider: ParentComponent = (props) => {
         currentWorkspace,
         currentSession,
         workspaceID,
+        currentEntryID,
+        setCurrentEntry,
         workspaces: () => workspaces() ?? [],
         refreshWorkspaces,
         sessions: () => sessions() ?? [],
