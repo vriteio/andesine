@@ -34,11 +34,11 @@ import {
 import type { BlockControlTarget, BlockControlRange } from "#editor/ui/block-control-targeting";
 import {
   BLOCK_CONTROL_HIDE_DELAY,
-  BLOCK_CONTROL_MOVE_DELAY,
   BLOCK_CONTROL_SIZE,
   EDITOR_MENU_Z_INDEX
 } from "#editor/ui/constants";
 import { isPositionInInheritedField } from "#editor/ui/block-utils";
+import { createBlockControlMove } from "#editor/ui/block-control-move";
 import { getSelectedRequiredFields } from "#editor/lib/optional-fields";
 import { createTableMenuItems } from "./table";
 import { createTurnIntoMenuItem } from "./turn-into";
@@ -353,7 +353,7 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
       hideTrigger.clear();
       setTriggerAvailable(true);
     };
-    const moveTrigger = debounce(showTrigger, BLOCK_CONTROL_MOVE_DELAY);
+    const moveTrigger = createBlockControlMove(showTrigger);
 
     let currentTarget: BlockControlTarget | null = null;
     let previousX = 0;

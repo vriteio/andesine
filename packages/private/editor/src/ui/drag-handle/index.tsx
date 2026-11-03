@@ -16,7 +16,8 @@ import {
 } from "#editor/ui/block-control-targeting";
 import type { BlockControlTarget } from "#editor/ui/block-control-targeting";
 import { createVerticalAutoScroll } from "#editor/ui/auto-scroll";
-import { BLOCK_CONTROL_HIDE_DELAY, BLOCK_CONTROL_MOVE_DELAY } from "#editor/ui/constants";
+import { BLOCK_CONTROL_HIDE_DELAY } from "#editor/ui/constants";
+import { createBlockControlMove } from "#editor/ui/block-control-move";
 import { createDragHandlePlugin, dragHandlePluginKey } from "./drag-handle-plugin";
 import { createListItemTargetResolver } from "./list-item-target";
 import { DragHandleTargetPlugin, dragHandleTargetPluginKey } from "./drag-handle-target-plugin";
@@ -211,7 +212,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       hideDragHandle.clear();
       setDragHandleAvailable(true);
     };
-    const moveDragHandle = debounce(showDragHandle, BLOCK_CONTROL_MOVE_DELAY);
+    const moveDragHandle = createBlockControlMove(showDragHandle);
 
     let pointerFrame: number | null = null;
     let pendingPointer: { x: number; y: number } | null = null;
