@@ -32,17 +32,6 @@ interface CatalogLoadResult {
   item: ExtensionCatalogDetails | null;
 }
 
-// What members see in the app, in plain words.
-const describeContributions = (item: ExtensionCatalogDetails): string => {
-  const parts = [
-    ...item.panels.map(({ name }) => `the ${name} panel`),
-    ...item.pages.filter(({ parent }) => !parent).map(({ name }) => `the ${name} page`),
-    ...item.blockActions.map(({ label }) => `“${label}” in the block menu`),
-    ...item.elementViews.map(({ element }) => `a view for ${element} content`)
-  ];
-
-  return parts.length ? `Adds ${parts.join(", ")}` : "Works in the background";
-};
 /** Missing required fields install the extension disabled until they are filled in. */
 const InstallReview: Component<InstallReviewProps> = (props) => {
   const notify = useNotify();
@@ -110,7 +99,6 @@ const InstallReview: Component<InstallReviewProps> = (props) => {
         <div class="flex min-w-0 flex-1 flex-col">
           <h2 class="truncate text-lg font-semibold">{props.item.displayName}</h2>
           <p class="text-sm text-gray-500">{props.item.description}</p>
-          <p class="pt-1 text-sm text-gray-600">{describeContributions(props.item)}.</p>
         </div>
       </div>
       <SettingsSection label="What it can do">
