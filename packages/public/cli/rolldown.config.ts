@@ -32,6 +32,8 @@ export default defineConfig({
   platform: "node",
   tsconfig: "tsconfig.json",
   external: isExternal,
+  // Drops imports of packages whose exports were tree-shaken, e.g. `@orpc/contract` of contracts.
+  treeshake: { moduleSideEffects: (_id, external) => !external },
   plugins: [
     {
       name: "cli-package",

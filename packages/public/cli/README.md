@@ -215,7 +215,8 @@ are used only when its normalized API root matches the resolved instance,
 including its deployment prefix. Missing selected profiles are errors except during `auth login`, which can create
 the named profile. The first login uses `default` if no profile is selected and
 sets the first saved profile as the default. A profile cannot be replaced by a
-login to a different instance; supply a new `--profile` name instead.
+login to a different instance; run `auth logout` first, which removes the profile, or supply a
+new `--profile` name instead.
 
 ## Authentication
 
@@ -271,7 +272,8 @@ prefix. HTTP redirects are not followed for authenticated requests.
 Login and status emit metadata only on stdout. Tokens are never printed. API
 commands use the same SDK authentication helper.
 
-Logout revokes the latest known refresh token and removes local credentials.
+Logout revokes the latest known refresh token and removes the profile with its local
+credentials; when it was the default profile, no profile is the default until the next login.
 Its JSON result reports `localRemoved` and `revocation` separately. If remote
 revocation cannot be confirmed, local removal still occurs and the command exits
 with an error. Browser sessions are not signed out. Older access tokens may remain

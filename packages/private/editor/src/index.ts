@@ -1,4 +1,12 @@
-import { type Component, createComponent, createSignal, lazy, onMount, Show } from "solid-js";
+import {
+  type Component,
+  createComponent,
+  createSignal,
+  lazy,
+  onMount,
+  Show,
+  Suspense
+} from "solid-js";
 import type { EditorProps } from "./client-types";
 import "./styles.scss";
 
@@ -19,7 +27,12 @@ const Editor: Component<EditorProps> = (props) => {
     },
     keyed: true,
     get children() {
-      return createComponent(ClientEditor, props);
+      // Loading the editor suspends only the editor; the app shows its own loading state.
+      return createComponent(Suspense, {
+        get children() {
+          return createComponent(ClientEditor, props);
+        }
+      });
     }
   });
 };

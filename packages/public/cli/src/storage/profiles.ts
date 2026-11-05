@@ -34,9 +34,10 @@ const saveProfile = async (
     });
   });
 };
-const clearProfileCredential = async (
+/** Removes the profile unless a concurrent login gave it another credential. */
+const removeProfile = async (
   name: string,
-  reference: string,
+  reference: string | undefined,
   signal: AbortSignal
 ): Promise<void> => {
   await withStateLock("profiles", signal, async (assertOwned) => {
@@ -45,16 +46,14 @@ const clearProfileCredential = async (
     const profile =
       config && Object.hasOwn(config.profiles, name) ? config.profiles[name] : undefined;
 
-    if (!config || profile?.credentialRef !== reference) return;
+    if (!config || !profile || profile.credentialRef !== reference) return;
 
-    const { credentialRef: _, ...remaining } = profile;
+    const { [name]: _, ...profiles } = config.profiles;
+    const defaultProfile = config.defaultProfile === name ? undefined : config.defaultProfile;
 
     assertOwned();
-    await writePrivateJSON(file, {
-      ...config,
-      profiles: { ...config.profiles, [name]: remaining }
-    });
+    await writePrivateJSON(file, { ...config, defaultProfile, profiles });
   });
 };
 
-export { saveProfile, clearProfileCredential };
+export { saveProfile, removeProfile };

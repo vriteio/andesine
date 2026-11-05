@@ -117,7 +117,7 @@ const login = async (
 
   if (existing && normalizeBaseURL(existing.baseURL) !== config.baseURL) {
     throw new CLIError(
-      "This profile belongs to another instance. Use --profile with a new name for this login."
+      "This profile belongs to another instance. Run auth logout first, or use --profile with a new name."
     );
   }
 

@@ -1,11 +1,11 @@
 import type { CommandContext } from "../context";
 import { CLIError } from "../errors";
 import { credentialStore } from "../storage/credentials";
-import { clearProfileCredential } from "../storage/profiles";
+import { removeProfile } from "../storage/profiles";
 import { withStateLock } from "../storage/lock";
 import { revokeAccess } from "./oauth";
 
-/** Remove this profile's credentials and report remote revocation separately. */
+/** Remove this profile and its credentials, and report remote revocation separately. */
 const logout = async (context: CommandContext): Promise<void> => {
   const { config, signal, output } = context;
   const reference = config.profile?.credentialRef;
@@ -19,6 +19,8 @@ const logout = async (context: CommandContext): Promise<void> => {
   }
 
   if (!reference || !config.profileName) {
+    if (config.profileName) await removeProfile(config.profileName, undefined, signal);
+
     await output.diagnostic("No saved login for this profile.");
     await output.json({ loggedOut: true, localRemoved: false, revocation: "not-applicable" });
     return;
@@ -51,10 +53,10 @@ const logout = async (context: CommandContext): Promise<void> => {
 
         assertOwned();
         await store.delete();
-        await clearProfileCredential(config.profileName!, reference, signal);
+        await removeProfile(config.profileName!, reference, signal);
         return revoked;
       }),
-    "Local credentials removed"
+    "Profile and local credentials removed"
   );
 
   await output.json({
@@ -63,7 +65,7 @@ const logout = async (context: CommandContext): Promise<void> => {
     revocation: revoked ? "confirmed" : "unconfirmed"
   });
   await output.diagnostic(
-    "Local credentials removed. Access tokens from earlier rotations may remain valid for up to 15 minutes."
+    "Profile and local credentials removed. Access tokens from earlier rotations may remain valid for up to 15 minutes."
   );
 
   if (!revoked) {

@@ -11,7 +11,16 @@ import {
   type EditorSchemaField
 } from "@andesine/editor";
 import clsx from "clsx";
-import { type Component, createEffect, createMemo, type JSX, Show } from "solid-js";
+import {
+  type Component,
+  createEffect,
+  createMemo,
+  createSignal,
+  type JSX,
+  on,
+  onCleanup,
+  Show
+} from "solid-js";
 import { useNotify } from "#web/context/notifications";
 import { config } from "#web/lib/api";
 import { createElementViews } from "#web/components/extensions/element-views";
@@ -52,8 +61,16 @@ interface CollaborativeEditorPaneProps {
 
 // The icon sets of element props with the `icon` control, e.g. a card's.
 const EDITOR_ICONS = { sets: ICON_PICKER_SETS, loadSet: loadIconSet };
+// The longest wait for element views' first render; a slow extension doesn't hide the entry.
+const ELEMENT_VIEWS_TIMEOUT = 500;
+// Views update after their first render, e.g. a code group hides its other blocks.
+const ELEMENT_VIEWS_SETTLE_TIME = 50;
+// A local load usually shows the entry sooner, so the skeleton would only flash.
+const LOCAL_SKELETON_DELAY = 100;
 const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props) => {
   const notify = useNotify();
+  const [viewsRenderedFor, setViewsRenderedFor] = createSignal<string | null>(null);
+  const [skeletonDelayPassed, setSkeletonDelayPassed] = createSignal(false);
   const elementViews = config.PUBLIC_EXTENSIONS_ENABLED ? createElementViews() : undefined;
   const extensionActions = config.PUBLIC_EXTENSIONS_ENABLED ? createBlockActions() : undefined;
   const selectedDocumentID = () => props.documentID;
@@ -120,23 +137,52 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
     setLocalSnapshotFailure,
     notifyError: (text) => notify({ type: "error", text })
   });
+  // Shown with its element views' first render, so they don't shift the content as they appear.
+  const contentShown = () => {
+    const state = documentLoadState();
+
+    return state.editorReady && viewsRenderedFor() === state.documentID;
+  };
   const showContentSkeleton = () => {
     const documentID = selectedDocumentID();
     const state = documentLoadState();
+    const isShown = state.documentID === documentID && contentShown();
+    const loadsRemotely = !state.isCheckingLocal && !state.hasLocalSnapshot;
 
     return Boolean(
-      documentID &&
-      state.documentID === documentID &&
-      !state.isCheckingLocal &&
-      !state.hasLocalSnapshot &&
-      !state.editorReady &&
-      !state.problem
+      documentID && !state.problem && !isShown && (loadsRemotely || skeletonDelayPassed())
     );
   };
 
   createEffect(() => {
     props.onLoadStateChange?.(documentLoadState());
   });
+  createEffect(
+    on(selectedDocumentID, () => {
+      const timeout = setTimeout(() => setSkeletonDelayPassed(true), LOCAL_SKELETON_DELAY);
+
+      setSkeletonDelayPassed(false);
+      onCleanup(() => clearTimeout(timeout));
+    })
+  );
+  // Tracks the document whose views it waited for.
+  createEffect<string | null>((waitedFor) => {
+    const { documentID, editorReady } = documentLoadState();
+    const rendering = elementViews?.rendering();
+    const show = () => setViewsRenderedFor(documentID);
+
+    if (!editorReady || viewsRenderedFor() === documentID) return waitedFor;
+
+    if (!rendering && waitedFor !== documentID) {
+      show();
+      return waitedFor;
+    }
+
+    const timeout = setTimeout(show, rendering ? ELEMENT_VIEWS_TIMEOUT : ELEMENT_VIEWS_SETTLE_TIME);
+
+    onCleanup(() => clearTimeout(timeout));
+    return rendering ? documentID : waitedFor;
+  }, null);
 
   return (
     <div class="flex w-full flex-1 overflow-hidden">
@@ -208,12 +254,7 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
                   onBack={props.onBack}
                 />
               </Show>
-              <div
-                class={clsx(
-                  "h-full w-full md:px-1",
-                  !documentLoadState().editorReady && "invisible"
-                )}
-              >
+              <div class={clsx("h-full w-full md:px-1", !contentShown() && "invisible")}>
                 <Editor
                   images={images()}
                   links={props.mode === "schema" ? undefined : links}
@@ -273,6 +314,8 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
                       editor.off("update", pruneImages);
                       cleanup?.();
                       markEditorNotReady();
+                      // A new editor, e.g. after a retry, renders its views again.
+                      setViewsRenderedFor(null);
                     };
                   }}
                   initialTitle={props.initialTitle}

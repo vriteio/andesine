@@ -46,6 +46,10 @@ interface ViewParking {
   /** A parked view with the key, e.g. of a moved element; a template's under the same root. */
   claim(key: string, rootID?: string): MountedView | null;
 }
+interface HostElementViews extends ElementViews {
+  /** Some mounted views haven't rendered yet; the sandbox renders them asynchronously. */
+  rendering(): boolean;
+}
 
 type ViewProps = NonNullable<Parameters<RunningExtension["host"]["createView"]>[1]>;
 /** A view of its own entry, or a child element's view from its root view's template. */
@@ -113,11 +117,13 @@ const mountView = (
   mount: ElementViewMount,
   scopes: ViewScopes,
   parking: ViewParking,
-  owner: ReturnType<typeof getOwner>
+  owner: ReturnType<typeof getOwner>,
+  startRender: () => () => void
 ): (() => void) => {
   return createRoot((dispose) => {
     const [view, setView] = createSignal<MountedView | null>(null);
     const sourceKey = getSourceKey(source);
+    const settleRender = startRender();
     const getParkingKey = () => {
       const key = untrack(mount.place).key;
 
@@ -157,7 +163,16 @@ const mountView = (
       });
     };
 
-    onCleanup(() => (disposed = true));
+    onCleanup(() => {
+      disposed = true;
+      settleRender();
+    });
+    // The sandbox adds the view's root with its first render.
+    createEffect(() => {
+      const current = view();
+
+      if (current && extension.host.tree.state.roots[current.id] !== undefined) settleRender();
+    });
 
     if ("name" in source) {
       start(() => {
@@ -232,9 +247,10 @@ const mountView = (
   }, owner);
 };
 /** Element views of running extensions; create it in a component to keep the app's context. */
-const createElementViews = (): ElementViews => {
+const createElementViews = (): HostElementViews => {
   const owner = getOwner();
   const { workspaceID, subscribeToUpdates } = useWorkspace();
+  const [unrendered, setUnrendered] = createSignal(0);
   const activeViews = createAsync(async () => {
     const id = workspaceID();
 
@@ -243,11 +259,23 @@ const createElementViews = (): ElementViews => {
   const scopes = createViewScopes();
   const parking = createViewParking();
   const renderers = new WeakMap<RunningExtension, Map<string, ElementViewRenderer>>();
+  const startRender = () => {
+    let settled = false;
+
+    setUnrendered((count) => count + 1);
+
+    return () => {
+      if (settled) return;
+
+      settled = true;
+      setUnrendered((count) => count - 1);
+    };
+  };
   const getRenderer = (extension: RunningExtension, source: ViewSource): ElementViewRenderer => {
     const key = getSourceKey(source);
     const bySource = renderers.get(extension) ?? new Map<string, ElementViewRenderer>();
     const renderer = bySource.get(key) ?? {
-      mount: (mount) => mountView(extension, source, mount, scopes, parking, owner)
+      mount: (mount) => mountView(extension, source, mount, scopes, parking, owner, startRender)
     };
 
     bySource.set(key, renderer);
@@ -260,7 +288,6 @@ const createElementViews = (): ElementViews => {
       if (isExtensionChange(event.action)) void revalidate(extensionActiveViewsQuery.key);
     })
   );
-
   const getSources = () => {
     return runningExtensions()
       .filter((extension) => extension.status() === "ready")
@@ -277,6 +304,7 @@ const createElementViews = (): ElementViews => {
   };
 
   return {
+    rendering: () => unrendered() > 0,
     resolve(name, ancestors) {
       const found = match(name, ancestors);
 

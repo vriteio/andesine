@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.1
+
+- `auth logout` removes the profile with its credentials, so a login can reuse the profile's name
+  for another instance; it also removes a profile that has no saved login.
+- The bundle no longer imports `@orpc/contract`, which isn't a dependency of the CLI; the CLI
+  stopped with `ERR_MODULE_NOT_FOUND` without it.
+
 ## 0.8.0
 
 - `auth login` checks the profile's workspace against the account's workspaces. A saved workspace
