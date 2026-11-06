@@ -6,10 +6,18 @@ import { config } from "#backend/lib/config";
 import { eq } from "drizzle-orm";
 import type Stripe from "stripe";
 
+interface MeterPrice {
+  /** In cents, for each package of units. */
+  amount: number;
+  /** Units in a package, e.g. 50K API calls; 1 without a package. */
+  size: number;
+  round: "up" | "down";
+}
+
 interface MeterPrices {
-  /** Unit prices over the included amounts, in cents. */
-  apiCalls: number;
-  aiCredits: number;
+  /** Prices over the pool. */
+  apiCalls: MeterPrice;
+  aiCredits: MeterPrice;
   currency: string;
 }
 
@@ -35,15 +43,24 @@ interface CachedPrices {
 }
 
 const PRICE_CACHE_TTL = 60 * 60 * 1000;
+const PRICE_FAILURE_TTL = 60 * 1000;
 
 let cachedPrices: CachedPrices | null = null;
 
-/** The last tier applies over the included amount. */
-const getUnitPrice = (price: Stripe.Price): number => {
-  const lastTier = price.tiers?.[price.tiers.length - 1];
-  const amount = lastTier?.unit_amount_decimal ?? price.unit_amount_decimal ?? "0";
+/** Usage over the pool is billed per unit or package, e.g. $1 per 50K API calls. */
+const toMeterPrice = (price: Stripe.Price): MeterPrice => {
+  const isUnsupportedPrice =
+    price.billing_scheme === "tiered" || price.unit_amount_decimal === null;
 
-  return Number(amount) / (price.transform_quantity?.divide_by ?? 1);
+  if (isUnsupportedPrice) {
+    throw new Error(`Stripe price ${price.id} must be a per-unit or package price, not tiered`);
+  }
+
+  return {
+    amount: Number(price.unit_amount_decimal),
+    size: price.transform_quantity?.divide_by ?? 1,
+    round: price.transform_quantity?.round === "down" ? "down" : "up"
+  };
 };
 const loadMeterPrices = async (): Promise<MeterPrices | null> => {
   const apiCallPriceID = config.STRIPE_PRO_API_CALL_PRICE_ID;
@@ -53,13 +70,13 @@ const loadMeterPrices = async (): Promise<MeterPrices | null> => {
   if (!stripe || !hasPrices) return null;
 
   const [apiCalls, aiCredits] = await Promise.all([
-    stripe.prices.retrieve(apiCallPriceID, { expand: ["tiers"] }),
-    stripe.prices.retrieve(aiCreditPriceID, { expand: ["tiers"] })
+    stripe.prices.retrieve(apiCallPriceID),
+    stripe.prices.retrieve(aiCreditPriceID)
   ]);
 
   return {
-    apiCalls: getUnitPrice(apiCalls),
-    aiCredits: getUnitPrice(aiCredits),
+    apiCalls: toMeterPrice(apiCalls),
+    aiCredits: toMeterPrice(aiCredits),
     currency: apiCalls.currency
   };
 };
@@ -68,21 +85,25 @@ const getMeterPrices = (): Promise<MeterPrices | null> => {
     const prices = loadMeterPrices();
 
     cachedPrices = { prices, expiresAt: Date.now() + PRICE_CACHE_TTL };
+    // Keeps a failure briefly, so bad prices don't call Stripe on every request.
     prices.catch(() => {
-      cachedPrices = null;
+      cachedPrices = { prices, expiresAt: Date.now() + PRICE_FAILURE_TTL };
     });
   }
 
   return cachedPrices.prices;
 };
-const estimateCharges = (usage: MeterOverages, prices: MeterPrices): MeterCharges => {
-  const overage = (meter: MeterOverage) => Math.max(meter.total - meter.limit, 0);
+/** Rounds the packages as Stripe does, so 1 call over the pool costs a whole package. */
+const estimateCharge = (meter: MeterOverage, price: MeterPrice): number => {
+  const packages = Math.max(meter.total - meter.limit, 0) / price.size;
+  const billedPackages = price.round === "down" ? Math.floor(packages) : Math.ceil(packages);
 
-  return {
-    apiCalls: Math.ceil(overage(usage.apiCalls) * prices.apiCalls),
-    aiCredits: Math.ceil(overage(usage.aiCredits) * prices.aiCredits)
-  };
+  return Math.ceil(billedPackages * price.amount);
 };
+const estimateCharges = (usage: MeterOverages, prices: MeterPrices): MeterCharges => ({
+  apiCalls: estimateCharge(usage.apiCalls, prices.apiCalls),
+  aiCredits: estimateCharge(usage.aiCredits, prices.aiCredits)
+});
 const estimateSpend = (usage: MeterOverages, prices: MeterPrices): number => {
   const charges = estimateCharges(usage, prices);
 

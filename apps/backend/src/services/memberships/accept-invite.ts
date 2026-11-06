@@ -6,7 +6,12 @@ import {
   users,
   workspaces
 } from "@andesine/server/database";
-import { getEffectivePlan } from "#backend/lib/billing";
+import {
+  countMembers,
+  FREE_MEMBER_LIMIT,
+  getEffectivePlan,
+  throwFreeMemberLimit
+} from "#backend/lib/billing";
 import {
   toMembershipID,
   toRoleID,
@@ -97,17 +102,14 @@ const acceptInvite = async (input: {
     }
 
     if (!user) throw new ORPCError("UNAUTHORIZED", { message: "User not found" });
+
+    // Checked again; the workspace lock keeps invites accepted at the same time in order.
     if (getEffectivePlan(workspace.subscriptionPlan) !== "pro") {
-      throw new ORPCError("FORBIDDEN", {
-        message: "This workspace must upgrade to Andesine Pro before you can accept the invite",
-        data: {
-          requiredPlan: "pro",
-          hints: [
-            "Ask a workspace administrator to review the subscription plan before accepting the invitation."
-          ]
-        }
-      });
+      const members = await countMembers(tx, workspace.id);
+
+      if (members >= FREE_MEMBER_LIMIT) throwFreeMemberLimit();
     }
+
     if (user.email.trim().toLowerCase() !== invite.email.trim().toLowerCase()) {
       throw new ORPCError("INVITE_ACCOUNT_MISMATCH", {
         status: 403,

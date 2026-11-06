@@ -1,7 +1,8 @@
-import { type ParentComponent } from "solid-js";
+import { type JSX, type ParentComponent } from "solid-js";
 
 interface SettingsSectionProps {
   label?: string;
+  actions?: JSX.Element;
 }
 
 const SettingsSection: ParentComponent<SettingsSectionProps> = (props) => (
@@ -10,6 +11,7 @@ const SettingsSection: ParentComponent<SettingsSectionProps> = (props) => (
       <div class="flex min-h-4 items-center gap-2 text-xs text-gray-400">
         {props.label}
         <div class="flex-1 h-px bg-gray-200" />
+        {props.actions}
       </div>
     </div>
     {props.children}

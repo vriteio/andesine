@@ -4,11 +4,14 @@ import { createAsync } from "@solidjs/router";
 import { type Component, createEffect, createSignal, For, Suspense } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
 import { config } from "#web/lib/api";
-import { subscriptionQuery, usageQuery } from "#web/lib/data";
+import { FREE_MEMBER_LIMIT, subscriptionQuery, usageQuery } from "#web/lib/data";
 import { formatNumber, formatUSD } from "#web/lib/primitives";
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
 import { SubscriptionAction } from "./subscription-action";
+
+// Widths of the Pro details while they load; 1em with 0.125em margins fills a leading-tight line.
+const DETAIL_SKELETON_WIDTHS = ["w-40", "w-36", "w-60", "w-56"];
 
 const SubscriptionSection: Component = () => {
   const { currentWorkspace } = useWorkspace();
@@ -25,10 +28,20 @@ const SubscriptionSection: Component = () => {
     const currentUsage = usageDetails();
 
     if (isPro()) {
+      const isLoading = !details || !currentUsage;
+
+      if (isLoading) {
+        return DETAIL_SKELETON_WIDTHS.map((width) => (
+          <Skeleton class={clsx("h-[1em] my-[0.125em] rounded", width)} />
+        ));
+      }
+
+      const blocksFree = details.seats > FREE_MEMBER_LIMIT;
+
       return [
         <>
           <span class="font-medium text-gray-700">
-            {details ? formatUSD(details.seats * config.PRICE_PER_SEAT_USD) : "—"}
+            {formatUSD(details.seats * config.PRICE_PER_SEAT_USD)}
             <span class="opacity-50 mx-0.5">/</span>
             mo.
           </span>{" "}
@@ -36,39 +49,52 @@ const SubscriptionSection: Component = () => {
         </>,
         <>
           <span class="font-medium text-gray-700">
-            {details?.seats ?? "—"} member {details?.seats === 1 ? "seat" : "seats"}
+            {details.seats} member {details.seats === 1 ? "seat" : "seats"}
           </span>{" "}
           active
         </>,
         <>
           <span class="font-medium text-gray-700">
-            {currentUsage ? formatNumber(currentUsage.apiCalls.total) : "—"} API calls
+            {formatNumber(currentUsage.apiCalls.total)} of{" "}
+            {formatNumber(currentUsage.apiCalls.limit)} API calls
           </span>{" "}
           this month
         </>,
         <>
           <span class="font-medium text-gray-700">
-            {currentUsage ? formatNumber(currentUsage.aiCredits.total) : "—"} AI credits
+            {formatNumber(currentUsage.aiCredits.total)} of{" "}
+            {formatNumber(currentUsage.aiCredits.limit)} AI credits
           </span>{" "}
           this month
-        </>
+        </>,
+        ...(blocksFree
+          ? [
+              <>
+                Moving to Free needs{" "}
+                <span class="font-medium text-gray-700">{FREE_MEMBER_LIMIT} members</span> or fewer
+              </>
+            ]
+          : [])
       ];
     }
 
     return [
-      "Unlimited team members",
-      "Priority support",
+      "Unlimited members, with roles, groups and restricted collections",
+      "Custom domains for hosted sites, without the badge",
       <>
-        <span class="font-medium text-gray-700">500K API calls</span> included
+        <span class="font-medium text-gray-700">150K API calls</span> and{" "}
+        <span class="font-medium text-gray-700">15K AI credits</span> per seat, shared across the
+        workspace
       </>,
       <>
         <span class="font-medium text-gray-700">$1 per 50K</span> additional API calls
       </>,
       <>
-        <span class="font-medium text-gray-700">50K AI credits</span> included
+        <span class="font-medium text-gray-700">$1 per 5K</span> additional AI credits
       </>,
       <>
-        <span class="font-medium text-gray-700">$1 per 5K</span> additional AI credits
+        <span class="font-medium text-gray-700">30 days</span> of version history and{" "}
+        <span class="font-medium text-gray-700">50 GiB</span> of storage
       </>
     ];
   };

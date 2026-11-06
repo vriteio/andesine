@@ -344,6 +344,13 @@
       "when": 1793183336936,
       "tag": "0048_rename_schema_defaults_to_initial",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1793924394812,
+      "tag": "0049_add-billing-periods",
+      "breakpoints": true
     }
   ]
 }

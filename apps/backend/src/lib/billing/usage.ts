@@ -8,6 +8,8 @@ interface UsageCounts {
 
 interface UsageCounters extends UsageCounts {
   spendingLimit: number | null;
+  /** The period's highest seat count, for the Pro pool. */
+  seats: number;
 }
 
 // Reloads from Postgres limit drift from concurrent loads.
@@ -50,14 +52,16 @@ const readUsageCounters = async (key: string): Promise<UsageCounters | null> => 
   const isLoaded =
     counters.apiCalls !== undefined &&
     counters.aiCredits !== undefined &&
-    counters.spendingLimit !== undefined;
+    counters.spendingLimit !== undefined &&
+    counters.seats !== undefined;
 
   if (!isLoaded) return null;
 
   return {
     apiCalls: Number(counters.apiCalls),
     aiCredits: Number(counters.aiCredits),
-    spendingLimit: counters.spendingLimit ? Number(counters.spendingLimit) : null
+    spendingLimit: counters.spendingLimit ? Number(counters.spendingLimit) : null,
+    seats: Number(counters.seats)
   };
 };
 const loadUsageCounters = async (key: string, counters: UsageCounters): Promise<void> => {
@@ -66,6 +70,7 @@ const loadUsageCounters = async (key: string, counters: UsageCounters): Promise<
     .hSetNX(key, "apiCalls", `${counters.apiCalls}`)
     .hSetNX(key, "aiCredits", `${counters.aiCredits}`)
     .hSetNX(key, "spendingLimit", `${counters.spendingLimit ?? ""}`)
+    .hSetNX(key, "seats", `${counters.seats}`)
     .expire(key, USAGE_COUNTERS_TTL, "NX")
     .exec();
 };

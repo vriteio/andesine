@@ -10,6 +10,8 @@ interface MeterUsageProps {
   unit: string;
   limitMessage: string;
   isPro: boolean;
+  /** Whether it's the current month, which Free limits apply to. */
+  current: boolean;
   /** Largest cost of one request, as Free limits refuse requests that would pass them. */
   maxCost: number;
   meter?: { daily: Array<{ day: number; count: number }>; total: number; limit: number };
@@ -18,7 +20,9 @@ interface MeterUsageProps {
 
 const MeterUsage: Component<MeterUsageProps> = (props) => {
   const limitExceeded = () => {
-    return !props.isPro && (props.meter?.total ?? 0) + props.maxCost > (props.meter?.limit ?? 0);
+    const isOverLimit = (props.meter?.total ?? 0) + props.maxCost > (props.meter?.limit ?? 0);
+
+    return props.current && !props.isPro && isOverLimit;
   };
 
   return (

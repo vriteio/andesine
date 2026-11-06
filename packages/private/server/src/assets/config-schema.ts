@@ -22,7 +22,7 @@ const assetConfigSchema = z.object({
   ASSET_S3_FORCE_PATH_STYLE: z.stringbool().default(false),
   ASSET_MAX_UPLOAD_BYTES: positiveInteger(DEFAULT_MAX_UPLOAD_BYTES, 64 * 1024 ** 2),
   ASSET_MAX_INPUT_PIXELS: positiveInteger(25_000_000, 100_000_000),
-  ASSET_STORAGE_BYTES: positiveInteger(10 * 1024 ** 3),
+  ASSET_STORAGE_BYTES: positiveInteger(1024 ** 3),
   PRO_ASSET_STORAGE_BYTES: positiveInteger(50 * 1024 ** 3),
   ASSET_UPLOAD_EXPIRY_HOURS: positiveInteger(3, 168),
   ASSET_RETENTION_DAYS: positiveInteger(7)

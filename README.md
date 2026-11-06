@@ -34,10 +34,10 @@ Product analytics are off unless `PUBLIC_POSTHOG_KEY` is set, together with `POS
 server events (backend, usage reporter) or `PUBLIC_POSTHOG_HOST` for client analytics (web app,
 landing page). Self-hosted instances send nothing by default. See [.env.example](.env.example).
 
-Set `BILLING_ENABLED=true` or `BILLING_ENABLED=false` in the backend, worker, and usage reporter.
-All three deployments must use the same value. A missing or invalid value stops startup.
-Use a shared deployment variable where possible. With billing disabled, all Pro features remain
-available and the reporter skips Stripe usage reporting.
+Billing is off unless `BILLING_ENABLED=true` is set in the backend, worker, and usage reporter.
+All three deployments must use the same value, and an invalid value stops startup. Use a shared
+deployment variable where possible. With billing disabled, all Pro features remain available and
+the reporter skips Stripe usage reporting.
 
 | Application    | Stripe settings required when billing is enabled                                                                                                 |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |

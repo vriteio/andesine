@@ -1,5 +1,6 @@
 import { memberships, workspaces } from "@andesine/server/database";
 // SPDX-License-Identifier: Elastic-2.0
+import { dropUsageCounters, getUsageCounterKey, recordPeriodSeats } from "#backend/lib/billing";
 import { config } from "#backend/lib/config";
 import { toUUID } from "@andesine/contracts/primitives";
 import { db, stripe } from "#backend/lib/adapters";
@@ -34,7 +35,10 @@ const updateSeats = async (input: { workspaceID: string }): Promise<void> => {
     await stripe.subscriptionItems.update(seatItemID, {
       quantity: Math.max(seatCount, 1)
     });
+    await recordPeriodSeats(tx, workspaceID);
   });
+  // The cached pool follows the new seat count.
+  await dropUsageCounters(getUsageCounterKey(workspaceID, new Date()));
 };
 
 export { updateSeats };

@@ -12,28 +12,28 @@ const billingConfigSchema = billingModeConfigSchema
     INCLUDED_API_CALLS: z
       .preprocess(normalizeBillingValue, z.coerce.number().int().min(0).default(50000))
       .describe("Number of API calls included in the Free plan"),
-    PRO_INCLUDED_API_CALLS: z
-      .preprocess(normalizeBillingValue, z.coerce.number().int().min(0).default(500000))
-      .describe("Number of API calls included in the Pro plan"),
+    PRO_API_CALLS_PER_SEAT: z
+      .preprocess(normalizeBillingValue, z.coerce.number().int().min(0).default(150000))
+      .describe("Number of API calls each Pro seat adds to the workspace's monthly pool"),
     INCLUDED_AI_CREDITS: z
       .preprocess(normalizeBillingValue, z.coerce.number().int().min(0).default(5000))
       .describe("Number of AI credits included in the Free plan"),
-    PRO_INCLUDED_AI_CREDITS: z
-      .preprocess(normalizeBillingValue, z.coerce.number().int().min(0).default(50000))
-      .describe("Number of AI credits included in the Pro plan"),
+    PRO_AI_CREDITS_PER_SEAT: z
+      .preprocess(normalizeBillingValue, z.coerce.number().int().min(0).default(15000))
+      .describe("Number of AI credits each Pro seat adds to the workspace's monthly pool"),
     STRIPE_SECRET_KEY: optionalBillingString.describe("Stripe secret API key"),
     STRIPE_WEBHOOK_SECRET: optionalBillingString.describe("Stripe webhook signing secret"),
     STRIPE_PRO_SEAT_PRICE_ID: optionalBillingString.describe(
       "Stripe Price ID for Pro per-seat charge"
     ),
     STRIPE_PRO_API_CALL_PRICE_ID: optionalBillingString.describe(
-      "Stripe Price ID for tiered Pro API call metering"
+      "Stripe Price ID for Pro API calls over the pool, per unit"
     ),
     STRIPE_PRO_API_CALL_METER_EVENT_NAME: optionalBillingString.describe(
       "Stripe Meter event name for tracking API usage"
     ),
     STRIPE_PRO_AI_CREDIT_PRICE_ID: optionalBillingString.describe(
-      "Stripe Price ID for tiered Pro AI credit metering"
+      "Stripe Price ID for Pro AI credits over the pool, per unit"
     ),
     STRIPE_PRO_AI_CREDIT_METER_EVENT_NAME: optionalBillingString.describe(
       "Stripe Meter event name for tracking AI credit usage"

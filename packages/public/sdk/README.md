@@ -141,11 +141,11 @@ grant, or app session) in one-minute windows.
 Each workspace also has two monthly meters, which reset at 00:00 UTC on the first
 day of each month:
 
-- **API calls:** each request with an API key or OAuth. Free includes 50,000; Pro
-  includes 500,000 and bills the rest.
-- **AI credits:** an AI answer uses 3 credits, and a semantic search uses 1. Requests
-  from the app use credits too. Free includes 5,000; Pro includes 50,000 and bills
-  the rest.
+- **API calls:** each request with an API key or OAuth. Free includes 50,000; on Pro,
+  each seat adds 150,000 to a pool shared across the workspace, and the rest is billed.
+- **AI credits:** an AI answer uses 10 credits, and a semantic search uses 1. Requests
+  from the app use credits too. Free includes 5,000; on Pro, each seat adds 15,000 to
+  the shared pool, and the rest is billed.
 
 On Free, the meters are hard limits. On Pro, a workspace admin can set a monthly
 spending limit for the billed usage; when it is reached, metered requests stop until

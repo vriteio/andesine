@@ -5,9 +5,10 @@ const getEffectivePlan = (plan?: string | null): string => {
   return config.BILLING_ENABLED ? plan || "free" : "pro";
 };
 
-const AI_CREDIT_COSTS = { answer: 3, semanticSearch: 1 } as const;
+const AI_CREDIT_COSTS = { answer: 10, semanticSearch: 1 } as const;
 
 export { AI_CREDIT_COSTS, getEffectivePlan };
-export * from "./carry-over";
+export * from "./members";
+export * from "./periods";
 export * from "./spending";
 export * from "./usage";

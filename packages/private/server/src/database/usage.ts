@@ -86,4 +86,30 @@ const usageLedger = pgTable(
   ]
 );
 
-export { analyticsUsageCursor, dailyUsage, deliveryStatusEnum, usageLedger, usageMeterEnum };
+/**
+ * A workspace's usage and highest seat count in a UTC month. Usage adds to it atomically, so the
+ * usage over the Pro pool (seats × the per-seat amounts) is exact under concurrent requests.
+ */
+const billingPeriods = pgTable(
+  "billing_periods",
+  {
+    workspaceID: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    periodStart: date("period_start", { mode: "string" }).notNull(),
+    apiCalls: bigint("api_calls", { mode: "number" }).notNull().default(0),
+    aiCredits: bigint("ai_credits", { mode: "number" }).notNull().default(0),
+    /** 0 when unknown, e.g. for months before seats were recorded. */
+    seats: integer("seats").notNull().default(0)
+  },
+  (table) => [primaryKey({ columns: [table.workspaceID, table.periodStart] })]
+);
+
+export {
+  analyticsUsageCursor,
+  billingPeriods,
+  dailyUsage,
+  deliveryStatusEnum,
+  usageLedger,
+  usageMeterEnum
+};

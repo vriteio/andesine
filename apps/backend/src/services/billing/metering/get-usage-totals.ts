@@ -2,6 +2,8 @@
 import { dailyUsage } from "@andesine/server/database";
 import {
   getEffectivePlan,
+  getIncludedUsage,
+  getPeriodSeats,
   getSpendingLimit,
   getUsageCounterKey,
   getUTCMonthPeriod,
@@ -10,14 +12,13 @@ import {
   toUsageDate,
   type UsageCounters
 } from "#backend/lib/billing";
-import { config } from "#backend/lib/config";
 import { toUUID } from "@andesine/contracts/primitives";
 import { db } from "#backend/lib/adapters";
 import { and, eq, gte, lte, sum } from "drizzle-orm";
 
 interface MeterTotal {
   total: number;
-  /** The hard limit on Free, or the included amount on Pro. */
+  /** The hard limit on Free, or the pool on Pro. */
   limit: number;
 }
 
@@ -34,8 +35,9 @@ const loadCounters = async (
   startDate: Date,
   endDate: Date
 ): Promise<UsageCounters> => {
-  const [spendingLimit, [row]] = await Promise.all([
+  const [spendingLimit, seats, [row]] = await Promise.all([
     getSpendingLimit(workspaceUUID),
+    getPeriodSeats(workspaceUUID, startDate),
     db
       .select({ apiCalls: sum(dailyUsage.requestCount), aiCredits: sum(dailyUsage.aiCreditCount) })
       .from(dailyUsage)
@@ -51,7 +53,8 @@ const loadCounters = async (
   return {
     apiCalls: Number(row?.apiCalls ?? 0),
     aiCredits: Number(row?.aiCredits ?? 0),
-    spendingLimit
+    spendingLimit,
+    seats
   };
 };
 
@@ -63,7 +66,6 @@ const getUsageTotals = async (input: {
   const workspaceUUID = toUUID(input.workspaceID);
   const period = getUTCMonthPeriod(now);
   const key = getUsageCounterKey(workspaceUUID, now);
-  const isPro = getEffectivePlan(input.plan) === "pro";
 
   let counters = await readUsageCounters(key);
 
@@ -74,15 +76,11 @@ const getUsageTotals = async (input: {
     counters = (await readUsageCounters(key)) ?? loaded;
   }
 
+  const included = getIncludedUsage(getEffectivePlan(input.plan), counters.seats);
+
   return {
-    apiCalls: {
-      total: counters.apiCalls,
-      limit: isPro ? config.PRO_INCLUDED_API_CALLS : config.INCLUDED_API_CALLS
-    },
-    aiCredits: {
-      total: counters.aiCredits,
-      limit: isPro ? config.PRO_INCLUDED_AI_CREDITS : config.INCLUDED_AI_CREDITS
-    },
+    apiCalls: { total: counters.apiCalls, limit: included.apiCalls },
+    aiCredits: { total: counters.aiCredits, limit: included.aiCredits },
     spendingLimit: counters.spendingLimit,
     resetDate: period.resetDate
   };

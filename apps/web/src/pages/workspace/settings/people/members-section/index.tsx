@@ -1,13 +1,14 @@
-import { IconButton } from "@andesine/components";
+import { Fragment, IconButton, Tooltip } from "@andesine/components";
 import { createAsync, revalidate, useNavigate, useParams } from "@solidjs/router";
 import { type Component, Show, Suspense, useTransition } from "solid-js";
+import { Dynamic } from "solid-js/web";
 import { useWorkspace } from "#web/context/workspace";
 import { TreeSkeleton } from "#web/components/tree";
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
 import { InviteList } from "./invite-list";
 import { WorkspaceMemberList } from "./member-list";
-import { invitesQuery, membershipsQuery, rolesQuery } from "#web/lib/data";
+import { FREE_MEMBER_LIMIT, invitesQuery, membershipsQuery, rolesQuery } from "#web/lib/data";
 import type { InvitationSubsectionProps } from "./types";
 
 const InvitationsSubsection: Component<InvitationSubsectionProps> = (props) => {
@@ -49,11 +50,17 @@ const MembersSection: Component = () => {
   const params = useParams<{ workspaceID?: string }>();
   const members = createAsync(() => membershipsQuery());
   const canManage = () => hasPermission("memberships");
-  const canManageProFeatures = () => {
-    return canManage() && currentWorkspace()?.subscriptionPlan === "pro";
-  };
-  const invites = createAsync(async () => (canManageProFeatures() ? invitesQuery() : []));
+  const isPro = () => currentWorkspace()?.subscriptionPlan === "pro";
+  const canManageProFeatures = () => canManage() && isPro();
+  const invites = createAsync(async () => (canManage() ? invitesQuery() : []));
   const roles = createAsync(() => rolesQuery());
+  const inviteLimitReason = () => {
+    const used = (members()?.length ?? 0) + (invites()?.length ?? 0);
+
+    if (isPro() || used < FREE_MEMBER_LIMIT) return "";
+
+    return `The Free plan has up to ${FREE_MEMBER_LIMIT} members, including pending invites`;
+  };
   const [membersRefreshing, startMembersRefresh] = useTransition();
   const refreshMembers = (onRevalidated = () => {}) => {
     void startMembersRefresh(() => {
@@ -72,14 +79,20 @@ const MembersSection: Component = () => {
           description="Manage people who have access to this workspace"
           fade={false}
         >
-          <Show when={canManageProFeatures()}>
-            <IconButton
-              label={() => <span class="px-1">Invite member</span>}
-              class="flex-row-reverse pr-1"
-              onClick={() => navigate(`/${params.workspaceID || ""}/settings/invite`)}
-              iconProps={{ class: "h-4 w-4" }}
-              icon="i-lucide:plus"
-            />
+          <Show when={canManage()}>
+            <Dynamic
+              component={inviteLimitReason() ? Tooltip : Fragment}
+              content={inviteLimitReason()}
+            >
+              <IconButton
+                label={() => <span class="px-1">Invite member</span>}
+                class="flex-row-reverse pr-1"
+                disabled={Boolean(inviteLimitReason())}
+                onClick={() => navigate(`/${params.workspaceID || ""}/settings/invite`)}
+                iconProps={{ class: "h-4 w-4" }}
+                icon="i-lucide:plus"
+              />
+            </Dynamic>
           </Show>
         </Setting>
         <div class="relative flex w-full flex-col">
@@ -91,14 +104,14 @@ const MembersSection: Component = () => {
               roles={roles() || []}
               canManage={canManage()}
               canManageRoles={canManageProFeatures()}
-              disabledNonAdmins={currentWorkspace()?.subscriptionPlan !== "pro"}
+              disabledNonAdmins={!isPro()}
               currentUserID={currentWorkspace()?.userID}
               membersRefreshing={membersRefreshing()}
               refreshMembers={refreshMembers}
             />
           </Suspense>
         </div>
-        <Show when={canManageProFeatures()}>
+        <Show when={canManage()}>
           <Suspense>
             <InvitationsSubsection invites={invites() || []} roles={roles() || []} />
           </Suspense>

@@ -32,7 +32,7 @@ const searchConfigSchema = z.object({
   SEARCH_ASK_MODEL: z
     .string()
     .min(1)
-    .default("gpt-5.6-luna")
+    .default("gpt-6-luna")
     .describe("OpenAI-compatible model used by Ask AI"),
   SEARCH_ASK_REASONING_EFFORT: z
     .enum(["none", "minimal", "low", "medium", "high", "xhigh", "max"])

@@ -5,10 +5,9 @@ import { db, stripe } from "#backend/lib/adapters";
 import { config } from "#backend/lib/config";
 import { ORPCError } from "@orpc/server";
 import { count, eq } from "drizzle-orm";
-import { addMonths, startOfMonth } from "date-fns";
 
 const getNextUTCMonthStart = (date: Date): Date => {
-  return startOfMonth(addMonths(date, 1));
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1));
 };
 
 const createCheckout = async (input: {

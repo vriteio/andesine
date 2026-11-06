@@ -12,12 +12,19 @@ interface PlanFeaturesProps {
 
 // Prices and Pro allowances match the web app's billing/subscription-section UI
 // and apps/web/src/lib/api/config.ts. There is no advertised annual plan or trial.
-const freeFeatures = ["Rich text editing", "Collections and schemas", "Publishing and API access"];
+const freeFeatures = [
+  "Up to 3 members, all admins",
+  "Collections, schemas, and publishing",
+  "50K API calls and 5K AI credits per month",
+  "Git sync, MCP, import, and export",
+  "Hosted site with a badge"
+];
 const proFeatures = [
-  "Unlimited team members",
-  "Roles, groups, and collection access",
-  "Priority support",
-  "500K API calls per month"
+  "Unlimited members",
+  "Roles, groups, and restricted collections",
+  "150K API calls and 15K AI credits per seat, shared across the workspace",
+  "Custom domains, without the badge",
+  "30-day version history and 50 GiB of storage"
 ];
 
 const PlanFeatures: Component<PlanFeaturesProps> = (props) => (
@@ -89,7 +96,7 @@ const Pricing: Component = () => {
               </span>
               <div class="flex flex-col">
                 <span class="text-sm text-white/80 leading-tight">USD / seat / month</span>
-                <span class="text-sm text-white/80 leading-tight">$1 per 50K API calls</span>
+                <span class="text-sm text-white/80 leading-tight">Agents never need a seat</span>
               </div>
             </div>
             <a

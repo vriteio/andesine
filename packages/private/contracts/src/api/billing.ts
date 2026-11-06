@@ -53,6 +53,40 @@ const billingUsageType = z.object({
   endDate: z.date().describe("End of the billing usage window"),
   resetDate: z.date().describe("Next monthly allowance reset at 00:00 UTC")
 });
+const billingHistoryType = z.object({
+  months: z
+    .array(
+      z.object({
+        month: z.string().describe("The UTC month, as YYYY-MM"),
+        apiCalls: z.number().int().min(0).describe("API calls in the month"),
+        aiCredits: z.number().int().min(0).describe("AI credits used in the month"),
+        seats: z
+          .number()
+          .int()
+          .min(0)
+          .nullable()
+          .describe("Highest seat count in the month; null when unknown"),
+        charged: z
+          .number()
+          .int()
+          .min(0)
+          .nullable()
+          .describe("Amount invoiced for the month, in cents; null without billing data"),
+        invoices: z
+          .array(
+            z.object({
+              amount: z.number().int().min(0).describe("Invoiced amount, in cents"),
+              url: z.string().url().describe("Hosted invoice page")
+            })
+          )
+          .describe("Invoices that bill the month")
+      })
+    )
+    .describe(
+      "Months since the workspace creation or the start of the previous year, oldest first"
+    ),
+  currency: z.string().nullable().describe("Currency of the invoiced amounts, e.g. usd")
+});
 const billingContract = baseContract.router({
   subscription: baseContract
     .meta({
@@ -67,7 +101,25 @@ const billingContract = baseContract.router({
         session: ["read:billing"]
       }
     })
+    .input(
+      z
+        .object({
+          month: z
+            .string()
+            .regex(/^\d{4}-(0[1-9]|1[0-2])$/)
+            .optional()
+            .describe("The UTC month to read, as YYYY-MM; the current month when omitted")
+        })
+        .optional()
+    )
     .output(billingUsageType),
+  history: baseContract
+    .meta({
+      required: {
+        session: ["read:billing"]
+      }
+    })
+    .output(billingHistoryType),
   updateSpendingLimit: baseContract
     .meta({
       required: {

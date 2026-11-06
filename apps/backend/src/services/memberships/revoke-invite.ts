@@ -55,7 +55,7 @@ const revokeInvite = withAuthorization<
   undefined,
   { updatedGroups: GroupMembersUpdate[] }
 >(
-  { permissions: { session: ["memberships"], key: ["memberships"] }, plan: "pro" },
+  { permissions: { session: ["memberships"], key: ["memberships"] } },
   async ({ auth, input, workspaceID, database }) => {
     const [role] = await database
       .select({ baseRole: roles.baseRole, permissions: roles.permissions })

@@ -3,6 +3,8 @@ import { dailyUsage } from "@andesine/server/database";
 import {
   estimateCharges,
   getEffectivePlan,
+  getIncludedUsage,
+  getPeriodSeats,
   getMeterPrices,
   getSpendingLimit,
   getUTCMonthPeriod,
@@ -22,7 +24,7 @@ interface DailyUsageRecord {
 interface MeterUsage {
   daily: DailyUsageRecord[];
   total: number;
-  /** The hard limit on Free, or the included amount on Pro. */
+  /** The hard limit on Free, or the pool on Pro. */
   limit: number;
 }
 
@@ -66,13 +68,17 @@ const getUsage = async (input: {
   const isCurrentMonth =
     targetDate.getUTCFullYear() === now.getUTCFullYear() &&
     targetDate.getUTCMonth() === now.getUTCMonth();
-  const isPro = getEffectivePlan(input.plan) === "pro";
+  const plan = getEffectivePlan(input.plan);
+  const isPro = plan === "pro";
+  const workspaceUUID = toUUID(input.workspaceID);
+  const seats = await getPeriodSeats(workspaceUUID, targetDate);
+  const included = getIncludedUsage(plan, seats);
   const rows = await db
     .select()
     .from(dailyUsage)
     .where(
       and(
-        eq(dailyUsage.workspaceID, toUUID(input.workspaceID)),
+        eq(dailyUsage.workspaceID, workspaceUUID),
         gte(dailyUsage.usageDate, toUsageDate(period.startDate)),
         lte(dailyUsage.usageDate, toUsageDate(period.endDate))
       )
@@ -85,19 +91,23 @@ const getUsage = async (input: {
   const apiCalls = toMeterUsage(
     toCounts((row) => row.requestCount),
     period.daysInMonth,
-    isPro ? config.PRO_INCLUDED_API_CALLS : config.INCLUDED_API_CALLS
+    included.apiCalls
   );
   const aiCredits = toMeterUsage(
     toCounts((row) => row.aiCreditCount),
     period.daysInMonth,
-    isPro ? config.PRO_INCLUDED_AI_CREDITS : config.INCLUDED_AI_CREDITS
+    included.aiCredits
   );
   const getSpending = async (): Promise<SpendingData | null> => {
     if (!isPro || !config.BILLING_ENABLED) return null;
 
     const [limit, prices] = await Promise.all([
-      getSpendingLimit(toUUID(input.workspaceID)),
-      getMeterPrices().catch(() => null)
+      getSpendingLimit(workspaceUUID),
+      getMeterPrices().catch((error: unknown) => {
+        console.error("Failed to load meter prices", { error });
+
+        return null;
+      })
     ]);
 
     return {

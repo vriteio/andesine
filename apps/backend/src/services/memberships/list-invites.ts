@@ -71,7 +71,7 @@ const listInvitesOperation = async (
   );
 };
 const listInvites = withAuthorization<PageInput, undefined, Page<InviteDetails>>(
-  { permissions: { session: ["memberships"], key: ["memberships"] }, plan: "pro" },
+  { permissions: { session: ["memberships"], key: ["memberships"] } },
   async ({ workspaceID, input }) => listInvitesOperation({ workspaceID, ...input })
 );
 

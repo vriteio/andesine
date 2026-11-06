@@ -19,22 +19,22 @@ const items: FAQItem[] = [
   {
     question: "How do Free and Pro differ?",
     answer:
-      "Free includes rich text editing, collections, schemas, and 1,000 API calls per month for individual use. Pro adds collaboration, access controls, priority support, and 500,000 monthly API calls for $12 USD per seat per month. Pricing applies to the cloud app."
+      "Free is for up to 3 members, all admins, with 50,000 API calls and 5,000 AI credits per month. Pro costs $12 USD per seat per month and adds unlimited members, roles and groups, restricted collections, custom domains, and a larger shared allowance. Pricing applies to the cloud app."
   },
   {
     question: "What counts as a paid seat?",
     answer:
-      "Every Pro workspace member counts, including the owner and read-only members. Invitations count after the person joins. Each workspace has a one-seat minimum."
+      "Every Pro workspace member counts, including the owner and read-only members. Invitations count after the person joins. Each workspace has a one-seat minimum. Agents never need a seat: their work counts as API calls and AI credits."
   },
   {
-    question: "Is the API allowance per workspace?",
+    question: "Is the allowance per workspace?",
     answer:
-      "Yes, shared across all seats. It resets each calendar month: 50,000 calls on Free and 500,000 on Pro. Extra Pro calls cost $1 USD per 50,000. Free metered requests stop at the limit until reset or upgrade."
+      "Yes. It resets each calendar month. On Pro, each seat adds 150,000 API calls and 15,000 AI credits to a pool shared across the workspace, about 1,500 AI answers per seat. Extra usage costs $1 USD per 50,000 API calls or 5,000 AI credits. Free stops at its limits until the reset or an upgrade."
   },
   {
     question: "Does Free include AI answers?",
     answer:
-      "Yes, with links to source documents. Each successful AI question counts toward your workspace’s monthly API allowance. For self-hosting, configure search and AI services."
+      "Yes, with links to source documents. AI uses credits: an answer costs 10 credits and a semantic search 1, so Free covers about 500 answers a month. For self-hosting, configure search and AI services."
   }
 ];
 

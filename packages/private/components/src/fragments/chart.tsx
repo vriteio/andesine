@@ -13,6 +13,7 @@ import { scaleLinear } from "d3-scale";
 import { line, area, curveCatmullRom } from "d3-shape";
 import { max } from "d3-array";
 import { nanoid } from "nanoid";
+import { Skeleton } from "../primitives/skeleton";
 
 interface LineChartDataPoint {
   defined?: boolean;
@@ -193,6 +194,10 @@ const LineChart: Component<LineChartProps> = (props) => {
       class={props.class ?? "w-full"}
       style={{ position: "relative", height: `${svgH()}px` }}
     >
+      {/* Server-rendered charts have no width until the browser measures them. */}
+      <Show when={svgWidth() === 0}>
+        <Skeleton class="absolute inset-0 rounded-xl" />
+      </Show>
       <svg
         class="select-none"
         width={svgWidth()}

@@ -12,8 +12,8 @@ const normalizeBillingValue = (value: unknown): unknown => {
 const optionalBillingString = z.preprocess(normalizeBillingValue, z.string().optional());
 const billingModeConfigSchema = z.object({
   BILLING_ENABLED: z
-    .preprocess(normalizeBillingValue, z.stringbool())
-    .describe("Enable cloud billing")
+    .preprocess(normalizeBillingValue, z.stringbool().default(false))
+    .describe("Enable cloud billing; off when not set")
 });
 const requireBillingSettings = <T extends BillingModeConfig>(
   requiredSettings: ReadonlyArray<keyof T & string>

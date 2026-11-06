@@ -1,4 +1,11 @@
 import { invitations, memberships, roles, users, workspaces } from "@andesine/server/database";
+import {
+  countMembers,
+  countPendingInvites,
+  FREE_MEMBER_LIMIT,
+  getEffectivePlan,
+  throwFreeMemberLimit
+} from "#backend/lib/billing";
 import { getUserAuthorization, withAuthorization } from "#backend/lib/policy";
 import { assertRoleDelegation } from "#backend/lib/policy/delegation";
 import type { SessionData } from "#backend/lib/policy/session";
@@ -23,7 +30,11 @@ const inviteMemberOperation = async (
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const result = await db.transaction(async (tx) => {
     const [workspace] = await tx
-      .select({ name: workspaces.name, deletingAt: workspaces.deletingAt })
+      .select({
+        name: workspaces.name,
+        deletingAt: workspaces.deletingAt,
+        subscriptionPlan: workspaces.subscriptionPlan
+      })
       .from(workspaces)
       .where(eq(workspaces.id, workspaceID))
       .for("update");
@@ -49,6 +60,20 @@ const inviteMemberOperation = async (
 
     if (!role) throw new ORPCError("BAD_REQUEST", { message: "Role not found" });
     assertRoleDelegation(input.auth, role);
+
+    if (getEffectivePlan(workspace.subscriptionPlan) !== "pro") {
+      if (role.baseRole !== "admin") {
+        throw new ORPCError("FORBIDDEN", {
+          message: "On the Free plan, every member is an admin",
+          data: { requiredPlan: "pro", hints: ["Invite the member with the Admin role."] }
+        });
+      }
+
+      const members = await countMembers(tx, workspaceID);
+      const invites = await countPendingInvites(tx, workspaceID);
+
+      if (members + invites >= FREE_MEMBER_LIMIT) throwFreeMemberLimit();
+    }
 
     const [existingUser] = await tx
       .select({ id: users.id })
@@ -135,7 +160,7 @@ const inviteMember = withAuthorization<
   undefined,
   Awaited<ReturnType<typeof inviteMemberOperation>>
 >(
-  { permissions: { session: ["memberships"], key: ["memberships"] }, plan: "pro" },
+  { permissions: { session: ["memberships"], key: ["memberships"] } },
   async ({ auth, input, workspaceID }) => {
     return inviteMemberOperation({
       ...input,

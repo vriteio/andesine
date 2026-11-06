@@ -91,12 +91,13 @@ const resolveStripeSubscriptionEvent = async (
     };
   }
 
+  // Stripe sends events out of order and retries failed ones later, so read the latest state.
   if (event.type === "customer.subscription.updated") {
-    return resolveSubscription(event.data.object, true);
+    return resolveSubscription(await stripe.subscriptions.retrieve(event.data.object.id), true);
   }
 
   if (event.type === "customer.subscription.deleted") {
-    return resolveSubscription(event.data.object, false);
+    return resolveSubscription(await stripe.subscriptions.retrieve(event.data.object.id), false);
   }
 
   if (event.type === "invoice.paid" || event.type === "invoice.payment_failed") {

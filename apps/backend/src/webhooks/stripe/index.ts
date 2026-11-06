@@ -86,7 +86,7 @@ const handleStripeWebhook = async (
       }
     }
 
-    const { revokedInviteIDs } = await persistStripeWebhookResult({
+    const { applied, revokedInviteIDs } = await persistStripeWebhookResult({
       eventID: event.id,
       workspaceID,
       update: result.update
@@ -101,7 +101,7 @@ const handleStripeWebhook = async (
       });
     }
 
-    if (result.workspaceID && result.update?.subscriptionPlan) {
+    if (applied && result.workspaceID && result.update?.subscriptionPlan) {
       await Auth.invalidateSessionData({ workspaceID: result.workspaceID });
 
       emitWorkspaceStateEvent(result.workspaceID, {

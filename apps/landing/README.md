@@ -83,10 +83,11 @@ are crops of the real fields, AI answer, and explorer views. Capture comments at
 describe the target dimensions and content. The sample workspace contains a publishing guide,
 supporting review and structure guides, and an active Product updates schema.
 
-Pricing follows the billing settings: Free and Pro at $12 USD per seat per month, with
-1K Free API calls, 500K Pro API calls, and $1 per additional 50K Pro calls. Allowances are
-per workspace and calendar month in UTC. The backend defaults, billing UI, and `.env.example`
-now agree on the 500K Pro allowance. Keep the landing copy aligned with deployed settings.
+Pricing follows the billing settings: Free for up to 3 members, and Pro at $12 USD per seat per
+month. Free has 50K API calls and 5K AI credits; each Pro seat adds 150K API calls and 15K AI
+credits to a pool shared across the workspace, then $1 per 50K calls or 5K credits. Allowances
+reset each calendar month in UTC. Keep the landing copy aligned with the backend defaults, the
+billing UI, and `.env.example`.
 
 The page renders to static HTML. The header menu, hero heading, and hero ribbon hydrate on load.
 Publishing controls and the pricing gradient hydrate when visible. The CTA is static and needs

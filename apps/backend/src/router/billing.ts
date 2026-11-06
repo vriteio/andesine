@@ -14,15 +14,19 @@ const billingRouter = handlers.router({
       workspaceID: context.auth.workspaceID
     });
   }),
-  usage: authorizedHandlers.usage.handler(async ({ context }) => {
+  usage: authorizedHandlers.usage.handler(async ({ context, input }) => {
     const subscription = await Billing.getSubscription({
       workspaceID: context.auth.workspaceID
     });
 
     return Billing.Metering.getUsage({
       workspaceID: context.auth.workspaceID,
-      plan: subscription.plan
+      plan: subscription.plan,
+      date: input?.month ? new Date(`${input.month}-01T00:00:00Z`) : undefined
     });
+  }),
+  history: authorizedHandlers.history.handler(async ({ context }) => {
+    return Billing.Metering.getHistory({ workspaceID: context.auth.workspaceID });
   }),
   updateSpendingLimit: authorizedHandlers.updateSpendingLimit.handler(
     async ({ context, input }) => {

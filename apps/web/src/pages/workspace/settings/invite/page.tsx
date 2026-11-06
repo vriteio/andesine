@@ -14,6 +14,7 @@ import { type Component, createEffect, createSignal, Suspense } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
 import { useNotify } from "#web/context/notifications";
+import { useWorkspace } from "#web/context/workspace";
 import { client } from "#web/lib/api";
 import { Setting } from "../setting";
 import { SettingsSection } from "../settings-section";
@@ -22,6 +23,7 @@ import { rolesQuery } from "#web/lib/data";
 
 const InviteSettingsPage: Component = () => {
   const notify = useNotify();
+  const { currentWorkspace } = useWorkspace();
   const { canGrantRole } = useDelegationPermissions();
   const navigate = useNavigate();
   const params = useParams<{ workspaceID?: string }>();
@@ -31,17 +33,23 @@ const InviteSettingsPage: Component = () => {
   const [selectedRoleID, setSelectedRoleID] = createSignal("");
   const [inviteLink, setInviteLink] = createSignal("");
   const [delivery, setDelivery] = createSignal<"sent" | "manual" | "failed">("sent");
+  const isPro = () => currentWorkspace()?.subscriptionPlan === "pro";
+  // On the Free plan, every member is an admin.
+  const availableRoles = () => {
+    return (roles() || []).filter((role) => {
+      return canGrantRole(role) && (isPro() || role.baseRole === "admin");
+    });
+  };
   const roleOptions = () => {
-    return (roles() || [])
-      .filter(canGrantRole)
-      .map((role) => ({ label: role.name, value: role.id }));
+    return availableRoles().map((role) => ({ label: role.name, value: role.id }));
   };
   const fillError = () => {
     if (!email().trim()) return "Email address is required";
     if (!/^\S+@\S+\.\S+$/.test(email().trim())) return "Enter a valid email address";
     if (!selectedRoleID()) return "Select a role";
-    if (!roles()?.some((role) => role.id === selectedRoleID() && canGrantRole(role)))
+    if (!availableRoles().some((role) => role.id === selectedRoleID())) {
       return "Select a role within your permissions";
+    }
 
     return "";
   };
@@ -75,7 +83,9 @@ const InviteSettingsPage: Component = () => {
             ? "An invitation is already pending. You can resend or copy it from People."
             : code === "MEMBERSHIP_ALREADY_EXISTS"
               ? "This person is already a workspace member."
-              : "Failed to create invitation"
+              : code === "FORBIDDEN" && error instanceof Error
+                ? error.message
+                : "Failed to create invitation"
       });
 
       if (code === "INVITE_ALREADY_PENDING" || code === "MEMBERSHIP_ALREADY_EXISTS") {
@@ -85,10 +95,10 @@ const InviteSettingsPage: Component = () => {
   }));
 
   createEffect(() => {
-    const availableRoles = roles() || [];
+    const options = availableRoles();
 
-    if (!availableRoles.some((role) => role.id === selectedRoleID())) {
-      setSelectedRoleID(availableRoles[0]?.id || "");
+    if (!options.some((role) => role.id === selectedRoleID())) {
+      setSelectedRoleID(options[0]?.id || "");
     }
   });
 
@@ -125,7 +135,11 @@ const InviteSettingsPage: Component = () => {
           </Setting>
           <Setting
             label="Role"
-            description="Role assigned when the invitation is accepted"
+            description={
+              isPro()
+                ? "Role assigned when the invitation is accepted"
+                : "On the Free plan, every member is an admin"
+            }
             fade={false}
           >
             <Select

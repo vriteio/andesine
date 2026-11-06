@@ -1,7 +1,7 @@
 import { invitations, stripeWebhookEvents, workspaces } from "@andesine/server/database";
 // SPDX-License-Identifier: Elastic-2.0
 import { db } from "#backend/lib/adapters";
-import { carryOverUsage } from "#backend/lib/billing";
+import { isTerminalSubscription } from "#backend/lib/policy";
 import { and, eq, ne, sql } from "drizzle-orm";
 import type Stripe from "stripe";
 
@@ -34,7 +34,7 @@ const persistStripeWebhookResult = async (input: {
   eventID: string;
   workspaceID: string | null;
   update?: Partial<typeof workspaces.$inferInsert>;
-}): Promise<{ revokedInviteIDs: string[] }> => {
+}): Promise<{ applied: boolean; revokedInviteIDs: string[] }> => {
   return db.transaction(async (tx) => {
     const [record] = await tx
       .select({ status: stripeWebhookEvents.status })
@@ -42,24 +42,32 @@ const persistStripeWebhookResult = async (input: {
       .where(eq(stripeWebhookEvents.id, input.eventID))
       .for("update");
 
-    if (!record || record.status === "processed") return { revokedInviteIDs: [] };
+    if (!record || record.status === "processed") return { applied: false, revokedInviteIDs: [] };
 
     const [workspace] = input.workspaceID
       ? await tx
           .select({
             id: workspaces.id,
             deletingAt: workspaces.deletingAt,
-            subscriptionPlan: workspaces.subscriptionPlan
+            subscriptionPlan: workspaces.subscriptionPlan,
+            subscriptionStatus: workspaces.subscriptionStatus,
+            subscriptionData: workspaces.subscriptionData
           })
           .from(workspaces)
           .where(eq(workspaces.id, input.workspaceID))
           .for("update")
       : [];
     const persistedWorkspaceID = workspace?.id ?? null;
+    const storedSubscriptionID = workspace?.subscriptionData?.subscriptionID;
+    const eventSubscriptionID = input.update?.subscriptionData?.subscriptionID;
+    // A late event of an ended subscription must not replace the workspace's newer one.
+    const isStaleSubscription =
+      Boolean(storedSubscriptionID && eventSubscriptionID) &&
+      storedSubscriptionID !== eventSubscriptionID &&
+      !isTerminalSubscription(workspace?.subscriptionStatus ?? "canceled") &&
+      isTerminalSubscription(input.update?.subscriptionStatus ?? "");
     const isDowngrade =
       workspace?.subscriptionPlan === "pro" && input.update?.subscriptionPlan === "free";
-    const isUpgrade =
-      workspace?.subscriptionPlan === "free" && input.update?.subscriptionPlan === "pro";
 
     let revokedInviteIDs: string[] = [];
 
@@ -73,18 +81,11 @@ const persistStripeWebhookResult = async (input: {
       })
       .where(eq(stripeWebhookEvents.id, input.eventID));
 
-    if (persistedWorkspaceID && !workspace?.deletingAt && input.update) {
-      await tx.update(workspaces).set(input.update).where(eq(workspaces.id, persistedWorkspaceID));
+    const update = workspace?.deletingAt || isStaleSubscription ? undefined : input.update;
+    const applied = Boolean(persistedWorkspaceID && update);
 
-      if (isUpgrade) {
-        const startedAt = input.update.subscriptionData?.startedAt;
-
-        await carryOverUsage(
-          tx,
-          persistedWorkspaceID,
-          startedAt ? new Date(startedAt * 1000) : new Date()
-        );
-      }
+    if (persistedWorkspaceID && update) {
+      await tx.update(workspaces).set(update).where(eq(workspaces.id, persistedWorkspaceID));
 
       if (isDowngrade) {
         const revokedInvites = await tx
@@ -106,7 +107,7 @@ const persistStripeWebhookResult = async (input: {
       .set({ status: "processed", processedAt: new Date() })
       .where(eq(stripeWebhookEvents.id, input.eventID));
 
-    return { revokedInviteIDs };
+    return { applied, revokedInviteIDs };
   });
 };
 const failStripeWebhookEvent = async (eventID: string, error: unknown): Promise<void> => {
