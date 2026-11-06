@@ -1,0 +1,34 @@
+// Edge fades
+@screen lt-md {
+  // Gone before the edge, as its strong color stays visible at a low opacity.
+  .ribbonFade {
+    mask-image: linear-gradient(
+      to right,
+      transparent 2%,
+      rgb(0 0 0 / 10%) 6%,
+      rgb(0 0 0 / 40%) 11%,
+      rgb(0 0 0 / 80%) 16%,
+      black 20%,
+      black 80%,
+      rgb(0 0 0 / 80%) 84%,
+      rgb(0 0 0 / 40%) 89%,
+      rgb(0 0 0 / 10%) 94%,
+      transparent 98%
+    );
+  }
+
+  // Sized past the box, so the card's shadow stays visible on the left, top and bottom.
+  .screenshotFade {
+    mask-image: linear-gradient(
+      to left,
+      transparent,
+      rgb(0 0 0 / 30%) 8%,
+      rgb(0 0 0 / 75%) 18%,
+      black 28%
+    );
+    mask-clip: no-clip;
+    mask-size: calc(100% + 2rem) calc(100% + 2rem);
+    mask-position: right center;
+    mask-repeat: no-repeat;
+  }
+}

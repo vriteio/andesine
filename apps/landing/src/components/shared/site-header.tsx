@@ -29,7 +29,7 @@ const SiteHeader: Component = () => {
         onClick={closeMenu}
       />
       <header class="fixed inset-x-0 top-0 z-40 mx-auto w-full md:top-2 md:max-w-3xl md:px-3 xl:max-w-4xl">
-        <div class="overflow-hidden bg-gray-50 pt-[env(safe-area-inset-top)] md:rounded-2xl md:bg-gray-50/85 md:pt-0 md:backdrop-blur-xl">
+        <div class="overflow-hidden bg-gray-50 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)] md:rounded-2xl md:bg-gray-50/85 md:p-0 md:backdrop-blur-xl">
           <div class="flex min-h-14 items-center justify-between gap-3 px-3">
             <a href={links.sections.home} aria-label="Andesine home" onClick={closeMenu}>
               <Logo />
