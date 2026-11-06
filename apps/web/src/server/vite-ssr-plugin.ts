@@ -1,9 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { Readable } from "node:stream";
+import type { ReadableStream as NodeReadableStream } from "node:stream/web";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import fastifyStatic from "@fastify/static";
 import middie from "@fastify/middie";
-import type { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync, FastifyRequest } from "fastify";
 import type { Render } from "#web/entry-server";
 import type { ViteDevServer } from "vite";
 
@@ -18,6 +20,16 @@ const clientTemplatePath = path.resolve(clientDistPath, "index.html");
 const serverEntryPath = pathToFileURL(
   path.resolve(webRootPath, "dist/server/entry-server.js")
 ).href;
+// Pages are only GET and HEAD requests, so there's no body to pass.
+const createWebRequest = (request: FastifyRequest): Request => {
+  const url = new URL(request.url, `${request.protocol}://${request.headers.host}`);
+
+  return new Request(url, {
+    method: request.method,
+    // @ts-expect-error: Fastify headers include values unsupported by the Fetch Headers type.
+    headers: new Headers(request.headers)
+  });
+};
 const viteSSRPlugin: FastifyPluginAsync = async (app) => {
   const templateHtml = isProduction ? await fs.readFile(clientTemplatePath, "utf-8") : "";
 
@@ -82,14 +94,17 @@ const viteSSRPlugin: FastifyPluginAsync = async (app) => {
           render = (await import(serverEntryPath)).render as Render;
         }
 
-        return render(
-          {
-            request,
-            reply
-          },
-          {
-            template
-          }
+        const response = await render(createWebRequest(request), template);
+
+        reply.status(response.status).headers(Object.fromEntries(response.headers));
+
+        // Set-Cookie headers are separate values, which Object.fromEntries would merge.
+        if (response.headers.has("set-cookie")) {
+          reply.header("set-cookie", response.headers.getSetCookie());
+        }
+
+        return reply.send(
+          response.body ? Readable.fromWeb(response.body as NodeReadableStream) : null
         );
       } catch (error) {
         const normalizedError = error instanceof Error ? error : new Error(String(error));

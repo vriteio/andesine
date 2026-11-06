@@ -714,6 +714,9 @@ importers:
       workbox-precaching:
         specifier: ^7.4.1
         version: 7.4.1
+      wrangler:
+        specifier: ^4.131.1
+        version: 4.131.1(@cloudflare/workers-types@5.20260911.1)(@types/node@26.1.2)
 
   apps/worker:
     dependencies:

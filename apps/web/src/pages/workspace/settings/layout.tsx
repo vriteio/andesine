@@ -1,5 +1,5 @@
 import { Card, ScrollShadow, Spinner, createRef } from "@andesine/components";
-import { Title } from "@solidjs/meta";
+import { Title } from "#web/components/title";
 import {
   revalidate,
   type RouteSectionProps,

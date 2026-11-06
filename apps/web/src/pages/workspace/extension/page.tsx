@@ -13,7 +13,7 @@ import {
 } from "#web/lib/extensions";
 import { useRouteData } from "#web/lib/navigation";
 import { usePublishingResolved } from "../use-panel-context";
-import { Title } from "@solidjs/meta";
+import { Title } from "#web/components/title";
 import { createAsync, useParams, useSearchParams } from "@solidjs/router";
 import {
   type Component,

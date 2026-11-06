@@ -1,67 +1,42 @@
 /* @refresh reload */
 import { generateHydrationScript, renderToStream, ssr } from "solid-js/web";
 import { provideRequestEvent } from "solid-js/web/storage";
-import { type FastifyReply, type FastifyRequest } from "fastify";
-import { PassThrough, Readable } from "node:stream";
 import App from "./app";
 
-interface RenderConfig {
-  template: string;
+interface RenderResponse {
+  status?: number;
+  headers: Headers;
 }
 
-type Render = (
-  ctx: { request: FastifyRequest; reply: FastifyReply },
-  config: RenderConfig
-) => Promise<void>;
+type Render = (request: Request, template: string) => Promise<Response>;
 type RenderToStreamOptions = NonNullable<Parameters<typeof renderToStream>[1]> & {
   onError(error: unknown): void;
 };
 
 const SSR_OUTLET = "<!--ssr-outlet-->";
 
-const isRedirectResponse = (response: Response | { status: number; headers: Headers }): boolean => {
-  return response.status >= 300 && response.status < 400 && response.headers.has("location");
+const isRedirectResponse = (response: RenderResponse): boolean => {
+  const status = response.status ?? 200;
+
+  return status >= 300 && status < 400 && response.headers.has("location");
 };
-
-const createWebRequest = (fastifyRequest: FastifyRequest): Request => {
-  const url = new URL(
-    fastifyRequest.url,
-    `${import.meta.env.PUBLIC_SECURE === "true" ? "https" : "http"}://${fastifyRequest.headers.host}`
-  );
-  const hasBody = !["GET", "HEAD"].includes(fastifyRequest.method);
-  const body = fastifyRequest.body;
-
-  let webBody;
-
-  if (hasBody && body) {
-    if (body instanceof Readable) {
-      webBody = Readable.toWeb(body);
-    } else {
-      throw new Error("Request body must be a Readable stream");
-    }
-  }
-
-  return new Request(url, {
-    method: fastifyRequest.method,
-    // @ts-expect-error: Fastify headers include values unsupported by the Fetch Headers type.
-    headers: new Headers(fastifyRequest.headers),
-    // @ts-expect-error: Node's Request supports the duplex option for streamed request bodies.
-    body: webBody,
-    duplex: webBody ? "half" : undefined
-  });
-};
-const render: Render = async (ctx, config) => {
-  const webCtx = {
-    request: createWebRequest(ctx.request),
-    response: new Response()
+/** Renders a page with Web streams, for the Node server and the Cloudflare Worker. */
+const render: Render = async (request, template) => {
+  const url = new URL(request.url);
+  // The router changes it or sets its own on redirects, so it's read from the event at the end.
+  const event: { request: Request; response: RenderResponse } = {
+    request,
+    response: { headers: new Headers() }
   };
-  const [templateStart, templateEnd] = config.template
+  const [templateStart, templateEnd] = template
     .replace("<!--app-head-->", generateHydrationScript())
     .split(SSR_OUTLET);
 
   if (templateEnd === undefined) {
     throw new Error("SSR template must include a <!--ssr-outlet--> placeholder");
   }
+
+  const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
 
   let resolveShellReady: (() => void) | undefined;
   let rejectShellReady: ((reason?: unknown) => void) | undefined;
@@ -71,60 +46,51 @@ const render: Render = async (ctx, config) => {
     resolveShellReady = resolve;
     rejectShellReady = reject;
   });
-
-  const stream = new PassThrough();
+  const settleShell = () => {
+    shellReadySettled = true;
+    resolveShellReady?.();
+  };
   const renderOptions: RenderToStreamOptions = {
-    onCompleteShell() {
-      shellReadySettled = true;
-      resolveShellReady?.();
-    },
-    onCompleteAll() {
-      shellReadySettled = true;
-      resolveShellReady?.();
-    },
+    onCompleteShell: settleShell,
+    onCompleteAll: settleShell,
     onError(error) {
       if (shellReadySettled) return;
 
       shellReadySettled = true;
-      stream.destroy();
       rejectShellReady?.(error);
     }
   };
-
-  const appStream = provideRequestEvent(webCtx, () => {
+  const appStream = provideRequestEvent(event, () => {
     return renderToStream(
-      () => ssr([templateStart, templateEnd], <App url={ctx.request.url} />),
+      () => ssr([templateStart, templateEnd], <App url={`${url.pathname}${url.search}`} />),
       renderOptions
     );
   });
 
-  appStream.pipe(stream);
+  // A failed render rejects the shell; the error is reported there.
+  void Promise.resolve(appStream.pipeTo(writable)).catch(() => undefined);
 
-  await shellReady.catch((error) => {
-    const normalizedError = error instanceof Error ? error : new Error(String(error));
-    ctx.request.log.error(normalizedError);
-    throw normalizedError;
-  });
-
-  if (isRedirectResponse(webCtx.response)) {
-    stream.destroy();
-    ctx.reply.status(webCtx.response.status);
-
-    for (const [key, value] of webCtx.response.headers) {
-      ctx.reply.header(key, value);
-    }
-
-    return ctx.reply.send();
+  try {
+    await shellReady;
+  } catch (error) {
+    void readable.cancel().catch(() => undefined);
+    throw error instanceof Error ? error : new Error(String(error));
   }
 
-  ctx.reply.status(webCtx.response.status);
-  ctx.reply.header("Content-Type", "text/html");
+  const { response } = event;
 
-  for (const [key, value] of webCtx.response.headers) {
-    ctx.reply.header(key, value);
+  if (isRedirectResponse(response)) {
+    void readable.cancel().catch(() => undefined);
+
+    return new Response(null, { status: response.status, headers: response.headers });
   }
 
-  return ctx.reply.send(stream);
+  // Copied whole, so several Set-Cookie headers stay separate.
+  const headers = new Headers(response.headers);
+
+  if (!headers.has("content-type")) headers.set("Content-Type", "text/html");
+
+  return new Response(readable, { status: response.status ?? 200, headers });
 };
 
 export { render };

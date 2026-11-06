@@ -8,12 +8,16 @@
     "build:client": "vite build --outDir dist/client --ssrManifest",
     "build:server": "vite build --outDir dist/server --ssr src/entry-server.tsx",
     "build:runtime": "rolldown -c rolldown.config.mjs",
+    "build:worker": "pnpm build:client && BUILD_TARGET=worker vite build --outDir dist/worker --ssr src/server/worker.ts",
+    "dev:worker": "wrangler dev",
+    "deploy:worker": "pnpm build:worker && wrangler deploy",
     "start": "NODE_ENV=production node ./dist/server/index.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@andesine/document": "workspace:*",
     "@andesine/components": "workspace:*",
+    "@andesine/contracts": "workspace:*",
+    "@andesine/document": "workspace:*",
     "@andesine/editor": "workspace:*",
     "@ark-ui/solid": "^5.38.0",
     "@atlaskit/pragmatic-drag-and-drop": "2.0.1",
@@ -26,6 +30,7 @@
     "@fastify/static": "^10.1.2",
     "@iconify/json": "^2.2.509",
     "@orpc/client": "catalog:",
+    "@orpc/contract": "catalog:",
     "@orpc/openapi-client": "catalog:",
     "@orpc/server": "catalog:",
     "@signaldb/core": "^1.8.1",
@@ -49,11 +54,11 @@
     "solid-js": "^1.9.14",
     "srvx": "^0.12.5",
     "tinykeys": "^4.0.0",
-    "yjs": "catalog:",
-    "@andesine/contracts": "workspace:*",
-    "@orpc/contract": "catalog:"
+    "yjs": "catalog:"
   },
   "devDependencies": {
+    "@andesine/sdk": "workspace:*",
+    "@andesine/uno-preset": "workspace:*",
     "@types/node": "^26.1.2",
     "@unocss/reset": "^66.7.5",
     "mini-svg-data-uri": "^1.4.4",
@@ -66,7 +71,6 @@
     "vite-plugin-solid": "^2.11.14",
     "workbox-core": "^7.4.1",
     "workbox-precaching": "^7.4.1",
-    "@andesine/sdk": "workspace:*",
-    "@andesine/uno-preset": "workspace:*"
+    "wrangler": "^4.131.1"
   }
 }

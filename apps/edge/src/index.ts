@@ -7,8 +7,12 @@ interface SessionResponse {
 
 interface Env {
   LANDING: Fetcher;
-  APP_ORIGIN: string;
+  /** The web Worker; APP_ORIGIN, when set, is used instead, e.g. a local or self-hosted app. */
+  APP: Fetcher;
+  APP_ORIGIN?: string;
   API_ORIGIN: string;
+  /** The backend's ORIGIN_SECRET, which requests to the API must carry. */
+  ORIGIN_SECRET?: string;
   POSTHOG_HOST?: string;
   /** The clients' PostHog host; a path such as /relay turns on the relay. */
   PUBLIC_POSTHOG_HOST?: string;
@@ -74,6 +78,7 @@ const getWorkspacePath = async (request: Request, env: Env): Promise<string | nu
     });
 
     if (clientIP) headers.set("x-client-ip", clientIP);
+    if (env.ORIGIN_SECRET) headers.set("x-origin-secret", env.ORIGIN_SECRET);
 
     const response = await fetch(sessionURL, {
       headers,
@@ -133,15 +138,24 @@ const rewriteAppLocation = (response: Response, appOrigin: URL): Response => {
 };
 
 const serveApp = async (request: Request, env: Env): Promise<Response> => {
+  const clientIP = request.headers.get("cf-connecting-ip");
+
+  if (!env.APP_ORIGIN) {
+    const appRequest = new Request(request);
+
+    if (clientIP) appRequest.headers.set("x-client-ip", clientIP);
+
+    return env.APP.fetch(appRequest);
+  }
+
   const appOrigin = readOrigin(env.APP_ORIGIN);
 
   if (!appOrigin) {
-    return new Response("APP_ORIGIN is not configured", { status: 503 });
+    return new Response("APP_ORIGIN is not a valid URL", { status: 503 });
   }
 
   const incomingURL = new URL(request.url);
   const targetURL = new URL(appOrigin);
-  const clientIP = request.headers.get("cf-connecting-ip");
 
   targetURL.pathname = incomingURL.pathname;
   targetURL.search = incomingURL.search;

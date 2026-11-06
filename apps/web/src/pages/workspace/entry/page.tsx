@@ -1,4 +1,4 @@
-import { Title } from "@solidjs/meta";
+import { Title } from "#web/components/title";
 import { useNavigate, useParams, useSearchParams } from "@solidjs/router";
 import { type Component, createEffect, Show } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";

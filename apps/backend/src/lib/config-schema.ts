@@ -39,6 +39,12 @@ const configSchema = billingConfigSchema.safeExtend({
     .min(0)
     .default(0)
     .describe("Number of proxies in front of the API, to read client IPs from X-Forwarded-For"),
+  ORIGIN_SECRET: z
+    .string()
+    .trim()
+    .min(32, "ORIGIN_SECRET must contain at least 32 characters")
+    .optional()
+    .describe("Secret that the proxy adds as X-Origin-Secret; other requests are refused"),
   ...extensionsConfigSchema.shape,
   // Secrets
   SECRET: secret.describe("Secret for signing tokens and encrypting data"),
