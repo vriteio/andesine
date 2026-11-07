@@ -7,7 +7,7 @@ import { config } from "#backend/lib/config";
 import { authPlugin } from "#backend/lib/transport/auth";
 import { mcpPlugin } from "#backend/lib/transport/mcp";
 import { endEventStreams } from "#backend/lib/transport/shutdown";
-import { hasOriginSecret } from "#backend/lib/transport/origin";
+import { hasOriginSecret, ORIGIN_SECRET_HEADER } from "#backend/lib/transport/origin";
 import Fastify, { type FastifyRequest } from "fastify";
 import corsPlugin from "@fastify/cors";
 import websocketPlugin from "@fastify/websocket";
@@ -110,7 +110,21 @@ app.addHook("onRequest", async (request, reply) => {
   const isHealthCheck = request.url === "/health";
 
   if (!isHealthCheck && !hasOriginSecret(request.headers)) {
+    console.warn("Origin secret check failed", {
+      url: request.url,
+      ray: request.headers["cf-ray"],
+      hasHeader: ORIGIN_SECRET_HEADER in request.headers
+    });
+
     return reply.status(403).send({ error: "Forbidden" });
+  }
+
+  if (request.headers["cf-worker"] && request.url.startsWith("/auth/get-session")) {
+    console.info("SSR client IP", {
+      ip: request.ip,
+      forwardedFor: request.headers["x-forwarded-for"],
+      connectingIP: request.headers["cf-connecting-ip"]
+    });
   }
 });
 

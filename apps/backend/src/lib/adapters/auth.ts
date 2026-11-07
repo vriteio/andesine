@@ -92,6 +92,7 @@ const auth = betterAuth({
     storage: "secondary-storage",
     ...RATE_LIMITS.authentication,
     customRules: {
+      "/get-session": false,
       "/sign-in/*": RATE_LIMITS.signIn,
       "/device/code": RATE_LIMITS.oauthDevice,
       "/device": RATE_LIMITS.oauthDevice,
