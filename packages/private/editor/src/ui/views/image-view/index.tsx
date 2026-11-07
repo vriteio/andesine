@@ -310,7 +310,8 @@ const ImageView = (props: ImageViewProps) => {
         // the clip would cut the card's own shadow.
         class={clsx(
           "group relative mx-auto overflow-hidden",
-          showsPlaceholder() ? "rounded-xl shadow-md shadow-tertiary/25" : "rounded-lg"
+          showsPlaceholder() && !uploading() && "shadow-md shadow-tertiary/25",
+          showsPlaceholder() ? "rounded-xl" : "rounded-lg"
         )}
         style={{
           "aspect-ratio": aspectRatio(),

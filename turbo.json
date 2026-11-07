@@ -88,17 +88,6 @@
     "andesine#typecheck": {
       "dependsOn": ["build"],
       "cache": false
-    },
-    "@andesine/edge#dev": {
-      "dependsOn": ["@andesine/landing#build"],
-      "cache": false,
-      "persistent": true,
-      "interactive": true
-    },
-    "@andesine/edge#deploy": {
-      "dependsOn": ["@andesine/landing#build", "typecheck"],
-      "cache": false,
-      "interactive": true
     }
   }
 }

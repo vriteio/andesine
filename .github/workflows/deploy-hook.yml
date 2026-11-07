@@ -1,0 +1,18 @@
+name: Deployment hook
+
+on:
+  push:
+    branches: [andesine]
+
+jobs:
+  notify:
+    if: github.repository == 'vriteio/andesine'
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -fsS -X POST "$DEPLOY_HOOK_URL" \
+            -H "Authorization: Bearer $DEPLOY_TOKEN" \
+            -d '{"ref":"main"}'
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}

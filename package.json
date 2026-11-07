@@ -20,12 +20,7 @@
     "db:migrate": "turbo run db:migrate --filter=@andesine/backend",
     "db:studio": "turbo run db:studio --filter=@andesine/backend",
     "dev:email": "dotenv -- turbo run dev:email --filter=@andesine/templates",
-    "dev:edge": "dotenv -- turbo dev --filter=@andesine/edge",
-    "build:worker": "dotenv -- pnpm --filter @andesine/web build:worker",
-    "dev:worker": "dotenv -- pnpm --filter @andesine/web dev:worker",
-    "dev:landing": "dotenv -- turbo dev --filter=@andesine/landing",
-    "deploy:edge": "dotenv -- turbo run deploy --filter=@andesine/edge",
-    "deploy:web": "dotenv -- pnpm --filter @andesine/web deploy:worker"
+    "dev:landing": "dotenv -- turbo dev --filter=@andesine/landing"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

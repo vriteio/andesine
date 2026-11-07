@@ -20,7 +20,7 @@ const isRedirectResponse = (response: RenderResponse): boolean => {
 
   return status >= 300 && status < 400 && response.headers.has("location");
 };
-/** Renders a page with Web streams, for the Node server and the Cloudflare Worker. */
+/** Renders a page with Web streams. */
 const render: Render = async (request, template) => {
   const url = new URL(request.url);
   // The router changes it or sets its own on redirects, so it's read from the event at the end.

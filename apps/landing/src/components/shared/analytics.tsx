@@ -23,7 +23,7 @@ const Analytics: Component = () => {
     client ??= import("posthog-js").then(({ posthog }) => {
       posthog.init(POSTHOG_KEY, {
         api_host: POSTHOG_HOST,
-        // The host can be the `/relay` path of the edge worker; links still open PostHog.
+        // The host can be a relay path, e.g. `/relay`; links still open PostHog.
         ui_host: "https://us.posthog.com",
         autocapture: false,
         capture_pageview: false,
