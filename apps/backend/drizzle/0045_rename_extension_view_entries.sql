@@ -22,7 +22,8 @@ LANGUAGE sql AS $$
   END
 $$;
 --> statement-breakpoint
-CREATE FUNCTION pg_temp.to_version(version jsonb) RETURNS jsonb
+-- 0044 created it too; migrations run in one session, which keeps pg_temp functions.
+CREATE OR REPLACE FUNCTION pg_temp.to_version(version jsonb) RETURNS jsonb
 LANGUAGE sql AS $$
   SELECT jsonb_set(
     version,
