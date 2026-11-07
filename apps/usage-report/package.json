@@ -9,6 +9,8 @@
     "start": "node ./dist/index.js"
   },
   "dependencies": {
+    "base-x": "catalog:",
+    "lexorank": "catalog:",
     "pg": "catalog:",
     "stripe": "^22.4.0",
     "zod": "catalog:",

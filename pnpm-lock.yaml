@@ -526,6 +526,12 @@ importers:
       '@andesine/server':
         specifier: workspace:*
         version: link:../../packages/private/server
+      base-x:
+        specifier: 'catalog:'
+        version: 5.0.1
+      lexorank:
+        specifier: 'catalog:'
+        version: 1.0.5
       pg:
         specifier: 'catalog:'
         version: 8.22.0
