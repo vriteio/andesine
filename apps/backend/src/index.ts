@@ -119,9 +119,11 @@ app.addHook("onRequest", async (request, reply) => {
     return reply.status(403).send({ error: "Forbidden" });
   }
 
-  if (request.headers["cf-worker"] && request.url.startsWith("/auth/get-session")) {
+  if (!request.headers["sec-fetch-mode"] && request.url.startsWith("/auth/get-session")) {
     console.info("SSR client IP", {
       ip: request.ip,
+      userAgent: request.headers["user-agent"],
+      worker: request.headers["cf-worker"],
       forwardedFor: request.headers["x-forwarded-for"],
       connectingIP: request.headers["cf-connecting-ip"]
     });
