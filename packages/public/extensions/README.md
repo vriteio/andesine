@@ -270,8 +270,11 @@ Choosing the action counts as an interaction, so host actions work right away.
 ## Dialogs and menus
 
 `Dialog` and `Menu` work in any view. A dialog is shown while it is rendered and
-calls `onClose` when dismissed; outside block actions, render it right after an
-interaction, e.g. from `onClick`, otherwise it is not shown. A `Menu` is a
+calls `onClose` when dismissed (Escape or a click outside it, unless
+`dismissible` is false). It has no close button, so give it a cancel action, e.g.
+an `IconButton` with `i-lucide:x` before the main button. Outside block actions,
+render it right after an interaction, e.g. from `onClick`, otherwise it is not
+shown. A `Menu` is a
 dropdown menu: `MenuTrigger` holds its trigger (with `contextMenu`, the area
 that opens it on a right click), and its items are `MenuItem` (nested items
 make a submenu; `loading` shows a spinner), `MenuGroup`, `MenuSeparator`, and

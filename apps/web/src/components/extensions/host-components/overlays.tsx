@@ -2,7 +2,6 @@ import {
   Dialog,
   DropdownArea,
   DropdownMenu,
-  IconButton,
   type MenuItem,
   Spinner
 } from "@andesine/components";
@@ -128,15 +127,11 @@ const overlayComponents: Pick<
           onOverlayClick={dismiss}
           aria-label={props.props.title}
         >
-          <div class="flex items-start gap-2">
-            <div class="flex min-w-0 flex-1 flex-col gap-0.5">
-              <h3 class="text-lg font-semibold leading-tight">{props.props.title}</h3>
-              <Show when={props.props.description}>
-                <p class="text-sm text-gray-500">{props.props.description}</p>
-              </Show>
-            </div>
-            <Show when={dismissible()}>
-              <IconButton icon="i-lucide:x" variant="ghost" aria-label="Close" onClick={dismiss} />
+          {/* No close button: as the app's dialogs, the content has its own cancel action. */}
+          <div class="flex min-w-0 flex-col gap-0.5">
+            <h3 class="text-lg font-semibold leading-tight">{props.props.title}</h3>
+            <Show when={props.props.description}>
+              <p class="text-sm text-gray-500">{props.props.description}</p>
             </Show>
           </div>
           {/* Paint containment clips at the box; the padding, offset by the margin, keeps shadows. */}
