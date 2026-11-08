@@ -56,6 +56,8 @@ interface SessionData {
   };
   key?: { keyID: string; permissions: KeyPermission[]; publishable?: PublishableKeyScope };
   extension?: ExtensionAuthorization;
+  /** Extension frontend requests without read:restricted_collections see no restricted content. */
+  hideRestricted?: boolean;
 }
 
 const userAuthorizationType = z.object({
@@ -117,26 +119,38 @@ const parseSessionData = (serialized: string): SessionData | null => {
   }
 };
 const isSessionAuthorizationEvent = (auth: SessionData, event: WorkspaceEvent): boolean => {
-  if (auth.type !== "session" || !auth.session) return false;
+  if (auth.type === "key" && auth.key) {
+    const keyID = auth.key.keyID;
+
+    if (event.action === "key:delete") return event.data.ids.includes(keyID);
+    if (event.action === "key:rotate") return event.data.previousKeyID === keyID;
+
+    return event.action === "key:update" && event.data.id === keyID;
+  }
+
+  const user = getUserAuthorization(auth);
+
+  if (!user) return false;
 
   if (
     event.action === "workspace:update" &&
+    event.data.id === auth.workspaceID &&
     event.data.subscriptionPlan === "free" &&
     getEffectivePlan(event.data.subscriptionPlan) === "free"
   ) {
-    return !auth.session.admin;
+    return !user.admin;
   }
 
   if (event.action === "membership:update" || event.action === "membership:remove") {
-    return event.data.id === auth.session.memberID;
+    return event.data.id === user.memberID;
   }
 
-  if (event.action === "role:delete") return event.data.id === auth.session.roleID;
+  if (event.action === "role:delete") return event.data.id === user.roleID;
 
   return (
     event.action === "role:update" &&
     event.data.permissions !== undefined &&
-    event.data.id === auth.session.roleID
+    event.data.id === user.roleID
   );
 };
 

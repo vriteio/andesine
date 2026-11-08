@@ -266,6 +266,9 @@ importers:
       '@orpc/standard-server':
         specifier: 1.14.14
         version: 1.14.14
+      '@orpc/standard-server-node':
+        specifier: 1.14.14
+        version: 1.14.14
       '@orpc/zod':
         specifier: 'catalog:'
         version: 1.14.14(@orpc/contract@1.14.14)(@orpc/server@1.14.14(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2))(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2)(zod@4.4.3)

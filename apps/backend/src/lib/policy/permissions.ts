@@ -6,7 +6,19 @@ import {
 import { type KeyPermission, type Permission } from "@andesine/contracts/entities";
 import { ORPCError } from "@orpc/server";
 import { getUserAuthorization, type SessionData } from "./session";
-import { MCP_WRITE_SCOPE } from "#backend/lib/auth/oauth";
+import { MCP_READ_SCOPE, MCP_WRITE_SCOPE } from "#backend/lib/auth/oauth";
+
+// Key permissions that MCP tokens can use; consent covers content only.
+const MCP_KEY_PERMISSIONS = new Set<KeyPermission>([
+  "entries",
+  "collections",
+  "versions",
+  "publishing",
+  "read:entries",
+  "read:collections",
+  "read:versions",
+  "read:publishing"
+]);
 
 const isAdminAuthorization = (auth: SessionData): boolean => {
   return getUserAuthorization(auth)?.admin === true;
@@ -36,12 +48,19 @@ const getMissingAuthorizationPermissions = (
   const writeKeyPermissions = Array.isArray(required.key)
     ? required.key.filter((permission) => !permission.startsWith("read:"))
     : [];
-
-  // MCP clients (OAuth with scopes) call only public API operations, and write ones need write scope.
+  const isMCPToken = mcpScopes?.some(
+    (scope) => scope === MCP_READ_SCOPE || scope === MCP_WRITE_SCOPE
+  );
+  const outsideMCPScope =
+    isMCPToken &&
+    Array.isArray(required.key) &&
+    required.key.some((permission) => !MCP_KEY_PERMISSIONS.has(permission));
+  // MCP clients call only public API operations, and write ones need write scope; the CLI has neither.
   const missingWriteScope =
-    mcpScopes && !mcpScopes.includes(MCP_WRITE_SCOPE) && writeKeyPermissions.length > 0;
+    isMCPToken && !mcpScopes?.includes(MCP_WRITE_SCOPE) && writeKeyPermissions.length > 0;
 
-  if (mcpScopes && !required.key) return null;
+  if (isMCPToken && !required.key) return null;
+  if (outsideMCPScope) return null;
   if (missingWriteScope) return writeKeyPermissions;
 
   const oauthPermissions = required.oauth ?? (required.key ? required.session : undefined);
@@ -96,6 +115,7 @@ const assertAuthorizationRequirements = (
   });
 };
 const hasAuthPermission = (auth: SessionData, required: KeyPermission | Permission): boolean => {
+  if (required === "read:restricted_collections" && auth.hideRestricted) return false;
   if (isAdminAuthorization(auth)) return true;
 
   const permissions = getGrantedPermissions(auth);

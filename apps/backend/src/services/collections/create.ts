@@ -7,7 +7,7 @@ import { rankBetweenNeighbors, toCollectionID, toUUID } from "@andesine/contract
 import { type Collection } from "@andesine/contracts/entities";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
-import { withAuthorization } from "#backend/lib/policy";
+import { loadAuthorizedCollectionTree, withAuthorization } from "#backend/lib/policy";
 import { resolveCollectionTarget } from "#backend/lib/content";
 import { normalizeCollectionName, ROOT_COLLECTION_NAME } from "@andesine/contracts/content";
 
@@ -42,7 +42,7 @@ const createCollection = withAuthorization<
     plan: (input) => (input.restricted ? "pro" : undefined),
     transaction: "locked-workspace"
   },
-  async ({ database, input, resolved, workspaceID }) => {
+  async ({ auth, database, input, resolved, workspaceID }) => {
     const requestedName = normalizeCollectionName(input.name ?? "Untitled");
 
     if (requestedName === ROOT_COLLECTION_NAME) {
@@ -154,6 +154,13 @@ const createCollection = withAuthorization<
           active: true
         });
       }
+    }
+
+    // Returning an existing collection is a read of it.
+    if (!created) {
+      const authorization = await loadAuthorizedCollectionTree({ auth, database });
+
+      authorization.assertCollectionAction(collectionID, "collection:read");
     }
 
     const tree = await loadCollectionTree(workspaceID, false, database);

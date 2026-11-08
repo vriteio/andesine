@@ -4,6 +4,8 @@ import type { WebhookActor } from "@andesine/contracts/webhooks";
 
 interface CollaborationContext {
   auth?: SessionData;
+  /** The cookie the connection signed in with, to close it when the session ends. */
+  sessionCookie?: string;
   collectionID?: string;
   contributorID?: string;
   entryID?: string;

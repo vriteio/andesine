@@ -5,11 +5,20 @@ import { validateWorkspaceID } from "#web/lib/validation";
 const normalizeRedirectTo = (value?: string | null): string | null => {
   const redirectTo = value?.trim();
 
-  if (!redirectTo || !redirectTo.startsWith("/") || redirectTo.startsWith("//")) {
+  if (!redirectTo?.startsWith("/")) return null;
+
+  const appOrigin = new URL(config.PUBLIC_APP_URL).origin;
+
+  // Backslashes and dot segments can resolve to another origin or to "//host".
+  try {
+    const url = new URL(redirectTo, appOrigin);
+    const path = `${url.pathname}${url.search}${url.hash}`;
+    const isSameOrigin = url.origin === appOrigin && !path.startsWith("//");
+
+    return isSameOrigin ? path : null;
+  } catch {
     return null;
   }
-
-  return redirectTo;
 };
 
 const appendRedirectTo = (path: string, redirectTo?: string | null, addAccount = false) => {

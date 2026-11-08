@@ -334,6 +334,9 @@ const createEntry = withAuthorization<CreateEntryInput, ResolvedCreateEntry, Cre
         throw new ORPCError("BAD_REQUEST", { message: "Entry ID belongs to another workspace" });
       }
 
+      // Returning an existing entry is a read of it.
+      if (!inserted) authorization.assertEntryAction(created.collectionID, "entry:read");
+
       // An existing entry with this ID keeps its content.
       if (inserted) {
         const fieldOperations = Object.entries(input.fields ?? {}).map(([key, value]) => ({

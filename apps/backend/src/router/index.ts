@@ -12,7 +12,10 @@ import { RPCHandler } from "@orpc/server/fastify";
 import { RequestHeadersPlugin, ResponseHeadersPlugin } from "@orpc/server/plugins";
 import type { StandardHandleResult } from "@orpc/server/standard";
 import { experimental_ZodSmartCoercionPlugin } from "@orpc/zod/zod4";
+import { toStandardBody } from "@orpc/standard-server-node";
 import { type FastifyPluginAsync, type FastifyReply, type FastifyRequest } from "fastify";
+import type { IncomingMessage } from "node:http";
+import { Readable } from "node:stream";
 import { router } from "./routes";
 import { apiContract } from "./implement";
 
@@ -172,9 +175,18 @@ const routerPlugin: FastifyPluginAsync = async (app) => {
       }
     }
   );
-  app.addContentTypeParser("*", function (_request, _payload, done) {
-    done(null, undefined);
-  });
+  // Buffer the body with a limit; oRPC reads raw streams without one.
+  // shortcut: one cap for every API route; bulk writes (100 items) and 5 MiB extension artifacts
+  // exceed the 1 MiB server default, so give large routes their own limit if this is too loose.
+  app.addContentTypeParser(
+    "*",
+    { parseAs: "buffer", bodyLimit: 16 * 1024 * 1024 },
+    async (request: FastifyRequest, body: Buffer) => {
+      const stream = Object.assign(Readable.from([body]), { headers: request.headers });
+
+      return toStandardBody(stream as unknown as IncomingMessage);
+    }
+  );
   app.get("/openapi.json", async (_request, reply) => {
     return reply.send(openAPIDocument);
   });

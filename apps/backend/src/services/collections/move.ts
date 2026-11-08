@@ -276,6 +276,12 @@ const planCollectionMove = withAuthorization<
       workspaceID
     });
 
+    // A move migrates the moved subtree, so it needs update rights on all of it.
+    authorization.assertCollectionSources(
+      schemaMigration.affectedCollectionIDs,
+      "collection:update"
+    );
+
     if (schemaMigration.migrationID && !input.confirmedDataLoss) {
       throw new ORPCError("PRECONDITION_FAILED", {
         message: "Schema migrations require explicit data-loss confirmation",

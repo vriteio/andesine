@@ -88,7 +88,7 @@ const isCollectionVisible = (
   permissionsByBoundaryID: Map<string, Permission[]>
 ): boolean => {
   if (canReadAllRestrictedCollections(auth) || boundaryIDs.length === 0) return true;
-  if (!getUserAuthorization(auth)) return false;
+  if (!getUserAuthorization(auth) || auth.hideRestricted) return false;
 
   return boundaryIDs.every((boundaryID) => permissionsByBoundaryID.has(boundaryID));
 };

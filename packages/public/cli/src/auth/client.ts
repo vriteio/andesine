@@ -100,6 +100,12 @@ const authenticatedClient = async (context: CommandContext, refreshEachRequest =
       );
     }
 
+    if (config.projectBaseURL) {
+      throw new CLIError(
+        "ANDESINE_API_KEY is not sent to an API root from andesine.json. Set ANDESINE_BASE_URL or --base-url to use it."
+      );
+    }
+
     return {
       client: createClient({ baseURL: config.baseURL, apiKey, headers, fetch: fetcher }),
       source: "environment" as const

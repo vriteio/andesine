@@ -1854,9 +1854,9 @@ export interface paths {
     put?: never;
     /**
      * Revert pending publishing changes
-     * @description Restores selected drafts to the reviewed publication snapshot. This can remove unpublished items and replace draft content. First review publishing.getChannelContent and pass its snapshotID. Use all: true or specific collectionIDs/entryIDs, never both. Requires write access to affected resources in addition to read:publishing.
+     * @description Restores selected drafts to the reviewed publication snapshot. This can remove unpublished items and replace draft content. First review publishing.getChannelContent and pass its snapshotID. Use all: true or specific collectionIDs/entryIDs, never both. Requires read:publishing and entries, plus write access to affected resources.
      *
-     *     Required API key permissions: read:publishing. Write permissions also grant read access for the same resource.
+     *     Required API key permissions: read:publishing, entries. Write permissions also grant read access for the same resource.
      */
     post: operations["publishing.revertChanges"];
     delete?: never;

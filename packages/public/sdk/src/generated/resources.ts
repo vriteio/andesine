@@ -1202,9 +1202,9 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
     /**
      * Revert pending publishing changes
      *
-     * Restores selected drafts to the reviewed publication snapshot. This can remove unpublished items and replace draft content. First review publishing.getChannelContent and pass its snapshotID. Use all: true or specific collectionIDs/entryIDs, never both. Requires write access to affected resources in addition to read:publishing.
+     * Restores selected drafts to the reviewed publication snapshot. This can remove unpublished items and replace draft content. First review publishing.getChannelContent and pass its snapshotID. Use all: true or specific collectionIDs/entryIDs, never both. Requires read:publishing and entries, plus write access to affected resources.
      *
-     * Required API key permissions: read:publishing. Write permissions also grant read access for the same resource.
+     * Required API key permissions: read:publishing, entries. Write permissions also grant read access for the same resource.
      *
      * @example
      * await client.publishing.revertChanges({

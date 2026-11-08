@@ -28,7 +28,8 @@ const allowedHeaders = [
   "X-Workspace-ID",
   "X-Requested-With",
   "X-Session-Verification",
-  "X-Session-Verification-Callback"
+  "X-Session-Verification-Callback",
+  "X-Hide-Restricted-Collections"
 ];
 const exposedHeaders = [
   "ETag",

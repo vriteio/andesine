@@ -65,9 +65,12 @@ const planSchemaVersionRevert = withAuthorization<
       collections: [{ action: "collection:update", collectionID: resolved.collectionID }]
     }),
     resolve: resolveSchemaVersion,
-    transaction: "locked-workspace"
+    transaction: "locked-workspace",
+    tree: true
   },
-  async ({ auth, database, input, resolved, workspaceID }) => {
+  async ({ auth, authorization, database, input, resolved, workspaceID }) => {
+    authorization.assertFullyVisibleSubtree(resolved.collectionID);
+
     const [schema] = await database
       .select({
         id: collectionSchemas.id,
@@ -221,6 +224,8 @@ const planSchemaVersionRevert = withAuthorization<
       ],
       workspaceID
     });
+
+    authorization.assertCollectionSources(plan.affectedCollectionIDs, "collection:update");
 
     if (!input.confirmedDataLoss) {
       throw new ORPCError("BAD_REQUEST", {

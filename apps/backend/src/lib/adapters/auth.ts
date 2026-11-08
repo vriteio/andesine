@@ -12,7 +12,7 @@ import { Workspaces } from "#backend/services/workspaces";
 import { incrementWithExpiry, redis } from "./redis";
 import { createOTPToken, RATE_LIMITS } from "#backend/lib/security";
 import { add } from "date-fns";
-import { APIError, createAuthMiddleware, isAPIError } from "better-auth/api";
+import { APIError } from "better-auth/api";
 import { createOAuthPlugins, OAUTH_DISABLED_PATHS } from "#backend/lib/auth/oauth";
 import { Auth } from "#backend/services/auth";
 import { capture } from "#backend/lib/analytics";
@@ -24,14 +24,6 @@ interface AuthHookContext {
 }
 
 const OTP_EXPIRY_SECONDS = 300;
-// A new review code is the same code, so failed guesses are limited, per client IP.
-const REVIEW_ACCOUNT_FAILURES = 10;
-const REVIEW_ACCOUNT_FAILURES_SECONDS = 60 * 60;
-const OTP_VERIFICATION_PATHS = [
-  "/sign-in/email-otp",
-  "/email-otp/verify-email",
-  "/email-otp/check-verification-otp"
-];
 
 // Sign-ups also create a session; their requests don't count as sign-ins.
 const signUpContexts = new WeakSet<object>();
@@ -45,21 +37,6 @@ const getAuthMethod = (context: AuthHookContext | null): string | undefined => {
   if (path.startsWith("/passkey/")) return "passkey";
 
   return path.includes("email-otp") ? "email" : path || undefined;
-};
-// Directory reviewers can't receive email codes, so their account has a fixed code.
-const isReviewAccount = (email: string): boolean => {
-  const reviewEmail = config.REVIEW_ACCOUNT_EMAIL?.toLowerCase();
-
-  return Boolean(reviewEmail && config.REVIEW_ACCOUNT_CODE) && email.toLowerCase() === reviewEmail;
-};
-
-const getReviewFailuresKey = (headers: Headers | undefined): string => {
-  return `review-account-failures:${headers?.get("x-client-ip") ?? "unknown"}`;
-};
-const isReviewAccountRequest = (body: unknown): boolean => {
-  const email = (body as { email?: unknown } | undefined)?.email;
-
-  return typeof email === "string" && isReviewAccount(email);
 };
 
 const auth = betterAuth({
@@ -192,6 +169,9 @@ const auth = betterAuth({
       },
       create: {
         before: async (user) => {
+          // An unverified provider email would let a later email sign-in inherit the provider link.
+          if (!user.emailVerified) return false;
+
           // Ensure the name is at most 320 chars
           const name = (user.name || user.email.split("@")[0]).slice(0, 320);
 
@@ -261,56 +241,16 @@ const auth = betterAuth({
       }
     }),
     {
-      id: "andesine-review-account",
-      hooks: {
-        before: [
-          {
-            matcher: (context) => OTP_VERIFICATION_PATHS.includes(context.path ?? ""),
-            handler: createAuthMiddleware(async (context) => {
-              if (!isReviewAccountRequest(context.body)) return;
-
-              const failures = Number(await redis.get(getReviewFailuresKey(context.headers)));
-
-              if (failures >= REVIEW_ACCOUNT_FAILURES) {
-                throw APIError.fromStatus("TOO_MANY_REQUESTS", {
-                  message: "Too many sign-in attempts"
-                });
-              }
-            })
-          }
-        ],
-        after: [
-          {
-            matcher: (context) => OTP_VERIFICATION_PATHS.includes(context.path ?? ""),
-            handler: createAuthMiddleware(async (context) => {
-              const failed = isAPIError(context.context.returned);
-
-              if (!failed || !isReviewAccountRequest(context.body)) return;
-
-              await incrementWithExpiry(
-                redis,
-                getReviewFailuresKey(context.headers),
-                REVIEW_ACCOUNT_FAILURES_SECONDS
-              );
-            })
-          }
-        ]
-      }
-    },
-    {
       id: "andesine-oauth-client",
       init: async (): Promise<void> => {
         await Auth.OAuth.provision();
       }
     },
     emailOTP({
-      generateOTP: ({ email }) => (isReviewAccount(email) ? config.REVIEW_ACCOUNT_CODE : undefined),
       async sendVerificationOTP({ email, otp, type }, ctx) {
         if (type === "forget-password" || type === "change-email") {
           throw APIError.fromStatus("BAD_REQUEST", { message: "Unsupported OTP type" });
         }
-
-        if (isReviewAccount(email)) return;
 
         const headers = ctx?.headers || ctx?.request?.headers;
         const sessionVerification = headers?.get("x-session-verification") === "true";

@@ -39,6 +39,11 @@ const getSessionData = async (input: GetSessionDataInput): Promise<SessionData> 
       userID: toUserID(result.session.userId),
       type: "session"
     });
+
+    // Set by the web host for extension requests; it can only narrow access.
+    if (input.headers.get("x-hide-restricted-collections") === "true") {
+      data = { ...data, hideRestricted: true };
+    }
   }
 
   const subscriptionPlan = getEffectivePlan(data.subscriptionPlan);

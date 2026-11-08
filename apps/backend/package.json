@@ -39,6 +39,7 @@
     "@orpc/openapi": "catalog:",
     "@orpc/server": "catalog:",
     "@orpc/standard-server": "1.14.14",
+    "@orpc/standard-server-node": "1.14.14",
     "@orpc/zod": "catalog:",
     "@react-email/components": "1.0.12",
     "@react-email/render": "2.1.0",

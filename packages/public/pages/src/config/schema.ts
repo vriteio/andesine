@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isEntryLink, isWebURL } from "../navigation/links";
 
 const identifierSchema = z
   .string()
@@ -16,11 +17,18 @@ const baseSchema = pathSchema.refine(
   "Use a base path with letters, digits, -, _, ., !, ~, *, ', ( and ) only."
 );
 /** `href`: a URL, a site path, or `entry:<entryID>` for the entry's page in an Andesine source. */
+const hrefSchema = z
+  .string()
+  .min(1)
+  .refine(
+    (href) => isEntryLink(href) || isWebURL(href),
+    "Use a URL, a site path, or an entry: link."
+  );
 const linkSchema = z
-  .object({ label: z.string().min(1), href: z.string().min(1), icon: iconSchema.optional() })
+  .object({ label: z.string().min(1), href: hrefSchema, icon: iconSchema.optional() })
   .strict();
 const iconLinkSchema = z
-  .object({ label: z.string().min(1), href: z.string().min(1), icon: iconSchema })
+  .object({ label: z.string().min(1), href: hrefSchema, icon: iconSchema })
   .strict();
 const logoSchema = z
   .object({

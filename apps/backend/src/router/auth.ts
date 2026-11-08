@@ -69,26 +69,33 @@ const authRouter = handlers.router({
 
     if (failedDeletion) throw failedDeletion.reason;
 
-    await Auth.deleteUser({ userID: input.userID });
-
-    // The account is already deleted, so its cleanup doesn't hold or fail the response.
-    void Promise.allSettled([
-      deleteAnalyticsPerson(input.userID),
-      ...remainingMemberships.map(async ({ workspaceID, memberID }) => {
+    const removeMemberships = () => {
+      return remainingMemberships.map(async ({ workspaceID, memberID }) => {
         emitMembershipEvent(workspaceID, {
           action: "membership:remove",
           memberID,
           data: { id: memberID }
         });
         await Billing.updateSeats({ workspaceID });
-      })
-    ]).then((results) => {
-      for (const result of results) {
-        if (result.status !== "rejected") continue;
+      });
+    };
+    // Cleanup doesn't hold or fail the response.
+    const logCleanup = (tasks: Array<Promise<unknown>>) => {
+      void Promise.allSettled(tasks).then((results) => {
+        for (const result of results) {
+          if (result.status !== "rejected") continue;
 
-        console.error("Failed to clean up deleted account", result.reason);
-      }
+          console.error("Failed to clean up deleted account", result.reason);
+        }
+      });
+    };
+
+    // Memberships are gone even when the user delete then fails, so their cleanup runs anyway.
+    await Auth.deleteUser({
+      userID: input.userID,
+      onMembershipsRemoved: () => logCleanup(removeMemberships())
     });
+    logCleanup([deleteAnalyticsPerson(input.userID)]);
   }),
   getIdentity: authorizedHandlers.getIdentity.handler(({ context }) => {
     context.resHeaders?.set("Cache-Control", "private, no-store");

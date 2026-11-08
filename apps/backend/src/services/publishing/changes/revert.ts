@@ -175,7 +175,7 @@ const prepareRevertPublishingChanges = withAuthorization<
   {
     actions: ({ resolved }) => getPublishingRevertAuthorizationActions(resolved),
     includeDeleted: true,
-    permissions: { session: true, key: ["read:publishing"] },
+    permissions: { session: true, key: ["read:publishing", "entries"] },
     resolve: ({ auth, database, input }) => {
       return loadPublishingRevertPlan(database, auth, input);
     },
@@ -191,7 +191,7 @@ const commitRevertPublishingChanges = withAuthorization<
   {
     actions: ({ resolved }) => getPublishingRevertAuthorizationActions(resolved),
     includeDeleted: true,
-    permissions: { session: true, key: ["read:publishing"] },
+    permissions: { session: true, key: ["read:publishing", "entries"] },
     resolve: async ({ auth, database, input }) => {
       const workingContentHashes = new Map<string, string>();
 

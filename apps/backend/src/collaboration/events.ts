@@ -174,7 +174,10 @@ const registerCollaborationEvents = (collab: Hocuspocus<CollaborationContext>): 
   });
 
   subscribeToWorkspaceStateEvents("*", (event) => {
-    if (event.action !== "workspace:delete") return;
+    if (event.action !== "workspace:delete") {
+      resetAffectedConnections(event);
+      return;
+    }
 
     for (const entryID of event.data.entryIDs) {
       collab.closeConnections(entryID);

@@ -3,6 +3,7 @@ import { collaborationActivity } from "./activity";
 import { authenticateCollaboration } from "./authentication";
 import { collaborationDatabase } from "./database";
 import { registerCollaborationEvents } from "./events";
+import { watchCollaborationSessions } from "./sessions";
 import { collaborationRedis } from "./redis";
 import type { CollaborationContext } from "./types";
 
@@ -12,6 +13,7 @@ const collab = new Hocuspocus<CollaborationContext>({
 });
 
 registerCollaborationEvents(collab);
+watchCollaborationSessions(collab);
 
 const shutdownCollaboration = async (timeoutMs: number): Promise<boolean> => {
   collab.closeConnections();

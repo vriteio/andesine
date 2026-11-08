@@ -1,4 +1,7 @@
-import { type ExtensionRequestParams } from "@andesine/contracts/extensions";
+import {
+  type ExtensionRequestParams,
+  RESTRICTED_CONTENT_PERMISSION
+} from "@andesine/contracts/extensions";
 import { type KeyPermission } from "@andesine/contracts/entities";
 import { hasPermission } from "@andesine/contracts/permissions";
 
@@ -99,7 +102,11 @@ const fetchExtensionAPI = async (
     credentials: "include",
     headers: {
       ...(params.body !== undefined && { "content-type": "application/json" }),
-      ...(context.workspaceID && { "x-workspace-id": context.workspaceID })
+      ...(context.workspaceID && { "x-workspace-id": context.workspaceID }),
+      // The backend applies the member's restricted access unless the extension was granted it.
+      ...(!context.permissions.includes(RESTRICTED_CONTENT_PERMISSION) && {
+        "x-hide-restricted-collections": "true"
+      })
     },
     signal: AbortSignal.timeout(REQUEST_TIMEOUT)
   });

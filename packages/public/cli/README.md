@@ -267,7 +267,10 @@ requests are not replayed to recover authentication.
 and `auth status`. An empty or rejected key does not fall back to OAuth. Login and
 logout still manage the selected saved profile and do not change the environment.
 No credential is used for a different API root, including a different deployment
-prefix. HTTP redirects are not followed for authenticated requests.
+prefix. `ANDESINE_API_KEY` is sent to a `baseURL` from `andesine.json` only when
+it is the default root, or `--base-url`, `ANDESINE_BASE_URL`, or the selected
+profile names the same root. HTTP redirects are not followed for authenticated
+requests.
 
 Login and status emit metadata only on stdout. Tokens are never printed. API
 commands use the same SDK authentication helper.

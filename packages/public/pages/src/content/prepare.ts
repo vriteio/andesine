@@ -4,7 +4,7 @@ import { fromMarkdown } from "@andesine/converters/markdown";
 import type { Element, ElementContent, Root } from "hast";
 import { bundledLanguages, codeToHast, type BundledLanguage } from "shiki";
 import type { HeadingContext } from "../context";
-import { isEntryLink } from "../navigation/links";
+import { isEntryLink, isWebURL } from "../navigation/links";
 import { readElement } from "./elements";
 import { getText } from "./hast";
 import { createIconCSS } from "./icons";
@@ -125,8 +125,8 @@ const prepareContent = async (
     if (isCard && typeof element.props.href === "string") {
       const { href: cardHref, ...rest } = element.props;
       const url = options.linkURL(cardHref);
-      // A card that links to an entry without a page, e.g. an unpublished one, isn't a link.
-      const props = isEntryLink(url) ? rest : { ...rest, href: url };
+      // An unresolved entry link (no page) or a non-web URL (e.g. javascript:) isn't a link.
+      const props = isWebURL(url) ? { ...rest, href: url } : rest;
 
       child.properties.dataAndesineProps = JSON.stringify(props);
     }

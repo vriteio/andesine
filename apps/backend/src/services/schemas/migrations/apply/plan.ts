@@ -40,9 +40,11 @@ const createSchemaApplicationPlan = withAuthorization<
       collections: [{ action: "collection:update", collectionID: resolved.collectionID }]
     }),
     resolve: resolveEnabledSchema,
-    transaction: "locked-workspace"
+    transaction: "locked-workspace",
+    tree: true
   },
-  async ({ auth, database, input, resolved, workspaceID }) => {
+  async ({ auth, authorization, database, input, resolved, workspaceID }) => {
+    authorization.assertFullyVisibleSubtree(resolved.collectionID);
     assertSchemaFieldKeys(input.definition.fields);
 
     const parsedDefinition = schemaDefinitionType.safeParse(input.definition);
@@ -143,6 +145,8 @@ const createSchemaApplicationPlan = withAuthorization<
       ],
       workspaceID
     });
+
+    authorization.assertCollectionSources(plan.affectedCollectionIDs, "collection:update");
 
     if (!plan.migrationID) {
       throw new ORPCError("INTERNAL_SERVER_ERROR", {

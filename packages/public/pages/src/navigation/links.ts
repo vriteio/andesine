@@ -5,9 +5,14 @@ interface Link {
 }
 
 const ENTRY_LINK = /^entry:([^?#]+)(.*)$/s;
+const WEB_PROTOCOLS = ["http:", "https:", "mailto:", "tel:"];
 
 /** Whether a link is still an `entry:` link, e.g. after it wasn't resolved to a page. */
 const isEntryLink = (href: string): boolean => href.startsWith("entry:");
+/** Site paths and http(s), mailto, and tel URLs; not javascript: or data: URLs. */
+const isWebURL = (url: string): boolean => {
+  return WEB_PROTOCOLS.includes(URL.parse(url, "https://example.com")?.protocol ?? "");
+};
 
 /**
  * Resolves `entry:<entryID>` links of the configuration, e.g. header links, to the entry's page,
@@ -39,5 +44,5 @@ const createLinkResolver = (sources: SourceData[]) => {
 
 type LinkResolver = ReturnType<typeof createLinkResolver>;
 
-export { createLinkResolver, isEntryLink };
+export { createLinkResolver, isEntryLink, isWebURL };
 export type { LinkResolver };

@@ -42,6 +42,7 @@ const syncRouter = handlers.router({
   }) {
     const { events } = await Sync.listenToWorkspaceEvents({
       auth: context.auth,
+      headers: context.reqHeaders,
       signal: signal ? AbortSignal.any([signal, shutdownSignal]) : shutdownSignal
     });
 

@@ -258,7 +258,7 @@ const publishingContract = baseContract.prefix("/publishing").router({
     .route({
       summary: "Revert pending publishing changes",
       description:
-        "Restores selected drafts to the reviewed publication snapshot. This can remove unpublished items and replace draft content. First review publishing.getChannelContent and pass its snapshotID. Use all: true or specific collectionIDs/entryIDs, never both. Requires write access to affected resources in addition to read:publishing.",
+        "Restores selected drafts to the reviewed publication snapshot. This can remove unpublished items and replace draft content. First review publishing.getChannelContent and pass its snapshotID. Use all: true or specific collectionIDs/entryIDs, never both. Requires read:publishing and entries, plus write access to affected resources.",
       tags: ["publishing"],
       method: "POST",
       path: "/changes/revert"
@@ -271,7 +271,7 @@ const publishingContract = baseContract.prefix("/publishing").router({
         channel: "published"
       }
     })
-    .meta({ required: { session: true, key: ["read:publishing"] } })
+    .meta({ required: { session: true, key: ["read:publishing", "entries"] } })
     .input(revertPublishingChangesInputType)
     .output(revertPublishingChangesResultType),
   getEntryVersion: authenticatedContract

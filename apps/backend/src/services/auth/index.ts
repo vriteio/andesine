@@ -2,6 +2,7 @@ import { deleteUser } from "./delete-user";
 import { getSessionData } from "./get-session-data";
 import { prepareAccountDeletion } from "./prepare-account-deletion";
 import { invalidateSessionData } from "./invalidate-session-data";
+import { isSessionActive } from "./is-session-active";
 import { OAuth } from "./oauth";
 
 import { getIdentity } from "./get-identity";
@@ -14,7 +15,8 @@ const Auth = {
   OAuth,
   getSessionData,
   prepareAccountDeletion,
-  invalidateSessionData
+  invalidateSessionData,
+  isSessionActive
 };
 
 export { Auth };

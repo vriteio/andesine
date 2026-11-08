@@ -35,6 +35,8 @@ interface ResolvedConfig {
   profileName?: string;
   /** Only present when the selected profile belongs to the resolved API root. */
   profile?: UserProfile;
+  /** The API root comes only from andesine.json, so environment secrets must not go to it. */
+  projectBaseURL: boolean;
   types: TypesConfig;
 }
 
@@ -109,13 +111,13 @@ const resolveConfig = async ({
   }
 
   const profileBaseURL = selectedProfile ? normalizeBaseURL(selectedProfile.baseURL) : undefined;
+  const explicitBaseURL = flags.baseUrl ?? env.ANDESINE_BASE_URL;
+  const defaultBaseURL = normalizeBaseURL("https://api.andesine.app");
   const baseURL = normalizeBaseURL(
-    flags.baseUrl ??
-      env.ANDESINE_BASE_URL ??
-      project?.value.baseURL ??
-      profileBaseURL ??
-      "https://api.andesine.app"
+    explicitBaseURL ?? project?.value.baseURL ?? profileBaseURL ?? defaultBaseURL
   );
+  const projectBaseURL =
+    explicitBaseURL === undefined && baseURL !== profileBaseURL && baseURL !== defaultBaseURL;
   const profile =
     selectedProfile && profileBaseURL === baseURL ? { ...selectedProfile, baseURL } : undefined;
   const workspaceID =
@@ -136,6 +138,7 @@ const resolveConfig = async ({
     configPath: project?.path,
     profileName,
     profile,
+    projectBaseURL,
     types: { ...types, output: path.resolve(outputDirectory, types.output) }
   };
 };

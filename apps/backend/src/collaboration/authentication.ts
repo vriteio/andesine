@@ -143,6 +143,7 @@ const authenticateCollaboration = async (input: {
 
   return {
     auth,
+    sessionCookie: requestHeaders.get("cookie") ?? undefined,
     collectionID: collectionID || undefined,
     schemaMigrationReadOnly,
     ...(schemaDocument

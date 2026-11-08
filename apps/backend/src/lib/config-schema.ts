@@ -45,6 +45,12 @@ const configSchema = billingConfigSchema.safeExtend({
     .min(32, "ORIGIN_SECRET must contain at least 32 characters")
     .optional()
     .describe("Secret that the proxy adds as X-Origin-Secret; other requests are refused"),
+  TRUSTED_CLIENT_IP_HEADER: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .optional()
+    .describe("Header with the client IP that the proxy sets; trusted only with ORIGIN_SECRET"),
   SSR_SECRET: z
     .string()
     .trim()
@@ -87,13 +93,6 @@ const configSchema = billingConfigSchema.safeExtend({
   // Passkeys (WebAuthn)
   PASSKEY_RP_ID: z.string().optional().describe("WebAuthn Relying Party ID"),
   PASSKEY_ORIGIN: z.string().optional().describe("WebAuthn expected origin"),
-  // Directory review: a fixed sign-in code for one account, set only while reviews run
-  REVIEW_ACCOUNT_EMAIL: z.email().optional().describe("Email of the directory review account"),
-  REVIEW_ACCOUNT_CODE: z
-    .string()
-    .regex(/^\d{6}$/)
-    .optional()
-    .describe("Fixed 6-digit sign-in code of the review account; no email is sent"),
   OPENAI_APPS_CHALLENGE: z
     .string()
     .optional()
