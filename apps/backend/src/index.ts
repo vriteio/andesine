@@ -7,7 +7,7 @@ import { config } from "#backend/lib/config";
 import { authPlugin } from "#backend/lib/transport/auth";
 import { mcpPlugin } from "#backend/lib/transport/mcp";
 import { endEventStreams } from "#backend/lib/transport/shutdown";
-import { hasOriginSecret, ORIGIN_SECRET_HEADER } from "#backend/lib/transport/origin";
+import { getClientIP, hasOriginSecret, ORIGIN_SECRET_HEADER } from "#backend/lib/transport/origin";
 import Fastify, { type FastifyRequest } from "fastify";
 import corsPlugin from "@fastify/cors";
 import websocketPlugin from "@fastify/websocket";
@@ -84,7 +84,7 @@ const createWebRequest = (fastifyRequest: FastifyRequest): Request => {
 
   const headers = new Headers(fastifyRequest.headers as HeadersInit);
 
-  headers.set("x-client-ip", fastifyRequest.ip);
+  headers.set("x-client-ip", getClientIP(fastifyRequest));
 
   return new Request(url, {
     method: fastifyRequest.method,
@@ -117,16 +117,6 @@ app.addHook("onRequest", async (request, reply) => {
     });
 
     return reply.status(403).send({ error: "Forbidden" });
-  }
-
-  if (!request.headers["sec-fetch-mode"] && request.url.startsWith("/auth/get-session")) {
-    console.info("SSR client IP", {
-      ip: request.ip,
-      userAgent: request.headers["user-agent"],
-      worker: request.headers["cf-worker"],
-      forwardedFor: request.headers["x-forwarded-for"],
-      connectingIP: request.headers["cf-connecting-ip"]
-    });
   }
 });
 
@@ -163,7 +153,7 @@ app.get(
     preValidation: async (request, reply) => {
       const limit = await consumeRateLimit({
         scope: "collaboration",
-        key: request.ip,
+        key: getClientIP(request),
         limit: RATE_LIMITS.collaboration
       });
 

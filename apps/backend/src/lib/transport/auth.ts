@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { getClientIP } from "#backend/lib/transport/origin";
 
 interface AuthRouteOptions {
   baseURL: string;
@@ -12,7 +13,7 @@ const authPlugin: FastifyPluginAsync<AuthRouteOptions> = async (app, options) =>
     const hasBody = !["GET", "HEAD"].includes(request.method) && request.body !== undefined;
     const body = typeof request.body === "string" ? request.body : JSON.stringify(request.body);
 
-    headers.set("x-client-ip", request.ip);
+    headers.set("x-client-ip", getClientIP(request));
 
     try {
       const response = await options.handler(

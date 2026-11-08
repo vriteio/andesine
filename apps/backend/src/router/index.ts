@@ -4,6 +4,7 @@ import { withErrorHints } from "#backend/lib/transport/error";
 import { generateOpenAPI } from "@andesine/contracts/openapi";
 import { config } from "#backend/lib/config";
 import { consumeRateLimit, RATE_LIMITS } from "#backend/lib/security";
+import { getClientIP } from "#backend/lib/transport/origin";
 import { Auth } from "#backend/services/auth";
 import { OpenAPIHandler } from "@orpc/openapi/fastify";
 import { onError, ORPCError, ValidationError } from "@orpc/server";
@@ -49,7 +50,7 @@ const routerPlugin: FastifyPluginAsync = async (app) => {
 
     const limit = await consumeRateLimit({
       scope: "invite-acceptance",
-      key: req.ip,
+      key: getClientIP(req),
       limit: RATE_LIMITS.inviteAcceptance
     });
 

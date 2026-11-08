@@ -45,6 +45,12 @@ const configSchema = billingConfigSchema.safeExtend({
     .min(32, "ORIGIN_SECRET must contain at least 32 characters")
     .optional()
     .describe("Secret that the proxy adds as X-Origin-Secret; other requests are refused"),
+  SSR_SECRET: z
+    .string()
+    .trim()
+    .min(32, "SSR_SECRET must contain at least 32 characters")
+    .optional()
+    .describe("Secret that server rendering adds as X-SSR-Secret, so its X-Visitor-IP counts"),
   ...extensionsConfigSchema.shape,
   // Secrets
   SECRET: secret.describe("Secret for signing tokens and encrypting data"),
