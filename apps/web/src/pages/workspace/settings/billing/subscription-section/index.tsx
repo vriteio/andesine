@@ -27,7 +27,7 @@ const SubscriptionSection: Component = () => {
     const details = subscriptionDetails();
     const currentUsage = usageDetails();
 
-    if (false) {
+    if (isPro()) {
       const isLoading = !details || !currentUsage;
 
       if (isLoading) {
