@@ -22,7 +22,8 @@ const RATE_LIMITS = {
   signIn: { max: 3, window: 10 },
   otp: { max: 3, window: 60 },
   oauthDevice: { max: 10, window: 60 },
-  oauthToken: { max: 30, window: 60 },
+  oauthToken: { max: 600, window: 60 },
+  oauthRegistration: { max: 60, window: 60 },
   inviteAcceptance: { max: 20, window: 60 },
   collaboration: { max: 30, window: 60 }
 } as const;

@@ -99,6 +99,7 @@ const auth = betterAuth({
       "/device/approve": RATE_LIMITS.oauthDevice,
       "/device/deny": RATE_LIMITS.oauthDevice,
       "/oauth2/token": RATE_LIMITS.oauthToken,
+      "/oauth2/register": RATE_LIMITS.oauthRegistration,
       "/email-otp/*": RATE_LIMITS.otp
     }
   },
