@@ -27,7 +27,7 @@ const SubscriptionSection: Component = () => {
     const details = subscriptionDetails();
     const currentUsage = usageDetails();
 
-    if (isPro()) {
+    if (false) {
       const isLoading = !details || !currentUsage;
 
       if (isLoading) {
@@ -79,23 +79,16 @@ const SubscriptionSection: Component = () => {
     }
 
     return [
-      "Unlimited members, with roles, groups and restricted collections",
-      "Custom domains for hosted sites, without the badge",
+      "Unlimited members, roles, and groups",
       <>
-        <span class="font-medium text-gray-700">150K API calls</span> and{" "}
-        <span class="font-medium text-gray-700">15K AI credits</span> per seat, shared across the
-        workspace
+        Additional <span class="font-medium text-gray-700">150K API calls</span> and{" "}
+        <span class="font-medium text-gray-700">15K AI credits</span> included per seat
       </>,
       <>
-        <span class="font-medium text-gray-700">$1 per 50K</span> additional API calls
+        <span class="font-medium text-gray-700">30-day</span> version history,{" "}
+        <span class="font-medium text-gray-700">50 GiB</span> storage
       </>,
-      <>
-        <span class="font-medium text-gray-700">$1 per 5K</span> additional AI credits
-      </>,
-      <>
-        <span class="font-medium text-gray-700">30 days</span> of version history and{" "}
-        <span class="font-medium text-gray-700">50 GiB</span> of storage
-      </>
+      "Custom domains for hosted sites"
     ];
   };
 
