@@ -6,6 +6,8 @@ import { createHash, randomUUID } from "node:crypto";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { toUUID } from "@andesine/contracts/primitives";
 import { getMCPResource, MCP_READ_SCOPE, MCP_WRITE_SCOPE } from "#backend/lib/auth/oauth";
+import { config } from "#backend/lib/config";
+import { ORIGIN_SECRET_HEADER } from "#backend/lib/transport/origin";
 
 interface MCPRouteOptions {
   /** Public URL of this API: the MCP resources and the authorization server. */
@@ -48,7 +50,9 @@ const createInjectFetch = (app: FastifyInstance, publicURL: string): typeof fetc
       headers: {
         ...Object.fromEntries(request.headers),
         host: new URL(publicURL).host,
-        [MCP_REQUEST_HEADER]: MCP_REQUEST_SECRET
+        [MCP_REQUEST_HEADER]: MCP_REQUEST_SECRET,
+        // In-process requests skip the proxy, so they add its origin secret themselves.
+        ...(config.ORIGIN_SECRET && { [ORIGIN_SECRET_HEADER]: config.ORIGIN_SECRET })
       },
       ...(body && { payload: body })
     });

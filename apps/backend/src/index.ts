@@ -7,12 +7,7 @@ import { config } from "#backend/lib/config";
 import { authPlugin } from "#backend/lib/transport/auth";
 import { mcpPlugin } from "#backend/lib/transport/mcp";
 import { endEventStreams } from "#backend/lib/transport/shutdown";
-import {
-  getClientIP,
-  hasOriginSecret,
-  isServerToServerPath,
-  ORIGIN_SECRET_HEADER
-} from "#backend/lib/transport/origin";
+import { getClientIP, hasOriginSecret, ORIGIN_SECRET_HEADER } from "#backend/lib/transport/origin";
 import Fastify, { type FastifyRequest } from "fastify";
 import corsPlugin from "@fastify/cors";
 import websocketPlugin from "@fastify/websocket";
@@ -110,12 +105,11 @@ const appCORS = {
 // sites; publishable keys also check their own origins.
 const publicCORS = { ...appCORS, origin: true, credentials: false };
 
-// Keeps the proxy's client IPs trustworthy; Render's health checks reach the service directly, as
-// do some OAuth and MCP requests of AI apps' servers.
+// Keeps the proxy's client IPs trustworthy; Render's health checks reach the service directly.
 app.addHook("onRequest", async (request, reply) => {
-  const isExempt = request.url === "/health" || isServerToServerPath(request.url);
+  const isHealthCheck = request.url === "/health";
 
-  if (!isExempt && !hasOriginSecret(request.headers)) {
+  if (!isHealthCheck && !hasOriginSecret(request.headers)) {
     console.warn("Origin secret check failed", {
       url: request.url,
       ray: request.headers["cf-ray"],
