@@ -56,7 +56,7 @@ const httpsEnabled = httpsKeyPath && httpsCertPath;
 const app = Fastify({
   bodyLimit: 1_048_576,
   // Rate limits use the client IP, which proxies otherwise hide behind their own
-  trustProxy: config.TRUST_PROXY_HOPS,
+  trustProxy: config.TRUST_PROXY || false,
   keepAliveTimeout: 10_000,
   maxRequestsPerSocket: 100,
   requestTimeout: 30_000,

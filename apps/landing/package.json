@@ -11,10 +11,10 @@
   "dependencies": {
     "@andesine/components": "workspace:*",
     "@astrojs/solid-js": "^7.0.2",
-    "astro": "^7.3.1",
+    "astro": "^7.3.8",
     "clsx": "^2.1.1",
     "posthog-js": "1.438.10",
-    "solid-js": "^1.9.14",
+    "solid-js": "^1.9.18",
     "three": "^0.185.1"
   },
   "devDependencies": {

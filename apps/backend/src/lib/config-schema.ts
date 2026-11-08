@@ -33,12 +33,13 @@ const configSchema = billingConfigSchema.safeExtend({
     .stringbool()
     .optional()
     .describe("Whether to use secure connections for public URLs"),
-  TRUST_PROXY_HOPS: z.coerce
-    .number()
-    .int()
-    .min(0)
-    .default(0)
-    .describe("Number of proxies in front of the API, to read client IPs from X-Forwarded-For"),
+  TRUST_PROXY: z
+    .string()
+    .trim()
+    .optional()
+    .describe(
+      "Addresses or CIDR ranges of the proxies in front of the API, comma-separated, to read client IPs from X-Forwarded-For"
+    ),
   ORIGIN_SECRET: z
     .string()
     .trim()

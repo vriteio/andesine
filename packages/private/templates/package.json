@@ -9,11 +9,10 @@
     "dev:email": "email dev --port 4000"
   },
   "devDependencies": {
-    "@react-email/preview-server": "5.2.10",
-    "@react-email/ui": "6.9.1",
+    "@react-email/ui": "6.11.8",
     "@types/node": "^26.1.2",
     "@types/react": "^19.2.18",
-    "react-email": "6.9.1"
+    "react-email": "6.11.8"
   },
   "dependencies": {
     "@react-email/components": "1.0.12",

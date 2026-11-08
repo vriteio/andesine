@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.0
+
+- **Breaking:** `ANDESINE_API_KEY` is sent to a `baseURL` from `andesine.json` only when it is the
+  default root, or `--base-url`, `ANDESINE_BASE_URL`, or the selected profile names the same root.
+  Before, a project file could send the key to any server.
+- `@modelcontextprotocol/sdk` 1.32.2: OAuth credentials and redirects stay with the expected
+  server, and other security fixes. `zod` 4.6.7.
+- `publishing revert-changes` requires the `entries` permission, as the API does.
+
 ## 0.8.1
 
 - `auth logout` removes the profile with its credentials, so a login can reuse the profile's name

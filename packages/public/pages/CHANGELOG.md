@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.0
+
+- **Breaking:** links in the configuration (`links`, `cta`, `socialLinks`, a section's `links`, and
+  icon links) must be an `entry:` link, a site path, or an `http:`, `https:`, `mailto:`, or `tel:`
+  URL. The build refuses others, e.g. `javascript:` URLs.
+- A card's `href` that isn't such a URL, e.g. a `javascript:` URL, no longer makes the card a link.
+- `astro` 7.3.8 (an XSS fix in JSX and MDX rendering), `zod` 4.6.7, `@scalar/openapi-parser`
+  0.29.20, and `@scalar/json-magic` 0.18.0 (with a fixed `undici`).
+
 ## 0.8.0
 
 - **Breaking:** icon classes, in the configuration and in content, e.g. a card's `icon`, use only

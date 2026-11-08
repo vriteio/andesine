@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.9.0
+
+- `schemas.updateDraft` replaces the fields of a schema draft; people editing the draft see the
+  change live. It takes the draft hash from `schemas.get` and fails if the draft changed since.
+- `schemas.apply` takes an optional `definition` to apply in place of the draft; the draft is
+  replaced only if the apply succeeds.
+- Workspaces have `exampleCollectionID`, the collection with the example content.
+- **Breaking:** `publishing.revertChanges` requires the `entries` permission in addition to
+  `read:publishing`; a read-only key can no longer revert drafts.
+- The README describes Pro usage as a pool shared across the workspace: each seat adds 150,000
+  API calls and 15,000 AI credits. An AI answer uses 10 credits.
+
 ## 0.8.0
 
 - `collections.get` returns one collection by `collectionID`, `collectionPath`, or

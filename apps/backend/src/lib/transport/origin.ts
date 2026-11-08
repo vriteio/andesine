@@ -23,7 +23,7 @@ const hasOriginSecret = (headers: FastifyRequest["headers"]): boolean => {
  * The client's IP. Server rendering calls the API from its own address, so it sends the visitor's
  * IP, which counts only with the SSR secret; browsers can't add that one, unlike the origin secret.
  * A proxy's client IP header counts only with the origin secret, which proves the proxy sent it;
- * otherwise the IP comes from the trusted proxy hops.
+ * otherwise the IP comes from the trusted proxies.
  */
 const getClientIP = (request: FastifyRequest): string => {
   const visitorIP = String(request.headers[VISITOR_IP_HEADER] ?? "");

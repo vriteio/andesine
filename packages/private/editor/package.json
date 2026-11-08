@@ -35,7 +35,6 @@
     "@tiptap/extension-collaboration": "catalog:",
     "@tiptap/extension-collaboration-caret": "catalog:",
     "@tiptap/extension-drag-handle": "catalog:",
-    "@tiptap/extension-dropcursor": "catalog:",
     "@tiptap/extension-gapcursor": "catalog:",
     "@tiptap/extension-node-range": "catalog:",
     "@tiptap/extension-table": "catalog:",
@@ -46,7 +45,7 @@
     "clsx": "^2.1.1",
     "nanoid": "^6.0.1",
     "prettier": "^3.9.6",
-    "solid-js": "^1.9.14",
+    "solid-js": "^1.9.18",
     "tippy.js": "^6.3.7",
     "yjs": "catalog:"
   },

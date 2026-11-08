@@ -1,6 +1,6 @@
 {
   "name": "@andesine/ui",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Headless documentation components for Andesine Pages",
   "type": "module",
   "license": "MIT",
@@ -34,7 +34,7 @@
     "node": ">=22"
   },
   "peerDependencies": {
-    "solid-js": "^1.9.14"
+    "solid-js": "^1.9.18"
   },
   "devDependencies": {
     "@babel/core": "7.29.7",
@@ -42,7 +42,7 @@
     "publint": "0.3.24",
     "rolldown": "^1.2.2",
     "rolldown-plugin-dts": "^0.28.6",
-    "solid-js": "1.9.14",
+    "solid-js": "1.9.18",
     "typescript": "6.0.3"
   },
   "repository": {

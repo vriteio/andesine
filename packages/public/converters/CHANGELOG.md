@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.1
+
+- No changes; versioned with the other public Andesine packages.
+
 ## 0.9.0
 
 - Images without an asset are placeholders. They export with an empty URL (`![alt]()` in

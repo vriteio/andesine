@@ -1,6 +1,6 @@
 {
   "name": "@andesine/pages",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Astro documentation framework for Andesine and local content",
   "type": "module",
   "license": "MIT",
@@ -48,7 +48,7 @@
   },
   "peerDependencies": {
     "@resvg/resvg-js": "^2.6.2",
-    "astro": "^7.3.1",
+    "astro": "^7.3.8",
     "satori": "^0.33.5",
     "vite": "^8.0.13"
   },
@@ -59,27 +59,27 @@
     "@iconify-json/simple-icons": "^1.2.100",
     "@iconify-json/tabler": "^1.2.41",
     "@iconify/utils": "^3.1.4",
-    "@scalar/json-magic": "0.15.2",
-    "@scalar/openapi-parser": "0.29.7",
+    "@scalar/json-magic": "0.18.0",
+    "@scalar/openapi-parser": "0.29.20",
     "hast-util-to-html": "9.0.5",
     "marked": "15.0.12",
     "pagefind": "1.5.2",
     "satori-html": "^0.3.2",
     "shiki": "^4.4.3",
     "yaml": "2.9.0",
-    "zod": "^4.5.4"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@resvg/resvg-js": "^2.6.2",
     "@types/hast": "^3.0.4",
     "@types/node": "^26.1.2",
-    "astro": "7.3.1",
+    "astro": "7.3.8",
     "publint": "0.3.24",
     "rolldown": "^1.2.2",
     "rolldown-plugin-dts": "^0.28.6",
     "satori": "^0.33.5",
     "typescript": "6.0.3",
-    "vite": "8.2.0"
+    "vite": "8.3.6"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

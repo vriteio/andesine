@@ -8,7 +8,6 @@
   "dependencies": {
     "@ark-ui/solid": "^5.38.0",
     "@floating-ui/dom": "^1.8.0",
-    "@solid-primitives/active-element": "^2.1.6",
     "@solid-primitives/media": "^2.3.6",
     "@solid-primitives/scheduled": "^1.5.3",
     "chrono-node": "^2.10.1",
@@ -18,7 +17,7 @@
     "d3-shape": "^3.2.0",
     "date-fns": "^4.4.0",
     "nanoid": "^6.0.1",
-    "solid-js": "^1.9.14",
+    "solid-js": "^1.9.18",
     "tinykeys": "^4.0.0"
   },
   "exports": {

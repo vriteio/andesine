@@ -1,6 +1,6 @@
 {
   "name": "@andesine/extensions",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Authoring tools for Andesine extensions",
   "type": "module",
   "license": "MIT",
@@ -35,15 +35,15 @@
     "node": ">=22"
   },
   "peerDependencies": {
-    "solid-js": "^1.9.14",
-    "zod": "^4.4.3"
+    "solid-js": "^1.9.18",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@andesine/contracts": "workspace:*",
     "publint": "0.3.24",
     "rolldown": "^1.2.2",
     "rolldown-plugin-dts": "^0.28.6",
-    "solid-js": "1.9.14",
+    "solid-js": "1.9.18",
     "typescript": "6.0.3",
     "zod": "catalog:"
   },

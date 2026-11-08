@@ -21,7 +21,7 @@
     "lexorank": "catalog:",
     "pg": "catalog:",
     "redis": "^6.2.0",
-    "sharp": "^0.35.4",
+    "sharp": "^0.35.5",
     "zod": "catalog:",
     "@andesine/contracts": "workspace:*",
     "@orpc/contract": "catalog:",

@@ -1,6 +1,6 @@
 {
   "name": "andesine",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "description": "Command-line tools for Andesine",
   "mcpName": "app.andesine/andesine",
   "type": "module",
@@ -40,7 +40,7 @@
     "@iconify-json/lucide": "^1.2.140",
     "@iconify-json/tabler": "^1.2.41",
     "@iconify/utils": "^3.1.4",
-    "@modelcontextprotocol/sdk": "1.30.1",
+    "@modelcontextprotocol/sdk": "1.32.2",
     "@orpc/zod": "^1.14.14",
     "babel-preset-solid": "^1.9.12",
     "base-x": "^5.0.1",
@@ -50,7 +50,7 @@
     "proper-lockfile": "4.1.2",
     "rolldown": "^1.2.2",
     "unocss": "^66.7.5",
-    "zod": "4.5.4"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@andesine/contracts": "workspace:*",

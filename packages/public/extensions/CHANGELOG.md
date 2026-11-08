@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.0
+
+- **Breaking:** the `zod` peer dependency is `^4.6.7`, which fixes memory exhaustion on large
+  constrained collections.
+- `solid-js` 1.9.18, which uses the fixed `seroval` 1.6.
+- The README explains that a `Dialog` has no close button, and how `dismissible` works.
+
 ## 0.8.0
 
 - Element props take `control: "link"`: the element menu shows a combobox of the workspace's
