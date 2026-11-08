@@ -30,8 +30,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^ast_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "asset-id",
         kind: "string",
@@ -42,8 +41,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^ent_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "entry-id",
         kind: "string",
@@ -108,8 +106,7 @@ const commands: APICommand[] = [
         location: "body",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^ast_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "asset-id",
         kind: "string",
@@ -120,8 +117,7 @@ const commands: APICommand[] = [
         location: "body",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^ent_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "entry-id",
         kind: "string",
@@ -132,9 +128,7 @@ const commands: APICommand[] = [
         location: "body",
         required: true,
         schema: {
-          type: "string",
-          maxLength: 4096,
-          format: "uri"
+          type: "string"
         },
         flag: "url",
         kind: "string",
@@ -199,8 +193,7 @@ const commands: APICommand[] = [
         location: "body",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^ast_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "asset-id",
         kind: "string",
@@ -211,8 +204,7 @@ const commands: APICommand[] = [
         location: "body",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^ent_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "entry-id",
         kind: "string",
@@ -223,9 +215,7 @@ const commands: APICommand[] = [
         location: "body",
         required: true,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 255
+          type: "string"
         },
         flag: "filename",
         kind: "string",
@@ -236,9 +226,7 @@ const commands: APICommand[] = [
         location: "body",
         required: true,
         schema: {
-          type: "integer",
-          minimum: 1,
-          maximum: 10485760
+          type: "number"
         },
         flag: "byte-size",
         kind: "number",
@@ -250,7 +238,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^[a-f0-9]{64}$",
           description: "SHA-256 of the file bytes, verified by the backend and worker"
         },
         flag: "checksum",
@@ -289,7 +276,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          maxLength: 500,
           default: ""
         },
         flag: "query",
@@ -301,8 +287,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^[a-f0-9]{64}$"
+          type: "string"
         },
         flag: "checksum",
         kind: "string",
@@ -325,9 +310,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "integer",
-          minimum: 1,
-          maximum: 50,
+          type: "number",
           default: 24
         },
         flag: "limit",
@@ -378,8 +361,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^ast_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "asset-id",
         kind: "string",
@@ -475,11 +457,8 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "array",
-          minItems: 1,
-          maxItems: 100,
           items: {
-            type: "string",
-            pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$"
+            type: "string"
           },
           description: "IDs of the collections to delete"
         },
@@ -532,7 +511,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the collection"
         },
         flag: "id",
@@ -545,8 +523,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          minLength: 1,
-          maxLength: 300,
           description: "Name of the collection"
         },
         flag: "name",
@@ -559,7 +535,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the parent collection"
         },
         flag: "parent-id",
@@ -633,7 +608,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the collection to delete"
         },
         flag: "id",
@@ -683,8 +657,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^coll_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "collection-id",
         kind: "string",
@@ -760,8 +733,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^coll_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "collection-id",
         kind: "string",
@@ -799,7 +771,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "Cursor from the previous page"
         },
         flag: "cursor",
@@ -811,9 +782,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "integer",
-          minimum: 1,
-          maximum: 100,
+          type: "number",
           description: "Maximum collections to return"
         },
         flag: "limit",
@@ -866,7 +835,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the collection to be moved"
         },
         flag: "id",
@@ -893,8 +861,7 @@ const commands: APICommand[] = [
         schema: {
           anyOf: [
             {
-              type: "string",
-              pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$"
+              type: "string"
             },
             {
               type: "null"
@@ -937,8 +904,7 @@ const commands: APICommand[] = [
         schema: {
           anyOf: [
             {
-              type: "string",
-              pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$"
+              type: "string"
             },
             {
               type: "null"
@@ -956,9 +922,7 @@ const commands: APICommand[] = [
         location: "body",
         required: false,
         schema: {
-          type: "integer",
-          minimum: 0,
-          maximum: 9007199254740991,
+          type: "number",
           description: "New zero-based index in the parent collection's descendants array"
         },
         flag: "index",
@@ -1010,7 +974,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the collection to be updated"
         },
         flag: "id",
@@ -1036,8 +999,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          minLength: 1,
-          maxLength: 300,
           description: "New name of the collection"
         },
         flag: "name",
@@ -1050,8 +1011,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          minLength: 1,
-          maxLength: 300,
           description: "Name the collection must still have"
         },
         flag: "expected-name",
@@ -1089,8 +1048,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^ent_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "entry-id",
         kind: "string",
@@ -1128,7 +1086,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^[a-f\\d]{64}$",
           description: "Hash of the effective schema definition"
         },
         flag: "expected-schema-hash",
@@ -1140,9 +1097,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 50,
+          $ref: "#/components/schemas/PublishingChannelCode",
           description: "Publishing channel, defaults to published"
         },
         flag: "channel",
@@ -1155,7 +1110,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^snp_[A-Za-z\\d]{1,22}$",
           description: "Historical publication snapshot to read"
         },
         flag: "snapshot-id",
@@ -1216,8 +1170,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^ws_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "workspace-id",
         kind: "string",
@@ -1228,8 +1181,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^snp_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "snapshot-id",
         kind: "string",
@@ -1240,8 +1192,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$"
+          type: "string"
         },
         flag: "entry-id",
         kind: "string",
@@ -1252,8 +1203,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^ast_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "asset-id",
         kind: "string",
@@ -1302,8 +1252,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^ent_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "entry-id",
         kind: "string",
@@ -1340,9 +1289,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 50
+          $ref: "#/components/schemas/PublishingChannelCode"
         },
         flag: "channel",
         kind: "string",
@@ -1353,8 +1300,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^snp_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "snapshot-id",
         kind: "string",
@@ -1404,8 +1350,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^coll_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "collection-id",
         kind: "string",
@@ -1442,9 +1387,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 50,
+          $ref: "#/components/schemas/PublishingChannelCode",
           description: "Publishing channel, defaults to published"
         },
         flag: "channel",
@@ -1457,7 +1400,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^snp_[A-Za-z\\d]{1,22}$",
           description: "Historical publication snapshot to read"
         },
         flag: "snapshot-id",
@@ -1509,7 +1451,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "Cursor from the previous page; keep the same filters"
         },
         flag: "cursor",
@@ -1521,9 +1462,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "integer",
-          minimum: 1,
-          maximum: 100,
+          type: "number",
           default: 50
         },
         flag: "limit",
@@ -1535,8 +1474,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^coll_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "collection-id",
         kind: "string",
@@ -1573,9 +1511,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 50
+          $ref: "#/components/schemas/PublishingChannelCode"
         },
         flag: "channel",
         kind: "string",
@@ -1586,8 +1522,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^snp_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "snapshot-id",
         kind: "string",
@@ -1639,7 +1574,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "Cursor from the previous page; keep the same filters"
         },
         flag: "cursor",
@@ -1651,9 +1585,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "integer",
-          minimum: 1,
-          maximum: 100,
+          type: "number",
           default: 50
         },
         flag: "limit",
@@ -1665,8 +1597,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^coll_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "collection-id",
         kind: "string",
@@ -1703,9 +1634,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 50
+          $ref: "#/components/schemas/PublishingChannelCode"
         },
         flag: "channel",
         kind: "string",
@@ -1716,8 +1645,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^snp_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "snapshot-id",
         kind: "string",
@@ -1753,7 +1681,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "array",
-          maxItems: 20,
           items: {
             $ref: "#/components/schemas/PropertyFilter"
           },
@@ -1821,11 +1748,8 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "array",
-          minItems: 1,
-          maxItems: 100,
           items: {
-            type: "string",
-            pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$"
+            type: "string"
           },
           description: "IDs of the entries to delete"
         },
@@ -1882,26 +1806,21 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "array",
-          minItems: 1,
-          maxItems: 100,
           items: {
             type: "object",
             properties: {
               id: {
                 type: "string",
-                pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
                 description: "ID of the entry to be moved"
               },
               order: {
                 type: "string",
-                maxLength: 255,
                 description: "New LexoRank order of the entry"
               },
               collectionID: {
                 anyOf: [
                   {
-                    type: "string",
-                    pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$"
+                    type: "string"
                   },
                   {
                     type: "null"
@@ -1920,8 +1839,7 @@ const commands: APICommand[] = [
               expectedCollectionID: {
                 anyOf: [
                   {
-                    type: "string",
-                    pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$"
+                    type: "string"
                   },
                   {
                     type: "null"
@@ -1994,19 +1912,15 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "array",
-          minItems: 1,
-          maxItems: 100,
           items: {
             type: "object",
             properties: {
               id: {
                 type: "string",
-                pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
                 description: "ID of the entry to be updated"
               },
               name: {
                 type: "string",
-                maxLength: 300,
                 description: "New name of the entry"
               },
               document: {
@@ -2049,8 +1963,6 @@ const commands: APICommand[] = [
               },
               operations: {
                 type: "array",
-                minItems: 1,
-                maxItems: 100,
                 items: {
                   anyOf: [
                     {
@@ -2061,7 +1973,6 @@ const commands: APICommand[] = [
                         },
                         find: {
                           type: "string",
-                          minLength: 1,
                           description: "Text that occurs exactly once in the MDX of one block"
                         },
                         replace: {
@@ -2128,7 +2039,6 @@ const commands: APICommand[] = [
                         },
                         ids: {
                           type: "array",
-                          minItems: 1,
                           items: {
                             type: "string"
                           }
@@ -2180,13 +2090,10 @@ const commands: APICommand[] = [
               },
               expectedHash: {
                 type: "string",
-                minLength: 64,
-                maxLength: 64,
                 description: "Hash of the content that the change is based on"
               },
               expectedName: {
                 type: "string",
-                maxLength: 300,
                 description: "Name the entry must still have"
               },
               version: {
@@ -2194,8 +2101,6 @@ const commands: APICommand[] = [
                 properties: {
                   name: {
                     type: "string",
-                    minLength: 1,
-                    maxLength: 100,
                     description: "Version name"
                   }
                 },
@@ -2255,7 +2160,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the entry"
         },
         flag: "id",
@@ -2268,7 +2172,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          maxLength: 300,
           description: "Name of the entry"
         },
         flag: "name",
@@ -2281,7 +2184,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the collection this entry belongs to"
         },
         flag: "collection-id",
@@ -2447,7 +2349,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the entry to delete"
         },
         flag: "id",
@@ -2497,8 +2398,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^ent_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "id",
         kind: "string",
@@ -2536,7 +2436,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^[a-f\\d]{64}$",
           description: "Hash of the effective schema definition"
         },
         flag: "expected-schema-hash",
@@ -2602,8 +2501,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^coll_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "collection-id",
         kind: "string",
@@ -2641,7 +2539,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "Cursor from the previous page"
         },
         flag: "cursor",
@@ -2653,9 +2550,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "integer",
-          minimum: 1,
-          maximum: 100,
+          type: "number",
           description: "Maximum entries to return"
         },
         flag: "limit",
@@ -2708,7 +2603,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the entry to be moved"
         },
         flag: "id",
@@ -2734,7 +2628,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          maxLength: 255,
           description: "New LexoRank order of the entry"
         },
         flag: "order",
@@ -2748,8 +2641,7 @@ const commands: APICommand[] = [
         schema: {
           anyOf: [
             {
-              type: "string",
-              pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$"
+              type: "string"
             },
             {
               type: "null"
@@ -2792,8 +2684,7 @@ const commands: APICommand[] = [
         schema: {
           anyOf: [
             {
-              type: "string",
-              pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$"
+              type: "string"
             },
             {
               type: "null"
@@ -2851,7 +2742,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the entry to be updated"
         },
         flag: "id",
@@ -2877,7 +2767,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          maxLength: 300,
           description: "New name of the entry"
         },
         flag: "name",
@@ -2944,8 +2833,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "array",
-          minItems: 1,
-          maxItems: 100,
           items: {
             anyOf: [
               {
@@ -2956,7 +2843,6 @@ const commands: APICommand[] = [
                   },
                   find: {
                     type: "string",
-                    minLength: 1,
                     description: "Text that occurs exactly once in the MDX of one block"
                   },
                   replace: {
@@ -3023,7 +2909,6 @@ const commands: APICommand[] = [
                   },
                   ids: {
                     type: "array",
-                    minItems: 1,
                     items: {
                       type: "string"
                     }
@@ -3083,8 +2968,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          minLength: 64,
-          maxLength: 64,
           description: "Hash of the content that the change is based on"
         },
         flag: "expected-hash",
@@ -3097,7 +2980,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          maxLength: 300,
           description: "Name the entry must still have"
         },
         flag: "expected-name",
@@ -3113,8 +2995,6 @@ const commands: APICommand[] = [
           properties: {
             name: {
               type: "string",
-              minLength: 1,
-              maxLength: 100,
               description: "Version name"
             }
           },
@@ -3240,7 +3120,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          format: "email",
           description: "Email address of the user to invite"
         },
         flag: "email",
@@ -3253,7 +3132,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the role to assign"
         },
         flag: "role-id",
@@ -3289,7 +3167,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "Cursor from the previous page; keep the same filters"
         },
         flag: "cursor",
@@ -3301,9 +3178,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "integer",
-          minimum: 1,
-          maximum: 100,
+          type: "number",
           default: 50
         },
         flag: "limit",
@@ -3353,7 +3228,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "Cursor from the previous page; keep the same filters"
         },
         flag: "cursor",
@@ -3365,9 +3239,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "integer",
-          minimum: 1,
-          maximum: 100,
+          type: "number",
           default: 50
         },
         flag: "limit",
@@ -3419,7 +3291,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the membership to remove"
         },
         flag: "id",
@@ -3470,7 +3341,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the pending invitation"
         },
         flag: "id",
@@ -3521,7 +3391,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the invite to revoke"
         },
         flag: "id",
@@ -3573,7 +3442,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the membership to update"
         },
         flag: "id",
@@ -3599,7 +3467,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "New role ID"
         },
         flag: "role-id",
@@ -3650,9 +3517,7 @@ const commands: APICommand[] = [
         location: "body",
         required: false,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 50,
+          $ref: "#/components/schemas/PublishingChannelCode",
           default: "published",
           description: "Publishing channel, defaults to published"
         },
@@ -3666,7 +3531,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^snp_[A-Za-z\\d]{1,22}$",
           description:
             "Reject the mutation if the channel no longer points to this reviewed snapshot"
         },
@@ -3680,11 +3544,8 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "array",
-          minItems: 1,
-          maxItems: 100,
           items: {
-            type: "string",
-            pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$"
+            type: "string"
           },
           description: "IDs of the collection trees to publish"
         },
@@ -3740,9 +3601,7 @@ const commands: APICommand[] = [
         location: "body",
         required: false,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 50,
+          $ref: "#/components/schemas/PublishingChannelCode",
           default: "published",
           description: "Publishing channel, defaults to published"
         },
@@ -3756,7 +3615,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^snp_[A-Za-z\\d]{1,22}$",
           description:
             "Reject the mutation if the channel no longer points to this reviewed snapshot"
         },
@@ -3770,8 +3628,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "array",
-          minItems: 1,
-          maxItems: 100,
           items: {
             $ref: "#/components/schemas/PublishEntryTarget"
           },
@@ -3827,11 +3683,8 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "array",
-          minItems: 1,
-          maxItems: 100,
           items: {
-            type: "string",
-            pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$"
+            type: "string"
           },
           description: "IDs of the collections to configure"
         },
@@ -3846,13 +3699,10 @@ const commands: APICommand[] = [
         schema: {
           type: "object",
           propertyNames: {
-            type: "string",
-            minLength: 1,
-            maxLength: 50
+            $ref: "#/components/schemas/PublishingChannelCode"
           },
           additionalProperties: {
-            type: "string",
-            pattern: "^snp_[A-Za-z\\d]{1,22}$"
+            type: "string"
           },
           description:
             "Optional snapshot checks for supplied channels before changing collection publishing. Omitted channels are not checked."
@@ -3930,9 +3780,7 @@ const commands: APICommand[] = [
         location: "body",
         required: false,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 50,
+          $ref: "#/components/schemas/PublishingChannelCode",
           default: "published",
           description: "Publishing channel, defaults to published"
         },
@@ -3946,7 +3794,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^snp_[A-Za-z\\d]{1,22}$",
           description:
             "Reject the mutation if the channel no longer points to this reviewed snapshot"
         },
@@ -3960,11 +3807,8 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "array",
-          minItems: 1,
-          maxItems: 100,
           items: {
-            type: "string",
-            pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$"
+            type: "string"
           },
           description: "IDs of the collection trees to unpublish"
         },
@@ -4016,9 +3860,7 @@ const commands: APICommand[] = [
         location: "body",
         required: false,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 50,
+          $ref: "#/components/schemas/PublishingChannelCode",
           default: "published",
           description: "Publishing channel, defaults to published"
         },
@@ -4032,7 +3874,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^snp_[A-Za-z\\d]{1,22}$",
           description:
             "Reject the mutation if the channel no longer points to this reviewed snapshot"
         },
@@ -4046,11 +3887,8 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "array",
-          minItems: 1,
-          maxItems: 100,
           items: {
-            type: "string",
-            pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$"
+            type: "string"
           },
           description: "IDs of the entries to unpublish"
         },
@@ -4102,8 +3940,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          minLength: 1,
-          maxLength: 50,
           description: "Publishing channel label"
         },
         flag: "name",
@@ -4141,8 +3977,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          minLength: 1,
-          maxLength: 50,
           description: "Publishing channel identifier"
         },
         flag: "code",
@@ -4168,7 +4002,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^snp_[A-Za-z\\d]{1,22}$",
           description: "Reject deletion if the channel snapshot changed"
         },
         flag: "expected-snapshot-id",
@@ -4206,9 +4039,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 50
+          $ref: "#/components/schemas/PublishingChannelCode"
         },
         flag: "channel",
         kind: "string",
@@ -4220,7 +4051,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "Publishing root collection whose content to list"
         },
         flag: "collection-id",
@@ -4298,7 +4128,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "Entry whose published version to get"
         },
         flag: "entry-id",
@@ -4310,9 +4139,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 50,
+          $ref: "#/components/schemas/PublishingChannelCode",
           default: "published",
           description: "Publishing channel, defaults to published"
         },
@@ -4326,7 +4153,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^[a-f\\d]{64}$",
           description: "Hash of the effective schema definition"
         },
         flag: "expected-schema-hash",
@@ -4339,7 +4165,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^snp_[A-Za-z\\d]{1,22}$",
           description: "Exact publication snapshot to read"
         },
         flag: "snapshot-id",
@@ -4440,7 +4265,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "Entry whose publications to list"
         },
         flag: "entry-id",
@@ -4492,7 +4316,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "Collection tree to publish"
         },
         flag: "collection-id",
@@ -4517,9 +4340,7 @@ const commands: APICommand[] = [
         location: "body",
         required: false,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 50,
+          $ref: "#/components/schemas/PublishingChannelCode",
           default: "published",
           description: "Publishing channel, defaults to published"
         },
@@ -4533,7 +4354,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^snp_[A-Za-z\\d]{1,22}$",
           description:
             "Reject the mutation if the channel no longer points to this reviewed snapshot"
         },
@@ -4573,7 +4393,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "Entry to publish"
         },
         flag: "entry-id",
@@ -4598,9 +4417,7 @@ const commands: APICommand[] = [
         location: "body",
         required: false,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 50,
+          $ref: "#/components/schemas/PublishingChannelCode",
           default: "published",
           description: "Publishing channel, defaults to published"
         },
@@ -4614,7 +4431,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^snp_[A-Za-z\\d]{1,22}$",
           description:
             "Reject the mutation if the channel no longer points to this reviewed snapshot"
         },
@@ -4628,7 +4444,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "Existing version to publish"
         },
         flag: "version-id",
@@ -4681,9 +4496,7 @@ const commands: APICommand[] = [
         location: "body",
         required: false,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 50,
+          $ref: "#/components/schemas/PublishingChannelCode",
           default: "published",
           description: "Publishing channel, defaults to published"
         },
@@ -4709,7 +4522,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "Publishing root collection"
         },
         flag: "collection-id",
@@ -4722,10 +4534,8 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "array",
-          maxItems: 100,
           items: {
-            type: "string",
-            pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$"
+            type: "string"
           },
           description: "Collections whose changes to revert"
         },
@@ -4739,10 +4549,8 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "array",
-          maxItems: 100,
           items: {
-            type: "string",
-            pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$"
+            type: "string"
           },
           description: "Entries whose changes to revert"
         },
@@ -4756,7 +4564,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^snp_[A-Za-z\\d]{1,22}$",
           description: "Snapshot used to review the changes"
         },
         flag: "snapshot-id",
@@ -4796,7 +4603,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "Collection to configure"
         },
         flag: "collection-id",
@@ -4823,13 +4629,10 @@ const commands: APICommand[] = [
         schema: {
           type: "object",
           propertyNames: {
-            type: "string",
-            minLength: 1,
-            maxLength: 50
+            $ref: "#/components/schemas/PublishingChannelCode"
           },
           additionalProperties: {
-            type: "string",
-            pattern: "^snp_[A-Za-z\\d]{1,22}$"
+            type: "string"
           },
           description:
             "Optional snapshot checks for supplied channels before changing collection publishing. Omitted channels are not checked."
@@ -4895,7 +4698,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "Collection tree to unpublish"
         },
         flag: "collection-id",
@@ -4920,9 +4722,7 @@ const commands: APICommand[] = [
         location: "body",
         required: false,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 50,
+          $ref: "#/components/schemas/PublishingChannelCode",
           default: "published",
           description: "Publishing channel, defaults to published"
         },
@@ -4936,7 +4736,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^snp_[A-Za-z\\d]{1,22}$",
           description:
             "Reject the mutation if the channel no longer points to this reviewed snapshot"
         },
@@ -4977,7 +4776,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "Entry to unpublish"
         },
         flag: "entry-id",
@@ -5002,9 +4800,7 @@ const commands: APICommand[] = [
         location: "body",
         required: false,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 50,
+          $ref: "#/components/schemas/PublishingChannelCode",
           default: "published",
           description: "Publishing channel, defaults to published"
         },
@@ -5018,7 +4814,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^snp_[A-Za-z\\d]{1,22}$",
           description:
             "Reject the mutation if the channel no longer points to this reviewed snapshot"
         },
@@ -5032,7 +4827,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "Version expected to be assigned"
         },
         flag: "version-id",
@@ -5071,8 +4865,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          minLength: 1,
-          maxLength: 50,
           description: "Code of the channel to rename"
         },
         flag: "code",
@@ -5098,8 +4890,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          minLength: 1,
-          maxLength: 50,
           description: "New publishing channel label"
         },
         flag: "name",
@@ -5151,8 +4941,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          minLength: 1,
-          maxLength: 50,
           description: "Name of the role"
         },
         flag: "name",
@@ -5205,7 +4993,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the role to delete"
         },
         flag: "id",
@@ -5293,7 +5080,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the role to update"
         },
         flag: "id",
@@ -5319,8 +5105,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          minLength: 1,
-          maxLength: 50,
           description: "New name for the role"
         },
         flag: "name",
@@ -5373,7 +5157,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the schema migration"
         },
         flag: "id",
@@ -5424,7 +5207,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the affected collection"
         },
         flag: "collection-id",
@@ -5475,8 +5257,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$"
+          type: "string"
         },
         flag: "id",
         kind: "string",
@@ -5488,7 +5269,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "Cursor from the previous page; keep the same filters"
         },
         flag: "cursor",
@@ -5500,9 +5280,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "integer",
-          minimum: 1,
-          maximum: 100,
+          type: "number",
           default: 50
         },
         flag: "limit",
@@ -5556,7 +5334,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the local collection schema"
         },
         flag: "schema-id",
@@ -5594,8 +5371,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          minLength: 1,
-          maxLength: 100,
           description: "Optional version name"
         },
         flag: "name",
@@ -5623,15 +5398,13 @@ const commands: APICommand[] = [
                     type: "object",
                     properties: {
                       id: {
-                        type: "string",
-                        minLength: 1
+                        type: "string"
                       },
                       kind: {
                         const: "fragment"
                       },
                       label: {
-                        type: "string",
-                        maxLength: 50
+                        type: "string"
                       },
                       allowedBlocks: {
                         type: "array",
@@ -5641,7 +5414,6 @@ const commands: APICommand[] = [
                       },
                       initialContent: {
                         type: "array",
-                        minItems: 1,
                         items: {
                           $ref: "#/components/schemas/ContentNodeInput"
                         }
@@ -5707,7 +5479,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the collection"
         },
         flag: "collection-id",
@@ -5759,7 +5530,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the local collection schema"
         },
         flag: "schema-id",
@@ -5822,8 +5592,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^coll_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "collection-id",
         kind: "string",
@@ -5898,8 +5667,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^schr_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "revision-id",
         kind: "string",
@@ -5962,7 +5730,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the local collection schema"
         },
         flag: "schema-id",
@@ -6003,15 +5770,13 @@ const commands: APICommand[] = [
                     type: "object",
                     properties: {
                       id: {
-                        type: "string",
-                        minLength: 1
+                        type: "string"
                       },
                       kind: {
                         const: "fragment"
                       },
                       label: {
-                        type: "string",
-                        maxLength: 50
+                        type: "string"
                       },
                       allowedBlocks: {
                         type: "array",
@@ -6021,7 +5786,6 @@ const commands: APICommand[] = [
                       },
                       initialContent: {
                         type: "array",
-                        minItems: 1,
                         items: {
                           $ref: "#/components/schemas/ContentNodeInput"
                         }
@@ -6086,7 +5850,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the schema version"
         },
         flag: "id",
@@ -6138,7 +5901,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the local collection schema"
         },
         flag: "schema-id",
@@ -6151,7 +5913,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "Cursor from the previous page"
         },
         flag: "cursor",
@@ -6163,9 +5924,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "integer",
-          minimum: 1,
-          maximum: 100,
+          type: "number",
           description: "Maximum versions to return"
         },
         flag: "limit",
@@ -6218,7 +5977,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the schema version to restore"
         },
         flag: "id",
@@ -6256,8 +6014,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          minLength: 1,
-          maxLength: 100,
           description: "Optional version name"
         },
         flag: "name",
@@ -6296,7 +6052,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the schema version"
         },
         flag: "id",
@@ -6323,9 +6078,7 @@ const commands: APICommand[] = [
         schema: {
           anyOf: [
             {
-              type: "string",
-              minLength: 1,
-              maxLength: 100
+              type: "string"
             },
             {
               type: "null"
@@ -6380,9 +6133,7 @@ const commands: APICommand[] = [
         location: "body",
         required: true,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 1000
+          type: "string"
         },
         flag: "question",
         kind: "string",
@@ -6393,8 +6144,7 @@ const commands: APICommand[] = [
         location: "body",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^coll_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "collection-id",
         kind: "string",
@@ -6432,7 +6182,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "array",
-          maxItems: 20,
           items: {
             $ref: "#/components/schemas/PropertyFilter"
           },
@@ -6448,7 +6197,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "array",
-          maxItems: 10,
           items: {
             $ref: "#/components/schemas/AnswerHistoryMessage"
           },
@@ -6498,9 +6246,7 @@ const commands: APICommand[] = [
         location: "body",
         required: true,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 1000
+          type: "string"
         },
         flag: "question",
         kind: "string",
@@ -6511,8 +6257,7 @@ const commands: APICommand[] = [
         location: "body",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^coll_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "collection-id",
         kind: "string",
@@ -6550,7 +6295,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "array",
-          maxItems: 20,
           items: {
             $ref: "#/components/schemas/PropertyFilter"
           },
@@ -6566,7 +6310,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "array",
-          maxItems: 10,
           items: {
             $ref: "#/components/schemas/AnswerHistoryMessage"
           },
@@ -6620,9 +6363,7 @@ const commands: APICommand[] = [
         location: "body",
         required: true,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 1000
+          type: "string"
         },
         flag: "question",
         kind: "string",
@@ -6633,8 +6374,7 @@ const commands: APICommand[] = [
         location: "body",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^coll_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "collection-id",
         kind: "string",
@@ -6672,7 +6412,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "array",
-          maxItems: 20,
           items: {
             $ref: "#/components/schemas/PropertyFilter"
           },
@@ -6688,7 +6427,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "array",
-          maxItems: 10,
           items: {
             $ref: "#/components/schemas/AnswerHistoryMessage"
           },
@@ -6704,8 +6442,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          minLength: 1,
-          maxLength: 50,
           description: "Publishing channel to search"
         },
         flag: "channel",
@@ -6752,9 +6488,7 @@ const commands: APICommand[] = [
         location: "body",
         required: true,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 1000
+          type: "string"
         },
         flag: "question",
         kind: "string",
@@ -6765,8 +6499,7 @@ const commands: APICommand[] = [
         location: "body",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^coll_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "collection-id",
         kind: "string",
@@ -6804,7 +6537,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "array",
-          maxItems: 20,
           items: {
             $ref: "#/components/schemas/PropertyFilter"
           },
@@ -6820,7 +6552,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "array",
-          maxItems: 10,
           items: {
             $ref: "#/components/schemas/AnswerHistoryMessage"
           },
@@ -6836,8 +6567,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          minLength: 1,
-          maxLength: 50,
           description: "Publishing channel to search"
         },
         flag: "channel",
@@ -6888,8 +6617,7 @@ const commands: APICommand[] = [
         location: "body",
         required: true,
         schema: {
-          type: "string",
-          maxLength: 500
+          type: "string"
         },
         flag: "query",
         kind: "string",
@@ -6900,8 +6628,7 @@ const commands: APICommand[] = [
         location: "body",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^coll_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "collection-id",
         kind: "string",
@@ -6939,7 +6666,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "array",
-          maxItems: 20,
           items: {
             $ref: "#/components/schemas/PropertyFilter"
           },
@@ -6954,9 +6680,7 @@ const commands: APICommand[] = [
         location: "body",
         required: false,
         schema: {
-          type: "integer",
-          minimum: 1,
-          maximum: 50,
+          type: "number",
           default: 20
         },
         flag: "limit",
@@ -7021,8 +6745,7 @@ const commands: APICommand[] = [
         location: "body",
         required: true,
         schema: {
-          type: "string",
-          maxLength: 500
+          type: "string"
         },
         flag: "query",
         kind: "string",
@@ -7033,8 +6756,7 @@ const commands: APICommand[] = [
         location: "body",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^coll_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "collection-id",
         kind: "string",
@@ -7072,7 +6794,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "array",
-          maxItems: 20,
           items: {
             $ref: "#/components/schemas/PropertyFilter"
           },
@@ -7087,9 +6808,7 @@ const commands: APICommand[] = [
         location: "body",
         required: false,
         schema: {
-          type: "integer",
-          minimum: 1,
-          maximum: 50,
+          type: "number",
           default: 20
         },
         flag: "limit",
@@ -7115,8 +6834,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          minLength: 1,
-          maxLength: 50,
           description: "Publishing channel to search"
         },
         flag: "channel",
@@ -7168,12 +6885,10 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "array",
-          maxItems: 100,
           items: {
             anyOf: [
               {
-                type: "string",
-                pattern: "^coll_[A-Za-z\\d]{1,22}$"
+                type: "string"
               },
               {
                 type: "string",
@@ -7273,12 +6988,10 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "array",
-          maxItems: 100,
           items: {
             anyOf: [
               {
-                type: "string",
-                pattern: "^coll_[A-Za-z\\d]{1,22}$"
+                type: "string"
               },
               {
                 type: "string",
@@ -7338,9 +7051,7 @@ const commands: APICommand[] = [
         location: "body",
         required: false,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 50
+          $ref: "#/components/schemas/PublishingChannelCode"
         },
         flag: "channel",
         kind: "string",
@@ -7351,8 +7062,7 @@ const commands: APICommand[] = [
         location: "body",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^snp_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "snapshot-id",
         kind: "string",
@@ -7390,7 +7100,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the entry to version"
         },
         flag: "entry-id",
@@ -7416,8 +7125,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          minLength: 1,
-          maxLength: 100,
           description: "Optional version name"
         },
         flag: "name",
@@ -7480,7 +7187,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the version to get"
         },
         flag: "id",
@@ -7493,7 +7199,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^[a-f\\d]{64}$",
           description: "Hash of the effective schema definition"
         },
         flag: "expected-schema-hash",
@@ -7559,7 +7264,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the entry whose versions to list"
         },
         flag: "entry-id",
@@ -7572,7 +7276,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "Cursor from the previous page"
         },
         flag: "cursor",
@@ -7584,9 +7287,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "integer",
-          minimum: 1,
-          maximum: 100,
+          type: "number",
           description: "Maximum versions to return"
         },
         flag: "limit",
@@ -7638,7 +7339,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the version to restore"
         },
         flag: "id",
@@ -7690,7 +7390,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "ID of the version to update"
         },
         flag: "id",
@@ -7717,9 +7416,7 @@ const commands: APICommand[] = [
         schema: {
           anyOf: [
             {
-              type: "string",
-              minLength: 1,
-              maxLength: 100
+              type: "string"
             },
             {
               type: "null"
@@ -7772,20 +7469,14 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "array",
-          minItems: 1,
-          maxItems: 10,
           items: {
             type: "object",
             properties: {
               id: {
-                type: "string",
-                pattern: "^wh_[A-Za-z\\d]{1,22}$"
+                type: "string"
               },
               expectedRevision: {
-                type: "integer",
-                minimum: -9007199254740991,
-                maximum: 9007199254740991,
-                exclusiveMinimum: 0
+                type: "number"
               }
             },
             required: ["id", "expectedRevision"],
@@ -7823,8 +7514,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^wh_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "id",
         kind: "string",
@@ -7848,10 +7538,7 @@ const commands: APICommand[] = [
         location: "body",
         required: true,
         schema: {
-          type: "integer",
-          minimum: -9007199254740991,
-          maximum: 9007199254740991,
-          exclusiveMinimum: 0
+          type: "number"
         },
         flag: "expected-destination-revision",
         kind: "number",
@@ -7863,11 +7550,8 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "array",
-          minItems: 1,
-          maxItems: 25,
           items: {
-            type: "string",
-            pattern: "^whdel_[A-Za-z\\d]{1,22}$"
+            type: "string"
           }
         },
         flag: "delivery-ids",
@@ -7915,20 +7599,14 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "array",
-          minItems: 1,
-          maxItems: 10,
           items: {
             type: "object",
             properties: {
               id: {
-                type: "string",
-                pattern: "^wh_[A-Za-z\\d]{1,22}$"
+                type: "string"
               },
               expectedRevision: {
-                type: "integer",
-                minimum: -9007199254740991,
-                maximum: 9007199254740991,
-                exclusiveMinimum: 0
+                type: "number"
               }
             },
             required: ["id", "expectedRevision"],
@@ -7990,9 +7668,7 @@ const commands: APICommand[] = [
         location: "body",
         required: true,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 100
+          type: "string"
         },
         flag: "name",
         kind: "string",
@@ -8003,9 +7679,7 @@ const commands: APICommand[] = [
         location: "body",
         required: true,
         schema: {
-          type: "string",
-          maxLength: 2048,
-          format: "uri"
+          type: "string"
         },
         flag: "url",
         kind: "string",
@@ -8029,8 +7703,6 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "array",
-          minItems: 1,
-          maxItems: 14,
           items: {
             $ref: "#/components/schemas/WebhookEventName"
           }
@@ -8074,11 +7746,8 @@ const commands: APICommand[] = [
                 },
                 roots: {
                   type: "array",
-                  minItems: 1,
-                  maxItems: 100,
                   items: {
-                    type: "string",
-                    pattern: "^coll_[A-Za-z\\d]{1,22}$"
+                    type: "string"
                   }
                 }
               },
@@ -8115,12 +7784,8 @@ const commands: APICommand[] = [
                 },
                 codes: {
                   type: "array",
-                  minItems: 1,
-                  maxItems: 100,
                   items: {
-                    type: "string",
-                    minLength: 1,
-                    maxLength: 50
+                    type: "string"
                   }
                 }
               },
@@ -8172,8 +7837,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^wh_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "id",
         kind: "string",
@@ -8197,10 +7861,7 @@ const commands: APICommand[] = [
         location: "body",
         required: true,
         schema: {
-          type: "integer",
-          minimum: -9007199254740991,
-          maximum: 9007199254740991,
-          exclusiveMinimum: 0
+          type: "number"
         },
         flag: "expected-revision",
         kind: "number",
@@ -8233,8 +7894,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^wh_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "id",
         kind: "string",
@@ -8280,8 +7940,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^wh_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "id",
         kind: "string",
@@ -8292,8 +7951,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^whdel_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "delivery-id",
         kind: "string",
@@ -8340,7 +7998,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "string",
-          pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
           description: "Cursor from the previous page; keep the same filters"
         },
         flag: "cursor",
@@ -8352,9 +8009,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "integer",
-          minimum: 1,
-          maximum: 100,
+          type: "number",
           default: 50
         },
         flag: "limit",
@@ -8402,8 +8057,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^wh_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "id",
         kind: "string",
@@ -8414,8 +8068,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^whdel_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "delivery-id",
         kind: "string",
@@ -8426,8 +8079,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^whrun_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "run-id",
         kind: "string",
@@ -8438,8 +8090,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^whatt_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "cursor",
         kind: "string",
@@ -8450,9 +8101,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "integer",
-          minimum: 1,
-          maximum: 100,
+          type: "number",
           default: 50
         },
         flag: "limit",
@@ -8500,8 +8149,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^wh_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "id",
         kind: "string",
@@ -8512,8 +8160,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^whdel_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "cursor",
         kind: "string",
@@ -8524,9 +8171,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "integer",
-          minimum: 1,
-          maximum: 100,
+          type: "number",
           default: 50
         },
         flag: "limit",
@@ -8561,8 +8206,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          format: "date-time"
+          type: "string"
         },
         flag: "created-after",
         kind: "string",
@@ -8573,8 +8217,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          format: "date-time"
+          type: "string"
         },
         flag: "created-before",
         kind: "string",
@@ -8621,8 +8264,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^wh_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "id",
         kind: "string",
@@ -8633,8 +8275,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^whdel_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "delivery-id",
         kind: "string",
@@ -8645,8 +8286,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "string",
-          pattern: "^whrun_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "cursor",
         kind: "string",
@@ -8657,9 +8297,7 @@ const commands: APICommand[] = [
         location: "query",
         required: false,
         schema: {
-          type: "integer",
-          minimum: 1,
-          maximum: 100,
+          type: "number",
           default: 50
         },
         flag: "limit",
@@ -8707,8 +8345,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^wh_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "id",
         kind: "string",
@@ -8719,8 +8356,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^whdel_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "delivery-id",
         kind: "string",
@@ -8744,10 +8380,7 @@ const commands: APICommand[] = [
         location: "body",
         required: true,
         schema: {
-          type: "integer",
-          minimum: -9007199254740991,
-          maximum: 9007199254740991,
-          exclusiveMinimum: 0
+          type: "number"
         },
         flag: "expected-destination-revision",
         kind: "number",
@@ -8780,8 +8413,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^wh_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "id",
         kind: "string",
@@ -8805,10 +8437,7 @@ const commands: APICommand[] = [
         location: "body",
         required: true,
         schema: {
-          type: "integer",
-          minimum: -9007199254740991,
-          maximum: 9007199254740991,
-          exclusiveMinimum: 0
+          type: "number"
         },
         flag: "expected-revision",
         kind: "number",
@@ -8853,8 +8482,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^wh_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "id",
         kind: "string",
@@ -8878,10 +8506,7 @@ const commands: APICommand[] = [
         location: "body",
         required: true,
         schema: {
-          type: "integer",
-          minimum: -9007199254740991,
-          maximum: 9007199254740991,
-          exclusiveMinimum: 0
+          type: "number"
         },
         flag: "expected-revision",
         kind: "number",
@@ -8925,8 +8550,7 @@ const commands: APICommand[] = [
         location: "path",
         required: true,
         schema: {
-          type: "string",
-          pattern: "^wh_[A-Za-z\\d]{1,22}$"
+          type: "string"
         },
         flag: "id",
         kind: "string",
@@ -8950,9 +8574,7 @@ const commands: APICommand[] = [
         location: "body",
         required: false,
         schema: {
-          type: "string",
-          minLength: 1,
-          maxLength: 100
+          type: "string"
         },
         flag: "name",
         kind: "string",
@@ -8963,9 +8585,7 @@ const commands: APICommand[] = [
         location: "body",
         required: false,
         schema: {
-          type: "string",
-          maxLength: 2048,
-          format: "uri"
+          type: "string"
         },
         flag: "url",
         kind: "string",
@@ -8988,8 +8608,6 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "array",
-          minItems: 1,
-          maxItems: 14,
           items: {
             $ref: "#/components/schemas/WebhookEventName"
           }
@@ -9033,11 +8651,8 @@ const commands: APICommand[] = [
                 },
                 roots: {
                   type: "array",
-                  minItems: 1,
-                  maxItems: 100,
                   items: {
-                    type: "string",
-                    pattern: "^coll_[A-Za-z\\d]{1,22}$"
+                    type: "string"
                   }
                 }
               },
@@ -9074,12 +8689,8 @@ const commands: APICommand[] = [
                 },
                 codes: {
                   type: "array",
-                  minItems: 1,
-                  maxItems: 100,
                   items: {
-                    type: "string",
-                    minLength: 1,
-                    maxLength: 50
+                    type: "string"
                   }
                 }
               },
@@ -9109,10 +8720,7 @@ const commands: APICommand[] = [
         location: "body",
         required: true,
         schema: {
-          type: "integer",
-          minimum: -9007199254740991,
-          maximum: 9007199254740991,
-          exclusiveMinimum: 0
+          type: "number"
         },
         flag: "expected-revision",
         kind: "number",
@@ -9189,6 +8797,9 @@ const schemas: Record<string, JSONSchema> = {
     },
     required: ["type"]
   },
+  PublishingChannelCode: {
+    type: "string"
+  },
   PropertyFilter: {
     anyOf: [
       {
@@ -9213,8 +8824,6 @@ const schemas: Record<string, JSONSchema> = {
       },
       key: {
         type: "string",
-        minLength: 1,
-        maxLength: 100,
         description: "Property identifier"
       },
       operator: {
@@ -9224,11 +8833,8 @@ const schemas: Record<string, JSONSchema> = {
       },
       values: {
         type: "array",
-        minItems: 1,
-        maxItems: 20,
         items: {
-          type: "string",
-          maxLength: 500
+          type: "string"
         }
       }
     },
@@ -9242,8 +8848,6 @@ const schemas: Record<string, JSONSchema> = {
       },
       key: {
         type: "string",
-        minLength: 1,
-        maxLength: 100,
         description: "Property identifier"
       },
       operator: {
@@ -9274,8 +8878,6 @@ const schemas: Record<string, JSONSchema> = {
       },
       key: {
         type: "string",
-        minLength: 1,
-        maxLength: 100,
         description: "Property identifier"
       },
       value: {
@@ -9292,8 +8894,6 @@ const schemas: Record<string, JSONSchema> = {
       },
       key: {
         type: "string",
-        minLength: 1,
-        maxLength: 100,
         description: "Property identifier"
       },
       operator: {
@@ -9351,9 +8951,7 @@ const schemas: Record<string, JSONSchema> = {
         type: "string"
       },
       content: {
-        type: "string",
-        minLength: 1,
-        maxLength: 4000
+        type: "string"
       }
     },
     required: ["role", "content"]
@@ -9362,15 +8960,13 @@ const schemas: Record<string, JSONSchema> = {
     type: "object",
     properties: {
       id: {
-        type: "string",
-        minLength: 1
+        type: "string"
       },
       kind: {
         const: "property"
       },
       label: {
-        type: "string",
-        maxLength: 50
+        type: "string"
       },
       type: {
         enum: ["text", "number", "checkbox", "date", "url", "select", "multi-select"],
@@ -9427,12 +9023,10 @@ const schemas: Record<string, JSONSchema> = {
     properties: {
       entryID: {
         type: "string",
-        pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
         description: "Entry to publish"
       },
       versionID: {
         type: "string",
-        pattern: "^(?:\\w+?_[A-Za-z\\d]{1,22})$",
         description: "Existing version to publish"
       }
     },

@@ -2139,7 +2139,6 @@ export interface components {
           operationID: string;
           /** @constant */
           schemaVersion: 1;
-          /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
           /** @default null */
@@ -2191,7 +2190,6 @@ export interface components {
           operationID: string;
           /** @constant */
           schemaVersion: 1;
-          /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
           /** @default null */
@@ -2242,7 +2240,6 @@ export interface components {
           operationID: string;
           /** @constant */
           schemaVersion: 1;
-          /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
           /** @default null */
@@ -2286,7 +2283,6 @@ export interface components {
           data: {
             collectionID: string | null;
             contentHash: string;
-            /** Format: date-time */
             savedAt: string;
           };
         }
@@ -2295,7 +2291,6 @@ export interface components {
           operationID: string;
           /** @constant */
           schemaVersion: 1;
-          /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
           /** @default null */
@@ -2397,7 +2392,6 @@ export interface components {
           operationID: string;
           /** @constant */
           schemaVersion: 1;
-          /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
           /** @default null */
@@ -2441,7 +2435,6 @@ export interface components {
           data: {
             name: string;
             collectionID: string | null;
-            /** Format: date-time */
             deletedAt: string;
           };
         }
@@ -2450,7 +2443,6 @@ export interface components {
           operationID: string;
           /** @constant */
           schemaVersion: 1;
-          /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
           /** @default null */
@@ -2501,7 +2493,6 @@ export interface components {
           operationID: string;
           /** @constant */
           schemaVersion: 1;
-          /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
           /** @default null */
@@ -2552,7 +2543,6 @@ export interface components {
           operationID: string;
           /** @constant */
           schemaVersion: 1;
-          /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
           /** @default null */
@@ -2603,7 +2593,6 @@ export interface components {
           operationID: string;
           /** @constant */
           schemaVersion: 1;
-          /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
           /** @default null */
@@ -2705,7 +2694,6 @@ export interface components {
           operationID: string;
           /** @constant */
           schemaVersion: 1;
-          /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
           /** @default null */
@@ -2749,7 +2737,6 @@ export interface components {
           data: {
             name: string;
             parentID: string | null;
-            /** Format: date-time */
             deletedAt: string;
           };
         }
@@ -2758,7 +2745,6 @@ export interface components {
           operationID: string;
           /** @constant */
           schemaVersion: 1;
-          /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
           /** @default null */
@@ -2809,7 +2795,6 @@ export interface components {
           operationID: string;
           /** @constant */
           schemaVersion: 1;
-          /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
           /** @default null */
@@ -2862,7 +2847,6 @@ export interface components {
           operationID: string;
           /** @constant */
           schemaVersion: 1;
-          /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
           /** @default null */
@@ -2914,7 +2898,6 @@ export interface components {
           operationID: string;
           /** @constant */
           schemaVersion: 1;
-          /** Format: date-time */
           occurredAt: string;
           workspaceID: string;
           /** @default null */
@@ -2978,7 +2961,6 @@ export interface components {
       | "publishing.channel_deleted";
     WebhookEndpoint: {
       name: string;
-      /** Format: uri */
       url: string;
       enabled: boolean;
       eventTypes: components["schemas"]["WebhookEventName"][];
@@ -3010,9 +2992,7 @@ export interface components {
       workspaceID: string;
       revision: number;
       destinationRevision: number;
-      /** Format: date-time */
       createdAt: string;
-      /** Format: date-time */
       updatedAt: string;
       disabledReason: ("manual" | "failures") | null;
       health: {
@@ -3026,7 +3006,6 @@ export interface components {
         failedCount: number;
       };
       signing: {
-        /** Format: date-time */
         rotatedAt: string;
         previousSecretExpiresAt: string | null;
       };
@@ -3036,15 +3015,12 @@ export interface components {
       endpointID: string;
       eventID: string;
       type: components["schemas"]["WebhookEventName"];
-      /** Format: date-time */
       occurredAt: string;
       test: boolean;
       /** @enum {string} */
       state: "pending" | "in_flight" | "succeeded" | "failed" | "cancelled";
       selectedRevision: number;
-      /** Format: date-time */
       createdAt: string;
-      /** Format: date-time */
       expiresAt: string;
       retentionDays: number;
       attemptCount: number;
@@ -3063,9 +3039,7 @@ export interface components {
       destinationRevision: number;
       /** @enum {string} */
       state: "pending" | "in_flight" | "succeeded" | "failed" | "cancelled";
-      /** Format: date-time */
       createdAt: string;
-      /** Format: date-time */
       deadlineAt: string;
       finishedAt: string | null;
       nextAttemptAt: string | null;
@@ -3088,7 +3062,6 @@ export interface components {
       id: string;
       runID: string;
       number: number;
-      /** Format: date-time */
       startedAt: string;
       finishedAt: string | null;
       durationMs: number | null;
@@ -3098,7 +3071,6 @@ export interface components {
       failureCategory:
         ("http_status" | "timeout" | "network" | "destination_policy" | "internal") | null;
       lateResult: {
-        /** Format: date-time */
         receivedAt: string;
         /** @enum {string} */
         outcome: "succeeded" | "receiver_failure" | "platform_failure";
@@ -3263,7 +3235,6 @@ export interface components {
       title: string;
       snippet: string;
       properties: components["schemas"]["SearchPropertyValue"][];
-      /** Format: date-time */
       updatedAt: string;
       channel?: components["schemas"]["PublishingChannelCode"];
       versionID?: string;
@@ -3282,7 +3253,6 @@ export interface components {
       title: string;
       snippet: string;
       properties: components["schemas"]["SearchPropertyValue"][];
-      /** Format: date-time */
       updatedAt: string;
       channel: components["schemas"]["PublishingChannelCode"];
       versionID: string;
@@ -3403,10 +3373,7 @@ export interface components {
     InstanceInfo: {
       /** @description API contract version, not the server build version */
       apiVersion: string;
-      /**
-       * Format: uri
-       * @description URL of the web app; entries open at {appURL}/{workspaceID}/{entryID}
-       */
+      /** @description URL of the web app; entries open at {appURL}/{workspaceID}/{entryID} */
       appURL: string;
       /** @description Configured availability; does not imply permission or current service health */
       features: {
@@ -3584,10 +3551,7 @@ export interface components {
       id: string;
       /** @description User's full name */
       name?: string;
-      /**
-       * Format: email
-       * @description Email address
-       */
+      /** @description Email address */
       email: string;
       /** @description URL of the user's avatar image */
       image?: string;
@@ -3642,15 +3606,9 @@ export interface components {
       sourceVersionID: string | null;
       /** @description Memberships that contributed to the version */
       contributorIDs: string[];
-      /**
-       * Format: date-time
-       * @description Time when the version was created
-       */
+      /** @description Time when the version was created */
       createdAt: string;
-      /**
-       * Format: date-time
-       * @description Time when the version name was last updated
-       */
+      /** @description Time when the version name was last updated */
       updatedAt: string;
       schema: components["schemas"]["ContentSchemaMetadata"] | null;
       /** @description ProseMirror JSON stored in the version */
@@ -3684,15 +3642,9 @@ export interface components {
       sourceVersionID: string | null;
       /** @description Memberships that contributed to the version */
       contributorIDs: string[];
-      /**
-       * Format: date-time
-       * @description Time when the version was created
-       */
+      /** @description Time when the version was created */
       createdAt: string;
-      /**
-       * Format: date-time
-       * @description Time when the version name was last updated
-       */
+      /** @description Time when the version name was last updated */
       updatedAt: string;
     };
     /** @enum {string} */
@@ -3717,15 +3669,9 @@ export interface components {
       /** @description Whether the draft differs from the active version */
       hasUnappliedChanges: boolean;
       activeVersion: components["schemas"]["SchemaVersionSummary"] | null;
-      /**
-       * Format: date-time
-       * @description Time when the local schema was first created
-       */
+      /** @description Time when the local schema was first created */
       createdAt: string;
-      /**
-       * Format: date-time
-       * @description Time when the local schema draft was last updated
-       */
+      /** @description Time when the local schema draft was last updated */
       updatedAt: string;
     };
     EffectiveCollectionSchema: {
@@ -3754,10 +3700,7 @@ export interface components {
       hash: string;
       /** @description Whether the effective schema is fully inherited */
       inherited: boolean;
-      /**
-       * Format: date-time
-       * @description Time when the effective revision was created
-       */
+      /** @description Time when the effective revision was created */
       createdAt: string;
     };
     SchemaVersion: {
@@ -3786,15 +3729,9 @@ export interface components {
       appliedBy: string | null;
       /** @description Memberships that contributed to the schema version */
       contributorIDs: string[];
-      /**
-       * Format: date-time
-       * @description Time when the schema version was created
-       */
+      /** @description Time when the schema version was created */
       createdAt: string;
-      /**
-       * Format: date-time
-       * @description Time when the schema version name was last updated
-       */
+      /** @description Time when the schema version name was last updated */
       updatedAt: string;
       /** @description Local schema definition stored in the version */
       definition: {
@@ -3839,15 +3776,9 @@ export interface components {
       appliedBy: string | null;
       /** @description Memberships that contributed to the schema version */
       contributorIDs: string[];
-      /**
-       * Format: date-time
-       * @description Time when the schema version was created
-       */
+      /** @description Time when the schema version was created */
       createdAt: string;
-      /**
-       * Format: date-time
-       * @description Time when the schema version name was last updated
-       */
+      /** @description Time when the schema version name was last updated */
       updatedAt: string;
     };
     SchemaApplicationResult: {
@@ -3876,9 +3807,7 @@ export interface components {
       initiatedBy: string | null;
       startedAt: string | null;
       completedAt: string | null;
-      /** Format: date-time */
       createdAt: string;
-      /** Format: date-time */
       updatedAt: string;
     };
     /** @enum {string} */
@@ -3963,10 +3892,7 @@ export interface components {
       path: string;
       slugPath: string;
       schema: components["schemas"]["ContentSchemaMetadata"] | null;
-      /**
-       * Format: date-time
-       * @description Time when the entry content was last updated
-       */
+      /** @description Time when the entry content was last updated */
       updatedAt: string;
       /** @description Hash of the current content, comparable to version hashes */
       hash: string;
@@ -4023,9 +3949,7 @@ export interface components {
       byteSize: number;
       width: number;
       height: number;
-      /** Format: uri */
       url: string;
-      /** Format: date-time */
       expiresAt: string;
     };
     /** @enum {string} */
@@ -4038,14 +3962,12 @@ export interface components {
       entryName: string;
       filename: string;
       description: string;
-      /** Format: uri */
       thumbnailURL: string;
       width: number;
       height: number;
     };
     AssetUploadRegistration: {
       assetID: string;
-      /** Format: date-time */
       expiresAt: string;
     };
     Membership: {
@@ -4065,10 +3987,7 @@ export interface components {
         id: string;
         /** @description User's full name */
         name?: string;
-        /**
-         * Format: email
-         * @description Email address
-         */
+        /** @description Email address */
         email: string;
         /** @description URL of the user's avatar image */
         image?: string;
@@ -4077,10 +3996,7 @@ export interface components {
     Invite: {
       /** @description ID of the invite */
       id: string;
-      /**
-       * Format: email
-       * @description Email address of the invited user
-       */
+      /** @description Email address of the invited user */
       email: string;
       /** @description ID of the role to assign */
       roleID: string;
@@ -4091,20 +4007,11 @@ export interface components {
        * @enum {string}
        */
       status: "pending" | "accepted" | "expired";
-      /**
-       * Format: date-time
-       * @description When the invite was created
-       */
+      /** @description When the invite was created */
       createdAt: string;
-      /**
-       * Format: date-time
-       * @description When the invite expires
-       */
+      /** @description When the invite expires */
       expiresAt: string;
-      /**
-       * Format: uri
-       * @description Signed URL for accepting the invitation
-       */
+      /** @description Signed URL for accepting the invitation */
       inviteLink: string;
       /** @description ID of the workspace the invite belongs to */
       workspaceID: string;
@@ -4112,10 +4019,7 @@ export interface components {
     MembershipInviteResult: {
       /** @description ID of the invite */
       inviteID: string;
-      /**
-       * Format: uri
-       * @description Invite link that can be shared manually
-       */
+      /** @description Invite link that can be shared manually */
       inviteLink: string;
       /**
        * @description Whether the invite email was sent, must be shared manually, or failed
@@ -4163,7 +4067,6 @@ export interface components {
       width: number;
       height: number;
       byteSize: number;
-      /** Format: uri */
       url: string;
     };
     PublishedEntry: {
@@ -4206,15 +4109,9 @@ export interface components {
       name: string;
       /** @description Whether the channel is built in */
       builtIn: boolean;
-      /**
-       * Format: date-time
-       * @description Time when the channel was created
-       */
+      /** @description Time when the channel was created */
       createdAt: string;
-      /**
-       * Format: date-time
-       * @description Time when the channel was last updated
-       */
+      /** @description Time when the channel was last updated */
       updatedAt: string;
     };
     PublishingChannelListItem: {
@@ -4224,24 +4121,15 @@ export interface components {
       name: string;
       /** @description Whether the channel is built in */
       builtIn: boolean;
-      /**
-       * Format: date-time
-       * @description Time when the channel was created
-       */
+      /** @description Time when the channel was created */
       createdAt: string;
-      /**
-       * Format: date-time
-       * @description Time when the channel was last updated
-       */
+      /** @description Time when the channel was last updated */
       updatedAt: string;
       assignmentCount?: number;
     };
     EntryPublication: {
       channel: components["schemas"]["EntryPublicationChannel"];
-      /**
-       * Format: date-time
-       * @description Time when the version was published
-       */
+      /** @description Time when the version was published */
       publishedAt: string;
       version: components["schemas"]["EntryVersionSummary"];
     };
@@ -4386,7 +4274,6 @@ export interface components {
       title: string;
       snippet: string;
       properties: components["schemas"]["SearchPropertyValue"][];
-      /** Format: date-time */
       updatedAt: string;
       channel: components["schemas"]["PublishingChannelCode"];
       versionID: string;
@@ -4403,7 +4290,6 @@ export interface components {
       title: string;
       snippet: string;
       properties: components["schemas"]["SearchPropertyValue"][];
-      /** Format: date-time */
       updatedAt: string;
       channel?: components["schemas"]["PublishingChannelCode"];
       versionID?: string;
@@ -4825,7 +4711,6 @@ export interface operations {
         "application/json": {
           assetID: string;
           entryID: string;
-          /** Format: uri */
           url: string;
           /** @default false */
           checkDuplicates?: boolean;
@@ -9180,10 +9065,7 @@ export interface operations {
             path: string;
             slugPath: string;
             schema: components["schemas"]["ContentSchemaMetadata"] | null;
-            /**
-             * Format: date-time
-             * @description Time when the entry content was last updated
-             */
+            /** @description Time when the entry content was last updated */
             updatedAt: string;
             /** @description Hash of the current content, comparable to version hashes */
             hash: string;
@@ -10617,7 +10499,6 @@ export interface operations {
                   operationID: string;
                   /** @constant */
                   schemaVersion: 1;
-                  /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
                   /** @default null */
@@ -10669,7 +10550,6 @@ export interface operations {
                   operationID: string;
                   /** @constant */
                   schemaVersion: 1;
-                  /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
                   /** @default null */
@@ -10720,7 +10600,6 @@ export interface operations {
                   operationID: string;
                   /** @constant */
                   schemaVersion: 1;
-                  /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
                   /** @default null */
@@ -10764,7 +10643,6 @@ export interface operations {
                   data: {
                     collectionID: string | null;
                     contentHash: string;
-                    /** Format: date-time */
                     savedAt: string;
                   };
                 }
@@ -10773,7 +10651,6 @@ export interface operations {
                   operationID: string;
                   /** @constant */
                   schemaVersion: 1;
-                  /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
                   /** @default null */
@@ -10875,7 +10752,6 @@ export interface operations {
                   operationID: string;
                   /** @constant */
                   schemaVersion: 1;
-                  /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
                   /** @default null */
@@ -10919,7 +10795,6 @@ export interface operations {
                   data: {
                     name: string;
                     collectionID: string | null;
-                    /** Format: date-time */
                     deletedAt: string;
                   };
                 }
@@ -10928,7 +10803,6 @@ export interface operations {
                   operationID: string;
                   /** @constant */
                   schemaVersion: 1;
-                  /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
                   /** @default null */
@@ -10979,7 +10853,6 @@ export interface operations {
                   operationID: string;
                   /** @constant */
                   schemaVersion: 1;
-                  /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
                   /** @default null */
@@ -11030,7 +10903,6 @@ export interface operations {
                   operationID: string;
                   /** @constant */
                   schemaVersion: 1;
-                  /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
                   /** @default null */
@@ -11081,7 +10953,6 @@ export interface operations {
                   operationID: string;
                   /** @constant */
                   schemaVersion: 1;
-                  /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
                   /** @default null */
@@ -11183,7 +11054,6 @@ export interface operations {
                   operationID: string;
                   /** @constant */
                   schemaVersion: 1;
-                  /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
                   /** @default null */
@@ -11227,7 +11097,6 @@ export interface operations {
                   data: {
                     name: string;
                     parentID: string | null;
-                    /** Format: date-time */
                     deletedAt: string;
                   };
                 }
@@ -11236,7 +11105,6 @@ export interface operations {
                   operationID: string;
                   /** @constant */
                   schemaVersion: 1;
-                  /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
                   /** @default null */
@@ -11287,7 +11155,6 @@ export interface operations {
                   operationID: string;
                   /** @constant */
                   schemaVersion: 1;
-                  /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
                   /** @default null */
@@ -11340,7 +11207,6 @@ export interface operations {
                   operationID: string;
                   /** @constant */
                   schemaVersion: 1;
-                  /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
                   /** @default null */
@@ -11392,7 +11258,6 @@ export interface operations {
                   operationID: string;
                   /** @constant */
                   schemaVersion: 1;
-                  /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
                   /** @default null */
@@ -11443,7 +11308,6 @@ export interface operations {
                   operationID: string;
                   /** @constant */
                   schemaVersion: 1;
-                  /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
                   /** @default null */
@@ -11493,7 +11357,6 @@ export interface operations {
                   operationID: string;
                   /** @constant */
                   schemaVersion: 1;
-                  /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
                   /** @default null */
@@ -11543,7 +11406,6 @@ export interface operations {
                   operationID: string;
                   /** @constant */
                   schemaVersion: 1;
-                  /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
                   /** @default null */
@@ -11595,7 +11457,6 @@ export interface operations {
                   operationID: string;
                   /** @constant */
                   schemaVersion: 1;
-                  /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
                   /** @default null */
@@ -11646,7 +11507,6 @@ export interface operations {
                   operationID: string;
                   /** @constant */
                   schemaVersion: 1;
-                  /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
                   /** @default null */
@@ -11698,7 +11558,6 @@ export interface operations {
                   operationID: string;
                   /** @constant */
                   schemaVersion: 1;
-                  /** Format: date-time */
                   occurredAt: string;
                   workspaceID: string;
                   /** @default null */
@@ -12290,15 +12149,9 @@ export interface operations {
               collectionIDs: string[];
               /** @description Publishable keys: the browser origins that can use the key, with localhost */
               allowedOrigins: string[];
-              /**
-               * Format: date-time
-               * @description The creation date
-               */
+              /** @description The creation date */
               createdAt: string;
-              /**
-               * Format: date-time
-               * @description The last update date
-               */
+              /** @description The last update date */
               updatedAt: string;
               /** @description The raw key, which is public */
               value: string;
@@ -12590,15 +12443,9 @@ export interface operations {
             collectionIDs: string[];
             /** @description Publishable keys: the browser origins that can use the key, with localhost */
             allowedOrigins: string[];
-            /**
-             * Format: date-time
-             * @description The creation date
-             */
+            /** @description The creation date */
             createdAt: string;
-            /**
-             * Format: date-time
-             * @description The last update date
-             */
+            /** @description The last update date */
             updatedAt: string;
             /** @description The raw key, which is public */
             value: string;
@@ -13136,15 +12983,9 @@ export interface operations {
             collectionIDs: string[];
             /** @description Publishable keys: the browser origins that can use the key, with localhost */
             allowedOrigins: string[];
-            /**
-             * Format: date-time
-             * @description The creation date
-             */
+            /** @description The creation date */
             createdAt: string;
-            /**
-             * Format: date-time
-             * @description The last update date
-             */
+            /** @description The last update date */
             updatedAt: string;
             /** @description The raw key, which is public */
             value: string;
@@ -13422,7 +13263,6 @@ export interface operations {
                         [key: string]: unknown;
                       };
                 };
-            /** Format: date-time */
             updatedAt: string;
           };
         };
@@ -13702,7 +13542,6 @@ export interface operations {
         content: {
           "application/json": {
             key: string;
-            /** Format: date-time */
             updatedAt: string;
           };
         };
@@ -14229,7 +14068,6 @@ export interface operations {
                           [key: string]: unknown;
                         };
                   };
-              /** Format: date-time */
               updatedAt: string;
             }[];
             hasMore: boolean;
@@ -16837,7 +16675,7 @@ export interface operations {
         collectionPath?: string;
         collectionSlugPath?: string;
         /** @example published */
-        channel?: string;
+        channel?: components["schemas"]["PublishingChannelCode"];
         snapshotID?: string;
       };
       header?: {
@@ -17100,7 +16938,7 @@ export interface operations {
         collectionPath?: string;
         collectionSlugPath?: string;
         /** @example published */
-        channel?: string;
+        channel?: components["schemas"]["PublishingChannelCode"];
         snapshotID?: string;
         descendants?: boolean;
         includeContent?: boolean;
@@ -17377,7 +17215,7 @@ export interface operations {
         path?: string;
         slugPath?: string;
         /** @example published */
-        channel?: string;
+        channel?: components["schemas"]["PublishingChannelCode"];
         snapshotID?: string;
       };
       header?: {
@@ -17902,7 +17740,7 @@ export interface operations {
         slugPath?: string;
         expectedSchemaHash?: string;
         /** @example published */
-        channel?: string;
+        channel?: components["schemas"]["PublishingChannelCode"];
         snapshotID?: string;
         contentFormat?: "json" | "mdx";
       };
@@ -18191,7 +18029,7 @@ export interface operations {
         collectionPath?: string;
         collectionSlugPath?: string;
         /** @example published */
-        channel?: string;
+        channel?: components["schemas"]["PublishingChannelCode"];
         snapshotID?: string;
       };
       header?: {
@@ -18716,7 +18554,6 @@ export interface operations {
       content: {
         "application/json": {
           name: string;
-          /** Format: uri */
           url: string;
           /** @default true */
           enabled?: boolean;
@@ -19253,7 +19090,6 @@ export interface operations {
       content: {
         "application/json": {
           name?: string;
-          /** Format: uri */
           url?: string;
           enabled?: boolean;
           eventTypes?: components["schemas"]["WebhookEventName"][];
@@ -28928,10 +28764,7 @@ export interface operations {
          *     }
          */
         "application/json": {
-          /**
-           * Format: email
-           * @description Email address of the user to invite
-           */
+          /** @description Email address of the user to invite */
           email: string;
           /** @description ID of the role to assign */
           roleID: string;
@@ -30788,7 +30621,7 @@ export interface operations {
            * @description Publishing channel, defaults to published
            * @default published
            */
-          channel?: string;
+          channel?: components["schemas"]["PublishingChannelCode"];
           /** @description Reject the mutation if the channel no longer points to this reviewed snapshot */
           expectedSnapshotID?: string;
         };
@@ -31088,7 +30921,7 @@ export interface operations {
            * @description Publishing channel, defaults to published
            * @default published
            */
-          channel?: string;
+          channel?: components["schemas"]["PublishingChannelCode"];
           /** @description Reject the mutation if the channel no longer points to this reviewed snapshot */
           expectedSnapshotID?: string;
         };
@@ -31681,7 +31514,7 @@ export interface operations {
            * @description Publishing channel, defaults to published
            * @default published
            */
-          channel?: string;
+          channel?: components["schemas"]["PublishingChannelCode"];
           /** @description Reject the mutation if the channel no longer points to this reviewed snapshot */
           expectedSnapshotID?: string;
           /** @description IDs of the collection trees to publish */
@@ -31983,7 +31816,7 @@ export interface operations {
            * @description Publishing channel, defaults to published
            * @default published
            */
-          channel?: string;
+          channel?: components["schemas"]["PublishingChannelCode"];
           /** @description Reject the mutation if the channel no longer points to this reviewed snapshot */
           expectedSnapshotID?: string;
           /** @description IDs of the collection trees to unpublish */
@@ -32274,7 +32107,7 @@ export interface operations {
            * @description Publishing channel, defaults to published
            * @default published
            */
-          channel?: string;
+          channel?: components["schemas"]["PublishingChannelCode"];
           /** @description Reject the mutation if the channel no longer points to this reviewed snapshot */
           expectedSnapshotID?: string;
           /** @description Existing version to publish */
@@ -32577,7 +32410,7 @@ export interface operations {
            * @description Publishing channel, defaults to published
            * @default published
            */
-          channel?: string;
+          channel?: components["schemas"]["PublishingChannelCode"];
           /** @description Reject the mutation if the channel no longer points to this reviewed snapshot */
           expectedSnapshotID?: string;
           /** @description Version expected to be assigned */
@@ -32870,7 +32703,7 @@ export interface operations {
            * @description Publishing channel, defaults to published
            * @default published
            */
-          channel?: string;
+          channel?: components["schemas"]["PublishingChannelCode"];
           /** @description Reject the mutation if the channel no longer points to this reviewed snapshot */
           expectedSnapshotID?: string;
           /** @description Entries and versions to publish */
@@ -33172,7 +33005,7 @@ export interface operations {
            * @description Publishing channel, defaults to published
            * @default published
            */
-          channel?: string;
+          channel?: components["schemas"]["PublishingChannelCode"];
           /** @description Reject the mutation if the channel no longer points to this reviewed snapshot */
           expectedSnapshotID?: string;
           /** @description IDs of the entries to unpublish */
@@ -33465,7 +33298,7 @@ export interface operations {
            * @description Publishing channel, defaults to published
            * @default published
            */
-          channel?: string;
+          channel?: components["schemas"]["PublishingChannelCode"];
           /** @description Whether to revert all pending changes */
           all?: boolean;
           /** @description Publishing root collection */
@@ -33785,7 +33618,7 @@ export interface operations {
     parameters: {
       query?: {
         /** @example published */
-        channel?: string;
+        channel?: components["schemas"]["PublishingChannelCode"];
         expectedSchemaHash?: string;
         snapshotID?: string;
       };
@@ -34853,7 +34686,7 @@ export interface operations {
       };
       path: {
         /** @example published */
-        channel: string;
+        channel: components["schemas"]["PublishingChannelCode"];
       };
       cookie?: never;
     };
@@ -36573,15 +36406,9 @@ export interface operations {
             sourceVersionID: string | null;
             /** @description Memberships that contributed to the version */
             contributorIDs: string[];
-            /**
-             * Format: date-time
-             * @description Time when the version was created
-             */
+            /** @description Time when the version was created */
             createdAt: string;
-            /**
-             * Format: date-time
-             * @description Time when the version name was last updated
-             */
+            /** @description Time when the version name was last updated */
             updatedAt: string;
             schema: components["schemas"]["ContentSchemaMetadata"] | null;
             /** @description ProseMirror JSON stored in the version */
@@ -37766,7 +37593,7 @@ export interface operations {
            * @default false
            */
           includeTree?: boolean;
-          channel?: string;
+          channel?: components["schemas"]["PublishingChannelCode"];
           snapshotID?: string;
         };
       };
