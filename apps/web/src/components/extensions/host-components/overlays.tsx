@@ -15,6 +15,7 @@ import { type HostComponentProps, type HostComponents } from "./types";
 
 interface ExtensionContentProps {
   extension: string;
+  class?: string;
   children?: JSX.Element;
 }
 
@@ -26,7 +27,10 @@ const menuWidths = { small: "w-48", medium: "w-64" };
 
 // Portaled content leaves the view's container, so it needs the extension's CSS scope again.
 const ExtensionContent = (props: ExtensionContentProps) => (
-  <div data-extension={props.extension} class="isolate min-w-0 [contain:layout_paint]">
+  <div
+    data-extension={props.extension}
+    class={clsx("isolate min-w-0 [contain:layout_paint]", props.class)}
+  >
     {props.children}
   </div>
 );
@@ -135,7 +139,10 @@ const overlayComponents: Pick<
               <IconButton icon="i-lucide:x" variant="ghost" aria-label="Close" onClick={dismiss} />
             </Show>
           </div>
-          <ExtensionContent extension={props.extension}>{props.children}</ExtensionContent>
+          {/* Paint containment clips at the box; the padding, offset by the margin, keeps shadows. */}
+          <ExtensionContent extension={props.extension} class="-m-2 p-2">
+            {props.children}
+          </ExtensionContent>
         </Dialog>
       </Show>
     );
