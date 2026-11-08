@@ -1,11 +1,13 @@
 import type { DefaultJobOptions } from "bullmq";
 
 const SEARCH_INDEXING_QUEUE_NAME = "search-indexing";
+// Retries span about 40 minutes, so a search service restart doesn't drop changes; jobs read
+// the current data when they run, so a late retry doesn't index stale content.
 const SEARCH_INDEXING_DEFAULT_JOB_OPTIONS = {
-  attempts: 5,
+  attempts: 10,
   backoff: {
     type: "exponential",
-    delay: 1000
+    delay: 5000
   },
   removeOnComplete: {
     age: 24 * 60 * 60,

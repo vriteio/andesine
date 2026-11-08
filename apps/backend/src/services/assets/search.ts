@@ -72,9 +72,8 @@ const searchAssets = withAuthorization<AssetSearchInput, undefined, AssetSearchR
         : [];
     const result = input.checksum
       ? { hits: sources.slice(0, input.limit).map(({ assetID }) => ({ document: { assetID } })) }
-      : await searchTypesenseClient.searchDocuments<{ assetID: string }>(
-          IMAGE_SEARCH_COLLECTION_ALIAS,
-          {
+      : await searchTypesenseClient
+          .searchDocuments<{ assetID: string }>(IMAGE_SEARCH_COLLECTION_ALIAS, {
             q: input.query || "*",
             query_by: "filename,description,extractedText",
             query_by_weights: "4,2,1",
@@ -91,8 +90,15 @@ const searchAssets = withAuthorization<AssetSearchInput, undefined, AssetSearchR
               ),
               rerank_hybrid_matches: true
             })
-          }
-        );
+          })
+          .catch((error: unknown) => {
+            console.error("Image search index request failed", { error });
+
+            throw new ORPCError("SERVICE_UNAVAILABLE", {
+              message: "Image search is temporarily unavailable",
+              data: { hints: ["Try the search again later."] }
+            });
+          });
     const results = await Promise.all(
       (result.hits || []).map(async ({ document }) => {
         const source = sourceByID.get(document.assetID);
