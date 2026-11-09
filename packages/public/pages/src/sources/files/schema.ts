@@ -18,7 +18,19 @@ const fileSchema = z
   })
   .strict();
 
-type FileMetadata = z.output<typeof fileSchema>;
+/** A folder's `meta.json`, in the Fumadocs format. Other Fumadocs keys are ignored. */
+const metaSchema = z.object({
+  /** The folder's navigation label. */
+  title: z.string().trim().min(1).optional(),
+  /** Child slugs (file names without extension, and folder names) in order. */
+  pages: z.array(z.string().trim().min(1)).default([])
+});
 
-export { fileSchema };
-export type { FileMetadata };
+/** The name of the collection with the source's `meta.json` files. */
+const toMetaCollection = (sourceID: string): string => `${sourceID}:meta`;
+
+type FileMetadata = z.output<typeof fileSchema>;
+type FolderMetadata = z.output<typeof metaSchema>;
+
+export { fileSchema, metaSchema, toMetaCollection };
+export type { FileMetadata, FolderMetadata };

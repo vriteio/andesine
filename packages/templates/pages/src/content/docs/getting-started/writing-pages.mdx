@@ -17,6 +17,26 @@ URL and the place in the navigation.
 
 Items sort by `order`, then by path.
 
+### Folder files
+
+A folder can have a `meta.json` file in the [Fumadocs](https://fumadocs.dev)
+format. A `meta.json` file in the source root applies to the top level.
+
+```json
+{
+  "title": "AI agents",
+  "pages": ["connect-an-ai-app", "local-server-and-plugin"]
+}
+```
+
+- `title` is the label of the folder in the navigation. It replaces the label
+  from the folder name or from the index page.
+- `pages` lists the file names without extension, and the subfolder names, in
+  order. Items that are not in the list come after it and sort as usual.
+
+The build stops when a `meta.json` file is not valid JSON, or when `pages` has a
+name that is not in the folder.
+
 ## Frontmatter
 
 | Field              | Default  | Description                                                                                  |

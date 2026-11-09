@@ -52,6 +52,10 @@ sources. Each page renders with `src/layouts/page.astro`. The layout receives on
 A source mount or the site root without a page redirects to the first page. The
 build stops when two pages use the same URL.
 
+In files sources, a folder can have a `meta.json` file in the Fumadocs format:
+`title` sets the folder's navigation label, and `pages` lists the child file and
+folder names in order. A `meta.json` file in the source root orders the top level.
+
 | Option       | Default                           | Description                              |
 | ------------ | --------------------------------- | ---------------------------------------- |
 | `config`     | `andesine.config.ts`              | Config file, relative to the root.       |

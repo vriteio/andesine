@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.0
+
+- Files sources read an optional `meta.json` file in each folder, in the Fumadocs format: `title`
+  sets the folder's navigation label, and `pages` sets the order of its pages and subfolders.
+
 ## 0.9.0
 
 - **Breaking:** links in the configuration (`links`, `cta`, `socialLinks`, a section's `links`, and

@@ -3,11 +3,13 @@ import type { FilesSourceConfig } from "../../config";
 import { toFileMarkdown } from "../../content/markdown";
 import { toHref, toSegments } from "../../routing/paths";
 import type { FileEntry, SourceData, SourceNode, SourcePage } from "../types";
-import type { FileMetadata } from "./schema";
+import { toMetaCollection, type FileMetadata, type FolderMetadata } from "./schema";
 
 interface TreeNode extends SourceNode {
   path: string;
   order: number;
+  /** The position in the parent folder's `meta.json`. */
+  position?: number;
   children?: TreeNode[];
 }
 
@@ -27,9 +29,14 @@ const toMarkdown = (entry: FileEntry, label: string, pageURL: URL): string => {
     throw new Error(`${label}: ${(error as Error).message}`);
   }
 };
+const toPosition = (node: TreeNode): number => node.position ?? Infinity;
 const sortTree = (nodes: TreeNode[]): SourceNode[] => {
   return [...nodes]
-    .sort((a, b) => a.order - b.order || a.path.localeCompare(b.path, "en"))
+    .sort((a, b) => {
+      return (
+        toPosition(a) - toPosition(b) || a.order - b.order || a.path.localeCompare(b.path, "en")
+      );
+    })
     .map(({ id, label, page, children }) => {
       return {
         id,
@@ -43,7 +50,8 @@ const sortTree = (nodes: TreeNode[]): SourceNode[] => {
 const createFilesSource = (
   source: FilesSourceConfig,
   options: FilesSourceOptions,
-  entries: FileEntry[]
+  entries: FileEntry[],
+  metas: FileEntry[]
 ): SourceData => {
   const { base } = options;
   const prefix = [
@@ -125,6 +133,27 @@ const createFilesSource = (
     }
   }
 
+  for (const meta of metas) {
+    const data = meta.data as FolderMetadata;
+    const label = `Source "${source.id}", file "${meta.id}"`;
+    const path = meta.id.replace(/\/?meta\.json$/, "");
+    const folder = folders.get(path);
+    const children = path ? folder?.children : root;
+
+    // A folder without pages, e.g. after its last page moved, has no navigation.
+    if (!children) continue;
+
+    if (folder && data.title) folder.label = data.title;
+
+    data.pages.forEach((slug, position) => {
+      const child = children.find((node) => node.path.split("/").at(-1) === slug);
+
+      if (!child) throw new Error(`${label}: no page or folder "${slug}" in this folder.`);
+
+      child.position = position;
+    });
+  }
+
   return { id: source.id, href: toHref(prefix), pages, navigation: sortTree(root) };
 };
 const loadFilesSource = async (
@@ -132,8 +161,9 @@ const loadFilesSource = async (
   options: FilesSourceOptions
 ): Promise<SourceData> => {
   const entries = (await getCollection(source.id)) as FileEntry[];
+  const metas = (await getCollection(toMetaCollection(source.id))) as FileEntry[];
 
-  return createFilesSource(source, options, entries);
+  return createFilesSource(source, options, entries, metas);
 };
 
 export { createFilesSource, loadFilesSource };

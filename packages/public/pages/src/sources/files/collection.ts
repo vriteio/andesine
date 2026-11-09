@@ -1,7 +1,7 @@
 import { defineCollection } from "astro/content/config";
 import { glob } from "astro/loaders";
 import type { FilesSourceConfig } from "../../config";
-import { fileSchema } from "./schema";
+import { fileSchema, metaSchema } from "./schema";
 
 const createFilesCollection = (source: FilesSourceConfig) => {
   return defineCollection({
@@ -14,5 +14,14 @@ const createFilesCollection = (source: FilesSourceConfig) => {
     schema: fileSchema
   });
 };
-
-export { createFilesCollection };
+const createFilesMetaCollection = (source: FilesSourceConfig) => {
+  return defineCollection({
+    loader: glob({
+      base: source.directory,
+      pattern: "**/meta.json",
+      generateId: ({ entry }) => entry
+    }),
+    schema: metaSchema
+  });
+};
+export { createFilesCollection, createFilesMetaCollection };
