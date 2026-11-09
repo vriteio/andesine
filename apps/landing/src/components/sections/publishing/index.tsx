@@ -4,6 +4,7 @@ import {
   PublishingGraphic,
   HistoryGraphic,
   TransformerGraphic,
+  HostedSiteGraphic,
   GitHubSyncGraphic
 } from "../../shared/feature-graphics";
 import { FeatureCard, type FeatureCardProps } from "../../shared/feature-card";
@@ -12,9 +13,12 @@ import { IconButton } from "@andesine/components/primitives";
 import { type Component, createSignal, For, onCleanup, onMount } from "solid-js";
 import clsx from "clsx";
 
-// Planned launch features: verify transformer outputs and automatic
-// Andesine-to-GitHub publishing before publication. Do not imply two-way sync or PR support.
 const stages: FeatureCardProps[] = [
+  {
+    title: "Hosted docs sites.",
+    text: "Turn a collection into a documentation site with search and AI answers. Andesine builds it each time you publish.",
+    graphic: HostedSiteGraphic
+  },
   {
     title: "Content API.",
     text: "Read documents, properties, and fragments from your website or app. Build your own content experience.",
@@ -36,8 +40,8 @@ const stages: FeatureCardProps[] = [
     graphic: TransformerGraphic
   },
   {
-    title: "Publish to GitHub.",
-    text: "Automatically sync converted files to your repository for your site to build and publish.",
+    title: "Sync with GitHub.",
+    text: "Keep Markdown or MDX files in your repository. Publishes become commits, and pushes update your content.",
     graphic: GitHubSyncGraphic
   }
 ];

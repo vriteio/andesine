@@ -2,15 +2,18 @@
 const links = {
   cloudApp: "/auth/sign-in",
   cloudSignUp: "/auth/sign-up",
+  docs: "/docs",
   repository: "https://github.com/vriteio/andesine",
-  email: "mailto:hello@andesine.app",
+  changelog: "https://github.com/vriteio/andesine/releases",
+  email: "mailto:support@andesine.app",
   social: {
-    x: "https://twitter.com/vriteio",
-    linkedin: "https://www.linkedin.com/company/vrite/"
+    x: "https://x.com/andesineapp",
+    linkedin: "https://www.linkedin.com/company/andesineapp"
   },
   legal: {
     privacy: "/privacy",
-    terms: "/tos"
+    terms: "/tos",
+    support: "/support"
   },
   vrite: "https://vrite.io/",
   sections: {

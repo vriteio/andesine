@@ -15,7 +15,6 @@ const teamFeatures: FeatureCardProps[] = [
     graphic: AccessGraphic
   },
   {
-    // Planned for launch: verify MCP and agent integration before publishing.
     title: "Connect your agents.",
     text: "Connect AI tools to your workspace through MCP.",
     graphic: AgentGraphic

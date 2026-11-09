@@ -10,7 +10,7 @@ interface FeatureCardProps extends FeatureContentProps {
 const FeatureCard: Component<FeatureCardProps> = (props) => (
   <article class="h-full" data-entry="up" data-entry-delay={props.entryDelay}>
     <Card shade class="flex h-full flex-col overflow-hidden bg-white! p-0">
-      <div class="px-2 pt-4">
+      <div class="px-2 pt-2">
         <props.graphic />
       </div>
       <div class="px-6 pb-6 pt-3">

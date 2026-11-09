@@ -1,90 +1,158 @@
-// Diagram motion
-.float {
-  animation: float 7s ease-in-out infinite;
+// Stage
+.stage {
+  @apply relative h-48 overflow-hidden rounded-lg bg-gray-50;
 }
 
-.pulse {
-  animation: pulse 6s ease-in-out infinite;
+// Panels
+// Panels draw their outline first, then unveil their content when the card enters the viewport.
+.panel {
+  @apply relative rounded-xl border border-gray-200 bg-white;
+  box-shadow: 0 0 12px 0 rgb(17 24 39 / 8%);
+
+  &::after {
+    @apply pointer-events-none absolute -inset-px rounded-xl border border-gray-300 opacity-0;
+    content: "";
+  }
 }
 
-.caret {
-  animation: caret 8s ease-in-out infinite;
+// Before states that only show during the motion; the static page shows the final state.
+.fadeOut {
+  opacity: 0;
 }
 
-.draw {
-  stroke-dasharray: 100;
-  animation: draw 7s ease-in-out infinite;
+// Motion
+:global([data-entry-state="visible"]) {
+  .panel {
+    animation: surface 900ms ease-out both;
+
+    &::after {
+      animation: outline 900ms ease-out both;
+    }
+
+    > * {
+      animation: unveil 450ms 650ms ease-out both;
+    }
+  }
+
+  .late {
+    animation-delay: 300ms;
+
+    &::after {
+      animation-delay: 300ms;
+    }
+
+    > * {
+      animation-delay: 950ms;
+    }
+  }
+
+  .pop {
+    animation: pop 400ms 1400ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  .rise {
+    animation: rise 500ms 1300ms ease-out both;
+  }
+
+  .fadeOut {
+    animation: fade-out 300ms 1400ms ease-out both;
+  }
+
+  .fadeIn {
+    animation: unveil 300ms 1500ms ease-out both;
+  }
+
+  .type {
+    animation: type 900ms 1400ms steps(24) both;
+  }
+
+  .caret {
+    animation: caret 700ms 1400ms ease-in-out both;
+  }
+
+  .highlight {
+    animation: highlight 500ms 1600ms ease-out both;
+  }
 }
 
-.flow {
-  stroke-dasharray: 3 12;
-  animation: flow 7s linear infinite;
-}
-
-.delay {
-  animation-delay: -2s;
-}
-
-@keyframes float {
+@keyframes surface {
   0%,
-  100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-6px);
+  60% {
+    background-color: transparent;
+    border-color: transparent;
+    box-shadow: none;
   }
 }
 
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 0.35;
-  }
-
-  50% {
+@keyframes outline {
+  0% {
+    clip-path: inset(0 100% 100% 0);
     opacity: 1;
+  }
+
+  55% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 0;
+  }
+}
+
+@keyframes unveil {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes type {
+  from {
+    clip-path: inset(0 100% 0 0);
   }
 }
 
 @keyframes caret {
-  0%,
-  20%,
-  100% {
-    transform: translateX(0);
-  }
-
-  45%,
-  75% {
-    transform: translateX(24px);
+  from {
+    transform: translateX(-2.5rem);
   }
 }
 
-@keyframes draw {
-  0%,
-  15% {
-    stroke-dashoffset: 100;
-  }
-
-  50%,
-  85% {
-    stroke-dashoffset: 0;
-  }
-
-  100% {
-    stroke-dashoffset: -100;
-  }
-}
-
-@keyframes flow {
-  to {
-    stroke-dashoffset: -60;
+@keyframes highlight {
+  from {
+    background-size: 0 100%;
   }
 }
 
 // Reduced motion
 @media (prefers-reduced-motion: reduce) {
-  .graphic * {
+  .stage * {
     animation: none !important;
   }
 }

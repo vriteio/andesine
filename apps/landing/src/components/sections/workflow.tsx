@@ -29,7 +29,7 @@ const steps: WorkflowStep[] = [
   },
   {
     title: "Publish",
-    text: "Deliver content through the API or sync files to GitHub.",
+    text: "Publish to a hosted site, read it through the API, or sync files to GitHub.",
     screenshot: "workflow-publish.png",
     alt: "Publishing menu with Publish current and the Published channel",
     width: 680,
