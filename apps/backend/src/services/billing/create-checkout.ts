@@ -126,8 +126,11 @@ const createCheckout = async (input: {
       ],
       success_url: input.successURL,
       cancel_url: input.cancelURL,
+      allow_promotion_codes: true,
       // Stripe Tax needs the address, and tax IDs the name, saved on the existing customer.
       automatic_tax: { enabled: true },
+      billing_address_collection: "required",
+      name_collection: { business: { enabled: true, optional: true } },
       tax_id_collection: { enabled: true },
       customer_update: { address: "auto", name: "auto" },
       metadata: { workspaceID },
