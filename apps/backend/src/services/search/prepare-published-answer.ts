@@ -1,0 +1,49 @@
+import { type PublishedAskInput, type PublishedAskSource } from "@andesine/server/search";
+import { withAuthorization } from "#backend/lib/policy";
+import {
+  createDocumentAuthorizer,
+  resolvePublishedScope
+} from "#backend/lib/search/published-scope";
+import { prepareAnswer, type PreparedAnswer } from "#backend/lib/search/answers";
+import { normalizePublishingChannelCode } from "#backend/lib/publishing";
+import { toSnapshotID } from "@andesine/contracts/primitives";
+
+const preparePublishedAnswer = withAuthorization<
+  PublishedAskInput,
+  undefined,
+  PreparedAnswer<PublishedAskSource>
+>(
+  {
+    permissions: { session: true, key: ["ai-answers", "read:publishing"] }
+  },
+  async ({ auth, database, input, workspaceID }) => {
+    const channel = normalizePublishingChannelCode(input.channel);
+
+    const scope = await resolvePublishedScope(
+      channel,
+      input,
+      database,
+      workspaceID,
+      auth.key?.publishable?.collectionIDs
+    );
+
+    return prepareAnswer({
+      ...input,
+      collectionID: scope.collectionID,
+      allowedCollectionIDs: scope.allowedCollectionIDs,
+      snapshotID: toSnapshotID(scope.snapshotID),
+      channel,
+      authorizeDocuments: createDocumentAuthorizer(
+        channel,
+        scope.snapshotID,
+        database,
+        workspaceID
+      ),
+      query: input.question,
+      scope: "published",
+      workspaceID: auth.workspaceID
+    });
+  }
+);
+
+export { preparePublishedAnswer };

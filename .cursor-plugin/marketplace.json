@@ -1,0 +1,15 @@
+{
+  "name": "andesine",
+  "owner": { "name": "Andesine" },
+  "metadata": {
+    "description": "Andesine plugins for Cursor",
+    "version": "0.1.1"
+  },
+  "plugins": [
+    {
+      "name": "andesine",
+      "source": "./plugins/andesine",
+      "description": "Andesine MCP server and a skill for working with workspace content"
+    }
+  ]
+}

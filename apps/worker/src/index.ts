@@ -1,0 +1,315 @@
+import { createAssetStorage } from "@andesine/server/assets";
+import {
+  ASSET_ANALYSIS_JOB_NAME,
+  ASSET_PROCESS_JOB_NAME,
+  PROFILE_IMAGE_JOB_NAME,
+  type ProfileImageJobData,
+  type AssetProcessJobData,
+  SEARCH_INDEXING_DEFAULT_JOB_OPTIONS,
+  SEARCH_INDEXING_QUEUE_NAME,
+  SCHEMA_MIGRATION_JOB_NAME,
+  type SchemaMigrationJobData
+} from "@andesine/server/queue";
+import { ensureSearchCollections } from "@andesine/server/search";
+import { searchCollectionDefinitions, typesenseClient } from "./search/client";
+import { indexAssetSearch } from "./assets/search";
+import { analyzeAsset, scheduleAssetAnalyses } from "./assets/analyze";
+import { processProfileImage } from "./assets/process-profile";
+import { processAsset } from "./assets/process";
+import { maintainAssets } from "./assets/maintenance";
+import { Queue, Worker, createNodeRedisClient } from "bullmq";
+import { createClient } from "redis";
+import { config } from "./config";
+import { processJob } from "./jobs";
+import { pool } from "./database";
+import { startWebhookScheduler } from "./webhooks/scheduler";
+import { startWebhookConsumer } from "./webhooks/consumer";
+import { startWebhookMaintenance } from "./webhooks/maintenance";
+import { removeUnusedOAuthClients } from "./oauth/maintenance";
+import { createCurrentSearchJobHandlers } from "./search/current";
+import { createPublishedSearchJobHandlers } from "./search/published";
+import {
+  createSchemaMigrationJobHandlers,
+  recoverAbandonedSchemaMigrations,
+  reconcileFailedSchemaMigrationJob
+} from "./schema-migrations";
+import {
+  EXTENSION_REGISTRY_JOB_NAME,
+  isExtensionRegistryEnabled,
+  refreshExtensions
+} from "./extensions/registry";
+
+const MAINTENANCE_QUEUE_NAME = "maintenance";
+const MAINTENANCE_INTERVAL_MS = 60_000;
+const queueRedisClient = createClient({ url: config.QUEUE_REDIS_URL });
+
+queueRedisClient.on("error", (error) => {
+  console.error("Worker Redis client error", { error });
+});
+// BullMQ can't recover when its first connection attempt fails, e.g. before Redis starts.
+await queueRedisClient.connect();
+
+const queueRedisConnection = createNodeRedisClient(queueRedisClient);
+const eventsRedisClient = createClient({ url: config.REDIS_URL });
+const searchIndexingQueue = new Queue(SEARCH_INDEXING_QUEUE_NAME, {
+  connection: queueRedisConnection,
+  defaultJobOptions: SEARCH_INDEXING_DEFAULT_JOB_OPTIONS,
+  skipWaitingForReady: true
+});
+const maintenanceQueue = new Queue(MAINTENANCE_QUEUE_NAME, {
+  connection: queueRedisConnection,
+  defaultJobOptions: SEARCH_INDEXING_DEFAULT_JOB_OPTIONS,
+  skipWaitingForReady: true
+});
+const jobDependencies = {
+  queue: searchIndexingQueue,
+  typesense: typesenseClient
+};
+const publishEvent = (channel: string, message: string) => {
+  return eventsRedisClient.publish(channel, message);
+};
+const schemaMigrationDependencies = {
+  queue: searchIndexingQueue,
+  publish: publishEvent
+};
+const jobHandlers = new Map([
+  ...createCurrentSearchJobHandlers(jobDependencies),
+  ...createPublishedSearchJobHandlers(jobDependencies),
+  ...createSchemaMigrationJobHandlers(schemaMigrationDependencies)
+]);
+const maintenanceHandlers = new Map([
+  ["schema-migration-recovery", () => recoverAbandonedSchemaMigrations(searchIndexingQueue)],
+  ["oauth-client-cleanup", removeUnusedOAuthClients]
+]);
+const maintenanceIntervals = new Map<string, number>([["oauth-client-cleanup", 60 * 60 * 1000]]);
+const reconciliations = new Set<Promise<void>>();
+
+if (isExtensionRegistryEnabled()) {
+  maintenanceHandlers.set(EXTENSION_REGISTRY_JOB_NAME, () => refreshExtensions(publishEvent));
+  maintenanceIntervals.set(
+    EXTENSION_REGISTRY_JOB_NAME,
+    config.EXTENSIONS_REGISTRY_REFRESH_SECONDS * 1000
+  );
+}
+
+const assetStorage = createAssetStorage(config);
+if (assetStorage) {
+  maintenanceHandlers.set("asset-search-indexing", () => indexAssetSearch(typesenseClient));
+  jobHandlers.set(ASSET_ANALYSIS_JOB_NAME, (job) =>
+    analyzeAsset(job.data.assetID as string, assetStorage)
+  );
+  maintenanceHandlers.set("asset-analysis-recovery", () =>
+    scheduleAssetAnalyses(searchIndexingQueue)
+  );
+  jobHandlers.set(PROFILE_IMAGE_JOB_NAME, (job) =>
+    processProfileImage(job.data as unknown as ProfileImageJobData, assetStorage)
+  );
+  jobHandlers.set(ASSET_PROCESS_JOB_NAME, (job) =>
+    processAsset(job.data as unknown as AssetProcessJobData, assetStorage)
+  );
+  maintenanceHandlers.set("asset-maintenance", () =>
+    maintainAssets(searchIndexingQueue, assetStorage, typesenseClient)
+  );
+}
+const worker = new Worker(
+  SEARCH_INDEXING_QUEUE_NAME,
+  (job, token) => processJob(job, jobHandlers, token),
+  {
+    autorun: false,
+    connection: queueRedisConnection,
+    concurrency: config.WORKER_CONCURRENCY
+  }
+);
+const maintenanceWorker = new Worker(
+  MAINTENANCE_QUEUE_NAME,
+  (job, token) => processJob(job, maintenanceHandlers, token),
+  { autorun: false, connection: queueRedisConnection, concurrency: 1 }
+);
+
+eventsRedisClient.on("error", (error) => {
+  console.error("Worker event Redis client error", { error });
+});
+maintenanceQueue.on("error", (error) => {
+  console.error("Maintenance queue error", { error });
+});
+maintenanceWorker.on("error", (error) => {
+  console.error("Maintenance worker error", { error });
+});
+maintenanceWorker.on("failed", (job, error) => {
+  console.error("Maintenance job failed", { error, jobId: job?.id, jobName: job?.name });
+});
+worker.on("error", (error) => {
+  console.error("Background worker error", { error });
+});
+worker.on("failed", (job, error) => {
+  console.error("Background job failed", {
+    error,
+    jobId: job?.id,
+    jobName: job?.name
+  });
+
+  if (job?.name !== SCHEMA_MIGRATION_JOB_NAME || !job.finishedOn) return;
+
+  const data = job.data as unknown as SchemaMigrationJobData;
+
+  const reconciliation = reconcileFailedSchemaMigrationJob(
+    {
+      error,
+      migrationID: data.migrationID,
+      workspaceID: data.workspaceID
+    },
+    schemaMigrationDependencies
+  )
+    .catch((reconciliationError) => {
+      console.error("Failed to reconcile exhausted schema migration job", {
+        error: reconciliationError,
+        migrationID: data.migrationID
+      });
+    })
+    .finally(() => reconciliations.delete(reconciliation));
+
+  reconciliations.add(reconciliation);
+});
+
+const webhookScheduler = startWebhookScheduler();
+const webhookConsumer = startWebhookConsumer(publishEvent);
+const webhookMaintenance = startWebhookMaintenance(publishEvent);
+
+let shutdownPromise: Promise<void> | undefined;
+const shutdown = (): Promise<void> => {
+  if (shutdownPromise) return shutdownPromise;
+
+  shutdownPromise = (async () => {
+    let exitCode = process.exitCode ? 1 : 0;
+
+    // Stop all webhook admission immediately; wait for active database/HTTP work
+    // before the shared pool closes. Maintenance does not need a live queue.
+    const webhookStops = await Promise.allSettled([
+      webhookConsumer.stop(),
+      webhookScheduler.stop(),
+      webhookMaintenance.stop()
+    ]);
+
+    if (webhookStops.some((result) => result.status === "rejected")) {
+      exitCode = 1;
+      console.error("Failed to close webhook workers");
+    }
+
+    // Finish maintenance while its target queue and database are still available.
+    try {
+      await maintenanceWorker.close();
+    } catch (error) {
+      exitCode = 1;
+      console.error("Failed to close the maintenance worker", error);
+    }
+
+    try {
+      await maintenanceQueue.close();
+    } catch (error) {
+      exitCode = 1;
+      console.error("Failed to close the maintenance queue", error);
+    }
+
+    try {
+      await worker.close();
+    } catch (error) {
+      exitCode = 1;
+      console.error("Failed to close the background worker", error);
+    }
+
+    // Reconciliation still needs the queue and the database.
+    await Promise.allSettled([...reconciliations]);
+
+    try {
+      await searchIndexingQueue.close();
+    } catch (error) {
+      exitCode = 1;
+      console.error("Failed to close the search indexing queue", error);
+    }
+
+    if (queueRedisClient.isOpen) {
+      try {
+        await queueRedisConnection.quit();
+      } catch (error) {
+        exitCode = 1;
+        console.error("Failed to close the worker Redis connection", error);
+      }
+    }
+
+    if (eventsRedisClient.isOpen) {
+      try {
+        await eventsRedisClient.close();
+      } catch (error) {
+        exitCode = 1;
+        console.error("Failed to close the worker event Redis connection", error);
+      }
+    }
+
+    try {
+      await pool.end();
+    } catch (error) {
+      exitCode = 1;
+      console.error("Failed to close the worker database pool", error);
+    }
+
+    process.exit(exitCode);
+  })();
+
+  return shutdownPromise;
+};
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
+
+// Webhooks start independently; install shutdown handlers before waiting for
+// Redis, event messaging, or search initialization.
+const startBackgroundWorkers = async (): Promise<void> => {
+  const [, , , outdatedSearchAliases] = await Promise.all([
+    worker.waitUntilReady(),
+    maintenanceWorker.waitUntilReady(),
+    eventsRedisClient.connect(),
+    ensureSearchCollections(typesenseClient, searchCollectionDefinitions)
+  ]);
+
+  if (shutdownPromise) return;
+
+  if (outdatedSearchAliases.length) {
+    console.warn("Search aliases point to older collections; run search:activate", {
+      aliases: outdatedSearchAliases
+    });
+  }
+
+  // Set the shared limit before any replica starts consuming maintenance jobs.
+  await maintenanceQueue.setGlobalConcurrency(1);
+  for (const name of maintenanceHandlers.keys()) {
+    if (shutdownPromise) return;
+
+    await maintenanceQueue.upsertJobScheduler(
+      name,
+      { every: maintenanceIntervals.get(name) ?? MAINTENANCE_INTERVAL_MS },
+      { name, data: {}, opts: SEARCH_INDEXING_DEFAULT_JOB_OPTIONS }
+    );
+  }
+  // A refresh scheduled before the registry was turned off would have no handler.
+  if (!maintenanceHandlers.has(EXTENSION_REGISTRY_JOB_NAME)) {
+    await maintenanceQueue.removeJobScheduler(EXTENSION_REGISTRY_JOB_NAME);
+  }
+  if (shutdownPromise) return;
+
+  void worker.run().catch((error) => {
+    worker.emit("error", error);
+  });
+  void maintenanceWorker.run().catch((error) => {
+    maintenanceWorker.emit("error", error);
+  });
+
+  console.log("Background worker is ready");
+};
+
+try {
+  await startBackgroundWorkers();
+} catch (error) {
+  console.error("Background worker startup failed", { error });
+  process.exitCode = 1;
+  await shutdown();
+}

@@ -1,0 +1,40 @@
+{
+  "name": "@andesine/worker",
+  "type": "module",
+  "private": true,
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "rolldown -c rolldown.config.mjs",
+    "typecheck": "tsc --noEmit",
+    "start": "node ./dist/index.js",
+    "dev": "tsx watch ./src/index.ts",
+    "extensions:refresh": "node --env-file-if-exists=../../.env ./dist/refresh-extension-registry.js",
+    "search:activate": "node --env-file-if-exists=../../.env ./dist/activate-search-collections.js"
+  },
+  "dependencies": {
+    "@andesine/document": "workspace:*",
+    "@aws-sdk/client-s3": "catalog:",
+    "@orpc/server": "catalog:",
+    "base-x": "catalog:",
+    "bullmq": "catalog:",
+    "drizzle-orm": "catalog:",
+    "lexorank": "catalog:",
+    "pg": "catalog:",
+    "redis": "^6.2.0",
+    "sharp": "^0.35.5",
+    "zod": "catalog:",
+    "@andesine/contracts": "workspace:*",
+    "@orpc/contract": "catalog:",
+    "@orpc/zod": "catalog:",
+    "@andesine/server": "workspace:*",
+    "yjs": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "@types/pg": "catalog:",
+    "rolldown": "^1.2.2",
+    "tsx": "^4.23.5",
+    "typescript": "6.0.3",
+    "@andesine/sdk": "workspace:*"
+  }
+}

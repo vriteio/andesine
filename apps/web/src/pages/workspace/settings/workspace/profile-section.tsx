@@ -1,0 +1,81 @@
+import { ImageSetting } from "../image-setting";
+import { Input, Skeleton, Spinner } from "@andesine/components";
+import { type Component, createEffect, createSignal, Show } from "solid-js";
+import { SettingsSection } from "../settings-section";
+import { Setting } from "../setting";
+import { useNotify } from "#web/context/notifications";
+import { useWorkspace } from "#web/context/workspace";
+import { client } from "#web/lib/api";
+import { createMutation } from "@tanstack/solid-query";
+import clsx from "clsx";
+
+const WorkspaceProfileSection: Component = () => {
+  const notify = useNotify();
+  const { currentWorkspace, hasPermission, refreshWorkspaces } = useWorkspace();
+  const [name, setName] = createSignal(currentWorkspace()?.name || "");
+  const updateWorkspaceNameMutation = createMutation(() => ({
+    onSuccess: () => {
+      void refreshWorkspaces();
+    },
+    onError: (error) => {
+      console.error(error);
+      setName(currentWorkspace()?.name || "");
+      notify({
+        type: "error",
+        text: "Failed to update workspace name"
+      });
+    },
+    mutationFn: async (input: { name: string }) => {
+      await client.workspaces.update({ name: input.name });
+    }
+  }));
+
+  createEffect(() => {
+    setName(currentWorkspace()?.name || "");
+  });
+
+  return (
+    <SettingsSection label="Profile">
+      <ImageSetting target="workspace" />
+      <Setting
+        label="Workspace name"
+        description="The display name for this workspace"
+        fade={false}
+      >
+        <Show
+          when={currentWorkspace()}
+          fallback={<Skeleton class="h-9 w-full max-w-md rounded-lg" />}
+        >
+          <div class="flex w-full max-w-md flex-col gap-2">
+            <div class="relative">
+              <Input
+                placeholder="My Workspace"
+                class={clsx("w-full", updateWorkspaceNameMutation.isPending && "animate-pulse")}
+                disabled={!hasPermission("workspace") || updateWorkspaceNameMutation.isPending}
+                value={name()}
+                setValue={setName}
+                slot={() => (
+                  <Show when={updateWorkspaceNameMutation.isPending}>
+                    <div class="absolute right-0 p-1.5">
+                      <Spinner class="h-4 w-4" color="primary" />
+                    </div>
+                  </Show>
+                )}
+                onConfirm={() => {
+                  if (name() !== currentWorkspace()?.name) {
+                    updateWorkspaceNameMutation.mutate({ name: name() });
+                  }
+                }}
+                onCancel={() => {
+                  setName(currentWorkspace()?.name || "");
+                }}
+              />
+            </div>
+          </div>
+        </Show>
+      </Setting>
+    </SettingsSection>
+  );
+};
+
+export { WorkspaceProfileSection };

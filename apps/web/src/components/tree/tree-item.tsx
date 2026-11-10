@@ -1,0 +1,335 @@
+import { Checkbox, createRef, type MenuItem } from "@andesine/components";
+import clsx from "clsx";
+import {
+  type Component,
+  createEffect,
+  createSignal,
+  type JSX,
+  Show,
+  onMount,
+  onCleanup
+} from "solid-js";
+import { useTree } from "./tree-context";
+import { useTreeKeyboardItems } from "./tree-keyboard";
+
+interface TreeItemProps {
+  keyboardMenu?: MenuItem[];
+  onOpenMenu?(): void;
+  id: string;
+  label: string;
+  children?: JSX.Element;
+  topLevel?: boolean;
+  icon: JSX.Element;
+  iconClass?: string;
+  selectable?: boolean;
+  checkbox?: boolean;
+  selectionState?: boolean | "indeterminate";
+  actions?: JSX.Element;
+  highlighted?: boolean;
+  dataAttributes?: Record<string, string>;
+  class?: string;
+  labelMaxLength?: number;
+  ref?: (el: HTMLElement) => void;
+  onClick?: (event: MouseEvent) => void;
+  onSelectionChange?(selected: boolean): void;
+  validateName?(name: string): string | undefined;
+  onRename?: (name: string) => void;
+  renderLabel?: (label: JSX.Element) => JSX.Element;
+}
+
+const TreeItem: Component<TreeItemProps> = (props) => {
+  const keyboardItems = useTreeKeyboardItems();
+  let element: HTMLElement | undefined;
+  const [
+    { focusedSource, isFocused, isRenaming, isSelected, flattenedOrder, itemHeight },
+    { setFocusedItem, setSelection, setRenaming }
+  ] = useTree();
+  const [currentName, setCurrentName] = createSignal("");
+  const [lastValidName, setLastValidName] = createSignal(props.label);
+  const [cancelledRef, setCancelledRef] = createRef(false);
+  const selected = () => {
+    return props.selectionState !== undefined
+      ? props.selectionState === true
+      : isSelected(props.id);
+  };
+  const focusItem = () => {
+    setFocusedItem(props.id, "hover");
+  };
+  const clearHoverFocus = () => {
+    if (isFocused(props.id) && focusedSource() === "hover") {
+      setFocusedItem(null, null);
+    }
+  };
+  const handlePointerDown = (event: PointerEvent) => {
+    const contextSelected = selected() || props.selectionState === "indeterminate";
+
+    if (event.button !== 2 || !props.selectable || contextSelected) return;
+
+    if (props.onSelectionChange) {
+      props.onSelectionChange(true);
+    } else {
+      setSelection([props.id]);
+    }
+  };
+  const handleClick = (event: MouseEvent) => {
+    const itemSelected = selected();
+    const selectionTarget =
+      event.target instanceof Element && event.target.closest("[data-tree-selectable]");
+
+    event.stopPropagation();
+
+    if (keyboardItems && selectionTarget) {
+      queueMicrotask(() => {
+        if (element?.isConnected) element.focus({ preventScroll: true });
+      });
+    }
+
+    if (
+      props.selectable &&
+      (itemSelected || props.checkbox) &&
+      event.target instanceof HTMLElement &&
+      event.target.closest("[data-tree-selectable]")
+    ) {
+      if (props.onSelectionChange) {
+        props.onSelectionChange(!itemSelected);
+      } else {
+        setSelection((sel) => {
+          if (itemSelected) {
+            return sel.filter((id) => id !== props.id);
+          }
+
+          return [...sel, props.id];
+        });
+      }
+
+      return;
+    }
+
+    if (props.selectable && (event.metaKey || event.ctrlKey || event.shiftKey)) {
+      if (props.onSelectionChange) {
+        props.onSelectionChange(!itemSelected);
+      } else {
+        setSelection((sel) => {
+          if (event.shiftKey) {
+            if (sel.length === 0) {
+              return [props.id];
+            }
+
+            const order = flattenedOrder();
+            const index = order.indexOf(props.id);
+            const startIndex = order.findIndex((id) => sel.includes(id));
+            const endIndex = order.findLastIndex((id) => sel.includes(id));
+
+            if (index < startIndex) {
+              return order.slice(index, endIndex + 1);
+            }
+
+            return order.slice(startIndex, index + 1);
+          } else if (event.metaKey || event.ctrlKey) {
+            if (sel.includes(props.id)) {
+              return sel.filter((id) => id !== props.id);
+            }
+
+            return [...sel, props.id];
+          }
+
+          return [props.id];
+        });
+      }
+    } else {
+      setSelection([]);
+      props.onClick?.(event);
+    }
+  };
+
+  createEffect(() => {
+    if (isRenaming(props.id)) {
+      setCancelledRef(false);
+      setCurrentName(props.label);
+      setLastValidName(props.label);
+    }
+  });
+  const renameError = () => props.validateName?.(currentName());
+  const submitRename = () => {
+    const name = renameError() ? lastValidName() : currentName();
+
+    if (!props.validateName?.(name)) props.onRename?.(name);
+    setSelection([]);
+    setRenaming("");
+  };
+
+  onMount(() => {
+    const id = props.id;
+
+    keyboardItems?.set(id, {
+      element: () => element,
+      label: () => props.label,
+      selectable: () => Boolean(props.selectable),
+      menuItems: () => props.keyboardMenu || [],
+      openMenu: () => props.onOpenMenu?.(),
+      activate: () => {
+        if (props.onClick) element?.click();
+        else props.onOpenMenu?.();
+      }
+    });
+    onCleanup(() => {
+      const root = element?.closest<HTMLElement>("[data-tree-keyboard]");
+      const wasFocused = document.activeElement === element;
+
+      keyboardItems?.delete(id);
+      if (wasFocused && root) {
+        queueMicrotask(() => {
+          if (root.isConnected && document.activeElement === document.body) root.focus();
+        });
+      }
+    });
+  });
+
+  return (
+    <div
+      class={clsx(
+        ":base: relative flex min-w-0 flex-1 gap-1 font-medium items-center pl-0.5 rounded-r-lg group @hover:cursor-pointer w-full overflow-hidden select-none focus-visible:outline-none",
+        (props.selectable || (keyboardItems && focusedSource() === "keyboard")) &&
+          isFocused(props.id) &&
+          !selected() &&
+          !props.highlighted &&
+          ":base: bg-gradient-to-r from-gray-500/10 to-transparent",
+        props.topLevel && ":base: rounded-l-lg",
+        props.class
+      )}
+      style={{ "min-height": itemHeight }}
+      ref={(el) => {
+        element = el;
+        props.ref?.(el);
+      }}
+      tabindex={keyboardItems ? -1 : undefined}
+      onFocus={(event) => {
+        if (keyboardItems && event.target === element) setFocusedItem(props.id, "keyboard");
+      }}
+      onClick={handleClick}
+      onPointerDown={handlePointerDown}
+      onPointerEnter={focusItem}
+      onPointerLeave={clearHoverFocus}
+      data-tree-item={props.id}
+      {...Object.fromEntries(
+        Object.entries(props.dataAttributes || {}).map(([k, v]) => [`data-${k}`, v])
+      )}
+    >
+      <Show when={props.highlighted && !selected()}>
+        <div
+          class={clsx(
+            "left-0 -z-10 rounded-r-lg absolute h-full w-full opacity-10 from-secondary via-primary to-transparent bg-gradient-to-r",
+            props.topLevel && "rounded-l-lg"
+          )}
+        />
+      </Show>
+      <Show
+        when={props.selectable}
+        fallback={
+          <div class={clsx("flex h-6 w-6 items-center justify-center", props.iconClass)}>
+            {props.icon}
+          </div>
+        }
+      >
+        <div
+          data-tree-selectable
+          class={clsx("flex h-6 w-6 items-center justify-center", props.iconClass)}
+        >
+          <Show when={!props.checkbox || (!selected() && props.selectionState !== "indeterminate")}>
+            <div
+              class={clsx(
+                "h-6 w-6 flex justify-center items-center",
+                props.checkbox && "media-mouse:group-hover:hidden"
+              )}
+            >
+              {props.icon}
+            </div>
+          </Show>
+          <Show when={props.checkbox}>
+            <div
+              class={clsx(
+                !selected() &&
+                  props.selectionState !== "indeterminate" &&
+                  "hidden media-mouse:group-hover:block"
+              )}
+            >
+              <Checkbox checked={props.selectionState ?? isSelected(props.id)} />
+            </div>
+          </Show>
+        </div>
+      </Show>
+      <Show
+        when={props.children}
+        fallback={(props.renderLabel || ((label) => label))(
+          <Show
+            when={!isRenaming(props.id)}
+            fallback={
+              <input
+                data-tree-rename
+                ref={(el) => {
+                  setCurrentName(props.label);
+                  queueMicrotask(() => {
+                    el.focus({ preventScroll: true });
+                    el.select();
+                  });
+                }}
+                type="text"
+                value={currentName()}
+                maxLength={props.labelMaxLength}
+                aria-invalid={Boolean(renameError())}
+                title={renameError()}
+                class="min-w-0 w-0 flex-1 cursor-text select-text overflow-hidden whitespace-nowrap bg-transparent outline-none"
+                style={{ "-webkit-touch-callout": "default" }}
+                onInput={(e) => {
+                  const name = e.currentTarget.value;
+
+                  setCurrentName(name);
+
+                  if (!props.validateName?.(name)) setLastValidName(name);
+                }}
+                onBlur={() => {
+                  if (cancelledRef()) return;
+
+                  submitRename();
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setCancelledRef(true);
+                    submitRename();
+                    if (keyboardItems) element?.focus({ preventScroll: true });
+                  }
+
+                  if (e.key === "Escape") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setRenaming("");
+                    setCancelledRef(true);
+                    if (keyboardItems) element?.focus({ preventScroll: true });
+                  }
+                }}
+              />
+            }
+          >
+            <span class="flex-1 line-clamp-1">{props.label}</span>
+          </Show>
+        )}
+      >
+        {props.children}
+      </Show>
+      <Show when={isRenaming(props.id) && renameError()}>
+        <span
+          role="img"
+          aria-label={renameError()}
+          title={renameError()}
+          class="h-4 w-4 shrink-0 text-red-500 i-lucide:circle-alert"
+        />
+      </Show>
+      {props.actions}
+    </div>
+  );
+};
+
+export { TreeItem };
+export type { TreeItemProps };

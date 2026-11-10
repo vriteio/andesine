@@ -1,0 +1,68 @@
+import {
+  InputRule,
+  type InputRuleFinder,
+  type ExtendedRegExpMatchArray,
+  type Range,
+  callOrReturn
+} from "@tiptap/core";
+import { type NodeType } from "@tiptap/pm/model";
+import { type Transaction } from "@tiptap/pm/state";
+
+const nodeInputRule = (config: {
+  find: InputRuleFinder;
+  type: NodeType;
+  getAttributes?:
+    | Record<string, unknown>
+    | ((match: ExtendedRegExpMatchArray) => Record<string, unknown>)
+    | false
+    | null;
+  appendTransaction?(input: {
+    tr: Transaction;
+    attributes: Record<string, unknown>;
+    range: Range;
+  }): void;
+}): InputRule => {
+  return new InputRule({
+    find: config.find,
+    handler: ({ state, range, match }) => {
+      const attributes = callOrReturn(config.getAttributes, undefined, match) || {};
+      const { tr } = state;
+      const start = range.from;
+
+      let end = range.to;
+
+      const newNode = config.type.create(attributes);
+
+      if (match[1]) {
+        const offset = match[0].lastIndexOf(match[1]);
+
+        let matchStart = start + offset;
+
+        if (matchStart > end) {
+          matchStart = end;
+        } else {
+          end = matchStart + match[1].length;
+        }
+
+        const lastChar = match[0][match[0].length - 1];
+
+        tr.insertText(lastChar, start + match[0].length - 1);
+        tr.replaceWith(matchStart - 1, end, newNode);
+      } else if (match[0]) {
+        // A block goes before its paragraph; replacing the text with it, the delete removed it.
+        const insertionStart = config.type.isInline ? start : start - 1;
+
+        tr.insert(insertionStart, newNode).delete(tr.mapping.map(start), tr.mapping.map(end));
+      }
+
+      config.appendTransaction?.({
+        tr,
+        attributes,
+        range
+      });
+      tr.scrollIntoView();
+    }
+  });
+};
+
+export { nodeInputRule };

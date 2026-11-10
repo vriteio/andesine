@@ -1,0 +1,33 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "app.andesine/andesine",
+  "title": "Andesine",
+  "description": "Search, read, write, and publish content in an Andesine knowledge base, CMS, and docs workspace.",
+  "version": "0.7.0",
+  "websiteUrl": "https://andesine.app",
+  "repository": {
+    "url": "https://github.com/vriteio/andesine",
+    "source": "github",
+    "subfolder": "packages/public/cli"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "andesine",
+      "version": "0.7.0",
+      "runtimeHint": "npx",
+      "transport": { "type": "stdio" },
+      "packageArguments": [{ "type": "positional", "value": "mcp" }],
+      "environmentVariables": [
+        {
+          "name": "ANDESINE_API_KEY",
+          "description": "Workspace API key; not needed after andesine auth login",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
+    }
+  ],
+  "remotes": [{ "type": "streamable-http", "url": "https://api.andesine.app/mcp" }]
+}

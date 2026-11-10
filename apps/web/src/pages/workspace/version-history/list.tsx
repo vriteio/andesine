@@ -1,0 +1,310 @@
+import {
+  Button,
+  createRef,
+  DropdownArea,
+  DropdownMenu,
+  IconButton,
+  type MenuItem,
+  ScrollShadow
+} from "@andesine/components";
+import { type Component, createEffect, createMemo, createSignal, For, on, Show } from "solid-js";
+import { TREE_ROOT_ID, Tree, type TreeMap } from "#web/components/tree";
+import { groupVersions, type VersionHistoryGroup } from "./groups";
+import { VersionHistoryItem, type VersionHistoryVersion } from "./item";
+import { VERSION_ITEM_HEIGHT, VersionHistorySkeleton } from "./skeleton";
+import clsx from "clsx";
+import { createAsync } from "@solidjs/router";
+import { membershipsQuery } from "#web/lib/data";
+
+interface VersionHistoryListProps {
+  activeVersionID: string;
+  assignedChannels?(version: VersionHistoryVersion): string[];
+  canManage: boolean;
+  canManagePublishing?: boolean;
+  canRevert?(version: VersionHistoryVersion): boolean;
+  emptyMessage: string;
+  failed: boolean;
+  fallbackLabel?(version: VersionHistoryVersion): string;
+  loading: boolean;
+  loadingMore: boolean;
+  nextCursor: string | null;
+  onAssign?(version: VersionHistoryVersion, channel: string): void;
+  onCompare?(version: VersionHistoryVersion): void;
+  onLoadMore(): void;
+  onOpen(version: VersionHistoryVersion): void;
+  onRefresh(): void;
+  onRename(version: VersionHistoryVersion, name: string): void;
+  onRevert?(version: VersionHistoryVersion): void;
+  onUnpublish?(version: VersionHistoryVersion, channel: string): void;
+  options?: MenuItem[];
+  ownerID: string;
+  versions: VersionHistoryVersion[];
+}
+
+const VersionHistoryList: Component<VersionHistoryListProps> = (props) => {
+  const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
+  const hasContributors = createMemo(() => {
+    return props.versions.some((version) => version.contributorIDs.length > 0);
+  });
+  const memberships = createAsync(async () => {
+    if (!hasContributors()) return null;
+
+    try {
+      return await membershipsQuery();
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
+  });
+  const contributorNamesByID = createMemo(() => {
+    return new Map(
+      (memberships.latest || []).map((member) => [
+        member.id,
+        member.profile.name || member.profile.email
+      ])
+    );
+  });
+  const options = () => props.options || [];
+  const [expandedGroups, setExpandedGroups] = createSignal<ReadonlySet<string>>(new Set());
+
+  let groupCountBeforeLoad: number | null = null;
+
+  const versionsByID = createMemo(() => {
+    return new Map(props.versions.map((version) => [version.id, version]));
+  });
+  const groups = createMemo(() => {
+    return groupVersions(props.versions, (version) => {
+      return Boolean(props.assignedChannels?.(version).length);
+    });
+  });
+  const groupsByVersionID = createMemo(() => {
+    const entries = groups().flatMap((group) => {
+      return group.versions.map((version) => [version.id, group] as const);
+    });
+
+    return new Map(entries);
+  });
+  const activeNestedGroup = createMemo(() => {
+    const group = groupsByVersionID().get(props.activeVersionID);
+
+    return group && group.versions[0].id !== props.activeVersionID ? group.key : null;
+  });
+  const tree = createMemo<TreeMap>(() => ({
+    [TREE_ROOT_ID]: {
+      items: groups().flatMap((group) => {
+        const versions = expandedGroups().has(group.key)
+          ? group.versions
+          : group.versions.slice(0, 1);
+
+        return versions.map((version) => version.id);
+      }),
+      levels: []
+    }
+  }));
+  const loadMore = () => {
+    groupCountBeforeLoad = groups().length;
+    props.onLoadMore();
+  };
+  const toggleGroup = (group: VersionHistoryGroup) => {
+    setExpandedGroups((expanded) => {
+      const next = new Set(expanded);
+
+      if (!next.delete(group.key)) next.add(group.key);
+
+      return next;
+    });
+  };
+
+  // Loaded versions that only joined the last group would leave the list as it was; they show.
+  createEffect(
+    on(
+      () => props.loadingMore,
+      (loading, wasLoading) => {
+        const lastGroup = groups().at(-1);
+        const joinedLastGroup = groups().length === groupCountBeforeLoad && lastGroup;
+
+        if (!wasLoading || loading) return;
+
+        if (joinedLastGroup) setExpandedGroups((expanded) => new Set(expanded).add(lastGroup.key));
+
+        groupCountBeforeLoad = null;
+      }
+    )
+  );
+  // A previewed version stays visible, e.g. when opened from a link.
+  createEffect(
+    on(
+      () => props.ownerID,
+      () => setExpandedGroups(new Set<string>()),
+      { defer: true }
+    )
+  );
+  createEffect(
+    on([() => props.ownerID, activeNestedGroup], ([, key]) => {
+      if (key) setExpandedGroups((expanded) => new Set(expanded).add(key));
+    })
+  );
+
+  return (
+    <DropdownArea>
+      <div class="relative flex min-h-0 w-full flex-1">
+        <div class="pointer-events-none absolute inset-y-0 left-0 right-3 overflow-hidden">
+          <ScrollShadow
+            color="panel"
+            offset={{ top: "2.25rem" }}
+            scrollableContainerRef={scrollableContainerRef}
+          />
+        </div>
+        <div
+          ref={setScrollableContainerRef}
+          class="relative flex min-h-0 w-full flex-1 flex-col scrollbar-panel scrollbar-hover overflow-y-auto px-1"
+        >
+          <div class="group/version-header sticky top-0 z-20 -mx-1 flex h-9 shrink-0 items-center gap-2 bg-white px-1 md:bg-gray-100">
+            <h2 class="flex-1 text-2xl font-semibold">Versions</h2>
+            <Show when={options().length > 0}>
+              <DropdownMenu
+                title="Versions"
+                cardProps={{ class: "w-48" }}
+                items={options()}
+                mobileSheetDragFromContent={false}
+                portal={false}
+                trigger={() => (
+                  <div class="opacity-20 media-mouse:opacity-0 media-mouse:group-hover/version-header:opacity-100">
+                    <IconButton icon="i-lucide:ellipsis-vertical" variant="ghost" />
+                  </div>
+                )}
+              />
+            </Show>
+          </div>
+          <Show when={!props.loading} fallback={<VersionHistorySkeleton />}>
+            <Show
+              when={!props.failed}
+              fallback={
+                <div class="flex flex-1 flex-col">
+                  <div>
+                    <Button
+                      class="flex w-full items-center justify-start gap-1 py-0.5 pl-0.5"
+                      variant="ghost"
+                      size="medium"
+                      onClick={props.onRefresh}
+                    >
+                      <div class="flex h-6 w-6 items-center justify-center">
+                        <div class="i-lucide:refresh-cw h-4.5 w-4.5 text-gray-400" />
+                      </div>
+                      <span class="flex-1 text-left line-clamp-1">Try again</span>
+                    </Button>
+                  </div>
+                  <p class="mx-1 mt-1 text-left text-xs text-gray-400">
+                    Versions could not be loaded. Check your connection and try again.
+                  </p>
+                </div>
+              }
+            >
+              <Show
+                when={props.versions.length > 0}
+                fallback={
+                  <div class="flex flex-1 flex-col">
+                    <div>
+                      <For each={options()}>
+                        {(option) => (
+                          <Button
+                            class="flex w-full items-center justify-start gap-1 py-0.5 pl-0.5"
+                            variant="ghost"
+                            size="medium"
+                            onClick={() => option.onClick?.()}
+                          >
+                            <div class="flex h-6 w-6 items-center justify-center">
+                              <div class={clsx(option.icon, "h-5 w-5 text-gray-400")} />
+                            </div>
+                            <span class="flex-1 text-left line-clamp-1">{option.label}</span>
+                          </Button>
+                        )}
+                      </For>
+                    </div>
+                    <p class="mx-1 mt-1 text-left text-xs text-gray-400">{props.emptyMessage}</p>
+                  </div>
+                }
+              >
+                <Tree
+                  tree={tree}
+                  itemHeight={VERSION_ITEM_HEIGHT}
+                  renderItem={(versionID) => {
+                    const version = versionsByID().get(versionID);
+
+                    if (!version) return null;
+
+                    const group = () => groupsByVersionID().get(versionID);
+                    const isGroupHead = () => {
+                      return group()?.versions[0].id === versionID && group()!.versions.length > 1;
+                    };
+                    const continuesGuide = () => {
+                      const versions = group()?.versions ?? [];
+                      const isExpanded = expandedGroups().has(group()?.key ?? "");
+
+                      return isExpanded && versions.at(-1)?.id !== versionID;
+                    };
+
+                    return (
+                      <div class="relative">
+                        <VersionHistoryItem
+                          version={version}
+                          expanded={expandedGroups().has(group()?.key ?? "")}
+                          timeframe={group()?.label}
+                          onToggleTimeframe={
+                            isGroupHead() ? () => toggleGroup(group()!) : undefined
+                          }
+                          fallbackLabel={props.fallbackLabel?.(version)}
+                          active={props.activeVersionID === version.id}
+                          assignedChannels={props.assignedChannels?.(version)}
+                          contributorNames={version.contributorIDs.map((id) => {
+                            return contributorNamesByID().get(id) || "Name unavailable";
+                          })}
+                          canManage={props.canManage}
+                          canManagePublishing={props.canManagePublishing}
+                          onAssign={
+                            props.onAssign
+                              ? (channel) => props.onAssign?.(version, channel)
+                              : undefined
+                          }
+                          onCompare={props.onCompare ? () => props.onCompare?.(version) : undefined}
+                          onOpen={() => props.onOpen(version)}
+                          onRename={(name) => props.onRename(version, name)}
+                          onRevert={
+                            props.onRevert && (!props.canRevert || props.canRevert(version))
+                              ? () => props.onRevert?.(version)
+                              : undefined
+                          }
+                          onUnpublish={
+                            props.onUnpublish
+                              ? (channel) => props.onUnpublish?.(version, channel)
+                              : undefined
+                          }
+                        />
+                        <Show when={continuesGuide()}>
+                          <div class="pointer-events-none absolute left-3.25 top-6 -bottom-1.5 w-px rounded-full bg-gray-300" />
+                        </Show>
+                      </div>
+                    );
+                  }}
+                />
+                <Show when={props.nextCursor}>
+                  <Button
+                    class="mt-1 w-full"
+                    variant="ghost"
+                    text="softer"
+                    loading={props.loadingMore}
+                    onClick={loadMore}
+                  >
+                    Load more
+                  </Button>
+                </Show>
+              </Show>
+            </Show>
+          </Show>
+        </div>
+      </div>
+    </DropdownArea>
+  );
+};
+
+export { VersionHistoryList };

@@ -1,0 +1,65 @@
+import { auth } from "#backend/lib/adapters";
+import { toUserID } from "@andesine/contracts/primitives";
+import { getUserAuthorization, type SessionData } from "#backend/lib/policy";
+import { resolveUserAuthorization } from "#backend/lib/auth/user-authorization";
+import { getEffectivePlan } from "#backend/lib/billing";
+import { ORPCError } from "@orpc/server";
+import { getExtensionSessionData, isExtensionToken } from "./get-extension-session-data";
+import { getKeySessionData } from "./get-key-session-data";
+import { OAuth } from "./oauth";
+
+interface GetSessionDataInput {
+  headers: Headers;
+  requireWorkspace?: boolean;
+}
+
+const getSessionData = async (input: GetSessionDataInput): Promise<SessionData> => {
+  const authorization = input.headers.get("authorization");
+  let data: SessionData;
+
+  if (authorization !== null) {
+    const token = /^Bearer\s+(\S+)$/i.exec(authorization)?.[1];
+
+    if (!token) throw new ORPCError("UNAUTHORIZED");
+
+    if (token.startsWith("and_at_")) {
+      data = await OAuth.getSessionData({ ...input, token });
+    } else if (isExtensionToken(token)) {
+      data = await getExtensionSessionData(token);
+    } else {
+      data = await getKeySessionData(token);
+    }
+  } else {
+    const result = await auth.api.getSession({ headers: input.headers });
+
+    if (!result?.session) throw new ORPCError("UNAUTHORIZED");
+
+    data = await resolveUserAuthorization({
+      ...input,
+      userID: toUserID(result.session.userId),
+      type: "session"
+    });
+
+    // Set by the web host for extension requests; it can only narrow access.
+    if (input.headers.get("x-hide-restricted-collections") === "true") {
+      data = { ...data, hideRestricted: true };
+    }
+  }
+
+  const subscriptionPlan = getEffectivePlan(data.subscriptionPlan);
+  const user = getUserAuthorization(data);
+
+  if (data.workspaceID && user && !user.admin && subscriptionPlan !== "pro") {
+    throw new ORPCError("FORBIDDEN", {
+      message: "This workspace is only available to admins while it is on the Free plan",
+      data: {
+        requiredPlan: "pro",
+        hints: ["Ask a workspace administrator to review the subscription plan."]
+      }
+    });
+  }
+
+  return { ...data, subscriptionPlan };
+};
+
+export { getSessionData };

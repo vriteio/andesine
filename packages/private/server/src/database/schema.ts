@@ -1,0 +1,132 @@
+import { entryVersionProperties } from "./version-properties";
+import { assetStorageDeletions, assetUploads } from "./asset-uploads";
+import { assetAnalyses, assetFiles, assets, entryAssets, entryVersionAssets } from "./assets";
+import { accounts, passkeys, sessions, verifications } from "./auth";
+import * as oauth from "./oauth";
+import { collections } from "./collections";
+import {
+  collectionSchemas,
+  effectiveSchemaRevisions,
+  schemaDraftContributors,
+  schemaMigrationCollections,
+  schemaMigrationEntries,
+  schemaMigrations,
+  schemaVersionContributors,
+  schemaVersions
+} from "./content-schemas";
+import { contents } from "./contents";
+import { stripeWebhookEvents } from "./stripe-webhook-events";
+import { entries } from "./entries";
+import {
+  collectionGroupRoles,
+  collectionMemberRoles,
+  groupInvitations,
+  groupMembers,
+  groups
+} from "./groups";
+import { invitations } from "./invitations";
+import { apiKeys } from "./keys";
+import { memberships } from "./memberships";
+import {
+  publishingChannels,
+  publishingSnapshotCollections,
+  publishingSnapshotEntries,
+  publishingSnapshots
+} from "./publishing";
+import { roles } from "./roles";
+import { analyticsUsageCursor, billingPeriods, dailyUsage, usageLedger } from "./usage";
+import { users } from "./users";
+import {
+  entryVersionActivity,
+  entryVersionActivityContributors,
+  entryVersionContributors,
+  entryVersions
+} from "./versions";
+import { workspaces } from "./workspaces";
+import { webhookEndpoints, webhookEndpointRevisions } from "./webhooks";
+import {
+  extensionActiveViews,
+  extensionConfigurations,
+  extensionDevelopmentVersions,
+  extensionElementViews,
+  extensionRegistryKeys,
+  extensionRegistryVersions,
+  extensionSecrets,
+  extensionStorage,
+  extensions
+} from "./extensions";
+import { outboundEvents, outboundEventResources } from "./outbound-events";
+import {
+  outboundDeliveries,
+  outboundDeliveryRuns,
+  outboundDeliveryAttempts
+} from "./outbound-deliveries";
+
+const schema = {
+  ...oauth,
+  users,
+  sessions,
+  accounts,
+  verifications,
+  passkeys,
+  workspaces,
+  assets,
+  assetUploads,
+  assetStorageDeletions,
+  assetAnalyses,
+  assetFiles,
+  roles,
+  memberships,
+  invitations,
+  collections,
+  collectionSchemas,
+  schemaDraftContributors,
+  schemaVersions,
+  schemaVersionContributors,
+  effectiveSchemaRevisions,
+  schemaMigrations,
+  schemaMigrationCollections,
+  schemaMigrationEntries,
+  groups,
+  groupMembers,
+  groupInvitations,
+  collectionGroupRoles,
+  collectionMemberRoles,
+  entries,
+  entryAssets,
+  contents,
+  entryVersions,
+  entryVersionAssets,
+  entryVersionProperties,
+  entryVersionContributors,
+  entryVersionActivity,
+  entryVersionActivityContributors,
+  publishingChannels,
+  publishingSnapshots,
+  publishingSnapshotCollections,
+  publishingSnapshotEntries,
+  apiKeys,
+  dailyUsage,
+  analyticsUsageCursor,
+  billingPeriods,
+  usageLedger,
+  stripeWebhookEvents,
+  webhookEndpoints,
+  webhookEndpointRevisions,
+  outboundEvents,
+  outboundEventResources,
+  outboundDeliveries,
+  outboundDeliveryRuns,
+  outboundDeliveryAttempts,
+  extensionRegistryVersions,
+  extensionRegistryKeys,
+  extensions,
+  extensionElementViews,
+  extensionActiveViews,
+  extensionStorage,
+  extensionConfigurations,
+  extensionSecrets,
+  extensionDevelopmentVersions
+};
+
+export { schema };

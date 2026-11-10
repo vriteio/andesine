@@ -1,0 +1,104 @@
+import { hasAuthorizationRequirements } from "./permissions";
+import type { SessionData } from "./session";
+
+const isWorkspaceEventVisible = (
+  auth: SessionData,
+  event: {
+    action: string;
+  }
+) => {
+  if (event.action.startsWith("entry:")) {
+    return hasAuthorizationRequirements(auth, { session: true, key: ["read:entries"] });
+  }
+
+  if (event.action.startsWith("collection:")) {
+    return hasAuthorizationRequirements(auth, { session: true, key: ["read:collections"] });
+  }
+
+  if (event.action.startsWith("publishing:")) {
+    return hasAuthorizationRequirements(auth, {
+      session: true,
+      key: ["read:publishing"]
+    });
+  }
+
+  if (event.action.startsWith("version:")) {
+    return hasAuthorizationRequirements(auth, {
+      session: true,
+      key: ["read:versions"]
+    });
+  }
+
+  if (event.action.startsWith("schema-version:")) {
+    return hasAuthorizationRequirements(auth, {
+      session: true,
+      key: ["read:collections"]
+    });
+  }
+
+  if (event.action.startsWith("schema-migration:")) {
+    return hasAuthorizationRequirements(auth, {
+      session: true,
+      key: ["read:collections"]
+    });
+  }
+
+  if (event.action.startsWith("schema:")) {
+    return hasAuthorizationRequirements(auth, {
+      session: true,
+      key: ["read:collections"]
+    });
+  }
+
+  if (event.action.startsWith("membership:")) {
+    return hasAuthorizationRequirements(auth, {
+      session: true,
+      key: ["read:memberships"]
+    });
+  }
+
+  if (event.action.startsWith("invite:")) {
+    return hasAuthorizationRequirements(auth, {
+      session: ["memberships"],
+      key: ["memberships"]
+    });
+  }
+
+  if (event.action.startsWith("role:")) {
+    return hasAuthorizationRequirements(auth, {
+      session: true,
+      key: ["read:roles"]
+    });
+  }
+
+  if (event.action.startsWith("group:")) {
+    return hasAuthorizationRequirements(auth, { session: true });
+  }
+
+  if (event.action === "restricted-assignments:update") {
+    return hasAuthorizationRequirements(auth, {
+      session: ["restricted_collections"]
+    });
+  }
+
+  if (event.action.startsWith("key:")) {
+    return hasAuthorizationRequirements(auth, { session: ["read:api_keys"] });
+  }
+
+  if (event.action.startsWith("webhook:")) {
+    return hasAuthorizationRequirements(auth, { session: ["read:webhooks"] });
+  }
+
+  // Every member's editor resolves element views from the active view index.
+  if (event.action.startsWith("extension:")) {
+    return hasAuthorizationRequirements(auth, { session: true });
+  }
+
+  if (event.action.startsWith("workspace:")) {
+    return hasAuthorizationRequirements(auth, { session: true });
+  }
+
+  return false;
+};
+
+export { isWorkspaceEventVisible };

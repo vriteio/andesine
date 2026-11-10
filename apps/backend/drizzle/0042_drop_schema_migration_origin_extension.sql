@@ -1,0 +1,1 @@
+ALTER TABLE "schema_migrations" DROP COLUMN "origin_extension_id";

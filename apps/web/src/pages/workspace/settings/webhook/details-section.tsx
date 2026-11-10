@@ -1,0 +1,40 @@
+import { Input } from "@andesine/components";
+import { type Component } from "solid-js";
+import type { SetStoreFunction } from "solid-js/store";
+import { Setting } from "../setting";
+import { SettingsSection } from "../settings-section";
+import type { WebhookDraft } from "./configuration";
+
+interface DetailsSectionProps {
+  disabled: boolean;
+  draft: WebhookDraft;
+  setDraft: SetStoreFunction<WebhookDraft>;
+}
+
+const DetailsSection: Component<DetailsSectionProps> = (props) => (
+  <SettingsSection label="Details">
+    <Setting label="Name" description="A clear name for this webhook" fade={false}>
+      <Input
+        placeholder="My webhook"
+        value={props.draft.name}
+        setValue={(value) => props.setDraft("name", value)}
+        disabled={props.disabled}
+        maxLength={100}
+        class="w-full max-w-md"
+      />
+    </Setting>
+    <Setting label="URL" description="The address that receives this webhook’s events" fade={false}>
+      <Input
+        placeholder="https://example.com/webhooks/andesine"
+        type="url"
+        value={props.draft.url}
+        setValue={(value) => props.setDraft("url", value)}
+        disabled={props.disabled}
+        maxLength={2048}
+        class="w-full max-w-md"
+      />
+    </Setting>
+  </SettingsSection>
+);
+
+export { DetailsSection };

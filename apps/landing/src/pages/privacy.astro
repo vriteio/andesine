@@ -1,0 +1,288 @@
+---
+import LegalPage from "../components/shared/legal-page/index.astro";
+
+const title = "Andesine Privacy Policy";
+const description = "How Vrite, Inc. collects, uses, and protects data in Andesine.";
+---
+
+<LegalPage title={title} description={description} path="/privacy/">
+  <h1>Andesine Privacy Policy</h1>
+  <p>Effective date: November 9, 2026. Last updated: November 9, 2026.</p>
+  <p>
+    This policy explains what data Andesine collects, why we collect it, who we share it with, how
+    long we keep it, and what choices you have.
+  </p>
+
+  <h3>1. Who we are</h3>
+  <p>
+    Andesine is operated by Vrite, Inc., a Delaware corporation ("we", "us"). Our address is 1111B S
+    Governors Ave STE 6387, Dover, DE 19904, United States. For privacy questions and requests,
+    email
+    <a href="mailto:support@andesine.app">support@andesine.app</a>.
+  </p>
+  <p>
+    For account data, analytics, and billing, we are the data controller. For the content in your
+    workspace, we process it to provide the service on behalf of the workspace and its admins.
+  </p>
+
+  <h3>2. Scope</h3>
+  <p>
+    This policy applies to Andesine Cloud: the website and app at
+    <a href="https://andesine.app">andesine.app</a>, the API at <code>api.andesine.app</code>
+    (including the MCP server), sites that you publish on <code>andesine.page</code>, and our
+    extensions, such as GitHub Sync.
+  </p>
+  <p>
+    It does not apply to self-hosted Andesine. The operator of a self-hosted instance is responsible
+    for the data on it. Self-hosted instances do not send analytics to us.
+  </p>
+
+  <h3>3. Data we collect</h3>
+  <h4>Account data</h4>
+  <p>
+    Your name, email address, and profile image. If you sign in with Google or GitHub, we receive
+    your name, email address, and profile image from that provider, and we keep the tokens that the
+    provider gives us.
+  </p>
+  <h4>Sign-in and security data</h4>
+  <p>
+    Sessions, with the IP address and browser user agent of each session. Passkeys (the public key
+    and device type only). One-time sign-in codes, which we store hashed.
+  </p>
+  <h4>Workspace content</h4>
+  <p>
+    The entries, collections, schemas, versions, images, and files that you and your team add. To
+    make content searchable, we create search embeddings of it. For images, we create a text
+    description and extract visible text.
+  </p>
+  <h4>Collaboration data</h4>
+  <p>
+    Workspace memberships and roles, the email addresses of people you invite, and which members
+    contributed to each version.
+  </p>
+  <h4>Billing data</h4>
+  <p>
+    Stripe processes payments. Stripe keeps your card details and tax ID; we do not receive your
+    full card number. We keep your Stripe customer ID, plan, subscription status, spending limit,
+    usage counts, and the billing events that Stripe sends us.
+  </p>
+  <h4>Connected apps, API keys, and integrations</h4>
+  <p>
+    The apps that you connect (for example, AI assistants through MCP), their access tokens, and the
+    access that you granted. API keys (we store a hash and an encrypted copy). Webhook URLs,
+    secrets, and delivery history. Extension settings and data. For GitHub Sync, the contents of the
+    repositories that you connect.
+  </p>
+  <h4>Usage and analytics data</h4>
+  <p>
+    Events about how you use Andesine, such as sign-ins, created workspaces, published entries, and
+    searches. These events contain IDs, not your content. See section 6.
+  </p>
+  <h4>Technical logs</h4>
+  <p>
+    Our hosting providers log requests, including the IP address, time, and path, to run and protect
+    the service.
+  </p>
+  <h4>Support messages</h4>
+  <p>The messages that you send us, and the data in them.</p>
+
+  <h3>4. How we use data</h3>
+  <ul>
+    <li>
+      <strong>To provide Andesine</strong>: accounts, workspaces, editing, collaboration, search,
+      publishing, the API, connected apps, and extensions. Legal basis: contract.
+    </li>
+    <li>
+      <strong>To keep the service secure</strong>: sign-in, abuse prevention, rate limits, and
+      investigations. Legal basis: legitimate interests.
+    </li>
+    <li>
+      <strong>To bill you</strong>: subscriptions, usage, invoices, and taxes. Legal basis: contract
+      and legal obligation.
+    </li>
+    <li>
+      <strong>To send emails</strong>: sign-in codes, session checks, invitations, spending alerts,
+      and significant updates. We do not send regular marketing emails. Legal basis: contract.
+    </li>
+    <li>
+      <strong>To improve Andesine</strong>: usage data that contain IDs only. Legal basis:
+      legitimate interests.
+    </li>
+    <li>
+      <strong>To comply with the law</strong> and to protect our rights. Legal basis: legal obligation
+      and legitimate interests.
+    </li>
+  </ul>
+  <p>We do not sell your personal data. We do not use it for targeted advertising.</p>
+
+  <h3>5. AI features</h3>
+  <p>
+    Search, Ask AI, and image analysis use OpenAI. When these features run, we send OpenAI the
+    content that they need: entry text for search embeddings, images for descriptions and text
+    extraction, and, for Ask AI, your question, recent messages in the conversation, and the
+    matching parts of your content.
+  </p>
+  <p>
+    OpenAI does not use data sent through its API to train its models. OpenAI can keep this data for
+    up to 30 days to detect abuse, and then deletes it.
+  </p>
+
+  <h3>6. Cookies and local storage</h3>
+  <ul>
+    <li>
+      <strong>Necessary</strong>: the session cookies that keep you signed in (up to 7 days), and
+      layout preferences such as panel sizes. These do not need consent.
+    </li>
+    <li>
+      <strong>Consent</strong>: the <code>andesine-consent</code> cookie saves your choice for 1 year.
+    </li>
+    <li>
+      <strong>Analytics</strong>: PostHog cookies - on website, only if you accept, and in product.
+      If you decline, we count visits without cookies.
+    </li>
+    <li>
+      <strong>Local storage</strong>: the app keeps a copy of workspace content in your browser to
+      work offline and load faster. Signing out clears it.
+    </li>
+  </ul>
+
+  <h3>7. Who we share data with</h3>
+  <p>We share data with these service providers, only to run Andesine:</p>
+  <ul>
+    <li>
+      <strong>Render</strong> (United States): hosting, database, search, and background jobs.
+    </li>
+    <li>
+      <strong>Cloudflare</strong> (global): network, website and app delivery, file storage, and hosting
+      of published sites and extensions.
+    </li>
+    <li><strong>Stripe</strong> (United States): payments, invoices, and taxes.</li>
+    <li><strong>Resend</strong> (United States): email delivery.</li>
+    <li><strong>OpenAI</strong> (United States): AI features (section 5).</li>
+    <li><strong>PostHog</strong> (United States): product analytics.</li>
+    <li>
+      <strong>Google and GitHub</strong>: sign-in, if you choose it. <strong>GitHub</strong>: GitHub
+      Sync, if you connect a repository.
+    </li>
+  </ul>
+  <p>We also share data:</p>
+  <ul>
+    <li>
+      <strong>With your workspace</strong>: members see your name, email address, profile image, and
+      your contributions.
+    </li>
+    <li>
+      <strong>With the public, when you publish</strong>: published content can be read by anyone
+      who has the workspace's publishable key, and sites on <code>andesine.page</code> are public.
+    </li>
+    <li><strong>With apps that you connect</strong> (section 8).</li>
+    <li>
+      <strong>When the law requires it</strong>, or to protect the rights and safety of others.
+    </li>
+    <li>
+      <strong>In a business transfer</strong>, such as a merger or acquisition, under this policy.
+    </li>
+  </ul>
+
+  <h3>8. Connected apps</h3>
+  <p>
+    When you connect an app, such as an AI assistant through MCP, you choose one workspace and read
+    or write access. The app can do only what your role in that workspace allows. Access tokens
+    expire after 15 minutes, and the app renews them for up to 30 days without use.
+  </p>
+  <p>
+    To remove an app's access, go to <strong>Settings → Personal → Connected apps</strong> and revoke
+    it. This deletes its tokens at once. Data that the app already received is under that app's privacy
+    policy.
+  </p>
+
+  <h3>9. How long we keep data</h3>
+  <ul>
+    <li>
+      <strong>Account data</strong>: until you delete your account. Then we delete your account,
+      sessions, sign-in methods, connected apps, and profile image, and your analytics data in
+      PostHog.
+    </li>
+    <li>
+      <strong>Workspaces</strong>: until an admin deletes the workspace. Deletion is immediate and
+      removes its content, versions, files, and search index. If you delete your account and you are
+      the only admin of a workspace, that workspace is deleted too. In other workspaces, your
+      content stays, without your name on it.
+    </li>
+    <li>
+      <strong>Automatic versions and webhook history</strong>: 7 days on the Free plan, 30 days on
+      the Pro plan. Named and published versions stay until you delete them.
+    </li>
+    <li><strong>Unused files</strong>: 7 days after no entry uses them.</li>
+    <li>
+      <strong>Billing records</strong>: as long as tax and accounting laws require, also after you
+      delete a workspace or account.
+    </li>
+    <li><strong>Backups</strong>: up to 7 days.</li>
+    <li><strong>Technical logs</strong>: up to 30 days.</li>
+    <li><strong>Support messages</strong>: as long as we need them to help you.</li>
+  </ul>
+
+  <h3>10. International transfers</h3>
+  <p>
+    We store and process data in the United States. When we transfer personal data from the European
+    Economic Area, the United Kingdom, or Switzerland, we rely on the Standard Contractual Clauses
+    and other safeguards that our service providers offer.
+  </p>
+
+  <h3>11. Security</h3>
+  <p>
+    We encrypt data in transit. We store API keys, sign-in codes, and webhook secrets hashed or
+    encrypted. Access to production systems is limited. No system is fully secure, so we cannot
+    guarantee security. If a breach affects your data, we will tell you as the law requires.
+  </p>
+
+  <h3>12. Your rights</h3>
+  <p>Depending on where you live, you can ask us to:</p>
+  <ul>
+    <li>give you access to, or a copy of, your personal data;</li>
+    <li>correct it;</li>
+    <li>delete it;</li>
+    <li>restrict or object to how we use it;</li>
+    <li>withdraw your consent, at any time.</li>
+  </ul>
+  <p>
+    You can edit your profile and delete your account in the app settings. For other requests, email <a
+      href="mailto:support@andesine.app">support@andesine.app</a
+    > from the email address of your account. We reply within 30 days. We do not treat you differently
+    for using your rights.
+  </p>
+  <p>
+    If you are in the EEA, the United Kingdom, or Switzerland, you can also complain to your data
+    protection authority.
+  </p>
+  <p>
+    <strong>California residents</strong>: we collect the categories of data in section 3 for the
+    purposes in section 4, from you, your workspace, and the providers you sign in with. We do not
+    sell or share personal data for cross-context behavioral advertising. We do not respond to Do
+    Not Track signals.
+  </p>
+
+  <h3>13. Children</h3>
+  <p>
+    Andesine is not for people under 16. We do not knowingly collect data from them. If you think a
+    child gave us data, email us and we will delete it.
+  </p>
+
+  <h3>14. Changes</h3>
+  <p>
+    We will post changes on this page and update the date above. If a change is significant, we will
+    tell you by email or in the app before it takes effect.
+  </p>
+
+  <h3>15. Contact</h3>
+  <p>
+    Vrite, Inc.
+    <br />
+    1111B S Governors Ave STE 6387
+    <br />
+    Dover, DE 19904, United States
+    <br />
+    <a href="mailto:support@andesine.app">support@andesine.app</a>
+  </p>
+</LegalPage>

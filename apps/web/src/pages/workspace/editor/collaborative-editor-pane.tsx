@@ -1,0 +1,335 @@
+import { createEntryImages } from "./images";
+import { useEditorLinks } from "./links";
+import { ICON_PICKER_SETS, loadIconSet } from "#web/lib/extensions/icon-masks";
+import { pruneCachedImages } from "#web/context/workspace/image-cache";
+import { getWorkspaceDatabaseName } from "#web/context/workspace/indexeddb";
+import { IconButton } from "@andesine/components";
+import {
+  Editor,
+  type EditorInstance,
+  type EditorMode,
+  type EditorSchemaField
+} from "@andesine/editor";
+import clsx from "clsx";
+import {
+  type Component,
+  createEffect,
+  createMemo,
+  createSignal,
+  type JSX,
+  on,
+  onCleanup,
+  Show
+} from "solid-js";
+import { useNotify } from "#web/context/notifications";
+import { config } from "#web/lib/api";
+import { createElementViews } from "#web/components/extensions/element-views";
+import { createBlockActions } from "#web/components/extensions/block-actions";
+import { CollaborationStatusIndicator } from "./collaboration-status-indicator";
+import { type DocumentLoadState, useDocumentLoadState } from "./document-load-state";
+import { getCollaborationStatus, getCollaborationUser } from "./editor-collaboration";
+import {
+  DocumentLoadError,
+  EDITOR_CONTENT_PADDING,
+  EditorContentSkeleton,
+  EditorPaneMessage
+} from "./editor-pane-states";
+import { createLocalEditorSnapshotLifecycle, LocalSnapshotError } from "./local-editor-snapshot";
+
+interface CollaborativeEditorPaneProps {
+  availableDocumentID?: string | null;
+  documentID?: string;
+  editable: boolean;
+  emptyTitle: string;
+  emptyDescription: string;
+  loading: boolean;
+  mode?: EditorMode;
+  schemaFields?: EditorSchemaField[];
+  notFoundTitle: string;
+  notFoundDescription: string;
+  resourceLabel: string;
+  staticTitle?: string;
+  user?: { id?: string; name?: string | null; email?: string };
+  workspaceID: string;
+  onBack(): void;
+  onEditor?(editor: EditorInstance): (() => void) | void;
+  onLoadStateChange?(state: DocumentLoadState): void;
+  validateTitle?(title: string, documentID: string): string | undefined;
+  initialTitle?: string;
+  onTitleChange?(title: string, documentID: string): void;
+}
+
+// The icon sets of element props with the `icon` control, e.g. a card's.
+const EDITOR_ICONS = { sets: ICON_PICKER_SETS, loadSet: loadIconSet };
+// The longest wait for element views' first render; a slow extension doesn't hide the entry.
+const ELEMENT_VIEWS_TIMEOUT = 500;
+// Views update after their first render, e.g. a code group hides its other blocks.
+const ELEMENT_VIEWS_SETTLE_TIME = 50;
+// A local load usually shows the entry sooner, so the skeleton would only flash.
+const LOCAL_SKELETON_DELAY = 100;
+const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props) => {
+  const notify = useNotify();
+  const [viewsRenderedFor, setViewsRenderedFor] = createSignal<string | null>(null);
+  const [skeletonDelayPassed, setSkeletonDelayPassed] = createSignal(false);
+  const elementViews = config.PUBLIC_EXTENSIONS_ENABLED ? createElementViews() : undefined;
+  const extensionActions = config.PUBLIC_EXTENSIONS_ENABLED ? createBlockActions() : undefined;
+  const selectedDocumentID = () => props.documentID;
+  const {
+    documentLoadState,
+    providerAttempt,
+    discardLocalSnapshot,
+    setLocalSnapshot,
+    setLocalSnapshotTimeout,
+    setLocalSnapshotFailure,
+    retryCollaboration,
+    markEditorReady,
+    handleProvider
+  } = useDocumentLoadState(selectedDocumentID);
+  const collaborationStatus = () => {
+    const state = documentLoadState();
+
+    if (props.editable && state.collaborationReadOnly && !state.resettingSchemaContent) {
+      return "read-only";
+    }
+
+    return getCollaborationStatus(state);
+  };
+  const collaborationUser = () => getCollaborationUser(props.user);
+  const editable = () => {
+    const state = documentLoadState();
+    const schemaConnected = state.connection === "connected" && state.authenticated;
+
+    return (
+      props.editable &&
+      !state.problem &&
+      (state.initialSyncComplete || state.hasLocalSnapshot) &&
+      !state.collaborationReadOnly &&
+      (props.mode !== "schema" || schemaConnected) &&
+      !state.resettingSchemaContent
+    );
+  };
+  // Read in editor transactions; a ternary in the prop would create a memo outside a root.
+  const schemaFields = () => (editable() ? props.schemaFields : undefined);
+  const links = useEditorLinks(() => props.workspaceID);
+  const images = createMemo(() => {
+    const entryID = props.documentID;
+    const userID = props.user?.id;
+
+    if (!entryID || !userID || props.mode === "schema") return undefined;
+
+    return createEntryImages({
+      workspaceID: props.workspaceID,
+      userID,
+      entryID,
+      enabled: () => {
+        const state = documentLoadState();
+
+        return editable() && state.connection === "connected" && state.authenticated;
+      }
+    });
+  });
+  const { beforeProviderAttach } = createLocalEditorSnapshotLifecycle({
+    workspaceID: () => props.workspaceID,
+    userID: () => props.user?.id || "",
+    discardLocalSnapshot,
+    setLocalSnapshot,
+    setLocalSnapshotTimeout,
+    setLocalSnapshotFailure,
+    notifyError: (text) => notify({ type: "error", text })
+  });
+  // Shown with its element views' first render, so they don't shift the content as they appear.
+  const contentShown = () => {
+    const state = documentLoadState();
+
+    return state.editorReady && viewsRenderedFor() === state.documentID;
+  };
+  const showContentSkeleton = () => {
+    const documentID = selectedDocumentID();
+    const state = documentLoadState();
+    const isShown = state.documentID === documentID && contentShown();
+    const loadsRemotely = !state.isCheckingLocal && !state.hasLocalSnapshot;
+
+    return Boolean(
+      documentID && !state.problem && !isShown && (loadsRemotely || skeletonDelayPassed())
+    );
+  };
+
+  createEffect(() => {
+    props.onLoadStateChange?.(documentLoadState());
+  });
+  createEffect(
+    on(selectedDocumentID, () => {
+      const timeout = setTimeout(() => setSkeletonDelayPassed(true), LOCAL_SKELETON_DELAY);
+
+      setSkeletonDelayPassed(false);
+      onCleanup(() => clearTimeout(timeout));
+    })
+  );
+  // Tracks the document whose views it waited for.
+  createEffect<string | null>((waitedFor) => {
+    const { documentID, editorReady } = documentLoadState();
+    const rendering = elementViews?.rendering();
+    const show = () => setViewsRenderedFor(documentID);
+
+    if (!editorReady || viewsRenderedFor() === documentID) return waitedFor;
+
+    if (!rendering && waitedFor !== documentID) {
+      show();
+      return waitedFor;
+    }
+
+    const timeout = setTimeout(show, rendering ? ELEMENT_VIEWS_TIMEOUT : ELEMENT_VIEWS_SETTLE_TIME);
+
+    onCleanup(() => clearTimeout(timeout));
+    return rendering ? documentID : waitedFor;
+  }, null);
+
+  return (
+    <div class="flex w-full flex-1 overflow-hidden">
+      <Show
+        when={selectedDocumentID()}
+        fallback={
+          <Show when={!props.loading} fallback={<EditorPaneMessage />}>
+            <EditorPaneMessage title={props.emptyTitle} description={props.emptyDescription} />
+          </Show>
+        }
+      >
+        <Show
+          when={props.availableDocumentID}
+          keyed
+          fallback={
+            <Show
+              when={props.loading}
+              fallback={
+                <EditorPaneMessage
+                  title={props.notFoundTitle}
+                  description={props.notFoundDescription}
+                >
+                  <IconButton
+                    icon="i-lucide:arrow-left"
+                    class="w-full gap-1"
+                    iconProps={{ class: "h-5 w-5 text-gray-400" }}
+                    text="base"
+                    size="medium"
+                    label="Go back"
+                    onClick={props.onBack}
+                  />
+                </EditorPaneMessage>
+              }
+            >
+              <div class="relative h-full w-full overflow-hidden">
+                <EditorContentSkeleton class={EDITOR_CONTENT_PADDING} />
+              </div>
+            </Show>
+          }
+        >
+          {(documentID) => (
+            <div class="relative flex h-full w-full overflow-hidden">
+              <Show when={showContentSkeleton()}>
+                <EditorContentSkeleton class={EDITOR_CONTENT_PADDING} />
+              </Show>
+              <Show when={documentLoadState().problem} keyed>
+                {(problem) => (
+                  <DocumentLoadError
+                    problem={problem}
+                    localTimeoutCount={documentLoadState().localTimeoutCount}
+                    resourceLabel={props.resourceLabel}
+                    onRetry={retryCollaboration}
+                    onBack={props.onBack}
+                  />
+                )}
+              </Show>
+              <Show
+                when={
+                  (!documentLoadState().isCheckingLocal ||
+                    documentLoadState().resettingSchemaContent) &&
+                  !documentLoadState().problem
+                }
+              >
+                <CollaborationStatusIndicator
+                  status={collaborationStatus()}
+                  hasLocalSnapshot={documentLoadState().hasLocalSnapshot}
+                  resourceLabel={props.resourceLabel}
+                  onRetry={retryCollaboration}
+                  onBack={props.onBack}
+                />
+              </Show>
+              <div class={clsx("h-full w-full md:px-1", !contentShown() && "invisible")}>
+                <Editor
+                  images={images()}
+                  links={props.mode === "schema" ? undefined : links}
+                  icons={EDITOR_ICONS}
+                  class={EDITOR_CONTENT_PADDING}
+                  doc={documentID}
+                  url={`${config.PUBLIC_WS_API_URL}/collab`}
+                  providerAttempt={providerAttempt()}
+                  editable={editable()}
+                  mode={props.mode}
+                  schemaFields={schemaFields()}
+                  elementViews={elementViews}
+                  blockActions={extensionActions?.blockActions}
+                  staticTitle={props.staticTitle}
+                  notify={(type, text) => notify({ type, text })}
+                  collaborationUser={collaborationUser()}
+                  beforeProviderAttach={beforeProviderAttach}
+                  onProvider={handleProvider}
+                  onProviderSetupError={(error) => {
+                    if (!(error instanceof LocalSnapshotError)) {
+                      setLocalSnapshotFailure(documentID);
+                    }
+                  }}
+                  onEditor={(editor) => {
+                    const markEditorNotReady = markEditorReady(documentID);
+                    const cleanup = props.onEditor?.(editor);
+                    const databaseName = getWorkspaceDatabaseName(
+                      props.workspaceID,
+                      props.user?.id || ""
+                    );
+
+                    let previousImageIDs = "";
+
+                    const pruneImages = () => {
+                      const assetIDs = new Set<string>();
+
+                      if (props.mode === "schema") return;
+
+                      editor.state.doc.descendants((node) => {
+                        if (node.type.name === "image" && node.attrs.assetID)
+                          assetIDs.add(node.attrs.assetID);
+                      });
+                      const nextImageIDs = [...assetIDs].sort().join(",");
+
+                      if (nextImageIDs === previousImageIDs) return;
+                      previousImageIDs = nextImageIDs;
+
+                      void pruneCachedImages(
+                        databaseName,
+                        (entryID, assetID) => entryID !== documentID || assetIDs.has(assetID)
+                      ).catch(() => undefined);
+                    };
+
+                    editor.on("update", pruneImages);
+
+                    return () => {
+                      editor.off("update", pruneImages);
+                      cleanup?.();
+                      markEditorNotReady();
+                      // A new editor, e.g. after a retry, renders its views again.
+                      setViewsRenderedFor(null);
+                    };
+                  }}
+                  initialTitle={props.initialTitle}
+                  validateTitle={(title) => props.validateTitle?.(title, documentID)}
+                  onTitleChange={(title) => props.onTitleChange?.(title, documentID)}
+                />
+              </div>
+            </div>
+          )}
+        </Show>
+      </Show>
+      {extensionActions && <extensionActions.BlockActionView />}
+    </div>
+  );
+};
+
+export { CollaborativeEditorPane };

@@ -1,0 +1,100 @@
+---
+title: API reference
+description: Make reference pages from an OpenAPI spec, and embed operations in guides.
+order: 4
+---
+
+An OpenAPI source reads an OpenAPI 3.0 or 3.1 spec at build time, and makes a
+reference section from it. The template has an example spec in
+`src/api/openapi.yaml`, in the **API reference** tab.
+
+```ts title="andesine.config.ts"
+sections: [
+  { id: "guides", label: "Guides", sources: ["docs"] },
+  { id: "reference", label: "API reference", sources: ["api"] }
+],
+sources: [
+  { id: "docs", type: "files", directory: "src/content/docs" },
+  { id: "api", type: "openapi", spec: "src/api/openapi.yaml", mount: "/api/" }
+]
+```
+
+`spec` is a JSON or YAML file in the project, or an HTTPS URL. The build reads
+external `$ref` files too, validates the spec, and stops with a list of errors when
+it is not valid. Swagger 2.0 specs are not supported. To show a changed spec, build
+the site again.
+
+## Pages
+
+| Page      | From                                            | URL                         |
+| --------- | ----------------------------------------------- | --------------------------- |
+| Overview  | `info.description`, `servers`, security schemes | The mount, e.g. `/api/`     |
+| Tag group | A tag's `description`                           | `/api/{tag}/`               |
+| Operation | Each operation                                  | `/api/{tag}/{operationId}/` |
+
+`projects.create` in the `projects` tag is at `/api/projects/create/`: an
+operation ID that starts with its tag does not repeat it. An operation without an
+`operationId` uses its method and path, e.g. `/api/get-health/`.
+
+URL segments keep letters and numbers, in any language, and join the other parts
+with `-`: `listPets` becomes `list-pets`. When two operations or tags get the same
+URL, the later one in the spec gets a number, e.g. `/api/pets/list-pets-2/`. To
+keep URLs stable, give operations and tags names that differ after this change.
+
+Tags are navigation groups, in the order of the spec's `tags`. Set `x-displayName`
+for the label of a tag. A tag with a `description` gets a landing page; set
+`tagPages: false` on the source to leave these pages out. An operation is in its first tag only. Operations without
+tags come after the groups. Callbacks and webhooks are not shown.
+
+Operation pages show the parameters, the request body, and the responses, with
+their fields, and request and response examples next to them. The Markdown version
+of each page has the same fields, for agents.
+
+Descriptions are Markdown. Raw HTML in them is not shown on the pages.
+
+## Examples
+
+The reference makes request examples in cURL, JavaScript, and Python. It uses the
+first server, the spec's example values, and placeholders for credentials, such as
+`Bearer <token>`. Response examples use the spec's examples, or values from the
+schemas.
+
+To replace an example, or to add a language, set `x-codeSamples` on the operation.
+A sample for `curl`, `shell`, `javascript`, or `python` replaces the generated one;
+other languages add a tab.
+
+```yaml
+x-codeSamples:
+  - lang: typescript
+    label: SDK
+    source: |
+      const project = await client.projects.create({ name: "Website launch" });
+```
+
+## Embeds
+
+Guides can show one operation with the `Operation` component. `source` is the ID
+of the OpenAPI source, and `id` is the operation ID, or the method and path, e.g.
+`GET /health`:
+
+```mdx
+<Operation source="api" id="projects.create" examples />
+```
+
+<Operation source="api" id="projects.create" examples />
+
+The title links to the operation's page. Props turn the parts of the operation on
+or off:
+
+| Prop             | Default | Shows                                         |
+| ---------------- | ------- | --------------------------------------------- |
+| `description`    | `true`  | The operation's description.                  |
+| `authentication` | `true`  | The security schemes.                         |
+| `parameters`     | `true`  | Path, query, header, and cookie parameters.   |
+| `requestBody`    | `true`  | The request body fields.                      |
+| `responses`      | `true`  | The responses and their fields.               |
+| `examples`       | `false` | The request and response examples.            |
+| `anchor`         | None    | A prefix for element IDs, to embed one twice. |
+
+Andesine content uses the `Operation` element with the same props. In the
+Markdown version of a page, an embed is a link to the operation's Markdown.

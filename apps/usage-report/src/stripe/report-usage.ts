@@ -1,0 +1,181 @@
+// SPDX-License-Identifier: Elastic-2.0
+import { config } from "../config";
+import { pool } from "../database";
+import { stripe } from "./client";
+
+interface UsageLedgerRow {
+  id: string;
+  workspace_id: string;
+  meter: "api-calls" | "ai-credits";
+  quantity: string;
+  usage_date: string;
+  stripe_event_identifier: string;
+  attempts: number;
+}
+
+interface WorkspaceRow {
+  customer_id: string | null;
+}
+
+/** Keeps late reports in the billing period of the usage day. */
+const toEventTimestamp = (usageDate: string): string => {
+  const endOfDay = new Date(`${usageDate}T23:59:59.999Z`).getTime();
+
+  return new Date(Math.min(endOfDay, Date.now())).toISOString();
+};
+const claimUsage = async (): Promise<UsageLedgerRow | null> => {
+  const client = await pool.connect();
+
+  try {
+    await client.query("begin");
+    const claimed = await client.query<Pick<UsageLedgerRow, "id">>(`
+      select id
+      from usage_ledger
+      where (
+        status in ('pending', 'failed')
+        and available_at <= now()
+      ) or (
+        status = 'processing'
+        and updated_at <= now() - interval '5 minutes'
+      )
+      order by created_at
+      limit 1
+      for update skip locked
+    `);
+    const row = claimed.rows[0];
+
+    if (!row) {
+      await client.query("commit");
+      return null;
+    }
+
+    const updated = await client.query<UsageLedgerRow>(
+      `
+        update usage_ledger
+        set
+          status = 'processing',
+          attempts = attempts + 1,
+          updated_at = now()
+        where id = $1
+        returning
+          id,
+          workspace_id,
+          meter,
+          quantity,
+          usage_date::text as usage_date,
+          stripe_event_identifier,
+          attempts
+      `,
+      [row.id]
+    );
+
+    await client.query("commit");
+
+    return updated.rows[0] ?? null;
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+/** Reports the usage ledger to Stripe, or returns null when billing is disabled. */
+const reportStripeUsage = async (): Promise<number | null> => {
+  if (!config.BILLING_ENABLED) return null;
+
+  let reportedCount = 0;
+  const failures: unknown[] = [];
+
+  for (;;) {
+    const ledger = await claimUsage();
+
+    if (!ledger) {
+      if (failures.length > 0) {
+        throw new AggregateError(
+          failures,
+          `Failed to report ${failures.length} usage ledger row(s); ${reportedCount} row(s) succeeded`
+        );
+      }
+
+      return reportedCount;
+    }
+
+    try {
+      const workspaceResult = await pool.query<WorkspaceRow>(
+        `
+          select customer_id
+          from workspaces
+          where id = $1
+          limit 1
+        `,
+        [ledger.workspace_id]
+      );
+      const workspace = workspaceResult.rows[0];
+
+      if (!workspace?.customer_id) {
+        throw new Error(`Stripe customer not found for metered workspace ${ledger.workspace_id}`);
+      }
+
+      const eventName = {
+        "api-calls": config.STRIPE_PRO_API_CALL_METER_EVENT_NAME,
+        "ai-credits": config.STRIPE_PRO_AI_CREDIT_METER_EVENT_NAME
+      }[ledger.meter];
+
+      if (!stripe || !eventName) throw new Error("Stripe metering is not configured");
+
+      await stripe.v2.billing.meterEvents.create({
+        event_name: eventName,
+        payload: {
+          stripe_customer_id: workspace.customer_id,
+          value: ledger.quantity
+        },
+        identifier: ledger.stripe_event_identifier,
+        timestamp: toEventTimestamp(ledger.usage_date)
+      });
+
+      const delivered = await pool.query(
+        `
+          update usage_ledger
+          set
+            status = 'delivered',
+            reported_at = now(),
+            last_error = null,
+            updated_at = now()
+          where id = $1
+            and status = 'processing'
+            and attempts = $2
+        `,
+        [ledger.id, ledger.attempts]
+      );
+
+      if (delivered.rowCount === 1) reportedCount += 1;
+    } catch (error) {
+      const delay = Math.min(60 * 60 * 1000, 2 ** Math.min(ledger.attempts, 10) * 1000);
+
+      const failed = await pool.query(
+        `
+          update usage_ledger
+          set
+            status = 'failed',
+            available_at = $3,
+            last_error = $4,
+            updated_at = now()
+          where id = $1
+            and status = 'processing'
+            and attempts = $2
+        `,
+        [
+          ledger.id,
+          ledger.attempts,
+          new Date(Date.now() + delay),
+          error instanceof Error ? error.message : String(error)
+        ]
+      );
+
+      if (failed.rowCount === 1) failures.push(error);
+    }
+  }
+};
+
+export { reportStripeUsage };

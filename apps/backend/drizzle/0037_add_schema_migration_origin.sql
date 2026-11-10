@@ -1,0 +1,1 @@
+ALTER TABLE "schema_migrations" ADD COLUMN "origin_extension_id" uuid;

@@ -1,0 +1,47 @@
+---
+import LegalPage from "../components/shared/legal-page/index.astro";
+
+const title = "Andesine Support";
+const description = "Get help with Andesine.";
+---
+
+<LegalPage title={title} description={description} path="/support/">
+  <h1>Andesine Support</h1>
+  <p>
+    Email us at <a href="mailto:support@andesine.app">support@andesine.app</a>. We usually reply
+    within two business days.
+  </p>
+  <h3>Before you write</h3>
+  <ul>
+    <li>
+      Read the <a href="/docs">documentation</a>. It explains setup, the editor, publishing, the
+      API, the CLI, MCP, and extensions.
+    </li>
+    <li>
+      Ask questions and share ideas in
+      <a href="https://github.com/vriteio/andesine/discussions">GitHub Discussions</a>.
+    </li>
+    <li>
+      Report bugs in <a href="https://github.com/vriteio/andesine/issues">GitHub Issues</a>.
+    </li>
+  </ul>
+  <h3>What to include</h3>
+  <ul>
+    <li>The email address of your Andesine account.</li>
+    <li>The workspace name, if the problem is about a workspace.</li>
+    <li>The steps that cause the problem, and what you expected to see.</li>
+  </ul>
+  <p>Do not send passwords, API keys, or other secrets.</p>
+  <h3>Billing, privacy, and account requests</h3>
+  <p>
+    Email <a href="mailto:support@andesine.app">support@andesine.app</a> from the email address of your
+    account. This includes questions about invoices, data access or deletion requests, and connected apps.
+    The <a href="/privacy">privacy policy</a> describes your data rights.
+  </p>
+  <h3>Security issues</h3>
+  <p>
+    Do not report security issues in public. Email
+    <a href="mailto:support@andesine.app">support@andesine.app</a> with the subject "Security" and the
+    steps to reproduce the issue.
+  </p>
+</LegalPage>

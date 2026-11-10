@@ -1,0 +1,15 @@
+---
+import { renderTabs } from "@andesine/pages/astro";
+import { ContentTabs } from "./tabs";
+
+interface Props {
+  /** Tab labels, added by the Andesine MDX plugin or content renderer. */
+  values: string;
+  /** Tabs with the same key share their selection. */
+  syncKey?: string;
+}
+
+const { values, panels } = await renderTabs(Astro.props.values, Astro.slots);
+---
+
+<ContentTabs client:visible values={values} panels={panels} syncKey={Astro.props.syncKey} />

@@ -1,0 +1,996 @@
+// Reusable checkbox control
+@mixin checkbox {
+  @apply h-5 w-5 shrink-0 cursor-pointer appearance-none rounded-md bg-transparent outline outline-2 -outline-offset-2 outline-gray-400 disabled:pointer-events-none disabled:opacity-70 disabled:shadow-none;
+
+  &:checked {
+    background-image:
+      url("data:image/svg+xml,%3csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M20 6 9 17l-5-5'/%3e%3c/svg%3e"),
+      linear-gradient(to top right, var(--un-gradient-stops));
+    @apply bg-center bg-no-repeat outline-transparent shadow-md shadow-tertiary/25;
+    background-size:
+      1rem 1rem,
+      100% 100%;
+  }
+}
+
+// Document title
+header[data-type="title"] {
+  @apply font-semibold text-5xl mb-3;
+}
+
+@screen lt-md {
+  header[data-type="title"] {
+    @apply text-4xl;
+  }
+}
+
+// Text and block selection
+.prose-editor {
+  ::selection {
+    @apply bg-tertiary/10;
+  }
+  code {
+    @apply caret-tertiary;
+  }
+
+  // Block selection
+  .block-selection-marker {
+    @apply select-none;
+  }
+
+  // The shade shows a block selection; Safari also paints the native one in the gaps between blocks.
+  .ProseMirror-hideselection,
+  .ProseMirror-hideselection * {
+    &::selection {
+      @apply bg-transparent;
+    }
+  }
+}
+
+// Links
+// Light gray underlines and icons, a step darker on hover, as the link menu's icon. An icon widget
+// at the link's start: a file (i-lucide:file) for an entry link, a globe (i-lucide:globe) for
+// other links; the caret is drawn before or after it (see the boundary cursor). A link to a
+// deleted or unreadable entry is gray.
+// The underline is thicker than the icon's lines, so a shade lighter looks the same.
+.prose-editor a {
+  @apply decoration-gray-300;
+
+  &:hover {
+    @apply decoration-gray-400;
+  }
+}
+
+.prose-editor .link-icon {
+  --link-icon: url("data:image/svg+xml,%3csvg viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='12' cy='12' r='10'/%3e%3cpath d='M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20'/%3e%3cpath d='M2 12h20'/%3e%3c/svg%3e");
+  display: inline-block;
+  width: 0.875em;
+  height: 0.875em;
+  margin-right: 0.125em;
+  vertical-align: -0.0625em;
+  background-color: currentColor;
+  mask: var(--link-icon) no-repeat center / contain;
+  @apply text-gray-400;
+
+  &[data-kind="entry"] {
+    --link-icon: url("data:image/svg+xml,%3csvg viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z'/%3e%3cpath d='M14 2v4a2 2 0 0 0 2 2h4'/%3e%3c/svg%3e");
+  }
+}
+
+.prose-editor a:hover > .link-icon {
+  @apply text-gray-500;
+}
+
+.prose-editor a:has([data-unavailable]) {
+  @apply text-gray-400 decoration-gray-300;
+}
+
+[data-marquee-selecting] [data-property-value] {
+  &,
+  * {
+    @apply pointer-events-none;
+  }
+}
+
+.block-selection-shade,
+.collaboration-block-selection-shade {
+  @apply absolute z-2 rounded-lg opacity-10 pointer-events-none;
+}
+
+.block-selection-shade {
+  @apply bg-gradient-to-r from-secondary via-primary to-transparent;
+}
+
+// Tables
+[data-table-node-view] {
+  @apply relative w-full min-w-0 my-0!;
+}
+
+.ProseMirror :where(*):has(+ [data-table-node-view]) {
+  @apply mb-0!;
+}
+
+[data-table-scroll-container] {
+  @apply relative overflow-x-auto overflow-y-hidden overscroll-x-none;
+}
+
+:is(.block-selection-shade, .collaboration-block-selection-shade)[data-table-selection-shade] {
+  @apply z-1;
+}
+
+[data-table-content] {
+  @apply relative min-w-full;
+  width: max-content;
+  // One default column width (80px) of extra space on the right, to drag the "+" handle into.
+  // The bottom space also fits the shadow of the row "+" button, which the scroll container clips.
+  padding: 24px calc(var(--table-right-space, 104px) + var(--table-preview-width, 0px))
+    calc(32px + var(--table-preview-height, 0px)) var(--table-left-space, 24px);
+}
+
+.ProseMirror [data-table-content] > table {
+  @apply m-0;
+  width: var(--table-content-width, 100%);
+}
+
+// Table gestures
+[data-table-interacting],
+[data-table-interacting] *,
+[data-table-handle],
+[data-table-handle] *,
+[data-table-resize-handle],
+[data-table-extension-handle],
+[data-table-extension-handle] * {
+  @apply select-none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+// Table drag handles
+[data-table-dragging],
+[data-table-dragging] * {
+  @apply cursor-grabbing!;
+}
+
+[data-table-handle="column"] button {
+  @apply absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 p-0;
+  width: 32px;
+  height: 16px;
+
+  @screen lg {
+    width: 24px;
+    height: 12px;
+  }
+}
+
+[data-table-handle="row"] button {
+  @apply absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 p-0;
+  width: 16px;
+  height: 32px;
+
+  @screen lg {
+    width: 12px;
+    height: 24px;
+  }
+}
+
+[data-table-handle] {
+  &:hover,
+  &:focus-within,
+  &[data-selected="true"],
+  &[data-active="true"] {
+    [data-table-grip-marker] {
+      @apply opacity-0;
+    }
+
+    button {
+      @apply opacity-100;
+    }
+  }
+}
+
+// Table extension handles
+[data-table-extension-handle]:is([data-active="true"], [data-selected="true"]) button {
+  @apply opacity-100;
+}
+
+// Table extension preview, joined with the table at its starting edge
+[data-table-content][data-table-extending="row"] {
+  > table {
+    @apply rounded-b-none;
+  }
+
+  [data-table-extension-preview] > table {
+    @apply rounded-t-none;
+  }
+}
+
+[data-table-content][data-table-extending="column"] {
+  > table {
+    @apply rounded-r-none;
+  }
+
+  [data-table-extension-preview] > table {
+    @apply rounded-l-none;
+  }
+}
+
+// Table cell selection gesture
+[data-table-selecting-cells] {
+  &,
+  * {
+    @apply cursor-crosshair;
+  }
+
+  [data-table-handle],
+  [data-table-extension-handle],
+  [data-table-resize-handle] {
+    @apply invisible;
+  }
+}
+
+// Table columns and cells
+.ProseMirror table {
+  @apply w-full table-fixed border-separate border border-gray-300 rounded-lg overflow-hidden;
+  border-spacing: 0;
+
+  td,
+  th {
+    @apply relative border-0 border-t border-gray-300 p-2 align-top;
+    overflow-wrap: anywhere;
+
+    > p {
+      @apply m-0;
+    }
+  }
+
+  tr:first-of-type > :is(td, th) {
+    @apply border-t-0;
+  }
+
+  tr > :is(td, th) ~ :is(td, th) {
+    @apply border-l;
+  }
+
+  th {
+    @apply bg-gray-100/80 font-semibold text-left;
+  }
+
+  .selectedCell::after {
+    @apply absolute inset-0 z-1 pointer-events-none bg-tertiary/10;
+    content: "";
+  }
+}
+
+// Collaborative cell selection
+.collaboration-cell-selection {
+  @apply absolute inset-0 z-0 pointer-events-none;
+  background: color-mix(in srgb, var(--collaboration-color) 10%, transparent);
+}
+
+// Table drop and resize indicators
+[data-table-indicator="column"] {
+  @apply bg-gradient-to-b from-secondary via-primary to-secondary rounded-full my-2;
+}
+
+[data-table-indicator="row"] {
+  @apply bg-gradient-to-r from-secondary via-primary to-secondary rounded-full mx-2;
+}
+
+// Version diff
+// Content
+.version-diff-table-shade {
+  @apply pointer-events-none absolute z-1 rounded-lg;
+}
+
+.version-diff-block {
+  @apply relative z-0;
+
+  &::after {
+    @apply pointer-events-none absolute inset-y-0 -inset-x-2 -z-1 rounded-lg;
+    content: "";
+  }
+}
+
+.version-diff-inline {
+  @apply rounded-lg;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.version-diff-block.version-diff-added::after,
+.version-diff-table-shade.version-diff-added,
+.version-diff-inline.version-diff-added {
+  @apply bg-green-500/10;
+}
+
+.version-diff-block.version-diff-removed::after,
+.version-diff-table-shade.version-diff-removed,
+.version-diff-inline.version-diff-removed {
+  @apply bg-red-500/10;
+}
+
+.version-diff-block.version-diff-modified::after,
+.version-diff-table-shade.version-diff-modified,
+.version-diff-inline.version-diff-modified {
+  @apply bg-blue-500/10;
+}
+
+.version-diff-removed-inline {
+  @apply line-through decoration-red-500;
+}
+
+// Badges
+.version-diff-badges-anchor {
+  @apply absolute h-0 w-0 select-none;
+}
+
+.version-diff-badges-anchor-block {
+  .version-diff-badges {
+    @apply right-4;
+  }
+}
+
+.version-diff-badges-anchor-nested {
+  @apply left-0 top-0;
+}
+
+.version-diff-badges {
+  @apply absolute right-2 top-0 z-10 flex gap-1;
+}
+
+.version-diff-badge {
+  @apply pointer-events-auto relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md;
+}
+
+.version-diff-badge-icon {
+  @apply h-3.5 w-3.5;
+}
+
+.version-diff-badge-added {
+  @apply bg-green-500/10 text-green-500;
+}
+
+.version-diff-badge-removed {
+  @apply bg-red-500/10 text-red-500;
+}
+
+.version-diff-badge-modified {
+  @apply bg-blue-500/10 text-blue-500;
+}
+
+.prose-editor :where(h1, h2, h3, h4, h5, h6):has(.version-diff-badges-anchor)::before {
+  @apply hidden;
+}
+
+// Drop and gap cursors
+.drop-cursor,
+.ProseMirror-gapcursor::after {
+  @apply bg-gradient-to-tr! rounded-full;
+}
+
+.drop-cursor.prosemirror-dropcursor-block,
+.ProseMirror-gapcursor::after {
+  @apply h-0.5!;
+}
+
+.ProseMirror-gapcursor {
+  @apply inset-x-0!;
+}
+
+.ProseMirror-gapcursor::after {
+  @apply w-full! border-0!;
+  // The cursor sits at the next block's top: centered in the blocks' 0.5rem margin, less its 2px.
+  top: calc(-0.25rem - 1px) !important;
+}
+
+// Collaboration
+.collaboration-caret {
+  // An atomic inline-block adds a wrap opportunity, even at zero width.
+  // Keep the empty anchor inline and draw all visible parts outside the text flow.
+  @apply relative z-5 inline pointer-events-auto;
+
+  &::before {
+    @apply absolute pointer-events-none top-0;
+    bottom: -0.1em;
+    left: -0.5px;
+    width: 1.5px;
+    background-color: var(--collaboration-color);
+    content: "";
+  }
+
+  &::after {
+    @apply absolute;
+    inset: -0.35rem -0.3rem;
+    content: "";
+  }
+
+  &:hover .collaboration-caret__label {
+    @apply translate-y-0 opacity-100;
+  }
+}
+
+.collaboration-caret--block-selection,
+.collaboration-caret--gap-cursor,
+.collaboration-caret--node-selection {
+  @apply hidden;
+}
+
+.collaboration-gap-cursor {
+  @apply absolute inset-x-0 z-5 h-0 pointer-events-none;
+
+  &::after {
+    @apply absolute inset-x-0 top-0 h-0.5 rounded-full;
+    background-color: var(--collaboration-color);
+    content: "";
+  }
+}
+
+.collaboration-caret__label {
+  @apply absolute -left-px z-6 max-w-48 translate-y-0.5 overflow-hidden text-ellipsis whitespace-nowrap rounded px-1.5 py-0.5 font-semibold leading-4 text-white opacity-0 pointer-events-none;
+  bottom: calc(100% + 0.25rem);
+  background-color: var(--collaboration-color);
+  font-size: 0.6875rem;
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+
+@screen lt-md {
+  .collaboration-caret {
+    pointer-events: none !important;
+  }
+}
+
+.collaboration-selection {
+  background: color-mix(in srgb, var(--collaboration-color) 22%, transparent);
+}
+
+.collaboration-block-selection-marker .collaboration-selection {
+  @apply bg-transparent;
+}
+
+.collaboration-block-selection-shade {
+  background: linear-gradient(to right, var(--collaboration-color), transparent);
+}
+
+.collaboration-node-selection {
+  .collaboration-selection {
+    @apply bg-transparent;
+  }
+
+  [data-block-control-anchor]::before {
+    @apply absolute inset-y-0 -left-2.5 -z-10 w-[calc(100%+1.25rem)] md:-left-2 md:rounded-lg;
+    background: linear-gradient(to right, var(--collaboration-color), transparent);
+    content: "";
+    opacity: 0.1;
+  }
+
+  [data-fragment-header]::before {
+    @apply md:w-[calc(12rem+0.75rem)];
+  }
+
+  :where([data-node-selection-icon], [data-node-selection-label]) {
+    color: var(--collaboration-color);
+  }
+
+  [data-node-selection-line] {
+    background: linear-gradient(to right, var(--collaboration-color), transparent);
+  }
+}
+
+// Empty-document placeholder
+header:only-of-type.is-empty:first-child::before,
+#editor-container:not([data-mobile-slash-menu-trigger])
+  header:only-of-type
+  + p:only-of-type.is-empty::before,
+.ProseMirror[data-editor-mode="schema"] > p.is-empty::before,
+.ProseMirror > p.is-empty[data-field-prompt]::before,
+.ProseMirror [data-fragment-node-view] p.is-empty::before {
+  @apply float-left h-0 pointer-events-none text-gray-300;
+  content: attr(data-placeholder);
+}
+
+@screen lt-md {
+  header:only-of-type.is-empty:first-child::before,
+  #editor-container header:only-of-type + p:only-of-type.is-empty::before,
+  .ProseMirror[data-editor-mode="schema"] > p.is-empty::before,
+  .ProseMirror > p.is-empty[data-field-prompt]::before,
+  .ProseMirror [data-fragment-node-view] p.is-empty::before {
+    @apply hidden;
+  }
+}
+
+// Core editor layout
+.prose-editor {
+  img.ProseMirror-separator {
+    @apply hidden!;
+  }
+  p,
+  ul,
+  ol,
+  blockquote {
+    @apply relative;
+  }
+
+  > * > .ProseMirror {
+    @apply pb-48;
+  }
+
+  font-kerning: none;
+  :where(h1, h2, h3, h4, h5, h6):not(:where(.not-prose, .not-prose *)) {
+    &::before {
+      @apply absolute -left-10 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center text-center text-base font-normal leading-4 text-gray-400;
+      font-family: "JetBrainsMonoVariable", monospace;
+    }
+
+    &[data-drag-handle-target]::before {
+      @apply hidden;
+    }
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply m-0 relative;
+  }
+  :where(h1):not(:where(.not-prose, .not-prose *))::before {
+    content: "H1";
+  }
+  :where(h2):not(:where(.not-prose, .not-prose *))::before {
+    content: "H2";
+  }
+  :where(h3):not(:where(.not-prose, .not-prose *))::before {
+    content: "H3";
+  }
+  :where(h4, h5):not(:where(.not-prose, .not-prose *)) {
+    line-height: 2.1rem;
+  }
+  :where(h4):not(:where(.not-prose, .not-prose *)) {
+    &::before {
+      content: "H4";
+    }
+  }
+  :where(h5):not(:where(.not-prose, .not-prose *)) {
+    &::before {
+      content: "H5";
+    }
+  }
+  :where(h6):not(:where(.not-prose, .not-prose *)) {
+    font-size: 0.875em;
+    line-height: 2.1rem;
+    &::before {
+      content: "H6";
+    }
+  }
+  :where(p):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+    @apply my-2;
+  }
+  :where(ul p, ol p):not(:where(.not-prose, .not-prose *)) {
+    @apply m-0;
+  }
+  :where(ul[data-type="taskList"]):not(:where(.not-prose, .not-prose *)) {
+    @apply pl-0;
+
+    > li {
+      @apply min-w-4 flex! items-start justify-start ps-0;
+      min-height: 1.75em;
+
+      label {
+        @apply mr-2 flex items-center justify-center;
+        min-height: 1.75em;
+
+        input {
+          @include checkbox;
+        }
+      }
+
+      > div {
+        @apply min-w-4;
+      }
+    }
+  }
+  :where([data-type="horizontal-rule"]):not(:where(.not-prose, .not-prose *)) {
+    @apply box-border w-full cursor-pointer rounded-lg px-2 py-3 transition-colors @hover:bg-gray-100;
+
+    > hr {
+      @apply m-0! rounded-full border border-gray-200 pointer-events-none;
+    }
+
+    &.ProseMirror-selectednode > hr {
+      @apply border border-tertiary;
+    }
+  }
+}
+
+@screen lt-md {
+  .prose-editor {
+    :where(h1, h2, h3, h4, h5, h6):not(:where(.not-prose, .not-prose *))::before {
+      @apply hidden!;
+    }
+
+    :where(h1):not(:where(.not-prose, .not-prose *)) {
+      font-size: 1.5em;
+    }
+
+    :where(h2):not(:where(.not-prose, .not-prose *)) {
+      font-size: 1.25em;
+    }
+
+    :where(h3, h4):not(:where(.not-prose, .not-prose *)) {
+      font-size: 1em;
+    }
+
+    :where(h5, h6):not(:where(.not-prose, .not-prose *)) {
+      font-size: 0.875em;
+    }
+  }
+}
+
+// Typography overrides
+.prose {
+  --un-prose-lists: #6b7280;
+  --un-prose-hr: #6b7280;
+  --un-prose-invert-lists: #9ca3af;
+  --un-prose-invert-hr: #9ca3af;
+  :where(div > .ProseMirror, blockquote, li) {
+    &
+      > :where(div, ul, ol, p, blockquote, hr):not(.ProseMirror-gapcursor)
+      + :where(div, ul, ol, p, blockquote, hr, h1, h2, h3, h4, h5, h6):not(
+        .ProseMirror-widget:not(:has([data-collab-cursor]))
+      ),
+    &
+      > :where(div, ul, ol, p, blockquote, hr):not(.ProseMirror-gapcursor)
+      + .ProseMirror-gapcursor
+      + :where(div, ul, ol, p, blockquote, hr, h1, h2, h3, h4, h5, h6):not(
+        .ProseMirror-widget:not(:has([data-collab-cursor]))
+      ) {
+      @apply my-2;
+    }
+
+    & > [data-property-node-view] + [data-fragment-node-view],
+    & > [data-property-node-view] + .ProseMirror-gapcursor + [data-fragment-node-view] {
+      @apply my-0!;
+    }
+
+    // Blocks after properties have no margin to center the cursor in.
+    & > [data-property-node-view] + .ProseMirror-gapcursor::after {
+      top: -1px !important;
+    }
+  }
+
+  :where(blockquote):not(:where(.not-prose, .not-prose *)) {
+    @apply border-l-3 pl-5.5 border-solid border-gray-300 not-italic text-gray-500;
+  }
+  :where(code):not(:where(.not-prose, .not-prose *, pre *)) {
+    &::after {
+      content: unset !important;
+    }
+    &::before {
+      @apply bg-gray-950/2.5 h-full w-full rounded-md absolute top-0 left-0 pointer-events-none -z-10;
+      content: "";
+    }
+    @apply relative bg-gradient-to-tr text-transparent bg-clip-text font-medium py-0.5 px-1 whitespace-pre-wrap z-0;
+    font-family: "JetBrainsMonoVariable", monospace !important;
+    @apply caret-gray-700;
+  }
+  :where(pre) {
+    @apply rounded-lg my-0;
+    font-family: "JetBrainsMonoVariable", monospace !important;
+  }
+  :where(mark) {
+    @apply text-gray-700;
+  }
+}
+
+// Boundary cursor
+// The caret drawn at a position with two sides, e.g. a code box's edge or an entry link's icon;
+// the browser's caret is hidden meanwhile.
+@keyframes boundary-cursor-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+.boundary-cursor-active,
+.boundary-cursor-active code {
+  @apply caret-transparent!;
+}
+
+.boundary-cursor {
+  @apply relative z-1 inline-block w-px -translate-y-px -mr-px align-middle bg-gray-700 pointer-events-none;
+  height: 1.34375rem;
+  animation: boundary-cursor-blink 1s steps(1, end) infinite;
+}
+
+// Inside a box, e.g. a code's: the same inherited gradient stops and direction as the code text.
+.boundary-cursor--inside {
+  @apply bg-tertiary;
+  height: 1.15625rem;
+}
+
+// Editor menus
+@screen lt-md {
+  [data-text-menu] {
+    width: 100dvw !important;
+    max-width: 100dvw;
+
+    > [data-menu] {
+      border-right-width: 0 !important;
+      border-left-width: 0 !important;
+    }
+  }
+
+  [data-drag-handle],
+  [data-block-menu-trigger] {
+    display: none !important;
+  }
+}
+
+/* Element tags */
+.prose-editor .element-node {
+  @apply relative my-2;
+}
+/*
+ * A warning on an element with blocks that its content rules don't accept: in the gutter, like
+ * heading levels, and like them hidden while the block's drag handle shows there.
+ */
+.prose-editor .element-content-badge {
+  @apply absolute -left-10 top-0 flex h-8 w-8 items-center justify-center text-amber-500;
+}
+.prose-editor .element-content-badge-frame {
+  @apply flex rounded-md bg-amber-500/10 p-1;
+}
+.prose-editor .element-content-badge[hidden],
+.prose-editor .element-node[data-drag-handle-target] > .element-content-badge {
+  @apply hidden;
+}
+.prose-editor .element-node:has(+ .element-node) {
+  @apply mb-0;
+}
+.prose-editor .element-node + .element-node {
+  @apply mt-0;
+}
+.prose-editor .element-content > .element-node {
+  @apply my-0;
+}
+.prose-editor .element-tag {
+  @apply font-mono text-sm text-gray-400 my-0.5;
+  white-space: break-spaces;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.25rem;
+  min-height: 1.25rem;
+}
+.prose-editor .element-tag-line {
+  @apply whitespace-pre-wrap;
+  min-height: 1.25rem;
+}
+/* Element draft selections remain visible inside a remote node selection. */
+.prose-editor [data-element-locked] .element-tag-line .collaboration-selection {
+  background: color-mix(in srgb, var(--collaboration-color) 22%, transparent);
+}
+.prose-editor .element-content {
+  @apply pl-4;
+  min-height: 1.5rem;
+}
+/* A view fills its element, e.g. a card in a grid cell. */
+.prose-editor .element-node:has(> [data-element-view]:not([hidden])) {
+  display: flex;
+  flex-direction: column;
+}
+.prose-editor [data-element-view]:not([hidden]) {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+/*
+ * The element spaces blocks, as sites do with collapsing margins; a view's outer margins, e.g. its
+ * card's `my-2`, would add to it, since they can't collapse through the view's root. Important:
+ * extension CSS isn't in a cascade layer, so it'd win over these styles otherwise.
+ */
+.prose-editor [data-element-view] > * > * {
+  margin-block: 0 !important;
+}
+/* A view lays out its own content; the indent and height are for the tag view. */
+.prose-editor [data-content-slot] > .element-content {
+  padding-left: 0;
+}
+.prose-editor [data-content-slot] > .element-content:not(:empty) {
+  min-height: 0;
+}
+/* Without blocks, the slot's placeholder paragraph holds the line; a click on it starts one. */
+.prose-editor [data-content-placeholder] + [data-content-slot] > .element-content {
+  @apply absolute inset-0;
+}
+/* Child blocks that an element view hides, e.g. the tabs that aren't selected; over e.g. flex. */
+.prose-editor [data-element-hidden] {
+  display: none !important;
+}
+.prose-editor .element-content[hidden],
+.prose-editor .element-tag[hidden] {
+  display: none;
+}
+/* Element tokens */
+.prose-editor .element-token-name {
+  color: var(--syntax-tag);
+}
+.prose-editor .element-token-property {
+  color: var(--syntax-property);
+}
+.prose-editor .element-token-attribute,
+.prose-editor .element-token-operator,
+.prose-editor .element-token-number {
+  color: var(--syntax-value);
+}
+.prose-editor .element-token-string {
+  color: var(--syntax-string);
+}
+.prose-editor .element-token-literal {
+  color: var(--syntax-literal);
+}
+.prose-editor .element-token-punctuation {
+  color: var(--syntax-punctuation);
+}
+
+/* Element search matches */
+.prose-editor [data-element-search-match] {
+  @apply bg-amber-100 dark:bg-amber-950;
+}
+
+/* Element selection */
+.prose-editor .element-node:not([data-element-editing]) > [data-element-tag] {
+  @apply select-none;
+}
+.prose-editor .element-node.ProseMirror-selectednode {
+  @apply outline-none;
+}
+
+/* Code blocks */
+.prose-editor .code-block-node {
+  @apply relative my-2 font-mono text-sm text-gray-700;
+  min-width: 0;
+}
+.prose-editor .code-block-node .cm-editor,
+.prose-editor .code-block-node .cm-content {
+  @apply font-mono;
+}
+.prose-editor .code-block-node .cm-selectionBackground,
+.prose-editor .code-mixed-selection {
+  @apply bg-tertiary/10!;
+}
+// A selection that continues outside a code block is painted from the editor state: natively, it'd
+// cover all the block with its line numbers, and Safari clamps it, moving its caret elsewhere.
+.prose-editor .code-block-node ::selection,
+.ProseMirror[data-code-mixed-selection] ::selection {
+  @apply bg-transparent!;
+}
+.ProseMirror[data-code-mixed-selection] {
+  @apply caret-transparent;
+
+  .cm-cursorLayer,
+  .cm-selectionLayer {
+    @apply hidden;
+  }
+}
+.prose-editor .code-block-node .cm-scroller {
+  @apply scrollbar-sm overscroll-x-none;
+  padding-right: var(--code-right-space, 1.5rem);
+}
+.prose-editor .code-block-node .cm-content {
+  flex-grow: 0;
+  width: max-content;
+  min-width: var(--code-content-width, 0px);
+}
+.prose-editor .code-block-node .cm-editor::before {
+  @apply absolute rounded-lg bg-gray-50 pointer-events-none;
+  content: "";
+  top: -0.5rem;
+  bottom: -0.5rem;
+  left: var(--code-background-left, 0px);
+  width: var(--code-background-width, 100%);
+}
+.prose-editor .code-block-node .cm-content,
+.prose-editor .code-block-node .cm-line {
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+.prose-editor .code-block-node.ProseMirror-selectednode {
+  @apply outline-none;
+}
+.prose-editor .code-block-node.version-diff-block::after {
+  left: var(--code-visible-left, 0px);
+  width: var(--code-visible-width, 100%);
+  right: auto;
+}
+.prose-editor .code-block-node.version-diff-added::after,
+.prose-editor .code-block-node.version-diff-removed::after {
+  @apply z-1;
+}
+
+/* A plain code block, e.g. in a code group, has no margins or background; its view frames it. */
+.prose-editor [data-element-plain].code-block-node {
+  @apply my-0;
+}
+.prose-editor [data-element-plain].code-block-node .cm-editor::before {
+  @apply hidden;
+}
+.prose-editor [data-element-plain].code-block-node .cm-gutters {
+  @apply bg-transparent;
+}
+
+/* Code block panel-wide scroll viewport */
+.prose-editor .code-block-scroll-spacer {
+  flex: 0 0 var(--code-left-space, 0px);
+}
+
+/* Code block line numbers */
+.prose-editor .code-block-node .cm-gutters {
+  @apply border-none bg-gray-50 pl-2 text-gray-400;
+}
+.prose-editor .code-block-node .cm-lineNumbers .cm-gutterElement {
+  @apply pl-0 pr-3;
+  line-height: 1.25rem;
+}
+
+/* Code block indentation and folding */
+.prose-editor .code-block-indent-guides {
+  background-image: repeating-linear-gradient(
+    to right,
+    theme("colors.gray.200") 0 1px,
+    transparent 1px var(--code-indent-unit)
+  );
+  background-size: var(--code-indent-width) 100%;
+  background-repeat: no-repeat;
+}
+.prose-editor .code-block-fold-icon {
+  @apply i-lucide:chevron-right inline-block h-4 w-4 align-middle;
+}
+.prose-editor .code-block-fold-icon-open {
+  @apply rotate-90;
+}
+.prose-editor .code-block-node .cm-foldGutter .cm-gutterElement {
+  @apply flex items-center justify-center px-0.5;
+  line-height: 1.25rem;
+}
+
+/* Horizontal scrollbars */
+// Chromium doesn't repaint scrollbar pseudo-elements on hover, so toggle the scrollbar itself
+// Safari doesn't add a scrollbar's height to the layout, so the scroller's height is fixed instead
+@media (hover: hover) and (pointer: fine) {
+  [data-table-scroll-container][data-overflowing] {
+    height: calc(var(--table-content-height) + 0.75rem);
+
+    &:not(:hover, :has(:focus-visible)) {
+      @apply overflow-x-hidden;
+    }
+  }
+
+  .prose-editor .code-block-node .cm-scroller[data-overflowing] {
+    @apply overflow-y-hidden;
+    height: calc(var(--code-content-height) + 0.75rem);
+
+    &:not(:hover, :has(:focus-visible)) {
+      @apply overflow-x-hidden;
+    }
+  }
+}
+
+/* Mobile code blocks */
+@screen lt-md {
+  .prose-editor .code-block-node {
+    font-size: 16px;
+  }
+}
+
+/* Image placeholders */
+.prose-editor .image-placeholder-card > * {
+  @apply rounded-inherit;
+}

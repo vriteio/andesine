@@ -1,0 +1,13 @@
+# Dependencies and build output
+node_modules
+dist
+.astro
+
+# Environment variables with the API key
+.env
+.env.*
+!.env.example
+
+# Platform folders
+.vercel
+.netlify

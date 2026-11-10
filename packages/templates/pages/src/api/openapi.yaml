@@ -1,0 +1,246 @@
+openapi: 3.1.0
+info:
+  title: Tasks API
+  version: 1.0.0
+  description: |
+    An example API for the reference pages of this template. It manages projects and
+    their tasks.
+
+    Replace this file with your own OpenAPI 3.0 or 3.1 spec, or set `spec` in
+    `andesine.config.ts` to its URL.
+servers:
+  - url: https://api.example.com/v1
+    description: Production
+security:
+  - bearer: []
+tags:
+  - name: projects
+    x-displayName: Projects
+    description: A project holds tasks and has one owner.
+  - name: tasks
+    x-displayName: Tasks
+    description: Tasks can have subtasks, and one assignee.
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      description: Send an API token from the account settings.
+  parameters:
+    ProjectID:
+      name: projectID
+      in: path
+      required: true
+      description: ID of the project.
+      schema: { type: string, pattern: "^prj_[A-Za-z0-9]+$" }
+      example: prj_4f8a
+  headers:
+    RateLimitRemaining:
+      description: Requests left in the current minute.
+      schema: { type: integer }
+  schemas:
+    Project:
+      type: object
+      required: [id, name, createdAt]
+      properties:
+        id: { type: string, description: ID of the project., examples: [prj_4f8a] }
+        name: { type: string, minLength: 1, maxLength: 100, examples: [Website launch] }
+        description: { type: [string, "null"], description: Optional notes. }
+        createdAt: { type: string, format: date-time, readOnly: true }
+    ProjectInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100, examples: [Website launch] }
+        description: { type: [string, "null"] }
+    Task:
+      type: object
+      required: [id, title, status]
+      properties:
+        id: { type: string, examples: [tsk_91c2] }
+        title: { type: string, examples: [Write the launch post] }
+        status:
+          type: string
+          enum: [todo, in_progress, done]
+          default: todo
+        assignee:
+          description: A person or a team.
+          oneOf:
+            - $ref: "#/components/schemas/Person"
+            - $ref: "#/components/schemas/Team"
+        subtasks:
+          type: array
+          description: Tasks that belong to this task.
+          items: { $ref: "#/components/schemas/Task" }
+    Person:
+      type: object
+      required: [type, email]
+      properties:
+        type: { const: person }
+        email: { type: string, format: email }
+    Team:
+      type: object
+      required: [type, name]
+      properties:
+        type: { const: team }
+        name: { type: string, examples: [Marketing] }
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string, examples: [NOT_FOUND] }
+        message: { type: string, examples: [The project does not exist.] }
+  responses:
+    NotFound:
+      description: The resource does not exist.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+paths:
+  /projects:
+    get:
+      operationId: projects.list
+      tags: [projects]
+      summary: List projects
+      description: Returns the projects of the account, newest first.
+      parameters:
+        - name: limit
+          in: query
+          description: Largest number of projects to return.
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - name: cursor
+          in: query
+          description: The `nextCursor` of the previous page.
+          schema: { type: string }
+      responses:
+        "200":
+          description: A page of projects.
+          headers:
+            X-RateLimit-Remaining: { $ref: "#/components/headers/RateLimitRemaining" }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Project" }
+                  nextCursor: { type: [string, "null"] }
+    post:
+      operationId: projects.create
+      tags: [projects]
+      summary: Create a project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProjectInput" }
+      responses:
+        "201":
+          description: The new project.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Project" }
+      x-codeSamples:
+        - lang: javascript
+          label: JavaScript
+          source: |
+            const response = await fetch("https://api.example.com/v1/projects", {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${process.env.TASKS_TOKEN}`,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({ name: "Website launch" })
+            });
+
+            const project = await response.json();
+  /projects/{projectID}:
+    parameters:
+      - $ref: "#/components/parameters/ProjectID"
+    get:
+      operationId: projects.get
+      tags: [projects]
+      summary: Get a project
+      responses:
+        "200":
+          description: The project.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Project" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      operationId: projects.delete
+      tags: [projects]
+      summary: Delete a project
+      description: Deletes the project and all of its tasks. You cannot undo this.
+      responses:
+        "204": { description: The project is deleted. }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /projects/{projectID}/tasks:
+    parameters:
+      - $ref: "#/components/parameters/ProjectID"
+    get:
+      operationId: tasks.list
+      tags: [tasks]
+      summary: List tasks
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [todo, in_progress, done] }
+      responses:
+        "200":
+          description: The tasks of the project.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Task" }
+    post:
+      operationId: tasks.create
+      tags: [tasks]
+      summary: Create a task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string, examples: [Write the launch post] }
+                status: { type: string, enum: [todo, in_progress, done], default: todo }
+      responses:
+        "201":
+          description: The new task.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+  /projects/{projectID}/tasks/{taskID}/complete:
+    parameters:
+      - $ref: "#/components/parameters/ProjectID"
+      - name: taskID
+        in: path
+        required: true
+        schema: { type: string }
+        example: tsk_91c2
+    post:
+      operationId: tasks.complete
+      tags: [tasks]
+      summary: Complete a task
+      deprecated: true
+      description: Use `PATCH /projects/{projectID}/tasks/{taskID}` with `status` set to `done`.
+      responses:
+        "200":
+          description: The completed task.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+  /health:
+    get:
+      operationId: health
+      summary: Check the service
+      security: []
+      responses:
+        "204": { description: The service works. }

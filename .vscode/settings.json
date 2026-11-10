@@ -1,29 +1,3 @@
 {
-  "cSpell.words": [
-    "clicktracking",
-    "codepen",
-    "codesandbox",
-    "Collab",
-    "composables",
-    "exitable",
-    "hget",
-    "Hocuspocus",
-    "hset",
-    "kanban",
-    "Kanbans",
-    "Lexo",
-    "listitem",
-    "OPENAI",
-    "openapi",
-    "outdir",
-    "sadd",
-    "smembers",
-    "srem",
-    "totp",
-    "unsign",
-    "Unsubscribable",
-    "weaviate"
-  ],
-  "unocss.root": ["apps/web"],
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "cSpell.words": ["COLLAB", "Lexo", "ORPC", "stringbool", "Unflushed", "unsign", "WSRPC", "xlarge"]
 }

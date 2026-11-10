@@ -1,0 +1,141 @@
+// Browser reset
+@use "@unocss/reset/tailwind.css";
+
+// Shared fonts and theme colors
+@use "@andesine/components/styles.scss";
+
+// Structure
+html {
+  @apply overflow-hidden overscroll-y-none bg-gray-100 text-gray-700 from-secondary via-primary to-secondary;
+  height: 100dvh;
+  font-family: "NunitoVariable", sans-serif;
+  -webkit-overflow-scrolling: touch;
+}
+
+@screen lt-md {
+  html {
+    // Upscale UI on mobile
+    font-size: 18px;
+    // Safari paints this color outside the page, e.g. the foldable iPhone's side status bar
+    @apply bg-gray-50;
+  }
+}
+
+body {
+  @apply flex min-h-full;
+}
+
+#app {
+  @apply flex flex-col flex-1 w-full;
+  height: 100vh;
+  height: 100dvh;
+}
+
+// Monospace utility
+.font-mono {
+  font-family: "JetBrainsMonoVariable", monospace !important;
+}
+
+// Selection
+::selection {
+  @apply bg-tertiary/10;
+}
+
+// Global scrollbars
+::-webkit-scrollbar {
+  @apply w-3 h-3 bg-gray-50;
+}
+::-webkit-scrollbar-track {
+  @apply mx-2.5 my-2.5;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-100 shadow-inner border-2 border-solid border-gray-50 rounded-lg;
+}
+.scrollbar-sm {
+  &::-webkit-scrollbar {
+    @apply w-2.5 h-2.5;
+  }
+  &::-webkit-scrollbar-track {
+    @apply mx-2 my-2;
+  }
+}
+.scrollbar-white {
+  &::-webkit-scrollbar {
+    @apply bg-white;
+  }
+  &::-webkit-scrollbar-thumb {
+    @apply bg-gray-100 shadow-inner border-2 border-solid border-white rounded-lg;
+  }
+}
+.scrollbar-base {
+  &::-webkit-scrollbar {
+    @apply bg-gray-50;
+  }
+  &::-webkit-scrollbar-thumb {
+    @apply bg-gray-100 shadow-inner border-2 border-solid border-gray-50 rounded-lg;
+  }
+}
+.scrollbar-contrast {
+  &::-webkit-scrollbar {
+    @apply bg-gray-100;
+  }
+  &::-webkit-scrollbar-thumb {
+    @apply bg-gray-200 shadow-inner border-2 border-solid border-gray-100 rounded-lg;
+  }
+}
+// Side panels are `gray-100` on desktop, and white sheets on mobile, as are search dialogs
+// `scrollbar-nested` follows the side panel it's in, e.g. in extension views
+.scrollbar-panel,
+.scrollbar-panel .scrollbar-nested {
+  &::-webkit-scrollbar {
+    @apply bg-gray-100;
+  }
+  &::-webkit-scrollbar-thumb {
+    @apply bg-gray-200 shadow-inner border-2 border-solid border-gray-100 rounded-lg;
+  }
+}
+@screen lt-md {
+  .scrollbar-panel,
+  .scrollbar-panel .scrollbar-nested,
+  .scrollbar-sheet {
+    &::-webkit-scrollbar {
+      @apply bg-white;
+    }
+    &::-webkit-scrollbar-thumb {
+      @apply bg-gray-100 shadow-inner border-2 border-solid border-white rounded-lg;
+    }
+  }
+}
+::-webkit-scrollbar-thumb:horizontal {
+  box-shadow: inset 2px 0 4px 0 rgb(0 0 0 / 5%);
+}
+// Chromium doesn't repaint scrollbar pseudo-elements on hover, so toggle the scrollbar itself
+// `data-overflowing` comes from `ScrollShadow`; the gutter then replaces the right padding
+@media (hover: hover) and (pointer: fine) {
+  .scrollbar-hover[data-overflowing] {
+    scrollbar-gutter: stable;
+    overflow-x: hidden;
+    padding-right: 0;
+  }
+  .scrollbar-hover:not(:hover, :has(:focus-visible)) {
+    overflow-y: hidden;
+  }
+}
+
+// Ark UI visibility state
+[hidden] {
+  @apply hidden!;
+}
+
+// Safari bottom bar tint; stays on top during the sheet morph
+[data-safari-bottom-tint] {
+  view-transition-name: safari-bottom-tint;
+}
+::view-transition-group(safari-bottom-tint) {
+  @apply z-3;
+  animation: none;
+}
+::view-transition-old(safari-bottom-tint),
+::view-transition-new(safari-bottom-tint) {
+  animation: none;
+}

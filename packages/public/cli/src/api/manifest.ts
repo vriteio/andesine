@@ -1,0 +1,9036 @@
+/* eslint-disable max-lines */
+// Generated from SDK openapi.json. Do not edit.
+import type { APICommand, JSONSchema } from "./types";
+
+const commands: APICommand[] = [
+  {
+    id: "assets.get",
+    group: "assets",
+    command: "get",
+    method: "get",
+    path: "/assets/{assetID}",
+    summary: "Get asset status and details",
+    description:
+      "Returns image metadata, processing status, and available files. Supply entryID when checking access through an entry.",
+    example: {
+      assetID: "ast_example",
+      entryID: "ent_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "assetID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "asset-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "entryID",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "entry-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "assets.importURL",
+    group: "assets",
+    command: "import-url",
+    method: "post",
+    path: "/assets/imports",
+    summary: "Import an image URL",
+    description:
+      "Downloads a remote image and starts processing it for the entry. With checkDuplicates, can return an existing image instead. Use assets.get to check processing status.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+    example: {
+      assetID: "ast_example",
+      entryID: "ent_example",
+      url: "https://example.com/image.png",
+      checkDuplicates: true
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "assetID",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "asset-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "entryID",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "entry-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "url",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "url",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "checkDuplicates",
+        location: "body",
+        required: false,
+        schema: {
+          type: "boolean",
+          default: false
+        },
+        flag: "check-duplicates",
+        kind: "boolean",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "assets.register",
+    group: "assets",
+    command: "register",
+    method: "post",
+    path: "/assets/uploads",
+    summary: "Register an image upload",
+    description:
+      "Reserves an image upload for an entry. Supply the byte count and lowercase SHA-256 checksum of the file. Call assets.upload before expiresAt, then use assets.get to check processing status.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+    example: {
+      assetID: "ast_example",
+      entryID: "ent_example",
+      filename: "image.png",
+      byteSize: 1024,
+      checksum: "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "assetID",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "asset-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "entryID",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "entry-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "filename",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "filename",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "byteSize",
+        location: "body",
+        required: true,
+        schema: {
+          type: "number"
+        },
+        flag: "byte-size",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "checksum",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string",
+          description: "SHA-256 of the file bytes, verified by the backend and worker"
+        },
+        flag: "checksum",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "assets.search",
+    group: "assets",
+    command: "search",
+    method: "get",
+    path: "/assets/search",
+    summary: "Search assets",
+    description:
+      "Finds workspace images by text or SHA-256 checksum. Semantic search defaults to true and uses 1 AI credit for a text query. Returns up to 50 results.\n\nRequired API key permissions: read:entries, read:collections. Write permissions also grant read access for the same resource.",
+    example: {
+      query: "mountains",
+      limit: 10
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "query",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          default: ""
+        },
+        flag: "query",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "checksum",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "checksum",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "semantic",
+        location: "query",
+        required: false,
+        schema: {
+          type: "boolean",
+          default: true
+        },
+        flag: "semantic",
+        kind: "boolean",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "query",
+        required: false,
+        schema: {
+          type: "number",
+          default: 24
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "assets.upload",
+    group: "assets",
+    command: "upload",
+    method: "put",
+    path: "/assets/{assetID}/upload",
+    summary: "Upload registered image bytes",
+    description:
+      "Uploads a file for a registered asset with multipart/form-data. The bytes must match the registered size and checksum. Processing continues after the upload; use assets.get to check status.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+    example: {
+      assetID: "ast_example",
+      file: "<binary file>"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "assetID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "asset-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "file",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string",
+          contentMediaType: "*/*"
+        },
+        flag: "file",
+        kind: "file",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "auth.getIdentity",
+    group: "auth",
+    command: "get-identity",
+    method: "get",
+    path: "/identity",
+    summary: "Get credential identity",
+    description:
+      "Returns the authenticated user for OAuth or browser credentials, or the key and workspace IDs and the permissions of an API key. Does not require a workspace selection and does not count toward API usage.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "collections.bulkDelete",
+    group: "collections",
+    command: "bulk-delete",
+    method: "post",
+    path: "/collections/bulk/delete",
+    summary: "Delete collection trees",
+    description:
+      "Soft-deletes the selected collections, their descendants, and their entries. The workspace root cannot be deleted. An active schema migration can block this action.\n\nRequired API key permissions: collections. Write permissions also grant read access for the same resource.",
+    example: {
+      ids: ["coll_example"]
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "ids",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          items: {
+            type: "string"
+          },
+          description: "IDs of the collections to delete"
+        },
+        flag: "ids",
+        kind: "json",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "collections.create",
+    group: "collections",
+    command: "create",
+    method: "post",
+    path: "/collections",
+    summary: "Create a collection",
+    description:
+      "Creates a child collection. Without parentID, uses the workspace root. The name defaults to Untitled. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed and NFC-normalized. Derived URL slugs must be unique across sibling entries and collections, including case and punctuation variants. Names cannot contain a slash or equal a single dot or two dots. Restricted collections require a session with restricted_collections permission and the Pro plan; API keys cannot create them.\n\nRequired API key permissions: collections. Write permissions also grant read access for the same resource.",
+    example: {
+      name: "Documentation",
+      parentID: "coll_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "id",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "ID of the collection"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "name",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Name of the collection"
+        },
+        flag: "name",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "parentID",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "ID of the parent collection"
+        },
+        flag: "parent-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "parentPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Name path of the parent collection"
+        },
+        flag: "parent-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "parentSlugPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Slug path of the parent collection"
+        },
+        flag: "parent-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "restricted",
+        location: "body",
+        required: false,
+        schema: {
+          type: "boolean",
+          description: "Whether to restrict access to the collection tree"
+        },
+        flag: "restricted",
+        kind: "boolean",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "collections.delete",
+    group: "collections",
+    command: "delete",
+    method: "delete",
+    path: "/collections/{id}",
+    summary: "Delete a collection tree",
+    description:
+      "Soft-deletes the collection, its descendants, and their entries. The workspace root cannot be deleted. An active schema migration can block this action.\n\nRequired API key permissions: collections. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "coll_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the collection to delete"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "collections.get",
+    group: "collections",
+    command: "get",
+    method: "get",
+    path: "/collections/get",
+    summary: "Get a collection",
+    description:
+      "Returns one collection by collectionID, collectionPath, or collectionSlugPath, with its name, path, and ancestors.\n\nRequired API key permissions: read:collections. Write permissions also grant read access for the same resource.",
+    example: {
+      collectionID: "coll_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "collectionID",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+        },
+        flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "collections.list",
+    group: "collections",
+    command: "list",
+    method: "get",
+    path: "/collections/list",
+    summary: "List collections",
+    description:
+      "Lists collections under the selected ancestor. Pass pagination.nextCursor to the next request while pagination.hasMore is true. The limit is 1 to 100.\n\nRequired API key permissions: read:collections. Write permissions also grant read access for the same resource.",
+    example: {
+      collectionID: "coll_example",
+      limit: 20
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "collectionID",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+        },
+        flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "cursor",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Cursor from the previous page"
+        },
+        flag: "cursor",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "query",
+        required: false,
+        schema: {
+          type: "number",
+          description: "Maximum collections to return"
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json",
+    pagination: "cursor"
+  },
+  {
+    id: "collections.move",
+    group: "collections",
+    command: "move",
+    method: "post",
+    path: "/collections/{id}/move",
+    summary: "Move a collection",
+    description:
+      "Moves the collection to another parent or position. Without a new parent, it stays in its parent. Without index, it keeps its position in the same parent and goes last in a new one. Rejects names already used in the new parent. A move that changes the schema can start a schema migration, which needs confirmedDataLoss when it can remove content.\n\nRequired API key permissions: collections. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "coll_example",
+      newParentID: "coll_parent"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the collection to be moved"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "newParentID",
+        location: "body",
+        required: false,
+        schema: {
+          anyOf: [
+            {
+              type: "string"
+            },
+            {
+              type: "null"
+            }
+          ],
+          description: "ID of the new parent collection, or null for the top level"
+        },
+        flag: "new-parent-id",
+        kind: "string",
+        nullable: true
+      },
+      {
+        name: "newParentPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Name path of the new parent collection; / is the top level"
+        },
+        flag: "new-parent-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "newParentSlugPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Slug path of the new parent collection; / is the top level"
+        },
+        flag: "new-parent-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedParentID",
+        location: "body",
+        required: false,
+        schema: {
+          anyOf: [
+            {
+              type: "string"
+            },
+            {
+              type: "null"
+            }
+          ],
+          description:
+            "ID of the parent that must still contain the collection, or null for the top level"
+        },
+        flag: "expected-parent-id",
+        kind: "string",
+        nullable: true
+      },
+      {
+        name: "index",
+        location: "body",
+        required: false,
+        schema: {
+          type: "number",
+          description: "New zero-based index in the parent collection's descendants array"
+        },
+        flag: "index",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "confirmedDataLoss",
+        location: "body",
+        required: false,
+        schema: {
+          type: "boolean",
+          default: false,
+          description: "Confirmation that a schema migration caused by the move can remove content"
+        },
+        flag: "confirmed-data-loss",
+        kind: "boolean",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "collections.update",
+    group: "collections",
+    command: "update",
+    method: "put",
+    path: "/collections/{id}",
+    summary: "Rename a collection",
+    description:
+      "Updates the collection name. Rejects names already used by a sibling entry or collection. An active schema migration can block this action.\n\nRequired API key permissions: collections. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "coll_example",
+      name: "Guides"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the collection to be updated"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "name",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "New name of the collection"
+        },
+        flag: "name",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedName",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Name the collection must still have"
+        },
+        flag: "expected-name",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "content.get",
+    group: "content",
+    command: "get",
+    method: "get",
+    path: "/content/entries/get",
+    summary: "Get published entry content",
+    description:
+      "Returns content from a publishing channel or a specific available snapshot. Use channel or snapshotID, never both. The default channel is published. Validates saved content against its recorded schema and returns schema metadata. expectedSchemaHash must match that revision; schema-less content cannot match it. Validation and hash checks run before ETag handling. Supports ETag and If-None-Match; a match returns 304 without a body.\n\nRequired API key permissions: read:publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      entryID: "ent_example",
+      channel: "published"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "entryID",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "entry-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "path",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+        },
+        flag: "path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "slugPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedSchemaHash",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Hash of the effective schema definition"
+        },
+        flag: "expected-schema-hash",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "channel",
+        location: "query",
+        required: false,
+        schema: {
+          $ref: "#/components/schemas/PublishingChannelCode",
+          description: "Publishing channel, defaults to published"
+        },
+        flag: "channel",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "snapshotID",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Historical publication snapshot to read"
+        },
+        flag: "snapshot-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "contentFormat",
+        location: "query",
+        required: false,
+        schema: {
+          enum: ["json", "mdx"],
+          type: "string",
+          default: "json",
+          description: "Content format of the response; mdx also returns the content as MDX in mdx"
+        },
+        flag: "content-format",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: true,
+    response: "json"
+  },
+  {
+    id: "content.getAsset",
+    group: "content",
+    command: "get-asset",
+    method: "get",
+    path: "/content/assets/{workspaceID}/{snapshotID}/{entryID}/{assetID}/{variant}",
+    summary: "Download a published asset",
+    description:
+      "Returns binary image data from a publication snapshot. No API key is required. The asset must belong to the entry in that available snapshot. Use the asset URLs returned with published content.",
+    example: {
+      workspaceID: "ws_example",
+      snapshotID: "snp_example",
+      entryID: "ent_example",
+      assetID: "ast_example",
+      variant: "display"
+    },
+    security: [],
+    fields: [
+      {
+        name: "workspaceID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "snapshotID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "snapshot-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "entryID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "entry-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "assetID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "asset-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "variant",
+        location: "path",
+        required: true,
+        schema: {
+          enum: ["thumbnail", "display", "source"],
+          type: "string"
+        },
+        flag: "variant",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "binary"
+  },
+  {
+    id: "content.getSchema",
+    group: "content",
+    command: "get-schema",
+    method: "get",
+    path: "/content/entries/schema",
+    summary: "Get a published entry schema",
+    description:
+      "Returns the exact recorded effective schema, or null for schema-less content. Uses the same publication access as content.get. Pass its snapshotID for a consistent read; use channel or snapshotID, not both.\n\nRequired API key permissions: read:publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      entryID: "ent_example",
+      channel: "published"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "entryID",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "entry-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "path",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+        },
+        flag: "path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "slugPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "channel",
+        location: "query",
+        required: false,
+        schema: {
+          $ref: "#/components/schemas/PublishingChannelCode"
+        },
+        flag: "channel",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "snapshotID",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "snapshot-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "content.getTree",
+    group: "content",
+    command: "get-tree",
+    method: "get",
+    path: "/content/tree",
+    summary: "Get a published collection tree",
+    description:
+      "Returns a published collection tree and its snapshot ID. Use channel or snapshotID, never both. The default channel is published. Reuse the snapshot ID for consistent content reads. Supports ETag and If-None-Match; a match returns 304 without a body.\n\nRequired API key permissions: read:publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      collectionID: "coll_example",
+      channel: "published"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "collectionID",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+        },
+        flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "channel",
+        location: "query",
+        required: false,
+        schema: {
+          $ref: "#/components/schemas/PublishingChannelCode",
+          description: "Publishing channel, defaults to published"
+        },
+        flag: "channel",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "snapshotID",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Historical publication snapshot to read"
+        },
+        flag: "snapshot-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: true,
+    response: "json"
+  },
+  {
+    id: "content.listCollections",
+    group: "content",
+    command: "list-collections",
+    method: "get",
+    path: "/content/collections",
+    summary: "List published collections",
+    description:
+      "Returns a flat page of collections from a publication snapshot. The default channel is published. On later pages, pass the returned snapshotID and pagination.nextCursor, and omit channel. Optionally select direct children using collectionID, collectionPath, or collectionSlugPath. Results are ordered by ID, not display order.\n\nRequired API key permissions: read:publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      channel: "published",
+      limit: 20
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "cursor",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Cursor from the previous page; keep the same filters"
+        },
+        flag: "cursor",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "query",
+        required: false,
+        schema: {
+          type: "number",
+          default: 50
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "collectionID",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+        },
+        flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "channel",
+        location: "query",
+        required: false,
+        schema: {
+          $ref: "#/components/schemas/PublishingChannelCode"
+        },
+        flag: "channel",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "snapshotID",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "snapshot-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json",
+    pagination: "snapshot"
+  },
+  {
+    id: "content.listEntries",
+    group: "content",
+    command: "list-entries",
+    method: "get",
+    path: "/content/entries",
+    summary: "List published entries",
+    description:
+      "Returns a flat page of entries from a publication snapshot. The default channel is published. On later pages, pass the returned snapshotID and pagination.nextCursor, and omit channel. Select direct children using collectionID, collectionPath, or collectionSlugPath, or include nested entries with descendants: true. descendants requires a collection scope. All property filters must match the assigned version. includeContent: true returns validated full content, properties, fragments, assets, and recorded schema metadata. An invalid full item fails the page. Keep the same scope and filters across pages. Results are ordered by ID, not display order.\n\nRequired API key permissions: read:publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      channel: "published",
+      limit: 20
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "cursor",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Cursor from the previous page; keep the same filters"
+        },
+        flag: "cursor",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "query",
+        required: false,
+        schema: {
+          type: "number",
+          default: 50
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "collectionID",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+        },
+        flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "channel",
+        location: "query",
+        required: false,
+        schema: {
+          $ref: "#/components/schemas/PublishingChannelCode"
+        },
+        flag: "channel",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "snapshotID",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "snapshot-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "descendants",
+        location: "query",
+        required: false,
+        schema: {
+          type: "boolean",
+          default: false
+        },
+        flag: "descendants",
+        kind: "boolean",
+        nullable: false
+      },
+      {
+        name: "includeContent",
+        location: "query",
+        required: false,
+        schema: {
+          type: "boolean",
+          default: false
+        },
+        flag: "include-content",
+        kind: "boolean",
+        nullable: false
+      },
+      {
+        name: "filters",
+        location: "query",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/PropertyFilter"
+          },
+          default: []
+        },
+        flag: "filters",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json",
+    pagination: "snapshot"
+  },
+  {
+    id: "entries.bulkDelete",
+    group: "entries",
+    command: "bulk-delete",
+    method: "post",
+    path: "/entries/bulk/delete",
+    summary: "Delete entries",
+    description:
+      "Soft-deletes the selected entries and clears current-entry selections for affected members. An active schema migration can block this action.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+    example: {
+      ids: ["ent_example"]
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "ids",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          items: {
+            type: "string"
+          },
+          description: "IDs of the entries to delete"
+        },
+        flag: "ids",
+        kind: "json",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "entries.bulkMove",
+    group: "entries",
+    command: "bulk-move",
+    method: "post",
+    path: "/entries/bulk/move",
+    summary: "Move entries",
+    description:
+      "Moves many entries in one workspace lock, with the items of entries.move; all or none apply. Moves that need a schema migration aren't supported; move those entries with entries.move. Error messages name the failing item by index. Each entry can appear once.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+    example: {
+      items: [
+        {
+          id: "ent_example",
+          collectionPath: "/Guides"
+        }
+      ]
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "items",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: {
+                type: "string",
+                description: "ID of the entry to be moved"
+              },
+              order: {
+                type: "string",
+                description: "New LexoRank order of the entry"
+              },
+              collectionID: {
+                anyOf: [
+                  {
+                    type: "string"
+                  },
+                  {
+                    type: "null"
+                  }
+                ],
+                description: "ID of the new parent collection"
+              },
+              collectionPath: {
+                type: "string",
+                description: "Name path of the new parent collection; / is the top level"
+              },
+              collectionSlugPath: {
+                type: "string",
+                description: "Slug path of the new parent collection; / is the top level"
+              },
+              expectedCollectionID: {
+                anyOf: [
+                  {
+                    type: "string"
+                  },
+                  {
+                    type: "null"
+                  }
+                ],
+                description:
+                  "ID of the collection that must still contain the entry, or null for the top level"
+              }
+            },
+            required: ["id"]
+          },
+          description: "Entry moves"
+        },
+        flag: "items",
+        kind: "json",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "entries.bulkUpdate",
+    group: "entries",
+    command: "bulk-update",
+    method: "post",
+    path: "/entries/bulk/update",
+    summary: "Update entries",
+    description:
+      "Writes content of many entries in one workspace lock, with the items of entries.update; a name without content is written as the title. All items are checked before any content changes, and all or none apply. Error messages name the failing item by index. Each entry can appear once. A repeated request with the same Idempotency-Key header returns the first result for 24 hours.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+    example: {
+      items: [
+        {
+          id: "ent_example",
+          operations: [
+            {
+              type: "replaceText",
+              find: "v1",
+              replace: "v2"
+            }
+          ]
+        }
+      ]
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "items",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: {
+                type: "string",
+                description: "ID of the entry to be updated"
+              },
+              name: {
+                type: "string",
+                description: "New name of the entry"
+              },
+              document: {
+                type: "object",
+                properties: {
+                  type: {
+                    type: "string"
+                  },
+                  attrs: {
+                    type: "object",
+                    propertyNames: {
+                      type: "string"
+                    },
+                    additionalProperties: {}
+                  },
+                  content: {
+                    type: "array",
+                    items: {
+                      $ref: "#/components/schemas/ContentNodeInput"
+                    }
+                  },
+                  marks: {
+                    type: "array",
+                    items: {
+                      $ref: "#/components/schemas/ContentMark"
+                    }
+                  },
+                  text: {
+                    type: "string"
+                  }
+                },
+                required: ["type"],
+                description:
+                  "ProseMirror JSON of the entry document, which must match the editor and the collection schema"
+              },
+              mdx: {
+                type: "string",
+                description:
+                  "Content as MDX: the title as H1, properties as <Property name value /> elements in place, fragments as <Fragment name> elements, and images as asset:<assetID>; frontmatter properties are also read, and entries.update and versions.create import image URLs"
+              },
+              operations: {
+                type: "array",
+                items: {
+                  anyOf: [
+                    {
+                      type: "object",
+                      properties: {
+                        type: {
+                          const: "replaceText"
+                        },
+                        find: {
+                          type: "string",
+                          description: "Text that occurs exactly once in the MDX of one block"
+                        },
+                        replace: {
+                          type: "string",
+                          description: "Replacement text"
+                        }
+                      },
+                      required: ["type", "find", "replace"],
+                      description: "Replace text in one block"
+                    },
+                    {
+                      type: "object",
+                      properties: {
+                        type: {
+                          const: "replaceBlock"
+                        },
+                        id: {
+                          type: "string"
+                        },
+                        mdx: {
+                          type: "string",
+                          description: "Blocks as MDX, without a title"
+                        }
+                      },
+                      required: ["type", "id", "mdx"],
+                      description: "Replace a block with zero or more blocks"
+                    },
+                    {
+                      type: "object",
+                      properties: {
+                        type: {
+                          const: "insertBlocks"
+                        },
+                        mdx: {
+                          type: "string",
+                          description: "Blocks as MDX, without a title"
+                        },
+                        before: {
+                          type: "string",
+                          description: "ID of the block to insert before"
+                        },
+                        after: {
+                          type: "string",
+                          description: "ID of the block to insert after"
+                        },
+                        position: {
+                          enum: ["start", "end"],
+                          type: "string",
+                          description: "Insert at the start or the end"
+                        },
+                        fragment: {
+                          type: "string",
+                          description: "Fragment key for position"
+                        }
+                      },
+                      required: ["type", "mdx"],
+                      description: "Insert blocks"
+                    },
+                    {
+                      type: "object",
+                      properties: {
+                        type: {
+                          const: "deleteBlocks"
+                        },
+                        ids: {
+                          type: "array",
+                          items: {
+                            type: "string"
+                          }
+                        }
+                      },
+                      required: ["type", "ids"],
+                      description: "Delete blocks"
+                    },
+                    {
+                      type: "object",
+                      properties: {
+                        type: {
+                          const: "setField"
+                        },
+                        key: {
+                          type: "string",
+                          description: "Field name or key"
+                        },
+                        value: {
+                          anyOf: [
+                            {
+                              type: "string"
+                            },
+                            {
+                              type: "number"
+                            },
+                            {
+                              type: "boolean"
+                            },
+                            {
+                              type: "array",
+                              items: {
+                                type: "string"
+                              }
+                            },
+                            {
+                              type: "null"
+                            }
+                          ],
+                          description: "Property value, or MDX for a fragment"
+                        }
+                      },
+                      required: ["type", "key", "value"],
+                      description: "Set a property value or the content of a fragment"
+                    }
+                  ]
+                },
+                description: "Edit operations, applied in order; all or none apply"
+              },
+              expectedHash: {
+                type: "string",
+                description: "Hash of the content that the change is based on"
+              },
+              expectedName: {
+                type: "string",
+                description: "Name the entry must still have"
+              },
+              version: {
+                type: "object",
+                properties: {
+                  name: {
+                    type: "string",
+                    description: "Version name"
+                  }
+                },
+                description: "Also save the new content as a version"
+              }
+            },
+            required: ["id"]
+          },
+          description: "Entry updates"
+        },
+        flag: "items",
+        kind: "json",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "entries.create",
+    group: "entries",
+    command: "create",
+    method: "post",
+    path: "/entries",
+    summary: "Create an entry",
+    description:
+      "Creates an entry and its initial document, in the collection given by collectionID, collectionPath, or collectionSlugPath (the top level by default). The name defaults to Untitled, or comes from the title of the supplied document or mdx. fields sets property values and fragment MDX by field name or key. path places the entry at a full name path and creates missing parent collections; a name already used there is a conflict. A repeated request with the same Idempotency-Key header returns the first result for 24 hours. Creation selects an available sibling name with a numeric suffix when needed. Names are trimmed and NFC-normalized. Derived URL slugs must be unique across sibling entries and collections, including case and punctuation variants. Names cannot contain a slash or equal a single dot or two dots. A collection schema sets the initial content without a document; a document must match it.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+    example: {
+      name: "Getting started",
+      collectionID: "coll_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "id",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "ID of the entry"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "name",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Name of the entry"
+        },
+        flag: "name",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionID",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "ID of the collection this entry belongs to"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "document",
+        location: "body",
+        required: false,
+        schema: {
+          type: "object",
+          properties: {
+            type: {
+              type: "string"
+            },
+            attrs: {
+              type: "object",
+              propertyNames: {
+                type: "string"
+              },
+              additionalProperties: {}
+            },
+            content: {
+              type: "array",
+              items: {
+                $ref: "#/components/schemas/ContentNodeInput"
+              }
+            },
+            marks: {
+              type: "array",
+              items: {
+                $ref: "#/components/schemas/ContentMark"
+              }
+            },
+            text: {
+              type: "string"
+            }
+          },
+          required: ["type"],
+          description:
+            "ProseMirror JSON of the entry document, which must match the editor and the collection schema"
+        },
+        flag: "document",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "mdx",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Content as MDX: the title as H1, properties as <Property name value /> elements in place, fragments as <Fragment name> elements, and images as asset:<assetID>; frontmatter properties are also read, and entries.update and versions.create import image URLs"
+        },
+        flag: "mdx",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "fields",
+        location: "body",
+        required: false,
+        schema: {
+          type: "object",
+          propertyNames: {
+            type: "string"
+          },
+          additionalProperties: {
+            anyOf: [
+              {
+                type: "string"
+              },
+              {
+                type: "number"
+              },
+              {
+                type: "boolean"
+              },
+              {
+                type: "array",
+                items: {
+                  type: "string"
+                }
+              },
+              {
+                type: "null"
+              }
+            ],
+            description: "Property value, or MDX for a fragment"
+          },
+          description: "Field values by name or key, set on the initial content"
+        },
+        flag: "fields",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "path",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Full name path of the entry, for example /Guides/Setup"
+        },
+        flag: "path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Name path of an existing parent collection"
+        },
+        flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Slug path of an existing parent collection"
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "entries.delete",
+    group: "entries",
+    command: "delete",
+    method: "delete",
+    path: "/entries/{id}",
+    summary: "Delete an entry",
+    description:
+      "Soft-deletes the entry and clears current-entry selections for affected members. An active schema migration can block this action.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "ent_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the entry to delete"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "entries.get",
+    group: "entries",
+    command: "get",
+    method: "get",
+    path: "/entries/get",
+    summary: "Get an entry",
+    description:
+      "Returns current entry details, fragments, properties, and recorded schema metadata. Validates content without changing it. expectedSchemaHash must match the recorded schema; schema-less content cannot match it. Use content.get to read published content.\n\nRequired API key permissions: read:entries. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "ent_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "path",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+        },
+        flag: "path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "slugPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedSchemaHash",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Hash of the effective schema definition"
+        },
+        flag: "expected-schema-hash",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "contentFormat",
+        location: "query",
+        required: false,
+        schema: {
+          enum: ["json", "mdx", "blocks"],
+          type: "string",
+          default: "json",
+          description:
+            "Content format of the response; mdx also returns the content as MDX in mdx, and blocks returns the blocks that edit operations address in blocks"
+        },
+        flag: "content-format",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "entries.list",
+    group: "entries",
+    command: "list",
+    method: "get",
+    path: "/entries/list",
+    summary: "List entries",
+    description:
+      "Lists entries in the selected collection, or all accessible entries when collectionID is omitted. Pass pagination.nextCursor to the next request while pagination.hasMore is true. The limit is 1 to 100 and defaults to 50.\n\nRequired API key permissions: read:entries. Write permissions also grant read access for the same resource.",
+    example: {
+      collectionID: "coll_example",
+      limit: 20
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "collectionID",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+        },
+        flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "cursor",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Cursor from the previous page"
+        },
+        flag: "cursor",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "query",
+        required: false,
+        schema: {
+          type: "number",
+          description: "Maximum entries to return"
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json",
+    pagination: "cursor"
+  },
+  {
+    id: "entries.move",
+    group: "entries",
+    command: "move",
+    method: "post",
+    path: "/entries/{id}/move",
+    summary: "Move an entry",
+    description:
+      "Moves the entry to another collection or position. Without order, it keeps its position in the same collection and goes last in a new one. Rejects names already used in the new collection. A move that changes the schema can start a schema migration, which needs confirmedDataLoss when it can remove content.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "ent_example",
+      collectionID: "coll_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the entry to be moved"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "order",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "New LexoRank order of the entry"
+        },
+        flag: "order",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionID",
+        location: "body",
+        required: false,
+        schema: {
+          anyOf: [
+            {
+              type: "string"
+            },
+            {
+              type: "null"
+            }
+          ],
+          description: "ID of the new parent collection"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: true
+      },
+      {
+        name: "collectionPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Name path of the new parent collection; / is the top level"
+        },
+        flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Slug path of the new parent collection; / is the top level"
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedCollectionID",
+        location: "body",
+        required: false,
+        schema: {
+          anyOf: [
+            {
+              type: "string"
+            },
+            {
+              type: "null"
+            }
+          ],
+          description:
+            "ID of the collection that must still contain the entry, or null for the top level"
+        },
+        flag: "expected-collection-id",
+        kind: "string",
+        nullable: true
+      },
+      {
+        name: "confirmedDataLoss",
+        location: "body",
+        required: false,
+        schema: {
+          type: "boolean",
+          default: false,
+          description: "Confirmation that a schema migration caused by the move can remove content"
+        },
+        flag: "confirmed-data-loss",
+        kind: "boolean",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "entries.update",
+    group: "entries",
+    command: "update",
+    method: "put",
+    path: "/entries/{id}",
+    summary: "Update an entry",
+    description:
+      "Renames the entry, replaces its content with document or mdx, or edits it with operations (with name, also renames). document and mdx need expectedHash, the hash of the content they replace (from entries.get); a different current hash returns CONTENT_HASH_MISMATCH. Operations anchor on block IDs, unique text, and field keys from entries.get with contentFormat blocks; expectedHash is optional for them, and a missing or ambiguous anchor returns CONTENT_OPERATION_INVALID. Only the changed blocks change, so live edits elsewhere are kept. Current content without a version is first saved as an auto version. version also saves the new content as a named version. Rejects names already used by a sibling entry or collection. expectedName applies the update only when the entry still has that name. An active schema migration can block this action. A repeated request with the same Idempotency-Key header returns the first result for 24 hours.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "ent_example",
+      name: "Installation"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the entry to be updated"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "name",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "New name of the entry"
+        },
+        flag: "name",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "document",
+        location: "body",
+        required: false,
+        schema: {
+          type: "object",
+          properties: {
+            type: {
+              type: "string"
+            },
+            attrs: {
+              type: "object",
+              propertyNames: {
+                type: "string"
+              },
+              additionalProperties: {}
+            },
+            content: {
+              type: "array",
+              items: {
+                $ref: "#/components/schemas/ContentNodeInput"
+              }
+            },
+            marks: {
+              type: "array",
+              items: {
+                $ref: "#/components/schemas/ContentMark"
+              }
+            },
+            text: {
+              type: "string"
+            }
+          },
+          required: ["type"],
+          description:
+            "ProseMirror JSON of the entry document, which must match the editor and the collection schema"
+        },
+        flag: "document",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "mdx",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Content as MDX: the title as H1, properties as <Property name value /> elements in place, fragments as <Fragment name> elements, and images as asset:<assetID>; frontmatter properties are also read, and entries.update and versions.create import image URLs"
+        },
+        flag: "mdx",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "operations",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            anyOf: [
+              {
+                type: "object",
+                properties: {
+                  type: {
+                    const: "replaceText"
+                  },
+                  find: {
+                    type: "string",
+                    description: "Text that occurs exactly once in the MDX of one block"
+                  },
+                  replace: {
+                    type: "string",
+                    description: "Replacement text"
+                  }
+                },
+                required: ["type", "find", "replace"],
+                description: "Replace text in one block"
+              },
+              {
+                type: "object",
+                properties: {
+                  type: {
+                    const: "replaceBlock"
+                  },
+                  id: {
+                    type: "string"
+                  },
+                  mdx: {
+                    type: "string",
+                    description: "Blocks as MDX, without a title"
+                  }
+                },
+                required: ["type", "id", "mdx"],
+                description: "Replace a block with zero or more blocks"
+              },
+              {
+                type: "object",
+                properties: {
+                  type: {
+                    const: "insertBlocks"
+                  },
+                  mdx: {
+                    type: "string",
+                    description: "Blocks as MDX, without a title"
+                  },
+                  before: {
+                    type: "string",
+                    description: "ID of the block to insert before"
+                  },
+                  after: {
+                    type: "string",
+                    description: "ID of the block to insert after"
+                  },
+                  position: {
+                    enum: ["start", "end"],
+                    type: "string",
+                    description: "Insert at the start or the end"
+                  },
+                  fragment: {
+                    type: "string",
+                    description: "Fragment key for position"
+                  }
+                },
+                required: ["type", "mdx"],
+                description: "Insert blocks"
+              },
+              {
+                type: "object",
+                properties: {
+                  type: {
+                    const: "deleteBlocks"
+                  },
+                  ids: {
+                    type: "array",
+                    items: {
+                      type: "string"
+                    }
+                  }
+                },
+                required: ["type", "ids"],
+                description: "Delete blocks"
+              },
+              {
+                type: "object",
+                properties: {
+                  type: {
+                    const: "setField"
+                  },
+                  key: {
+                    type: "string",
+                    description: "Field name or key"
+                  },
+                  value: {
+                    anyOf: [
+                      {
+                        type: "string"
+                      },
+                      {
+                        type: "number"
+                      },
+                      {
+                        type: "boolean"
+                      },
+                      {
+                        type: "array",
+                        items: {
+                          type: "string"
+                        }
+                      },
+                      {
+                        type: "null"
+                      }
+                    ],
+                    description: "Property value, or MDX for a fragment"
+                  }
+                },
+                required: ["type", "key", "value"],
+                description: "Set a property value or the content of a fragment"
+              }
+            ]
+          },
+          description: "Edit operations, applied in order; all or none apply"
+        },
+        flag: "operations",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "expectedHash",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Hash of the content that the change is based on"
+        },
+        flag: "expected-hash",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedName",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Name the entry must still have"
+        },
+        flag: "expected-name",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "version",
+        location: "body",
+        required: false,
+        schema: {
+          type: "object",
+          properties: {
+            name: {
+              type: "string",
+              description: "Version name"
+            }
+          },
+          description: "Also save the new content as a version"
+        },
+        flag: "version",
+        kind: "json",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "extensions.listElements",
+    group: "extensions",
+    command: "list-elements",
+    method: "get",
+    path: "/extensions/elements",
+    summary: "List custom elements",
+    description:
+      "The custom elements that the workspace's active extensions draw in the editor, e.g. Tabs: their props, whether they have content, which child blocks their content accepts, and the elements that belong inside them. Write them in MDX as <Name prop=\"value\">content</Name>. The editor guides edits by these rules and offers a clean-up; the API doesn't enforce them.\n\nRequired API key permissions: read:entries. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "instance.get",
+    group: "instance",
+    command: "get",
+    method: "get",
+    path: "/instance",
+    summary: "Get instance capabilities and limits",
+    description:
+      "Returns configured features and effective limits for the authenticated workspace. These values do not grant permissions or report live service health. No discovery request is made automatically by the SDK.",
+    example: {},
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "memberships.invite",
+    group: "memberships",
+    command: "invite",
+    method: "post",
+    path: "/memberships",
+    summary: "Invite a workspace member",
+    description:
+      "Creates an invitation and attempts email delivery. Check emailDelivery in the result. Requires the Pro plan and permission to delegate the selected role. Existing membership or pending invitation returns a conflict.\n\nRequired API key permissions: memberships. Write permissions also grant read access for the same resource.",
+    example: {
+      email: "editor@example.com",
+      roleID: "rl_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "email",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string",
+          description: "Email address of the user to invite"
+        },
+        flag: "email",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "roleID",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the role to assign"
+        },
+        flag: "role-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "memberships.list",
+    group: "memberships",
+    command: "list",
+    method: "get",
+    path: "/memberships",
+    summary: "List workspace members",
+    description:
+      "Lists workspace memberships with role and user details. Use pagination.nextCursor to continue with the same filters; concurrent changes can affect later pages.\n\nRequired API key permissions: read:memberships. Write permissions also grant read access for the same resource.",
+    example: {},
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "cursor",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Cursor from the previous page; keep the same filters"
+        },
+        flag: "cursor",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "query",
+        required: false,
+        schema: {
+          type: "number",
+          default: 50
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json",
+    pagination: "cursor"
+  },
+  {
+    id: "memberships.listInvites",
+    group: "memberships",
+    command: "list-invites",
+    method: "get",
+    path: "/memberships/invites",
+    summary: "List invitations",
+    description:
+      "Lists pending, unexpired workspace invitations. Use pagination.nextCursor to continue. Requires the Pro plan.\n\nRequired API key permissions: memberships. Write permissions also grant read access for the same resource.",
+    example: {},
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "cursor",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Cursor from the previous page; keep the same filters"
+        },
+        flag: "cursor",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "query",
+        required: false,
+        schema: {
+          type: "number",
+          default: 50
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json",
+    pagination: "cursor"
+  },
+  {
+    id: "memberships.remove",
+    group: "memberships",
+    command: "remove",
+    method: "delete",
+    path: "/memberships/{id}",
+    summary: "Remove a workspace member",
+    description:
+      "Removes the membership and its workspace access. Administrator memberships have additional restrictions.\n\nRequired API key permissions: memberships. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "ms_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the membership to remove"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "memberships.resendInvite",
+    group: "memberships",
+    command: "resend-invite",
+    method: "post",
+    path: "/memberships/invites/{id}/resend",
+    summary: "Resend an invitation",
+    description:
+      "Attempts email delivery again for a pending invitation. Check emailDelivery in the result. Requires the Pro plan.\n\nRequired API key permissions: memberships. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "inv_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the pending invitation"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "memberships.revokeInvite",
+    group: "memberships",
+    command: "revoke-invite",
+    method: "delete",
+    path: "/memberships/invites/{id}",
+    summary: "Revoke an invitation",
+    description:
+      "Revokes a pending invitation so it can no longer be accepted. Requires the Pro plan.\n\nRequired API key permissions: memberships. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "inv_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the invite to revoke"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "memberships.update",
+    group: "memberships",
+    command: "update",
+    method: "patch",
+    path: "/memberships/{id}",
+    summary: "Change a member role",
+    description:
+      "Assigns a new role to a member. Requires the Pro plan and permission to delegate that role. Administrator assignments have additional restrictions.\n\nRequired API key permissions: memberships. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "ms_example",
+      roleID: "rl_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the membership to update"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "roleID",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string",
+          description: "New role ID"
+        },
+        flag: "role-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "publishing.bulkPublishCollections",
+    group: "publishing",
+    command: "bulk-publish-collections",
+    method: "post",
+    path: "/publishing/collections/bulk/publish",
+    summary: "Publish collection trees",
+    description:
+      "Publishes the latest entry versions in the selected publishing-enabled collection trees. At least one ID is required. The default channel is published. Supply expectedSnapshotID from a prior channel read to reject concurrent publication changes.\n\nRequired API key permissions: publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      ids: ["coll_example"],
+      channel: "published"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "channel",
+        location: "body",
+        required: false,
+        schema: {
+          $ref: "#/components/schemas/PublishingChannelCode",
+          default: "published",
+          description: "Publishing channel, defaults to published"
+        },
+        flag: "channel",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedSnapshotID",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Reject the mutation if the channel no longer points to this reviewed snapshot"
+        },
+        flag: "expected-snapshot-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "ids",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          items: {
+            type: "string"
+          },
+          description: "IDs of the collection trees to publish"
+        },
+        flag: "ids",
+        kind: "json",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "publishing.bulkPublishEntries",
+    group: "publishing",
+    command: "bulk-publish-entries",
+    method: "post",
+    path: "/publishing/entries/bulk/publish",
+    summary: "Publish entries",
+    description:
+      "Publishes the selected entries with optional version IDs. Entries must be in publishing-enabled collections. At least one entry is required. The default channel is published. Supply expectedSnapshotID from a prior channel read to reject concurrent publication changes.\n\nRequired API key permissions: publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      entries: [
+        {
+          entryID: "ent_example"
+        }
+      ],
+      channel: "published"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "channel",
+        location: "body",
+        required: false,
+        schema: {
+          $ref: "#/components/schemas/PublishingChannelCode",
+          default: "published",
+          description: "Publishing channel, defaults to published"
+        },
+        flag: "channel",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedSnapshotID",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Reject the mutation if the channel no longer points to this reviewed snapshot"
+        },
+        flag: "expected-snapshot-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "entries",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/PublishEntryTarget"
+          },
+          description: "Entries and versions to publish"
+        },
+        flag: "entries",
+        kind: "json",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "publishing.bulkSetCollections",
+    group: "publishing",
+    command: "bulk-set-collections",
+    method: "post",
+    path: "/publishing/collections/bulk/set",
+    summary: "Configure publishing for collections",
+    description:
+      "Enables publishing for the selected collections, or disables it and unpublishes their trees from all channels. When enabling, publish can also publish the latest entry versions.\n\nRequired API key permissions: publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      ids: ["coll_example"],
+      enabled: true,
+      publish: false
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "ids",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          items: {
+            type: "string"
+          },
+          description: "IDs of the collections to configure"
+        },
+        flag: "ids",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "expectedSnapshots",
+        location: "body",
+        required: false,
+        schema: {
+          type: "object",
+          propertyNames: {
+            $ref: "#/components/schemas/PublishingChannelCode"
+          },
+          additionalProperties: {
+            type: "string"
+          },
+          description:
+            "Optional snapshot checks for supplied channels before changing collection publishing. Omitted channels are not checked."
+        },
+        flag: "expected-snapshots",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "enabled",
+        location: "body",
+        required: true,
+        schema: {
+          type: "boolean",
+          description:
+            "Enable publishing, or disable and unpublish the collection trees from all channels"
+        },
+        flag: "enabled",
+        kind: "boolean",
+        nullable: false
+      },
+      {
+        name: "publish",
+        location: "body",
+        required: false,
+        schema: {
+          type: "boolean",
+          description: "Whether to publish latest entry versions when enabling publishing"
+        },
+        flag: "publish",
+        kind: "boolean",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "publishing.bulkUnpublishCollections",
+    group: "publishing",
+    command: "bulk-unpublish-collections",
+    method: "post",
+    path: "/publishing/collections/bulk/unpublish",
+    summary: "Unpublish collection trees",
+    description:
+      "Removes publication assignments for the selected collection trees from the channel. At least one ID is required. The default channel is published. Supply expectedSnapshotID from a prior channel read to reject concurrent publication changes.\n\nRequired API key permissions: publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      ids: ["coll_example"],
+      channel: "published"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "channel",
+        location: "body",
+        required: false,
+        schema: {
+          $ref: "#/components/schemas/PublishingChannelCode",
+          default: "published",
+          description: "Publishing channel, defaults to published"
+        },
+        flag: "channel",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedSnapshotID",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Reject the mutation if the channel no longer points to this reviewed snapshot"
+        },
+        flag: "expected-snapshot-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "ids",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          items: {
+            type: "string"
+          },
+          description: "IDs of the collection trees to unpublish"
+        },
+        flag: "ids",
+        kind: "json",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "publishing.bulkUnpublishEntries",
+    group: "publishing",
+    command: "bulk-unpublish-entries",
+    method: "post",
+    path: "/publishing/entries/bulk/unpublish",
+    summary: "Unpublish entries",
+    description:
+      "Removes publication assignments for the selected entries from the channel. At least one ID is required. The default channel is published. Supply expectedSnapshotID from a prior channel read to reject concurrent publication changes.\n\nRequired API key permissions: publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      ids: ["ent_example"],
+      channel: "published"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "channel",
+        location: "body",
+        required: false,
+        schema: {
+          $ref: "#/components/schemas/PublishingChannelCode",
+          default: "published",
+          description: "Publishing channel, defaults to published"
+        },
+        flag: "channel",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedSnapshotID",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Reject the mutation if the channel no longer points to this reviewed snapshot"
+        },
+        flag: "expected-snapshot-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "ids",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          items: {
+            type: "string"
+          },
+          description: "IDs of the entries to unpublish"
+        },
+        flag: "ids",
+        kind: "json",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "publishing.createChannel",
+    group: "publishing",
+    command: "create-channel",
+    method: "post",
+    path: "/publishing/channels",
+    summary: "Create a publishing channel",
+    description:
+      "Creates a publishing channel from its display name and returns the generated channel code.\n\nRequired API key permissions: publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      name: "Preview"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "name",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string",
+          description: "Publishing channel label"
+        },
+        flag: "name",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "publishing.deleteChannel",
+    group: "publishing",
+    command: "delete-channel",
+    method: "delete",
+    path: "/publishing/channels/{code}",
+    summary: "Delete a publishing channel",
+    description:
+      "Deletes a custom channel and its publication assignments. The default published channel cannot be deleted.\n\nRequired API key permissions: publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      code: "preview"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "code",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "Publishing channel identifier"
+        },
+        flag: "code",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedSnapshotID",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Reject deletion if the channel snapshot changed"
+        },
+        flag: "expected-snapshot-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "publishing.getChannelContent",
+    group: "publishing",
+    command: "get-channel-content",
+    method: "get",
+    path: "/publishing/channels/{channel}/content",
+    summary: "Get channel content and pending changes",
+    description:
+      "Returns publication state and pending changes for a publishing root, with the snapshot ID needed to review and revert changes.\n\nRequired API key permissions: read:publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      channel: "published",
+      collectionID: "coll_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "channel",
+        location: "path",
+        required: true,
+        schema: {
+          $ref: "#/components/schemas/PublishingChannelCode"
+        },
+        flag: "channel",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionID",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Publishing root collection whose content to list"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+        },
+        flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "publishing.getEntryVersion",
+    group: "publishing",
+    command: "get-entry-version",
+    method: "get",
+    path: "/publishing/entries/{entryID}/version",
+    summary: "Get a published entry version",
+    description:
+      "Returns the entry version assigned to a channel, or to an explicit available snapshot, with its recorded schema metadata. Validates content against that revision. expectedSchemaHash must match it; schema-less content cannot match it. The default channel is published.\n\nRequired API key permissions: read:publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      entryID: "ent_example",
+      channel: "published"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "entryID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "Entry whose published version to get"
+        },
+        flag: "entry-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "channel",
+        location: "query",
+        required: false,
+        schema: {
+          $ref: "#/components/schemas/PublishingChannelCode",
+          default: "published",
+          description: "Publishing channel, defaults to published"
+        },
+        flag: "channel",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedSchemaHash",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Hash of the effective schema definition"
+        },
+        flag: "expected-schema-hash",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "snapshotID",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Exact publication snapshot to read"
+        },
+        flag: "snapshot-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "publishing.listChannels",
+    group: "publishing",
+    command: "list-channels",
+    method: "get",
+    path: "/publishing/channels",
+    summary: "List publishing channels",
+    description:
+      "Returns workspace publishing channels. Set includeAssignmentCount to include entry assignment counts.\n\nRequired API key permissions: read:publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      includeAssignmentCount: true
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "includeAssignmentCount",
+        location: "query",
+        required: false,
+        schema: {
+          type: "boolean",
+          description: "Whether to include the number of assigned entries"
+        },
+        flag: "include-assignment-count",
+        kind: "boolean",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "publishing.listEntryPublications",
+    group: "publishing",
+    command: "list-entry-publications",
+    method: "get",
+    path: "/publishing/entries/{entryID}/publications",
+    summary: "List entry publications",
+    description:
+      "Returns the entry publication assignments across channels.\n\nRequired API key permissions: read:publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      entryID: "ent_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "entryID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "Entry whose publications to list"
+        },
+        flag: "entry-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "publishing.publishCollection",
+    group: "publishing",
+    command: "publish-collection",
+    method: "post",
+    path: "/publishing/collections/{collectionID}",
+    summary: "Publish a collection tree",
+    description:
+      "Publishes the latest entry versions in a publishing-enabled collection tree to the channel. The default channel is published. Supply expectedSnapshotID from a prior channel read to reject concurrent publication changes.\n\nRequired API key permissions: publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      collectionID: "coll_example",
+      channel: "published"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "collectionID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "Collection tree to publish"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "channel",
+        location: "body",
+        required: false,
+        schema: {
+          $ref: "#/components/schemas/PublishingChannelCode",
+          default: "published",
+          description: "Publishing channel, defaults to published"
+        },
+        flag: "channel",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedSnapshotID",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Reject the mutation if the channel no longer points to this reviewed snapshot"
+        },
+        flag: "expected-snapshot-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "publishing.publishEntry",
+    group: "publishing",
+    command: "publish-entry",
+    method: "post",
+    path: "/publishing/entries/{entryID}",
+    summary: "Publish an entry",
+    description:
+      "Publishes an existing version, or the latest entry content if versionID is omitted. The entry must be in a publishing-enabled collection. The default channel is published. Supply expectedSnapshotID from a prior channel read to reject concurrent publication changes.\n\nRequired API key permissions: publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      entryID: "ent_example",
+      channel: "published"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "entryID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "Entry to publish"
+        },
+        flag: "entry-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "channel",
+        location: "body",
+        required: false,
+        schema: {
+          $ref: "#/components/schemas/PublishingChannelCode",
+          default: "published",
+          description: "Publishing channel, defaults to published"
+        },
+        flag: "channel",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedSnapshotID",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Reject the mutation if the channel no longer points to this reviewed snapshot"
+        },
+        flag: "expected-snapshot-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "versionID",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Existing version to publish"
+        },
+        flag: "version-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "publishing.revertChanges",
+    group: "publishing",
+    command: "revert-changes",
+    method: "post",
+    path: "/publishing/changes/revert",
+    summary: "Revert pending publishing changes",
+    description:
+      "Restores selected drafts to the reviewed publication snapshot. This can remove unpublished items and replace draft content. First review publishing.getChannelContent and pass its snapshotID. Use all: true or specific collectionIDs/entryIDs, never both. Requires read:publishing and entries, plus write access to affected resources.\n\nRequired API key permissions: read:publishing, entries. Write permissions also grant read access for the same resource.",
+    example: {
+      collectionID: "coll_example",
+      snapshotID: "snp_example",
+      entryIDs: ["ent_example"],
+      channel: "published"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "channel",
+        location: "body",
+        required: false,
+        schema: {
+          $ref: "#/components/schemas/PublishingChannelCode",
+          default: "published",
+          description: "Publishing channel, defaults to published"
+        },
+        flag: "channel",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "all",
+        location: "body",
+        required: false,
+        schema: {
+          type: "boolean",
+          description: "Whether to revert all pending changes"
+        },
+        flag: "all",
+        kind: "boolean",
+        nullable: false
+      },
+      {
+        name: "collectionID",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string",
+          description: "Publishing root collection"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionIDs",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            type: "string"
+          },
+          description: "Collections whose changes to revert"
+        },
+        flag: "collection-ids",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "entryIDs",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            type: "string"
+          },
+          description: "Entries whose changes to revert"
+        },
+        flag: "entry-ids",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "snapshotID",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string",
+          description: "Snapshot used to review the changes"
+        },
+        flag: "snapshot-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "publishing.setCollection",
+    group: "publishing",
+    command: "set-collection",
+    method: "put",
+    path: "/publishing/collections/{collectionID}",
+    summary: "Configure collection publishing",
+    description:
+      "Enables publishing for a collection, or disables it and unpublishes its tree from all channels. When enabling, publish can also publish the latest entry versions.\n\nRequired API key permissions: publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      collectionID: "coll_example",
+      enabled: true,
+      publish: false
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "collectionID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "Collection to configure"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedSnapshots",
+        location: "body",
+        required: false,
+        schema: {
+          type: "object",
+          propertyNames: {
+            $ref: "#/components/schemas/PublishingChannelCode"
+          },
+          additionalProperties: {
+            type: "string"
+          },
+          description:
+            "Optional snapshot checks for supplied channels before changing collection publishing. Omitted channels are not checked."
+        },
+        flag: "expected-snapshots",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "enabled",
+        location: "body",
+        required: true,
+        schema: {
+          type: "boolean",
+          description:
+            "Enable publishing, or disable and unpublish the collection tree from all channels"
+        },
+        flag: "enabled",
+        kind: "boolean",
+        nullable: false
+      },
+      {
+        name: "publish",
+        location: "body",
+        required: false,
+        schema: {
+          type: "boolean",
+          description: "Whether to publish latest entry versions when enabling publishing"
+        },
+        flag: "publish",
+        kind: "boolean",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "publishing.unpublishCollection",
+    group: "publishing",
+    command: "unpublish-collection",
+    method: "delete",
+    path: "/publishing/collections/{collectionID}",
+    summary: "Unpublish a collection tree",
+    description:
+      "Removes publication assignments for a collection tree from the channel. The default channel is published. Supply expectedSnapshotID from a prior channel read to reject concurrent publication changes.\n\nRequired API key permissions: publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      collectionID: "coll_example",
+      channel: "published"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "collectionID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "Collection tree to unpublish"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "channel",
+        location: "body",
+        required: false,
+        schema: {
+          $ref: "#/components/schemas/PublishingChannelCode",
+          default: "published",
+          description: "Publishing channel, defaults to published"
+        },
+        flag: "channel",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedSnapshotID",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Reject the mutation if the channel no longer points to this reviewed snapshot"
+        },
+        flag: "expected-snapshot-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "publishing.unpublishEntry",
+    group: "publishing",
+    command: "unpublish-entry",
+    method: "delete",
+    path: "/publishing/entries/{entryID}",
+    summary: "Unpublish an entry",
+    description:
+      "Removes the entry publication from the channel. Supply versionID to require that version to be assigned; a changed assignment returns a conflict. The default channel is published. Supply expectedSnapshotID from a prior channel read to reject concurrent publication changes.\n\nRequired API key permissions: publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      entryID: "ent_example",
+      channel: "published",
+      versionID: "ver_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "entryID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "Entry to unpublish"
+        },
+        flag: "entry-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "channel",
+        location: "body",
+        required: false,
+        schema: {
+          $ref: "#/components/schemas/PublishingChannelCode",
+          default: "published",
+          description: "Publishing channel, defaults to published"
+        },
+        flag: "channel",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedSnapshotID",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Reject the mutation if the channel no longer points to this reviewed snapshot"
+        },
+        flag: "expected-snapshot-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "versionID",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Version expected to be assigned"
+        },
+        flag: "version-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "publishing.updateChannel",
+    group: "publishing",
+    command: "update-channel",
+    method: "put",
+    path: "/publishing/channels/{code}",
+    summary: "Rename a publishing channel",
+    description:
+      "Changes the display name of a publishing channel. The channel code, which content reads and webhooks use, doesn't change.\n\nRequired API key permissions: publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      code: "preview",
+      name: "Staging"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "code",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "Code of the channel to rename"
+        },
+        flag: "code",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "name",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string",
+          description: "New publishing channel label"
+        },
+        flag: "name",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "roles.create",
+    group: "roles",
+    command: "create",
+    method: "post",
+    path: "/roles",
+    summary: "Create a role",
+    description:
+      "Creates a workspace role. Names are unique without regard to case and must contain 1 to 50 characters after trimming. Requires the Pro plan and permission to delegate the selected permissions.\n\nRequired API key permissions: roles. Write permissions also grant read access for the same resource.",
+    example: {
+      name: "Editor",
+      permissions: ["content"]
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "name",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string",
+          description: "Name of the role"
+        },
+        flag: "name",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "permissions",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/Permission"
+          },
+          description: "Permissions to grant to the role"
+        },
+        flag: "permissions",
+        kind: "json",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "roles.delete",
+    group: "roles",
+    command: "delete",
+    method: "delete",
+    path: "/roles/{id}",
+    summary: "Delete a role",
+    description:
+      "Deletes a custom role and updates its assignments. Built-in roles cannot be deleted. Requires the Pro plan.\n\nRequired API key permissions: roles. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "rl_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the role to delete"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "roles.list",
+    group: "roles",
+    command: "list",
+    method: "get",
+    path: "/roles",
+    summary: "List roles",
+    description:
+      "Returns workspace roles and their permissions.\n\nRequired API key permissions: read:roles. Write permissions also grant read access for the same resource.",
+    example: {},
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "roles.update",
+    group: "roles",
+    command: "update",
+    method: "put",
+    path: "/roles/{id}",
+    summary: "Update a role",
+    description:
+      "Changes a role name or permissions. Names are unique without regard to case. Requires the Pro plan and permission to delegate the selected permissions. Built-in roles have additional restrictions.\n\nRequired API key permissions: roles. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "rl_example",
+      name: "Content editor"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the role to update"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "name",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "New name for the role"
+        },
+        flag: "name",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "permissions",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/Permission"
+          },
+          description: "New permissions for the role"
+        },
+        flag: "permissions",
+        kind: "json",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "schemaMigrations.get",
+    group: "schema-migrations",
+    command: "get",
+    method: "get",
+    path: "/schema-migrations/{id}",
+    summary: "Get schema migration status",
+    description:
+      "Returns bounded migration progress and status. Use schemaMigrations.listContentLossEntries for per-entry content loss details. Check status before repeating an operation blocked by this migration.\n\nRequired API key permissions: read:collections. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "smg_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the schema migration"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "schemaMigrations.getActive",
+    group: "schema-migrations",
+    command: "get-active",
+    method: "get",
+    path: "/collections/{collectionID}/schema-migration",
+    summary: "Get the active schema migration",
+    description:
+      "Returns the active migration for a collection, or null when none is active.\n\nRequired API key permissions: read:collections. Write permissions also grant read access for the same resource.",
+    example: {
+      collectionID: "coll_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "collectionID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the affected collection"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "schemaMigrations.listContentLossEntries",
+    group: "schema-migrations",
+    command: "list-content-loss-entries",
+    method: "get",
+    path: "/schema-migrations/{id}/content-loss-entries",
+    summary: "List entries with migration content loss",
+    description:
+      "Lists accessible, non-deleted entries that lost content in a completed migration. Returns an empty page until completion. Use pagination.nextCursor to continue.\n\nRequired API key permissions: read:collections. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "smg_example",
+      limit: 20
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "cursor",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Cursor from the previous page; keep the same filters"
+        },
+        flag: "cursor",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "query",
+        required: false,
+        schema: {
+          type: "number",
+          default: 50
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json",
+    pagination: "cursor"
+  },
+  {
+    id: "schemas.apply",
+    group: "schemas",
+    command: "apply",
+    method: "post",
+    path: "/schemas/{schemaID}/apply",
+    summary: "Apply a schema draft",
+    description:
+      "Creates a schema version from the draft, or from definition, and starts any required migration of affected entry content. With definition, the draft is replaced only if the apply succeeds. Review possible content removal before calling: confirmedDataLoss must be true. Use schemaMigrations.get to follow a returned migrationID.\n\nRequired API key permissions: collections. Write permissions also grant read access for the same resource.",
+    example: {
+      schemaID: "sch_example",
+      confirmedDataLoss: true,
+      name: "Reviewed schema"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "schemaID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the local collection schema"
+        },
+        flag: "schema-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "confirmedDataLoss",
+        location: "body",
+        required: true,
+        schema: {
+          const: true,
+          description: "Confirmation that the migration can remove entry content"
+        },
+        flag: "confirmed-data-loss",
+        kind: "boolean",
+        nullable: false
+      },
+      {
+        name: "name",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Optional version name"
+        },
+        flag: "name",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "definition",
+        location: "body",
+        required: false,
+        schema: {
+          type: "object",
+          properties: {
+            formatVersion: {
+              const: 1
+            },
+            fields: {
+              type: "array",
+              items: {
+                anyOf: [
+                  {
+                    $ref: "#/components/schemas/SchemaProperty"
+                  },
+                  {
+                    type: "object",
+                    properties: {
+                      id: {
+                        type: "string"
+                      },
+                      kind: {
+                        const: "fragment"
+                      },
+                      label: {
+                        type: "string"
+                      },
+                      allowedBlocks: {
+                        type: "array",
+                        items: {
+                          $ref: "#/components/schemas/SchemaBlockType"
+                        }
+                      },
+                      initialContent: {
+                        type: "array",
+                        items: {
+                          $ref: "#/components/schemas/ContentNodeInput"
+                        }
+                      },
+                      optional: {
+                        type: "boolean"
+                      }
+                    },
+                    required: ["id", "kind", "label", "allowedBlocks", "initialContent"]
+                  }
+                ]
+              }
+            }
+          },
+          required: ["formatVersion", "fields"],
+          description:
+            "The fields to apply instead of the draft's; inherited fields stay as they are"
+        },
+        flag: "definition",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "expectedHash",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Draft hash from schemas.get; the apply fails if the draft changed since"
+        },
+        flag: "expected-hash",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "schemas.create",
+    group: "schemas",
+    command: "create",
+    method: "post",
+    path: "/collections/{collectionID}/schema",
+    summary: "Create a local collection schema",
+    description:
+      "Creates a local schema draft for the collection. Use schemas.get to inspect local and effective schemas.\n\nRequired API key permissions: collections. Write permissions also grant read access for the same resource.",
+    example: {
+      collectionID: "coll_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "collectionID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the collection"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "schemas.delete",
+    group: "schemas",
+    command: "delete",
+    method: "delete",
+    path: "/schemas/{schemaID}",
+    summary: "Delete a local schema",
+    description:
+      "Removes the local schema and recalculates inherited schemas. This can start a content migration. Review possible content removal before setting confirmedDataLoss. Use schemaMigrations.get with a returned migrationID.\n\nRequired API key permissions: collections. Write permissions also grant read access for the same resource.",
+    example: {
+      schemaID: "sch_example",
+      confirmedDataLoss: false
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "schemaID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the local collection schema"
+        },
+        flag: "schema-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "confirmedDataLoss",
+        location: "body",
+        required: false,
+        schema: {
+          type: "boolean",
+          default: false,
+          description: "Confirmation that an inherited-schema migration can remove entry content"
+        },
+        flag: "confirmed-data-loss",
+        kind: "boolean",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "schemas.get",
+    group: "schemas",
+    command: "get",
+    method: "get",
+    path: "/schemas/collection",
+    summary: "Get collection schemas",
+    description:
+      "Returns local and effective schema details for the collection, including inheritance.\n\nRequired API key permissions: read:collections. Write permissions also grant read access for the same resource.",
+    example: {
+      collectionID: "coll_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "collectionID",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+        },
+        flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "schemas.getRevision",
+    group: "schemas",
+    command: "get-revision",
+    method: "get",
+    path: "/schema-revisions/{revisionID}",
+    summary: "Get an exact schema revision",
+    description:
+      "Returns the recorded effective definition, including inherited fields. Requires read access to the revision's collection. The definition is independent of the currently active schema.\n\nRequired API key permissions: read:collections. Write permissions also grant read access for the same resource.",
+    example: {
+      revisionID: "schr_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "revisionID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "revision-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "schemas.updateDraft",
+    group: "schemas",
+    command: "update-draft",
+    method: "post",
+    path: "/schemas/{schemaID}/draft",
+    summary: "Update a schema draft",
+    description:
+      "Replaces the fields of the local schema draft. People editing the draft see the change live. Fields keep their content in entries by ID, so reuse the IDs from schemas.get. Inherited fields stay as they are; don't include them. Entries don't change until schemas.apply.\n\nRequired API key permissions: collections. Write permissions also grant read access for the same resource.",
+    example: {
+      schemaID: "sch_example",
+      definition: {
+        formatVersion: 1,
+        fields: [
+          {
+            id: "summary",
+            kind: "property",
+            label: "Summary",
+            type: "text",
+            initialValue: "",
+            options: []
+          }
+        ]
+      }
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "schemaID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the local collection schema"
+        },
+        flag: "schema-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "definition",
+        location: "body",
+        required: true,
+        schema: {
+          type: "object",
+          properties: {
+            formatVersion: {
+              const: 1
+            },
+            fields: {
+              type: "array",
+              items: {
+                anyOf: [
+                  {
+                    $ref: "#/components/schemas/SchemaProperty"
+                  },
+                  {
+                    type: "object",
+                    properties: {
+                      id: {
+                        type: "string"
+                      },
+                      kind: {
+                        const: "fragment"
+                      },
+                      label: {
+                        type: "string"
+                      },
+                      allowedBlocks: {
+                        type: "array",
+                        items: {
+                          $ref: "#/components/schemas/SchemaBlockType"
+                        }
+                      },
+                      initialContent: {
+                        type: "array",
+                        items: {
+                          $ref: "#/components/schemas/ContentNodeInput"
+                        }
+                      },
+                      optional: {
+                        type: "boolean"
+                      }
+                    },
+                    required: ["id", "kind", "label", "allowedBlocks", "initialContent"]
+                  }
+                ]
+              }
+            }
+          },
+          required: ["formatVersion", "fields"],
+          description: "The draft's own fields"
+        },
+        flag: "definition",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "expectedHash",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Draft hash from schemas.get; the update fails if the draft changed since"
+        },
+        flag: "expected-hash",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "schemaVersions.get",
+    group: "schema-versions",
+    command: "get",
+    method: "get",
+    path: "/schema-versions/{id}",
+    summary: "Get a schema version",
+    description:
+      "Returns a saved schema version and its definition.\n\nRequired API key permissions: read:collections. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "schv_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the schema version"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "schemaVersions.list",
+    group: "schema-versions",
+    command: "list",
+    method: "get",
+    path: "/schemas/{schemaID}/versions",
+    summary: "List schema versions",
+    description:
+      "Lists versions of a local collection schema. Pass pagination.nextCursor to the next request while pagination.hasMore is true. The limit is 1 to 100.\n\nRequired API key permissions: read:collections. Write permissions also grant read access for the same resource.",
+    example: {
+      schemaID: "sch_example",
+      limit: 20
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "schemaID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the local collection schema"
+        },
+        flag: "schema-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "cursor",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Cursor from the previous page"
+        },
+        flag: "cursor",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "query",
+        required: false,
+        schema: {
+          type: "number",
+          description: "Maximum versions to return"
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json",
+    pagination: "cursor"
+  },
+  {
+    id: "schemaVersions.revert",
+    group: "schema-versions",
+    command: "revert",
+    method: "post",
+    path: "/schema-versions/{id}/revert",
+    summary: "Restore a schema version",
+    description:
+      "Restores the selected definition and starts any required content migration. Review possible content removal before calling: confirmedDataLoss must be true. Use schemaMigrations.get to follow a returned migrationID.\n\nRequired API key permissions: collections. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "schv_example",
+      confirmedDataLoss: true
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the schema version to restore"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "confirmedDataLoss",
+        location: "body",
+        required: true,
+        schema: {
+          const: true,
+          description: "Confirmation that the migration can remove entry content"
+        },
+        flag: "confirmed-data-loss",
+        kind: "boolean",
+        nullable: false
+      },
+      {
+        name: "name",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Optional version name"
+        },
+        flag: "name",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "schemaVersions.update",
+    group: "schema-versions",
+    command: "update",
+    method: "patch",
+    path: "/schema-versions/{id}",
+    summary: "Rename a schema version",
+    description:
+      "Changes the saved version name. Set name to null to remove the name.\n\nRequired API key permissions: collections. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "schv_example",
+      name: "Reviewed schema"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the schema version"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "name",
+        location: "body",
+        required: true,
+        schema: {
+          anyOf: [
+            {
+              type: "string"
+            },
+            {
+              type: "null"
+            }
+          ],
+          description: "New version name, or null to remove it"
+        },
+        flag: "name",
+        kind: "string",
+        nullable: true
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "search.askCurrent",
+    group: "search",
+    command: "ask-current",
+    method: "post",
+    path: "/search/current/ask",
+    summary: "Ask AI about current content",
+    description:
+      "Returns a complete answer with numbered sources. Requires explicit ai-answers permission in addition to content read permissions. Accepts up to 1,000 question characters, 10 history messages of up to 4,000 characters each, and 20 property filters. Uses 10 AI credits and the Ask AI rate limit. Use a secret key on your server, or a publishable key for published content.\n\nRequired API key permissions: ai-answers, read:entries, read:collections. Write permissions also grant read access for the same resource.",
+    example: {
+      question: "How do I install Andesine?"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "question",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "question",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionID",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+        },
+        flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "filters",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/PropertyFilter"
+          },
+          default: []
+        },
+        flag: "filters",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "history",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/AnswerHistoryMessage"
+          },
+          default: []
+        },
+        flag: "history",
+        kind: "json",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "search.askCurrentStream",
+    group: "search",
+    command: "ask-current-stream",
+    method: "post",
+    path: "/search/current/ask/stream",
+    summary: "Stream an AI answer about current content",
+    description:
+      "Emits sources, textDelta, and completed events over SSE. Uses the same inputs, permissions, AI credits, and rate limit as complete answers. Stream errors use SSE error frames. Never reconnect automatically.\n\nRequired API key permissions: ai-answers, read:entries, read:collections. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "question",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "question",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionID",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+        },
+        flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "filters",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/PropertyFilter"
+          },
+          default: []
+        },
+        flag: "filters",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "history",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/AnswerHistoryMessage"
+          },
+          default: []
+        },
+        flag: "history",
+        kind: "json",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "stream"
+  },
+  {
+    id: "search.askPublished",
+    group: "search",
+    command: "ask-published",
+    method: "post",
+    path: "/search/published/ask",
+    summary: "Ask AI about published content",
+    description:
+      "Returns a complete answer with numbered sources. Requires explicit ai-answers permission in addition to content read permissions. Accepts up to 1,000 question characters, 10 history messages of up to 4,000 characters each, and 20 property filters. Uses 10 AI credits and the Ask AI rate limit. Use a secret key on your server, or a publishable key for published content.\n\nRequired API key permissions: ai-answers, read:publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      question: "How do I install Andesine?",
+      channel: "published"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "question",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "question",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionID",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+        },
+        flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "filters",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/PropertyFilter"
+          },
+          default: []
+        },
+        flag: "filters",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "history",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/AnswerHistoryMessage"
+          },
+          default: []
+        },
+        flag: "history",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "channel",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string",
+          description: "Publishing channel to search"
+        },
+        flag: "channel",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "search.askPublishedStream",
+    group: "search",
+    command: "ask-published-stream",
+    method: "post",
+    path: "/search/published/ask/stream",
+    summary: "Stream an AI answer about published content",
+    description:
+      "Emits sources, textDelta, and completed events over SSE. Uses the same inputs, permissions, AI credits, and rate limit as complete answers. Stream errors use SSE error frames. Never reconnect automatically.\n\nRequired API key permissions: ai-answers, read:publishing. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "question",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "question",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionID",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+        },
+        flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "filters",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/PropertyFilter"
+          },
+          default: []
+        },
+        flag: "filters",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "history",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/AnswerHistoryMessage"
+          },
+          default: []
+        },
+        flag: "history",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "channel",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string",
+          description: "Publishing channel to search"
+        },
+        flag: "channel",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "stream"
+  },
+  {
+    id: "search.current",
+    group: "search",
+    command: "current",
+    method: "post",
+    path: "/search/current",
+    summary: "Search current content",
+    description:
+      "Searches current entry content by text and optional property filters. Up to 20 filters and 50 results are allowed. Semantic search is optional, uses 1 AI credit, and has a separate rate limit.\n\nRequired API key permissions: read:entries, read:collections. Write permissions also grant read access for the same resource.",
+    example: {
+      query: "installation",
+      limit: 10
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "query",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "query",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionID",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+        },
+        flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "filters",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/PropertyFilter"
+          },
+          default: []
+        },
+        flag: "filters",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "body",
+        required: false,
+        schema: {
+          type: "number",
+          default: 20
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "semantic",
+        location: "body",
+        required: false,
+        schema: {
+          type: "boolean",
+          default: false,
+          description: "Whether to combine keyword and vector search"
+        },
+        flag: "semantic",
+        kind: "boolean",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "search.published",
+    group: "search",
+    command: "published",
+    method: "post",
+    path: "/search/published",
+    summary: "Search published content",
+    description:
+      "Searches content published to the required channel. Up to 20 filters and 50 results are allowed. Semantic search is optional, uses 1 AI credit, and has a separate rate limit.\n\nRequired API key permissions: read:publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      query: "installation",
+      channel: "published",
+      limit: 10
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "query",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "query",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionID",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "collection-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+        },
+        flag: "collection-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collectionSlugPath",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+        },
+        flag: "collection-slug-path",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "filters",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/PropertyFilter"
+          },
+          default: []
+        },
+        flag: "filters",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "body",
+        required: false,
+        schema: {
+          type: "number",
+          default: 20
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "semantic",
+        location: "body",
+        required: false,
+        schema: {
+          type: "boolean",
+          default: false,
+          description: "Whether to combine keyword and vector search"
+        },
+        flag: "semantic",
+        kind: "boolean",
+        nullable: false
+      },
+      {
+        name: "channel",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string",
+          description: "Publishing channel to search"
+        },
+        flag: "channel",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "typeMetadata.getCurrent",
+    group: "type-metadata",
+    command: "get-current",
+    method: "post",
+    path: "/type-metadata/current",
+    summary: "Get current content type metadata",
+    description:
+      "Read-only bulk metadata for type generation. Returns one consistent database snapshot of accessible collections and their active effective schemas, including inheritance. Optional entry/tree data requires read:entries in addition to read:collections. Explicit unavailable collection selectors fail. Active schema migrations in the selected collections return a conflict. No entry content is loaded. Schema-free collections use general types without warnings.\n\nRequired API key permissions: read:collections. Write permissions also grant read access for the same resource.",
+    example: {
+      collections: ["/Tutorials"],
+      includeEntries: false
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collections",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            anyOf: [
+              {
+                type: "string"
+              },
+              {
+                type: "string",
+                description:
+                  "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+              },
+              {
+                type: "object",
+                properties: {
+                  collectionSlugPath: {
+                    type: "string",
+                    description:
+                      "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+                  }
+                },
+                required: ["collectionSlugPath"]
+              }
+            ]
+          },
+          default: [],
+          description:
+            "Collection IDs, name paths, or objects with collectionSlugPath. Includes selected subtrees; empty selects all accessible collections."
+        },
+        flag: "collections",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "includeEntries",
+        location: "body",
+        required: false,
+        schema: {
+          type: "boolean",
+          default: false,
+          description: "Include entry IDs, names, paths, and schema associations."
+        },
+        flag: "include-entries",
+        kind: "boolean",
+        nullable: false
+      },
+      {
+        name: "includeTree",
+        location: "body",
+        required: false,
+        schema: {
+          type: "boolean",
+          default: false,
+          description:
+            "Include ordered child IDs for each collection. Also includes entry metadata."
+        },
+        flag: "include-tree",
+        kind: "boolean",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "typeMetadata.getPublished",
+    group: "type-metadata",
+    command: "get-published",
+    method: "post",
+    path: "/type-metadata/published",
+    summary: "Get published content type metadata",
+    description:
+      "Read-only bulk metadata for type generation. Resolves a channel once (published by default), or reads a retained snapshot. Uses publication paths, names, and exact entry-version schema revisions; never substitutes current schemas. Supports mixed revisions and schema-free entries. Empty collections use general types without warnings. Includes selected subtrees; no selectors means all published collections and root entries. Publication-access rules match content.get. No entry content is loaded. Reuse source.snapshotID for related reads. The fingerprint changes only when returned type metadata changes, not when content-only publication creates a new snapshot.\n\nRequired API key permissions: read:publishing. Write permissions also grant read access for the same resource.",
+    example: {
+      channel: "published",
+      collections: ["/Tutorials"]
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "collections",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            anyOf: [
+              {
+                type: "string"
+              },
+              {
+                type: "string",
+                description:
+                  "Decoded content path, such as /Docs/Page or coll_ID/Page. Names are case-sensitive. Do not URL-encode names before passing them to the SDK."
+              },
+              {
+                type: "object",
+                properties: {
+                  collectionSlugPath: {
+                    type: "string",
+                    description:
+                      "Decoded derived slug path, such as /docs/getting-started or coll_ID/getting-started. Use the returned slugPath without URL encoding."
+                  }
+                },
+                required: ["collectionSlugPath"]
+              }
+            ]
+          },
+          default: [],
+          description:
+            "Collection IDs, name paths, or objects with collectionSlugPath. Includes selected subtrees; empty selects all accessible collections."
+        },
+        flag: "collections",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "includeEntries",
+        location: "body",
+        required: false,
+        schema: {
+          type: "boolean",
+          default: false,
+          description: "Include entry IDs, names, paths, and schema associations."
+        },
+        flag: "include-entries",
+        kind: "boolean",
+        nullable: false
+      },
+      {
+        name: "includeTree",
+        location: "body",
+        required: false,
+        schema: {
+          type: "boolean",
+          default: false,
+          description:
+            "Include ordered child IDs for each collection. Also includes entry metadata."
+        },
+        flag: "include-tree",
+        kind: "boolean",
+        nullable: false
+      },
+      {
+        name: "channel",
+        location: "body",
+        required: false,
+        schema: {
+          $ref: "#/components/schemas/PublishingChannelCode"
+        },
+        flag: "channel",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "snapshotID",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "snapshot-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "versions.create",
+    group: "versions",
+    command: "create",
+    method: "post",
+    path: "/entries/{entryID}/versions",
+    summary: "Create an entry version",
+    description:
+      "Saves a version of the current entry content, or of supplied document (ProseMirror JSON) or mdx, which must match the editor and the entry's collection schema. Never changes the current content. Optionally assigns a name. Publish the version with publishing.publishEntry. A repeated request with the same Idempotency-Key header returns the first result for 24 hours.\n\nRequired API key permissions: versions. Write permissions also grant read access for the same resource.",
+    example: {
+      entryID: "ent_example",
+      name: "Before release"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "entryID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the entry to version"
+        },
+        flag: "entry-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "name",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Optional version name"
+        },
+        flag: "name",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "document",
+        location: "body",
+        required: false,
+        schema: {
+          $ref: "#/components/schemas/ContentNodeInput",
+          description: "ProseMirror JSON of the version; the current content when omitted"
+        },
+        flag: "document",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "mdx",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Content as MDX: the title as H1, properties as <Property name value /> elements in place, fragments as <Fragment name> elements, and images as asset:<assetID>; frontmatter properties are also read, and entries.update and versions.create import image URLs"
+        },
+        flag: "mdx",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "versions.get",
+    group: "versions",
+    command: "get",
+    method: "get",
+    path: "/versions/{id}",
+    summary: "Get an entry version",
+    description:
+      "Returns the saved content and recorded schema metadata of an entry version. Validates against its recorded revision, including historical versions. expectedSchemaHash must match that revision; schema-less content cannot match it.\n\nRequired API key permissions: read:versions. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "ver_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the version to get"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedSchemaHash",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Hash of the effective schema definition"
+        },
+        flag: "expected-schema-hash",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "contentFormat",
+        location: "query",
+        required: false,
+        schema: {
+          enum: ["json", "mdx"],
+          type: "string",
+          default: "json",
+          description: "Content format of the response; mdx also returns the content as MDX in mdx"
+        },
+        flag: "content-format",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "versions.list",
+    group: "versions",
+    command: "list",
+    method: "get",
+    path: "/entries/{entryID}/versions",
+    summary: "List entry versions",
+    description:
+      "Lists saved entry versions. Pass pagination.nextCursor to the next request while pagination.hasMore is true. The limit is 1 to 100.\n\nRequired API key permissions: read:versions. Write permissions also grant read access for the same resource.",
+    example: {
+      entryID: "ent_example",
+      limit: 20
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "entryID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the entry whose versions to list"
+        },
+        flag: "entry-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "cursor",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Cursor from the previous page"
+        },
+        flag: "cursor",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "query",
+        required: false,
+        schema: {
+          type: "number",
+          description: "Maximum versions to return"
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json",
+    pagination: "cursor"
+  },
+  {
+    id: "versions.revert",
+    group: "versions",
+    command: "revert",
+    method: "post",
+    path: "/versions/{id}/revert",
+    summary: "Restore an entry version",
+    description:
+      "Restores saved content to the current entry and returns the resulting version. An active schema migration can block this action.\n\nRequired API key permissions: versions. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "ver_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the version to restore"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "versions.update",
+    group: "versions",
+    command: "update",
+    method: "patch",
+    path: "/versions/{id}",
+    summary: "Rename an entry version",
+    description:
+      "Changes the saved version name. Set name to null to remove the name.\n\nRequired API key permissions: versions. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "ver_example",
+      name: "Release candidate"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the version to update"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "name",
+        location: "body",
+        required: true,
+        schema: {
+          anyOf: [
+            {
+              type: "string"
+            },
+            {
+              type: "null"
+            }
+          ],
+          description: "New version name, or null to remove it"
+        },
+        flag: "name",
+        kind: "string",
+        nullable: true
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "webhooks.bulkDelete",
+    group: "webhooks",
+    command: "bulk-delete",
+    method: "post",
+    path: "/webhooks/bulk/delete",
+    summary: "Delete webhooks",
+    description:
+      "Deletes every listed webhook in one transaction, checking each expectedRevision. Each deletion cancels pending deliveries and destroys signing keys; history stays until its original expiry.\n\nRequired API key permissions: webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "webhooks",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: {
+                type: "string"
+              },
+              expectedRevision: {
+                type: "number"
+              }
+            },
+            required: ["id", "expectedRevision"],
+            additionalProperties: false
+          }
+        },
+        flag: "webhooks",
+        kind: "json",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "webhooks.bulkRedeliver",
+    group: "webhooks",
+    command: "bulk-redeliver",
+    method: "post",
+    path: "/webhooks/{id}/deliveries/bulk/redeliver",
+    summary: "Redeliver webhook events",
+    description:
+      "Replays every listed delivery in one transaction with the same checks as a single redelivery. Any ineligible delivery fails the whole request. Counts as one request for rate limiting.\n\nRequired API key permissions: webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedDestinationRevision",
+        location: "body",
+        required: true,
+        schema: {
+          type: "number"
+        },
+        flag: "expected-destination-revision",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "deliveryIDs",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          items: {
+            type: "string"
+          }
+        },
+        flag: "delivery-ids",
+        kind: "json",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "webhooks.bulkSetEnabled",
+    group: "webhooks",
+    command: "bulk-set-enabled",
+    method: "post",
+    path: "/webhooks/bulk/set-enabled",
+    summary: "Enable or disable webhooks",
+    description:
+      "Applies the state to every listed webhook in one transaction, checking each expectedRevision. Enabling checks the scope authority and destination of each webhook. Webhooks already in the state are unchanged.\n\nRequired API key permissions: webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "webhooks",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: {
+                type: "string"
+              },
+              expectedRevision: {
+                type: "number"
+              }
+            },
+            required: ["id", "expectedRevision"],
+            additionalProperties: false
+          }
+        },
+        flag: "webhooks",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "enabled",
+        location: "body",
+        required: true,
+        schema: {
+          type: "boolean"
+        },
+        flag: "enabled",
+        kind: "boolean",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "webhooks.create",
+    group: "webhooks",
+    command: "create",
+    method: "post",
+    path: "/webhooks",
+    summary: "Create a webhook",
+    description:
+      "Creates an enabled webhook unless `enabled` is false and returns the signing secret once. The caller must be able to read every resource type its events send, and restricted content when included.\n\nRequired API key permissions: webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "name",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "name",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "url",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "url",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "enabled",
+        location: "body",
+        required: false,
+        schema: {
+          type: "boolean",
+          default: true
+        },
+        flag: "enabled",
+        kind: "boolean",
+        nullable: false
+      },
+      {
+        name: "eventTypes",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/WebhookEventName"
+          }
+        },
+        flag: "event-types",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "schemaVersion",
+        location: "body",
+        required: true,
+        schema: {
+          const: 1
+        },
+        flag: "schema-version",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "collections",
+        location: "body",
+        required: true,
+        schema: {
+          anyOf: [
+            {
+              type: "object",
+              properties: {
+                mode: {
+                  const: "all"
+                }
+              },
+              required: ["mode"],
+              additionalProperties: false
+            },
+            {
+              type: "object",
+              properties: {
+                mode: {
+                  const: "selected"
+                },
+                roots: {
+                  type: "array",
+                  items: {
+                    type: "string"
+                  }
+                }
+              },
+              required: ["mode", "roots"],
+              additionalProperties: false
+            }
+          ]
+        },
+        flag: "collections",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "channels",
+        location: "body",
+        required: true,
+        schema: {
+          anyOf: [
+            {
+              type: "object",
+              properties: {
+                mode: {
+                  const: "all"
+                }
+              },
+              required: ["mode"],
+              additionalProperties: false
+            },
+            {
+              type: "object",
+              properties: {
+                mode: {
+                  const: "selected"
+                },
+                codes: {
+                  type: "array",
+                  items: {
+                    type: "string"
+                  }
+                }
+              },
+              required: ["mode", "codes"],
+              additionalProperties: false
+            }
+          ]
+        },
+        flag: "channels",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "restrictedContent",
+        location: "body",
+        required: true,
+        schema: {
+          type: "boolean",
+          description: "Include restricted collections, including ones restricted later"
+        },
+        flag: "restricted-content",
+        kind: "boolean",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "webhooks.delete",
+    group: "webhooks",
+    command: "delete",
+    method: "delete",
+    path: "/webhooks/{id}",
+    summary: "Delete a webhook",
+    description:
+      "Cancels pending deliveries and destroys signing keys. Retains history until its original expiry; a deleted endpoint cannot be replayed.\n\nRequired API key permissions: webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedRevision",
+        location: "body",
+        required: true,
+        schema: {
+          type: "number"
+        },
+        flag: "expected-revision",
+        kind: "number",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "webhooks.get",
+    group: "webhooks",
+    command: "get",
+    method: "get",
+    path: "/webhooks/{id}",
+    summary: "Get a webhook",
+    description:
+      "Required API key permissions: read:webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "webhooks.getDelivery",
+    group: "webhooks",
+    command: "get-delivery",
+    method: "get",
+    path: "/webhooks/{id}/deliveries/{deliveryID}",
+    summary: "Get a webhook delivery",
+    description:
+      "Returns retained delivery metadata and, with content authority, the immutable event payload. Expired deliveries return not found even before physical cleanup.\n\nRequired API key permissions: read:webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "deliveryID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "delivery-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "webhooks.list",
+    group: "webhooks",
+    command: "list",
+    method: "get",
+    path: "/webhooks",
+    summary: "List webhooks",
+    description:
+      "Required API key permissions: read:webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "cursor",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Cursor from the previous page; keep the same filters"
+        },
+        flag: "cursor",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "query",
+        required: false,
+        schema: {
+          type: "number",
+          default: 50
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json",
+    pagination: "cursor"
+  },
+  {
+    id: "webhooks.listAttempts",
+    group: "webhooks",
+    command: "list-attempts",
+    method: "get",
+    path: "/webhooks/{id}/deliveries/{deliveryID}/runs/{runID}/attempts",
+    summary: "List delivery attempts",
+    description:
+      "Required API key permissions: read:webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "deliveryID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "delivery-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "runID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "run-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "cursor",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "cursor",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "query",
+        required: false,
+        schema: {
+          type: "number",
+          default: 50
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json",
+    pagination: "cursor"
+  },
+  {
+    id: "webhooks.listDeliveries",
+    group: "webhooks",
+    command: "list-deliveries",
+    method: "get",
+    path: "/webhooks/{id}/deliveries",
+    summary: "List webhook deliveries",
+    description:
+      "Returns unexpired history, including for a deleted endpoint. Metadata does not include event payloads.\n\nRequired API key permissions: read:webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "cursor",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "cursor",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "query",
+        required: false,
+        schema: {
+          type: "number",
+          default: 50
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "type",
+        location: "query",
+        required: false,
+        schema: {
+          $ref: "#/components/schemas/WebhookEventName"
+        },
+        flag: "type",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "state",
+        location: "query",
+        required: false,
+        schema: {
+          enum: ["pending", "in_flight", "succeeded", "failed", "cancelled"],
+          type: "string"
+        },
+        flag: "state",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "createdAfter",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "created-after",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "createdBefore",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "created-before",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json",
+    pagination: "cursor"
+  },
+  {
+    id: "webhooks.listRuns",
+    group: "webhooks",
+    command: "list-runs",
+    method: "get",
+    path: "/webhooks/{id}/deliveries/{deliveryID}/runs",
+    summary: "List delivery runs",
+    description:
+      "Required API key permissions: read:webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "deliveryID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "delivery-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "cursor",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "cursor",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "query",
+        required: false,
+        schema: {
+          type: "number",
+          default: 50
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json",
+    pagination: "cursor"
+  },
+  {
+    id: "webhooks.redeliver",
+    group: "webhooks",
+    command: "redeliver",
+    method: "post",
+    path: "/webhooks/{id}/deliveries/{deliveryID}/redeliver",
+    summary: "Redeliver a webhook event",
+    description:
+      "Checks the reviewed destination revision and current scope authority. Reuses the original event ID, payload, and expiry. Returns a conflict if a run is active, or the endpoint is disabled or deleted.\n\nRequired API key permissions: webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "deliveryID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "delivery-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedDestinationRevision",
+        location: "body",
+        required: true,
+        schema: {
+          type: "number"
+        },
+        flag: "expected-destination-revision",
+        kind: "number",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "webhooks.rotateSecret",
+    group: "webhooks",
+    command: "rotate-secret",
+    method: "post",
+    path: "/webhooks/{id}/rotate-secret",
+    summary: "Rotate a webhook secret",
+    description:
+      "Returns a new secret once. Overlap keeps the old secret valid for 24 hours. Immediate rotation retires it at once. Normal rotation conflicts while a previous overlap remains active.\n\nRequired API key permissions: webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedRevision",
+        location: "body",
+        required: true,
+        schema: {
+          type: "number"
+        },
+        flag: "expected-revision",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "mode",
+        location: "body",
+        required: true,
+        schema: {
+          enum: ["overlap", "immediate"],
+          type: "string"
+        },
+        flag: "mode",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "webhooks.sendTest",
+    group: "webhooks",
+    command: "send-test",
+    method: "post",
+    path: "/webhooks/{id}/test",
+    summary: "Send a webhook test",
+    description:
+      "Schedules one signed synthetic attempt for this endpoint, including when disabled. The event must be selected by the endpoint. It does not enable the endpoint or change content.\n\nRequired API key permissions: webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expectedRevision",
+        location: "body",
+        required: true,
+        schema: {
+          type: "number"
+        },
+        flag: "expected-revision",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "type",
+        location: "body",
+        required: true,
+        schema: {
+          $ref: "#/components/schemas/WebhookEventName"
+        },
+        flag: "type",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "webhooks.update",
+    group: "webhooks",
+    command: "update",
+    method: "put",
+    path: "/webhooks/{id}",
+    summary: "Update a webhook",
+    description:
+      "Checks expectedRevision and validates the merged configuration. A URL change cancels pending deliveries and returns a replacement secret once. Scope changes require authority over the previous and new scope.\n\nRequired API key permissions: webhooks. Write permissions also grant read access for the same resource.",
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "name",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "name",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "url",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string"
+        },
+        flag: "url",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "enabled",
+        location: "body",
+        required: false,
+        schema: {
+          type: "boolean"
+        },
+        flag: "enabled",
+        kind: "boolean",
+        nullable: false
+      },
+      {
+        name: "eventTypes",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/WebhookEventName"
+          }
+        },
+        flag: "event-types",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "schemaVersion",
+        location: "body",
+        required: false,
+        schema: {
+          const: 1
+        },
+        flag: "schema-version",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "collections",
+        location: "body",
+        required: false,
+        schema: {
+          anyOf: [
+            {
+              type: "object",
+              properties: {
+                mode: {
+                  const: "all"
+                }
+              },
+              required: ["mode"],
+              additionalProperties: false
+            },
+            {
+              type: "object",
+              properties: {
+                mode: {
+                  const: "selected"
+                },
+                roots: {
+                  type: "array",
+                  items: {
+                    type: "string"
+                  }
+                }
+              },
+              required: ["mode", "roots"],
+              additionalProperties: false
+            }
+          ]
+        },
+        flag: "collections",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "channels",
+        location: "body",
+        required: false,
+        schema: {
+          anyOf: [
+            {
+              type: "object",
+              properties: {
+                mode: {
+                  const: "all"
+                }
+              },
+              required: ["mode"],
+              additionalProperties: false
+            },
+            {
+              type: "object",
+              properties: {
+                mode: {
+                  const: "selected"
+                },
+                codes: {
+                  type: "array",
+                  items: {
+                    type: "string"
+                  }
+                }
+              },
+              required: ["mode", "codes"],
+              additionalProperties: false
+            }
+          ]
+        },
+        flag: "channels",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "restrictedContent",
+        location: "body",
+        required: false,
+        schema: {
+          type: "boolean",
+          description: "Include restricted collections, including ones restricted later"
+        },
+        flag: "restricted-content",
+        kind: "boolean",
+        nullable: false
+      },
+      {
+        name: "expectedRevision",
+        location: "body",
+        required: true,
+        schema: {
+          type: "number"
+        },
+        flag: "expected-revision",
+        kind: "number",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "workspaces.list",
+    group: "workspaces",
+    command: "list",
+    method: "get",
+    path: "/workspaces",
+    summary: "List available workspaces",
+    description:
+      "Lists workspaces available to the OAuth user, with current role permissions and plan access. Browser sessions can list workspaces across signed-in accounts. Does not require workspace selection and does not count toward API usage.",
+    security: [
+      {
+        oauth: []
+      }
+    ],
+    fields: [],
+    conditional: false,
+    response: "json"
+  }
+];
+const schemas: Record<string, JSONSchema> = {
+  ContentNodeInput: {
+    type: "object",
+    properties: {
+      type: {
+        type: "string"
+      },
+      attrs: {
+        type: "object",
+        propertyNames: {
+          type: "string"
+        },
+        additionalProperties: {}
+      },
+      content: {
+        type: "array",
+        items: {
+          $ref: "#/components/schemas/ContentNodeInput"
+        }
+      },
+      marks: {
+        type: "array",
+        items: {
+          $ref: "#/components/schemas/ContentMark"
+        }
+      },
+      text: {
+        type: "string"
+      }
+    },
+    required: ["type"]
+  },
+  ContentMark: {
+    type: "object",
+    properties: {
+      type: {
+        type: "string"
+      },
+      attrs: {
+        type: "object",
+        propertyNames: {
+          type: "string"
+        },
+        additionalProperties: {}
+      }
+    },
+    required: ["type"]
+  },
+  PublishingChannelCode: {
+    type: "string"
+  },
+  PropertyFilter: {
+    anyOf: [
+      {
+        $ref: "#/components/schemas/TextPropertyFilter"
+      },
+      {
+        $ref: "#/components/schemas/NumberPropertyFilter"
+      },
+      {
+        $ref: "#/components/schemas/BooleanPropertyFilter"
+      },
+      {
+        $ref: "#/components/schemas/DatePropertyFilter"
+      }
+    ]
+  },
+  TextPropertyFilter: {
+    type: "object",
+    properties: {
+      kind: {
+        const: "text"
+      },
+      key: {
+        type: "string",
+        description: "Property identifier"
+      },
+      operator: {
+        enum: ["any", "all", "none"],
+        type: "string",
+        default: "any"
+      },
+      values: {
+        type: "array",
+        items: {
+          type: "string"
+        }
+      }
+    },
+    required: ["kind", "key", "values"]
+  },
+  NumberPropertyFilter: {
+    type: "object",
+    properties: {
+      kind: {
+        const: "number"
+      },
+      key: {
+        type: "string",
+        description: "Property identifier"
+      },
+      operator: {
+        $ref: "#/components/schemas/ComparisonOperator"
+      },
+      value: {
+        type: "number"
+      }
+    },
+    required: ["kind", "key", "operator", "value"]
+  },
+  ComparisonOperator: {
+    enum: [
+      "equals",
+      "notEquals",
+      "greaterThan",
+      "greaterThanOrEqual",
+      "lessThan",
+      "lessThanOrEqual"
+    ],
+    type: "string"
+  },
+  BooleanPropertyFilter: {
+    type: "object",
+    properties: {
+      kind: {
+        const: "boolean"
+      },
+      key: {
+        type: "string",
+        description: "Property identifier"
+      },
+      value: {
+        type: "boolean"
+      }
+    },
+    required: ["kind", "key", "value"]
+  },
+  DatePropertyFilter: {
+    type: "object",
+    properties: {
+      kind: {
+        const: "date"
+      },
+      key: {
+        type: "string",
+        description: "Property identifier"
+      },
+      operator: {
+        $ref: "#/components/schemas/ComparisonOperator"
+      },
+      value: {
+        type: "string"
+      }
+    },
+    required: ["kind", "key", "operator", "value"]
+  },
+  WebhookEventName: {
+    enum: [
+      "entry.created",
+      "entry.updated",
+      "entry.content_saved",
+      "entry.moved",
+      "entry.deleted",
+      "entry.restored",
+      "collection.created",
+      "collection.updated",
+      "collection.moved",
+      "collection.deleted",
+      "collection.restored",
+      "publishing.channel_advanced",
+      "publishing.channel_created",
+      "publishing.channel_deleted"
+    ],
+    type: "string"
+  },
+  Permission: {
+    enum: [
+      "content",
+      "publishing",
+      "api_keys",
+      "read:api_keys",
+      "billing",
+      "read:billing",
+      "restricted_collections",
+      "read:restricted_collections",
+      "memberships",
+      "roles",
+      "webhooks",
+      "read:webhooks",
+      "extensions",
+      "workspace"
+    ],
+    type: "string"
+  },
+  AnswerHistoryMessage: {
+    type: "object",
+    properties: {
+      role: {
+        enum: ["user", "assistant"],
+        type: "string"
+      },
+      content: {
+        type: "string"
+      }
+    },
+    required: ["role", "content"]
+  },
+  SchemaProperty: {
+    type: "object",
+    properties: {
+      id: {
+        type: "string"
+      },
+      kind: {
+        const: "property"
+      },
+      label: {
+        type: "string"
+      },
+      type: {
+        enum: ["text", "number", "checkbox", "date", "url", "select", "multi-select"],
+        type: "string"
+      },
+      initialValue: {
+        $ref: "#/components/schemas/SchemaPropertyValue"
+      },
+      options: {
+        type: "array",
+        items: {
+          type: "string"
+        }
+      },
+      optional: {
+        type: "boolean"
+      }
+    },
+    required: ["id", "kind", "label", "type", "initialValue", "options"]
+  },
+  SchemaPropertyValue: {
+    anyOf: [
+      {
+        type: "boolean"
+      },
+      {
+        type: "string"
+      },
+      {
+        type: "array",
+        items: {
+          type: "string"
+        }
+      }
+    ]
+  },
+  SchemaBlockType: {
+    enum: [
+      "heading",
+      "blockquote",
+      "bulletList",
+      "orderedList",
+      "taskList",
+      "horizontalRule",
+      "codeBlock",
+      "table",
+      "element",
+      "image"
+    ],
+    type: "string"
+  },
+  PublishEntryTarget: {
+    type: "object",
+    properties: {
+      entryID: {
+        type: "string",
+        description: "Entry to publish"
+      },
+      versionID: {
+        type: "string",
+        description: "Existing version to publish"
+      }
+    },
+    required: ["entryID"]
+  }
+};
+export { commands, schemas };

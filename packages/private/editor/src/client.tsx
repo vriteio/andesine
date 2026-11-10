@@ -1,0 +1,535 @@
+import {
+  DocumentIDs,
+  Title,
+  EntryDocument,
+  CollectionSchemaDocument,
+  SchemaFieldOptional,
+  Text,
+  Paragraph,
+  HardBreak,
+  Image,
+  Blockquote,
+  BulletList,
+  OrderedList,
+  TaskList,
+  ListItem,
+  Property,
+  Fragment,
+  TableCell,
+  TableHeader,
+  TableRow
+} from "@andesine/document/tiptap";
+import { TitleValidation, titleValidationKey } from "./extensions/title-validation";
+import { createCodeBlockNavigation } from "./ui/views/code-block-view/navigation";
+import { findFormattableCodeBlock, formatCodeBlock } from "./lib/code-format";
+import { Element } from "#editor/extensions/nodes/element";
+import { Elements } from "./extensions/elements";
+import { Images } from "./extensions/images";
+import { Links, linksPluginKey } from "./extensions/links";
+import { MAX_ENTRY_TITLE_LENGTH, normalizeEntryTitle } from "@andesine/document";
+import { CodeBlock } from "#editor/extensions/nodes/code-block";
+import { Heading } from "#editor/extensions/nodes/heading";
+import { Link } from "#editor/extensions/marks/link";
+import { Bold } from "#editor/extensions/marks/bold";
+import { Code } from "#editor/extensions/marks/code";
+import { Italic } from "#editor/extensions/marks/italic";
+import { HorizontalRule } from "#editor/extensions/nodes/horizontal-rule";
+import { Highlight } from "#editor/extensions/marks/highlight";
+import { Superscript } from "#editor/extensions/marks/superscript";
+import { Subscript } from "#editor/extensions/marks/subscript";
+import { Strike } from "#editor/extensions/marks/strike";
+import { TaskItem } from "#editor/extensions/nodes/task-item";
+import { Table } from "#editor/extensions/nodes/table";
+import { BubbleMenu } from "./ui/menus/bubble-menu";
+import { LinkBubbleMenu } from "./ui/menus/link-menu";
+import { BlockSelection as BlockSelectionMenu } from "./ui/block-selection";
+import {
+  type Component,
+  createEffect,
+  createMemo,
+  createSignal,
+  on,
+  onCleanup,
+  Show,
+  untrack
+} from "solid-js";
+import { Editor, getSchema, isTextSelection } from "@tiptap/core";
+import { yXmlFragmentToProseMirrorRootNode } from "@tiptap/y-tiptap";
+import { SlashMenu } from "./ui/menus/slash-menu";
+import { BlockMenuArea } from "./ui/menus/block-menu";
+import { ScrollShadow, createRef } from "@andesine/components";
+import clsx from "clsx";
+import {
+  ResourceNameTracker,
+  SchemaConstraints,
+  FieldKeyboard,
+  Separator,
+  TrailingNode,
+  Collaboration,
+  CollaborationCaret,
+  createPlaceholder,
+  UniqueID,
+  BlockSelection,
+  Gapcursor,
+  Dropcursor,
+  NodeCharacterLimit,
+  VersionDiff
+} from "./extensions";
+import { DragHandleMenu } from "./ui/drag-handle";
+import type { EditorProps } from "./client-types";
+import { useEditorProvider } from "./use-editor-provider";
+import {
+  createCodeBlockViewRenderer,
+  createElementViewRenderer,
+  createFragmentViewRenderer,
+  createImageViewRenderer,
+  createPropertyViewRenderer,
+  createTableViewRenderer
+} from "./ui/views";
+import { getOwner } from "solid-js/web";
+
+const ClientEditor: Component<EditorProps> = (props) => {
+  const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
+  const [menuContainerRef, setMenuContainerRef] = createRef<HTMLElement | null>(null);
+  const [editorContentElement, setEditorContentElement] = createSignal<HTMLElement | null>(null);
+  const owner = getOwner();
+  const instances = new Set<Editor>();
+  const collaborative = () => props.content === undefined;
+  const provider = useEditorProvider({
+    url: () => props.url,
+    doc: () => props.doc,
+    enabled: collaborative,
+    attempt: () => props.providerAttempt,
+    beforeAttach: () => props.beforeProviderAttach,
+    onProvider: () => props.onProvider,
+    onError: () => props.onProviderSetupError,
+    notify: props.notify
+  });
+
+  const collaborationUser = () => {
+    return props.collaborationUser || { name: "Anonymous", color: "#f59e0b" };
+  };
+  const editor = createMemo(() => {
+    const contentElement = editorContentElement();
+    const currentProvider = provider();
+    const content = props.content;
+    const editorMode = props.mode || "entry";
+
+    // The element only ever holds the current instance, however often this runs before the effects.
+    contentElement?.replaceChildren();
+
+    if (!contentElement || (collaborative() && !currentProvider)) {
+      return null;
+    }
+
+    const collaborationExtensions = currentProvider
+      ? [
+          Collaboration.configure({
+            awareness: currentProvider.awareness,
+            canChangeImages: () => props.images?.enabled() ?? false,
+            document: currentProvider.document
+          }),
+          CollaborationCaret.configure({
+            provider: currentProvider,
+            user: collaborationUser()
+          })
+        ]
+      : [];
+    const diffExtensions = props.diff ? [VersionDiff.configure({ ...props.diff, owner })] : [];
+    const schemaExtensions = [
+      SchemaConstraints.configure({ mode: editorMode, fields: () => props.schemaFields ?? [] }),
+      ...(editorMode === "schema" ? [SchemaFieldOptional] : [])
+    ];
+    const titleExtensions =
+      editorMode === "entry"
+        ? [
+            Title,
+            TitleValidation.configure({
+              validate: (title) => untrack(() => props.validateTitle?.(title)),
+              initialTitle: () => untrack(() => props.initialTitle || "Untitled")
+            }),
+            NodeCharacterLimit.configure({ limits: { title: MAX_ENTRY_TITLE_LENGTH } })
+          ]
+        : [];
+    const extensions = [
+      // Basic
+      editorMode === "entry" ? EntryDocument : CollectionSchemaDocument,
+      Paragraph,
+      Text,
+      HardBreak,
+      ...titleExtensions,
+      Property.extend({
+        addNodeView() {
+          return createPropertyViewRenderer(
+            owner,
+            () => props.editable ?? true,
+            editorMode === "schema"
+          );
+        }
+      }),
+      Fragment.extend({
+        addNodeView() {
+          return createFragmentViewRenderer(
+            owner,
+            () => props.editable ?? true,
+            editorMode === "schema"
+          );
+        }
+      }),
+      // Marks
+      Link,
+      Bold,
+      Code,
+      Italic,
+      Highlight,
+      Superscript,
+      Subscript,
+      Strike,
+      Image.extend({
+        addNodeView() {
+          return createImageViewRenderer(
+            owner,
+            () => props.editable ?? true,
+            () => props.images
+          );
+        }
+      }),
+      Images.configure({ images: () => props.images, notify: props.notify }),
+      Links.configure({ links: () => props.links }),
+      Element.extend({
+        addNodeView() {
+          return createElementViewRenderer({
+            owner,
+            awareness: currentProvider?.awareness || null,
+            schema: editorMode === "schema",
+            user: collaborationUser,
+            editable: () => props.editable ?? true,
+            elementViews: props.elementViews
+          });
+        }
+      }),
+      Elements.configure({ notify: props.notify, elementViews: props.elementViews }),
+      CodeBlock.extend({
+        addKeyboardShortcuts() {
+          return {
+            ...this.parent?.(),
+            "Mod-Shift-f": () => {
+              const pos = findFormattableCodeBlock(this.editor);
+
+              if (pos === null) return false;
+              void formatCodeBlock(this.editor, pos, props.notify);
+              return true;
+            }
+          };
+        },
+        addNodeView() {
+          return createCodeBlockViewRenderer({
+            awareness: currentProvider?.awareness || null,
+            editable: () => props.editable ?? true,
+            diff: props.diff,
+            notify: props.notify
+          });
+        },
+        addProseMirrorPlugins() {
+          return [...(this.parent?.() || []), createCodeBlockNavigation(this.editor)];
+        }
+      }),
+      // Simple blocks
+      HorizontalRule,
+      Heading,
+      Blockquote,
+      BulletList,
+      OrderedList,
+      TaskList,
+      TaskItem,
+      ListItem,
+      Table.extend({
+        addNodeView() {
+          return createTableViewRenderer(owner, () => props.editable ?? true);
+        }
+      }),
+      TableRow,
+      TableCell,
+      TableHeader,
+      // Other
+      ResourceNameTracker,
+      ...schemaExtensions,
+      DocumentIDs,
+      UniqueID,
+      Gapcursor,
+      FieldKeyboard,
+      Dropcursor,
+      BlockSelection,
+      ...diffExtensions,
+      ...collaborationExtensions,
+      TrailingNode.configure({ mode: editorMode }),
+      createPlaceholder(editorMode),
+      Separator
+    ];
+    const initialContent =
+      currentProvider && editorMode === "schema"
+        ? yXmlFragmentToProseMirrorRootNode(
+            currentProvider.document.getXmlFragment("default"),
+            getSchema(extensions)
+          ).toJSON()
+        : content;
+
+    // Mounting renders node views, whose reads must not become dependencies of this memo.
+    return untrack(() => {
+      const instance = new Editor({
+        content: initialContent,
+        element: contentElement,
+        editable: props.editable ?? true,
+        extensions,
+        editorProps: {
+          attributes: {
+            "class": `outline-none min-h-full`,
+            "data-editor-mode": editorMode
+          }
+        },
+        onUpdate: ({ editor }) => {
+          // Keep title data out of the dependencies of whatever dispatches, e.g. an effect.
+          untrack(() => {
+            const titleNode = editor.state.doc.firstChild;
+
+            if (titleNode?.type.name !== "title") return;
+
+            const title = normalizeEntryTitle(titleNode.textContent);
+
+            if (!props.validateTitle?.(title)) props.onTitleChange?.(title);
+          });
+        }
+      });
+
+      instances.add(instance);
+
+      return instance;
+    });
+  });
+
+  createEffect(() => {
+    const currentEditor = editor();
+
+    if (!currentEditor || !props.validateTitle) return;
+
+    const error = props.validateTitle(
+      normalizeEntryTitle(currentEditor.state.doc.firstChild?.textContent || "")
+    );
+
+    if (error === titleValidationKey.getState(currentEditor.state)?.error) return;
+
+    untrack(() => {
+      return currentEditor.view.dispatch(
+        currentEditor.state.tr.setMeta(titleValidationKey, "validate")
+      );
+    });
+  });
+
+  createEffect(() => {
+    const currentEditor = editor();
+
+    for (const instance of instances) {
+      if (instance === currentEditor) continue;
+
+      instance.destroy();
+      instances.delete(instance);
+    }
+  });
+
+  createEffect(() => {
+    const currentEditor = editor();
+
+    if (!currentEditor) return;
+
+    currentEditor.setEditable(props.editable ?? true);
+    // Plugins like the trailing node skip read-only editors, so they run again here.
+    currentEditor.view.dispatch(currentEditor.state.tr);
+  });
+
+  // Entry links show their entries' current titles, e.g. after a rename.
+  createEffect(() => {
+    const currentEditor = editor();
+
+    if (!currentEditor) return;
+
+    props.links?.entries();
+    untrack(() =>
+      currentEditor.view.dispatch(currentEditor.state.tr.setMeta(linksPluginKey, true))
+    );
+  });
+
+  createEffect(() => {
+    const currentEditor = editor();
+
+    if (!currentEditor) return;
+
+    const cleanup = props.onEditor?.(currentEditor);
+
+    onCleanup(() => {
+      cleanup?.();
+    });
+  });
+
+  createEffect(() => {
+    const scrollContainer = scrollableContainerRef();
+
+    if (!scrollContainer) return;
+
+    props.onScrollContainer?.(scrollContainer);
+
+    onCleanup(() => {
+      props.onScrollContainer?.(null);
+    });
+  });
+
+  const editableEditor = () => (props.editable === false ? null : editor());
+
+  onCleanup(() => {
+    instances.forEach((instance) => instance.destroy());
+  });
+
+  createEffect(() => {
+    const isInsideBubbleMenu = (event: PointerEvent): boolean => {
+      const target = event.target as HTMLElement | null;
+
+      return !!target?.closest?.(".tippy-box");
+    };
+    const onDown = (event: PointerEvent) => {
+      if (isInsideBubbleMenu(event)) return;
+    };
+    const onUp = (event: PointerEvent) => {
+      if (isInsideBubbleMenu(event)) return;
+
+      const currentEditor = editableEditor();
+
+      if (
+        currentEditor &&
+        !currentEditor.state.selection.empty &&
+        isTextSelection(currentEditor.state.selection)
+      ) {
+        setTimeout(() => {
+          currentEditor.view.dispatch(currentEditor.state.tr.setMeta("forceUpdate", true));
+        }, 10);
+      }
+    };
+
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("pointerup", onUp);
+    onCleanup(() => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("pointerup", onUp);
+    });
+  });
+
+  // The trailing paragraph for optional fields depends on them.
+  createEffect(
+    on(
+      () => props.schemaFields,
+      () => {
+        const currentEditor = editor();
+
+        if (currentEditor) currentEditor.view.dispatch(currentEditor.state.tr);
+      },
+      { defer: true }
+    )
+  );
+
+  // In code block editors too, as those keep their keys from ProseMirror.
+  createEffect(() => {
+    const currentEditor = editableEditor();
+    const handleSaveShortcut = (event: KeyboardEvent) => {
+      const isSaveShortcut =
+        (event.metaKey || event.ctrlKey) &&
+        !event.shiftKey &&
+        !event.altKey &&
+        event.key.toLowerCase() === "s";
+      const insideEditor =
+        event.target === document.body ||
+        (event.target instanceof Node && scrollableContainerRef()?.contains(event.target));
+
+      if (!currentEditor || !isSaveShortcut || !insideEditor) return;
+
+      const pos = findFormattableCodeBlock(currentEditor);
+
+      event.preventDefault();
+
+      if (pos === null) props.notify?.("info", "Andesine saves your content automatically");
+      else void formatCodeBlock(currentEditor, pos, props.notify);
+    };
+
+    window.addEventListener("keydown", handleSaveShortcut, true);
+    onCleanup(() => window.removeEventListener("keydown", handleSaveShortcut, true));
+  });
+
+  return (
+    <BlockSelectionMenu editor={editableEditor()} scrollableContainerRef={scrollableContainerRef}>
+      <div class="overflow-hidden relative flex h-full w-full">
+        <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
+        <div
+          class={clsx("relative z-0 w-full overflow-x-hidden overflow-y-auto", props.class)}
+          ref={setScrollableContainerRef}
+          data-editor-scrollable-container
+        >
+          <div
+            class="absolute inset-0 z-20 pointer-events-none not-prose [&>*]:pointer-events-auto"
+            data-editor-menu-container
+            ref={setMenuContainerRef}
+          />
+          <BlockMenuArea
+            editor={editableEditor()}
+            blockActions={props.blockActions}
+            elementViews={props.elementViews}
+            links={props.links}
+            icons={props.icons}
+            menuContainerRef={menuContainerRef}
+            notify={(type, text) => props.notify?.(type, text)}
+          >
+            <div class="w-full flex flex-col items-center">
+              <div
+                class="w-full prose-editor z-1 max-w-[44rem] prose prose-headings:font-semibold prose-headings:text-gray-700 prose-bold:text-gray-700 flex flex-col relative"
+                id="editor-container"
+              >
+                <Show when={editableEditor()} keyed>
+                  {/* Order of menus is important, as every `registerPlugin()` call re-triggers `onDestroy` */}
+                  <SlashMenu
+                    editor={editor()!}
+                    menuContainerRef={menuContainerRef}
+                    mode={props.mode || "entry"}
+                    elementViews={props.elementViews}
+                  />
+                  <BubbleMenu
+                    editor={editor()!}
+                    links={props.links}
+                    menuContainerRef={menuContainerRef}
+                  />
+                  <LinkBubbleMenu
+                    editor={editor()!}
+                    links={props.links}
+                    menuContainerRef={menuContainerRef}
+                  />
+                  <DragHandleMenu editor={editor()!} menuContainerRef={menuContainerRef} />
+                </Show>
+                <Show when={props.staticTitle} keyed>
+                  {(title) => (
+                    <header class="not-prose" data-type="title" data-static-editor-title>
+                      <h1>{title}</h1>
+                    </header>
+                  )}
+                </Show>
+                <div ref={setEditorContentElement} class="min-h-full" />
+              </div>
+            </div>
+          </BlockMenuArea>
+        </div>
+      </div>
+    </BlockSelectionMenu>
+  );
+};
+
+export { ClientEditor };
+export type { EditorMode, EditorProps } from "./client-types";
+export type {
+  EditorProvider,
+  EditorProviderSetup,
+  EditorProviderSetupResult
+} from "./client-types";

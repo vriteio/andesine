@@ -1,0 +1,70 @@
+name: Check public packages
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "packages/public/**"
+      - "packages/templates/**"
+      - "apps/backend/**"
+      - "packages/private/**"
+      - "package.json"
+      - "turbo.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "eslint.config.mjs"
+      - ".github/workflows/*public-package*.yml"
+  push:
+    branches: [main]
+    paths:
+      - "packages/public/**"
+      - "packages/templates/**"
+      - "apps/backend/**"
+      - "packages/private/**"
+      - "package.json"
+      - "turbo.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "eslint.config.mjs"
+      - ".github/workflows/*public-package*.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - uses: pnpm/action-setup@v6
+      - run: pnpm install --frozen-lockfile
+      - name: Check source
+        run: |
+          pnpm exec eslint packages/public packages/templates apps/backend/scripts
+          pnpm exec prettier --check packages/public packages/templates .github/workflows/public-packages.yml .github/workflows/publish-public-package.yml
+      - name: Check generated API files
+        run: |
+          pnpm api:generate
+          git diff --exit-code -- packages/public/sdk/openapi.json packages/public/sdk/src/generated
+      - name: Build, check, and pack
+        run: |
+          mkdir -p "$RUNNER_TEMP/packages"
+          pnpm --filter @andesine/sdk pack --pack-destination "$RUNNER_TEMP/packages"
+          pnpm --filter @andesine/converters pack --pack-destination "$RUNNER_TEMP/packages"
+          pnpm --filter @andesine/extensions pack --pack-destination "$RUNNER_TEMP/packages"
+          pnpm --filter @andesine/ui pack --pack-destination "$RUNNER_TEMP/packages"
+          pnpm --filter @andesine/pages pack --pack-destination "$RUNNER_TEMP/packages"
+          pnpm --filter ./packages/public/cli pack --pack-destination "$RUNNER_TEMP/packages"
+      - name: Check generated CLI bindings
+        run: git diff --exit-code -- packages/public/cli/src/api/manifest.ts packages/public/cli/src/api/bindings.ts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: public-packages
+          path: ${{ runner.temp }}/packages/*.tgz
+          if-no-files-found: error

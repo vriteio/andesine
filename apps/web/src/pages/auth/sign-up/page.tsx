@@ -1,0 +1,132 @@
+import { type Component, Show } from "solid-js";
+import { Title } from "@solidjs/meta";
+import { IconButton, Button } from "@andesine/components";
+import { authClient, config } from "#web/lib/api";
+import { useSearchParams } from "@solidjs/router";
+import { appendRedirectTo, normalizeRedirectTo, toCallbackURL } from "#web/lib/navigation";
+import { useNotify } from "#web/context/notifications";
+import { createMutation } from "@tanstack/solid-query";
+
+const SignUpPage: Component = () => {
+  const [searchParams] = useSearchParams();
+  const notify = useNotify();
+  const signUpWithSocialMutation = createMutation(() => ({
+    mutationFn: async (input: { provider: "google" | "github"; callbackURL: string }) => {
+      const { error } = await authClient.signIn.social({
+        provider: input.provider,
+        callbackURL: input.callbackURL
+      });
+
+      if (error) throw error;
+
+      return true;
+    }
+  }));
+  const signingUpWithGoogle = () =>
+    signUpWithSocialMutation.isPending && signUpWithSocialMutation.variables?.provider === "google";
+  const signingUpWithGitHub = () =>
+    signUpWithSocialMutation.isPending && signUpWithSocialMutation.variables?.provider === "github";
+  const redirectTo = () =>
+    normalizeRedirectTo(
+      Array.isArray(searchParams.redirectTo) ? searchParams.redirectTo[0] : searchParams.redirectTo
+    );
+  const signUpWithProvider = async (provider: "google" | "github") => {
+    try {
+      await signUpWithSocialMutation.mutateAsync({
+        provider,
+        callbackURL: toCallbackURL(redirectTo())
+      });
+    } catch {
+      notify({
+        type: "error",
+        text: `${provider === "google" ? "Google" : "GitHub"} sign-up failed`
+      });
+    }
+  };
+
+  return (
+    <div class="flex flex-col gap-4">
+      <Title>Sign up | Andesine</Title>
+      <div>
+        <span class="text-2xl font-semibold">Welcome!</span>
+        <div class="text-gray-400 leading-5 text-sm">
+          By registering you agree to our{" "}
+          <Button link="https://andesine.app/privacy" variant="link" class="px-0">
+            privacy policy
+          </Button>{" "}
+          and{" "}
+          <Button link="https://andesine.app/tos" variant="link" class="px-0">
+            terms of service
+          </Button>
+          .
+        </div>
+      </div>
+      <div class="flex flex-col gap-2.5">
+        <Show when={config.PUBLIC_GOOGLE_AUTH_ENABLED}>
+          <IconButton
+            icon="i-devicon:google"
+            class="w-full gap-1"
+            iconProps={{ class: "h-5.5 w-5.5" }}
+            text="base"
+            size="medium"
+            label={signingUpWithGoogle() ? "Continuing with Google..." : "Continue with Google"}
+            disabled={signingUpWithGoogle() || signingUpWithGitHub()}
+            onClick={() => {
+              void signUpWithProvider("google");
+            }}
+          />
+        </Show>
+        <Show when={config.PUBLIC_GITHUB_AUTH_ENABLED}>
+          <IconButton
+            icon="i-mdi:github"
+            class="w-full gap-1"
+            iconProps={{ class: "text-black" }}
+            text="base"
+            size="medium"
+            label={signingUpWithGitHub() ? "Continuing with GitHub..." : "Continue with GitHub"}
+            disabled={signingUpWithGoogle() || signingUpWithGitHub()}
+            onClick={() => {
+              void signUpWithProvider("github");
+            }}
+          />
+        </Show>
+
+        <Show when={config.PUBLIC_GOOGLE_AUTH_ENABLED || config.PUBLIC_GITHUB_AUTH_ENABLED}>
+          <div class="flex items-center justify-start gap-2 text-gray-400 text-xs">
+            <div class="h-px flex-1 bg-gray-200"></div>
+            Or sign up with
+            <div class="h-px flex-1 bg-gray-200"></div>
+          </div>
+        </Show>
+        <div class="flex items-center justify-center gap-1">
+          <IconButton
+            label="Email"
+            class="w-full gap-1"
+            text="base"
+            size="medium"
+            iconProps={{ class: "h-5.5 w-5.5 text-gray-400" }}
+            icon="i-fluent:mail-16-filled"
+            link={appendRedirectTo(
+              "/auth/email?mode=sign-up",
+              redirectTo(),
+              searchParams.addAccount === "true"
+            )}
+          />
+        </div>
+      </div>
+      <div class="flex flex-col items-start justify-center w-full transform text-sm text-gray-400">
+        <span>Already have an account?</span>
+        <IconButton
+          icon="i-lucide:arrow-right"
+          variant="link"
+          link={appendRedirectTo("/auth/sign-in", redirectTo(), searchParams.addAccount === "true")}
+          label={() => <span>Sign in</span>}
+          iconProps={{ class: "w-4 h-4" }}
+          class="flex-row-reverse gap-1 inline-flex font-medium px-0 -mt-1"
+        ></IconButton>
+      </div>
+    </div>
+  );
+};
+
+export default SignUpPage;

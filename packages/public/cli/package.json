@@ -1,0 +1,84 @@
+{
+  "name": "andesine",
+  "version": "0.9.0",
+  "description": "Command-line tools for Andesine",
+  "mcpName": "app.andesine/andesine",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "andesine": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "exports": {
+    "./config.schema.json": "./dist/config.schema.json"
+  },
+  "scripts": {
+    "build": "rolldown -c rolldown.config.ts",
+    "typecheck": "tsc --noEmit",
+    "prepack": "turbo run lint:package --filter=andesine",
+    "lint:package": "publint --strict",
+    "generate:api": "tsx scripts/generate-api.ts"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "dependencies": {
+    "@andesine/converters": "workspace:*",
+    "@andesine/sdk": "workspace:*",
+    "@babel/core": "^7.29.7",
+    "@clack/prompts": "1.7.0",
+    "@commander-js/extra-typings": "15.0.0",
+    "@iconify-json/lucide": "^1.2.140",
+    "@iconify-json/tabler": "^1.2.41",
+    "@iconify/utils": "^3.1.4",
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "@orpc/zod": "^1.14.14",
+    "babel-preset-solid": "^1.9.12",
+    "base-x": "^5.0.1",
+    "commander": "15.0.0",
+    "lexorank": "^1.0.5",
+    "open": "11.0.0",
+    "proper-lockfile": "4.1.2",
+    "rolldown": "^1.2.2",
+    "unocss": "^66.7.5",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@andesine/contracts": "workspace:*",
+    "@andesine/mcp": "workspace:*",
+    "@andesine/uno-preset": "workspace:*",
+    "@types/babel__core": "^7.20.5",
+    "@types/node": "^26.1.2",
+    "@types/proper-lockfile": "4.1.4",
+    "prettier": "^3.9.6",
+    "publint": "0.3.24",
+    "tsx": "^4.23.5",
+    "typescript": "6.0.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vriteio/andesine.git",
+    "directory": "packages/public/cli"
+  },
+  "homepage": "https://andesine.app/docs/developers/cli/",
+  "bugs": {
+    "url": "https://github.com/vriteio/andesine/issues"
+  },
+  "keywords": [
+    "andesine",
+    "cli",
+    "typescript"
+  ],
+  "optionalDependencies": {
+    "@napi-rs/keyring": "2.1.0"
+  }
+}

@@ -1,0 +1,128 @@
+import fs from "node:fs/promises";
+import path from "node:path";
+import { Readable } from "node:stream";
+import type { ReadableStream as NodeReadableStream } from "node:stream/web";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import fastifyStatic from "@fastify/static";
+import middie from "@fastify/middie";
+import type { FastifyPluginAsync, FastifyRequest } from "fastify";
+import type { Render } from "#web/entry-server";
+import type { ViteDevServer } from "vite";
+
+const isProduction = process.env.NODE_ENV === "production";
+const base = process.env.BASE ?? "/";
+
+const currentFilePath = fileURLToPath(import.meta.url);
+const currentDirPath = path.dirname(currentFilePath);
+const webRootPath = path.resolve(currentDirPath, "../..");
+const clientDistPath = path.resolve(webRootPath, "dist/client");
+const clientTemplatePath = path.resolve(clientDistPath, "index.html");
+const serverEntryPath = pathToFileURL(
+  path.resolve(webRootPath, "dist/server/entry-server.js")
+).href;
+// Pages are only GET and HEAD requests, so there's no body to pass.
+const createWebRequest = (request: FastifyRequest): Request => {
+  const url = new URL(request.url, `${request.protocol}://${request.headers.host}`);
+
+  return new Request(url, {
+    method: request.method,
+    // @ts-expect-error: Fastify headers include values unsupported by the Fetch Headers type.
+    headers: new Headers(request.headers)
+  });
+};
+const viteSSRPlugin: FastifyPluginAsync = async (app) => {
+  const templateHtml = isProduction ? await fs.readFile(clientTemplatePath, "utf-8") : "";
+
+  let vite: ViteDevServer | undefined;
+
+  app.removeAllContentTypeParsers();
+  app.addContentTypeParser("*", function (_request, payload, done) {
+    done(null, payload);
+  });
+
+  if (!isProduction) {
+    await app.register(middie);
+
+    const { createServer } = await import("vite");
+
+    vite = await createServer({
+      server: {
+        middlewareMode: true,
+        ws: { server: app.server }
+      },
+      appType: "custom",
+      base
+    });
+
+    app.use(vite.middlewares);
+    app.addHook("onClose", async () => {
+      await vite?.close();
+    });
+  } else {
+    await app.register(fastifyStatic, {
+      root: clientDistPath,
+      serve: false
+    });
+  }
+
+  app.route({
+    method: ["GET", "HEAD"],
+    url: "*",
+    async handler(request, reply) {
+      const requestUrl = new URL(request.url, `http://${request.headers.host ?? "localhost"}`);
+
+      if (path.extname(requestUrl.pathname)) {
+        if (
+          requestUrl.pathname === "/service-worker.js" ||
+          requestUrl.pathname === "/offline.html"
+        ) {
+          reply.header("Cache-Control", "no-cache");
+        }
+        return reply.sendFile(requestUrl.pathname);
+      }
+
+      try {
+        const ssrUrl = `${requestUrl.pathname}${requestUrl.search}`;
+
+        let template = templateHtml;
+        let render: Render;
+        if (!isProduction) {
+          template = await fs.readFile(path.resolve(webRootPath, "index.html"), "utf-8");
+          template = await vite!.transformIndexHtml(ssrUrl, template);
+          render = (await vite!.ssrLoadModule("/src/entry-server.tsx")).render as Render;
+        } else {
+          render = (await import(serverEntryPath)).render as Render;
+        }
+
+        const response = await render(createWebRequest(request), template);
+
+        reply.status(response.status).headers(Object.fromEntries(response.headers));
+
+        // Set-Cookie headers are separate values, which Object.fromEntries would merge.
+        if (response.headers.has("set-cookie")) {
+          reply.header("set-cookie", response.headers.getSetCookie());
+        }
+
+        return reply.send(
+          response.body ? Readable.fromWeb(response.body as NodeReadableStream) : null
+        );
+      } catch (error) {
+        const normalizedError = error instanceof Error ? error : new Error(String(error));
+        vite?.ssrFixStacktrace(normalizedError);
+        request.log.error({ err: normalizedError }, "SSR render failed");
+
+        return reply
+          .status(500)
+          .type("text/plain")
+          .header("X-Request-ID", request.id)
+          .send(
+            isProduction
+              ? `Unable to render this page. Reference: ${request.id}`
+              : (normalizedError.stack ?? normalizedError.message)
+          );
+      }
+    }
+  });
+};
+
+export { viteSSRPlugin };

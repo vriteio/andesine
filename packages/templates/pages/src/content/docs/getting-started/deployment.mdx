@@ -1,0 +1,142 @@
+---
+title: Deployment
+description: Put the site on a static host, a Node.js server, or a serverless platform.
+order: 5
+---
+
+The host that a site needs depends on its sources.
+
+| Sources                          | Build output                    | Hosts                                         |
+| -------------------------------- | ------------------------------- | --------------------------------------------- |
+| Files only                       | Static files in `dist/`         | Any static host                               |
+| Andesine, with a publishable key | Static files in `dist/`         | Any static host                               |
+| Andesine, without one            | Static pages, and server routes | A Node.js server, Vercel, Netlify, Cloudflare |
+
+Search and AI answers need the Andesine API at each request. A publishable key lets
+browsers call it; a secret key must stay on a server.
+
+## Static hosting
+
+Create a publishable key (`adn_pk_...`) in the API settings of the workspace. Select
+the collection of the source, add the origin of the site, e.g.
+`https://docs.example.com`, and allow AI answers if the site uses them. Then set the
+key on the source:
+
+```ts title="andesine.config.ts"
+sources: [{ id: "docs", type: "andesine", collection: "coll_...", publicKey: "adn_pk_..." }];
+```
+
+The template reads it from `ANDESINE_PUBLIC_KEY`. A publishable key is safe in
+browsers: it reads only the published content of its collections, and browsers can use
+it only on its origins. The build reads the content with it, so no secret key is
+needed. Browsers then call the Andesine API directly, and the build adds no server
+routes and no adapter. Upload `dist/` to any static host.
+
+Publishable keys always allow `http://localhost` and `http://127.0.0.1` on any port,
+so search works with `npm run dev` and `npm run preview`.
+
+## Node.js
+
+Without a publishable key, Andesine search and AI answers use server routes at
+`/_andesine/`, which keep the API key on the server. All pages are static files, and
+only these routes run on the server. `astro.config.ts` adds the `@astrojs/node`
+adapter when an Andesine source has no publishable key.
+
+```sh
+npm run build
+node dist/server/entry.mjs
+```
+
+Set `ANDESINE_API_KEY` in the server environment. `HOST` and `PORT` set the
+address of the server.
+
+## Vercel and Netlify
+
+Replace the Node.js adapter with the adapter of the platform:
+
+```sh
+npm uninstall @astrojs/node
+npm install @astrojs/vercel
+```
+
+```ts title="astro.config.ts"
+import vercel from "@astrojs/vercel";
+
+export default defineConfig({
+  adapter: config.sources.some((source) => source.type === "andesine" && !source.publicKey)
+    ? vercel()
+    : undefined
+  // ...
+});
+```
+
+For Netlify, use `@astrojs/netlify` and `netlify()`. The platform serves the
+static pages from its CDN, and runs the server routes as one function. Set
+`ANDESINE_API_KEY` in the project settings, for builds and for functions.
+
+<Callout type="note">
+  The limit of 10 AI questions a minute for each visitor is kept in the memory of each function
+  instance, so on serverless platforms it is less strict. The Andesine API applies its own limits
+  too.
+</Callout>
+
+## Cloudflare
+
+Cloudflare Workers can run the search and AI answer routes, and serve the pages as
+static assets.
+
+```sh
+npm uninstall @astrojs/node
+npm install @astrojs/cloudflare
+npm install --save-dev wrangler
+```
+
+Build the pages with Node.js, so that social images can use the native renderer:
+
+```ts title="astro.config.ts"
+import cloudflare from "@astrojs/cloudflare";
+
+export default defineConfig({
+  adapter: config.sources.some((source) => source.type === "andesine" && !source.publicKey)
+    ? cloudflare({ prerenderEnvironment: "node" })
+    : undefined
+  // ...
+});
+```
+
+Add a `wrangler.jsonc` with the name of the Worker:
+
+```jsonc title="wrangler.jsonc"
+{
+  "name": "docs",
+  "compatibility_date": "2026-09-25"
+}
+```
+
+Set the API key as a secret of the Worker:
+
+```sh
+npx wrangler secret put ANDESINE_API_KEY
+```
+
+The build also needs `ANDESINE_API_KEY` in its environment, for example in the
+settings of Workers Builds.
+
+## API limits
+
+All visitors of a site share its key, so they share its limits too.
+
+- Each search uses one API call. Each AI answer uses one API call and 3 AI credits.
+  A build uses a few API calls.
+- Rate limits allow 600 requests and 60 AI answers a minute on Free, and ten times
+  more on Pro.
+- The monthly API calls and AI credits are hard limits on Free. When they run out,
+  search or AI answers show that they are not available until the next month. Pro
+  bills the usage over the included amounts, up to the workspace's spending limit.
+
+See the usage in the billing settings of the workspace.
+
+## Content updates
+
+Andesine sources show new publications after the next build. Start a build from a
+deploy hook of the platform when you publish, e.g. with an Andesine webhook.

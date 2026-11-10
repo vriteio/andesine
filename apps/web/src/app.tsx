@@ -1,94 +1,219 @@
-import { Component, ParentComponent, Show, lazy } from "solid-js";
-import { Route, Router } from "@solidjs/router";
-import RelativeTimePlugin from "dayjs/plugin/relativeTime";
-import dayjs from "dayjs";
-import { SecuredLayout } from "#layout";
-import { useHostConfig } from "#context";
+import { Router, createAsync, query, redirect, revalidate } from "@solidjs/router";
+import { MetaProvider, Title } from "@solidjs/meta";
+import {
+  DropdownProvider,
+  IconButton,
+  ShortcutsProvider,
+  TooltipProvider,
+  DotsBackground
+} from "@andesine/components";
+import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
+import { ErrorBoundary, type ParentComponent, Show, Suspense, createSignal } from "solid-js";
+import { NotificationsProvider } from "./context/notifications";
+import { ClipboardProvider } from "./context/clipboard";
+import { ExtensionHostActions } from "./components/extensions/host-actions";
+import { Analytics } from "./components/analytics";
+import { resetAnalytics } from "./lib/analytics";
+import { LayoutProvider } from "./context/layout";
+import { authClient, client, config } from "./lib/api";
+import { getRequestEvent } from "solid-js/web";
+import { appendRedirectTo, normalizeRedirectTo, routes } from "./lib/navigation";
+import { validateWorkspaceID } from "./lib/validation";
+import { isOffline, readOfflineState } from "./lib/offline";
 
-dayjs.extend(RelativeTimePlugin);
+const rootRedirectQuery = query(async () => {
+  const event = getRequestEvent();
 
-const AuthView = lazy(async () => {
-  const { AuthView } = await import("#views/auth");
+  if (!event && typeof window === "undefined") {
+    return { success: true };
+  }
 
-  return { default: AuthView };
-});
-const VerifyView = lazy(async () => {
-  const { VerifyView } = await import("#views/verify");
+  const url = new URL(event ? event.request.url : window.location.href);
+  const pathname = url.pathname.replace(/\/$/, "");
+  const isDeviceRoute = pathname === "/auth/device";
+  const isConnectRoute = pathname === "/auth/connect";
+  // The OAuth server sends people to sign in with a signed request for the consent page.
+  const isOAuthSignIn =
+    pathname === "/auth/sign-in" &&
+    url.searchParams.has("sig") &&
+    url.searchParams.has("client_id");
+  const consentPath = `/auth/connect${url.search}`;
+  const offlineState = readOfflineState();
+  const offlinePath = typeof window !== "undefined" ? window.location.pathname : "";
 
-  return { default: VerifyView };
-});
-const ConflictView = lazy(async () => {
-  const { ConflictView } = await import("#views/conflict");
+  if (isOffline() && offlineState && !isDeviceRoute && !isConnectRoute) {
+    if (
+      !offlineState.workspaces.some(
+        (workspace) =>
+          offlinePath.startsWith(`/${workspace.id}/`) || offlinePath === `/${workspace.id}`
+      )
+    ) {
+      throw redirect(`/${offlineState.workspaceID}/`);
+    }
 
-  return { default: ConflictView };
-});
-const ContentPieceEditorView = lazy(async () => {
-  const { ContentPieceEditorView } = await import("#views/editor");
+    return { success: true };
+  }
 
-  return { default: ContentPieceEditorView };
-});
-const SnippetEditorView = lazy(async () => {
-  const { SnippetEditorView } = await import("#views/editor");
+  const { data, error } = await authClient.getSession();
 
-  return { default: SnippetEditorView };
-});
-const VersionEditorView = lazy(async () => {
-  const { VersionEditorView } = await import("#views/editor");
+  if (error && isOffline() && offlineState) return { success: true };
+  const isAuthRoute = url.pathname.startsWith("/auth");
+  const isInviteRoute = url.pathname === "/invite";
+  const isNewWorkspaceRoute = url.pathname === "/new-workspace";
+  const pathSegments = url.pathname.split("/").filter(Boolean);
+  const workspaceID = pathSegments[0] || "";
+  const isWorkspaceEditor = validateWorkspaceID(workspaceID) && pathSegments.length === 1;
+  const isAddAccount = url.searchParams.get("addAccount") === "true";
+  const redirectTo = normalizeRedirectTo(url.searchParams.get("redirectTo"));
 
-  return { default: VersionEditorView };
-});
-const DiffEditorView = lazy(async () => {
-  const { DiffEditorView } = await import("#views/editor");
+  if (!data?.session) {
+    // A failed check isn't a signed-out user, so the identity stays.
+    if (!error) resetAnalytics();
 
-  return { default: DiffEditorView };
-});
-const DashboardView = lazy(async () => {
-  const { DashboardView } = await import("#views/dashboard");
+    if (isOAuthSignIn) throw redirect(appendRedirectTo("/auth/sign-in", consentPath));
 
-  return { default: DashboardView };
-});
-const WorkspacesView = lazy(async () => {
-  const { WorkspacesView } = await import("#views/workspaces");
+    if (!isAuthRoute || isConnectRoute) {
+      throw redirect(appendRedirectTo("/auth/sign-in", `${url.pathname}${url.search}`));
+    }
 
-  return { default: WorkspacesView };
-});
-const SecuredWrapper: ParentComponent = (props) => {
-  return <SecuredLayout>{props.children}</SecuredLayout>;
-};
-const Wrapper: ParentComponent = (props) => {
+    return { success: true };
+  } else {
+    const { currentWorkspaceID } = data.user;
+
+    if (isOAuthSignIn) throw redirect(consentPath);
+
+    if (isDeviceRoute || isConnectRoute || (isAuthRoute && isAddAccount)) {
+      return { success: true };
+    }
+
+    if (isInviteRoute) {
+      return { success: true };
+    }
+
+    if (redirectTo) {
+      throw redirect(redirectTo);
+    }
+
+    if (isNewWorkspaceRoute) {
+      return { success: true };
+    }
+
+    if (workspaceID && validateWorkspaceID(workspaceID)) {
+      if (isWorkspaceEditor) {
+        const workspaces = await client.workspaces.list();
+        const currentEntryID = workspaces.find(({ id }) => id === workspaceID)?.currentEntryID;
+
+        if (currentEntryID) {
+          throw redirect(`/${workspaceID}/${currentEntryID}`);
+        }
+      }
+
+      return { success: true };
+    }
+
+    if (!currentWorkspaceID) {
+      throw redirect(`/new-workspace`);
+    }
+
+    if (currentWorkspaceID) {
+      throw redirect(`/${currentWorkspaceID}`);
+    }
+  }
+
+  return { success: true };
+}, "root-redirect");
+
+interface AppErrorProps {
+  reset(): void;
+}
+
+const AppError = (props: AppErrorProps) => {
+  const [retrying, setRetrying] = createSignal(false);
+  const retry = async () => {
+    setRetrying(true);
+
+    try {
+      await revalidate();
+      props.reset();
+    } catch {
+      setRetrying(false);
+    }
+  };
+
   return (
-    <div class="flex flex-col flex-1 h-full overflow-hidden scrollbar-contrast justify-center items-center">
-      {props.children}
-    </div>
-  );
-};
-const App: Component = () => {
-  const hostConfig = useHostConfig();
-
-  return (
-    <>
-      <Router preload={false}>
-        <Route path={["/", "**"]} component={Wrapper}>
-          <Route path="/auth" component={AuthView} />
-          <Route path="/verify" component={VerifyView} />
-          <Route path="/workspaces" component={WorkspacesView} />
-        </Route>
-        <Route path={["/", "**"]} component={SecuredWrapper}>
-          <Route path="/editor/:contentPieceId?" component={ContentPieceEditorView} />
-          <Route path={["/:contentPieceId?"]} component={DashboardView} />
-          <Route path="/snippet/:snippetId?" component={SnippetEditorView} />
-          <Route path="/version/:contentPieceId?/:versionId?" component={VersionEditorView} />
-          <Route
-            path="/diff/:diffAgainst/:contentPieceId?/:versionId?"
-            component={DiffEditorView}
+    <main class="relative flex h-full w-full items-center justify-center">
+      <Title>Something went wrong | Andesine</Title>
+      <DotsBackground class="absolute mask-edge-fading-16" />
+      <div class="relative p-4 lg:p-24">
+        <div class="absolute left-0 top-0 h-full w-full rounded-2xl bg-gray-100 mask-edge-fading-4 lg:mask-edge-fading-24" />
+        <div class="relative flex w-72 flex-col gap-4">
+          <div>
+            <h1 class="text-2xl font-semibold">Something went wrong</h1>
+            <p class="text-sm leading-5 text-gray-400">
+              The page couldn’t be loaded. Check your connection and try again.
+            </p>
+          </div>
+          <IconButton
+            icon="i-lucide:rotate-cw"
+            class="w-full gap-1"
+            iconProps={{ class: "h-5 w-5 text-gray-400" }}
+            text="base"
+            size="medium"
+            label="Retry"
+            onClick={retry}
+            disabled={retrying()}
           />
-          <Show when={hostConfig.githubApp}>
-            <Route path="/conflict" component={ConflictView} />
-          </Show>
-        </Route>
-      </Router>
-    </>
+        </div>
+      </div>
+    </main>
   );
 };
+const RootLayout: ParentComponent = (props) => {
+  const queryClient = new QueryClient();
+
+  createAsync(() => rootRedirectQuery(), { deferStream: true });
+
+  return (
+    <MetaProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <DropdownProvider>
+            <ShortcutsProvider>
+              <NotificationsProvider>
+                <ClipboardProvider>
+                  <Show when={config.PUBLIC_EXTENSIONS_ENABLED}>
+                    <ExtensionHostActions />
+                  </Show>
+                  <Analytics />
+                  <LayoutProvider>
+                    <ErrorBoundary
+                      fallback={(error, reset) => {
+                        console.error("Failed to render the app", error);
+                        return <AppError reset={reset} />;
+                      }}
+                    >
+                      {/* No fallback here to avoid showing loading state while the root redirect query is being resolved */}
+                      <Suspense>{props.children}</Suspense>
+                    </ErrorBoundary>
+                  </LayoutProvider>
+                </ClipboardProvider>
+              </NotificationsProvider>
+            </ShortcutsProvider>
+          </DropdownProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </MetaProvider>
+  );
+};
+
+interface AppProps {
+  url?: string;
+}
+
+const App = (props: AppProps) => (
+  <Router url={props.url} root={RootLayout}>
+    {routes}
+  </Router>
+);
 
 export default App;

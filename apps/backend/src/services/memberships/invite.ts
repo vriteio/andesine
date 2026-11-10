@@ -1,0 +1,174 @@
+import { invitations, memberships, roles, users, workspaces } from "@andesine/server/database";
+import {
+  countMembers,
+  countPendingInvites,
+  FREE_MEMBER_LIMIT,
+  getEffectivePlan,
+  throwFreeMemberLimit
+} from "#backend/lib/billing";
+import { getUserAuthorization, withAuthorization } from "#backend/lib/policy";
+import { assertRoleDelegation } from "#backend/lib/policy/delegation";
+import type { SessionData } from "#backend/lib/policy/session";
+import { toInviteID, toMembershipID, toRoleID, toUUID } from "@andesine/contracts/primitives";
+import { db } from "#backend/lib/adapters";
+import { deliverInvite } from "#backend/lib/messaging";
+import { and, eq, lt } from "drizzle-orm";
+import { ORPCError } from "@orpc/server";
+
+interface InviteMemberInput {
+  email: string;
+  roleID: string;
+  inviterID?: string;
+}
+
+const inviteMemberOperation = async (
+  input: InviteMemberInput & { workspaceID: string; auth: SessionData }
+) => {
+  const workspaceID = toUUID(input.workspaceID);
+  const roleID = toUUID(input.roleID);
+  const normalizedEmail = input.email.trim().toLowerCase();
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const result = await db.transaction(async (tx) => {
+    const [workspace] = await tx
+      .select({
+        name: workspaces.name,
+        deletingAt: workspaces.deletingAt,
+        subscriptionPlan: workspaces.subscriptionPlan
+      })
+      .from(workspaces)
+      .where(eq(workspaces.id, workspaceID))
+      .for("update");
+
+    if (!workspace || workspace.deletingAt) {
+      throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
+    }
+
+    await tx
+      .update(invitations)
+      .set({ status: "expired" })
+      .where(
+        and(
+          eq(invitations.workspaceID, workspaceID),
+          eq(invitations.status, "pending"),
+          lt(invitations.expiresAt, new Date())
+        )
+      );
+    const [role] = await tx
+      .select()
+      .from(roles)
+      .where(and(eq(roles.id, roleID), eq(roles.workspaceID, workspaceID)));
+
+    if (!role) throw new ORPCError("BAD_REQUEST", { message: "Role not found" });
+    assertRoleDelegation(input.auth, role);
+
+    if (getEffectivePlan(workspace.subscriptionPlan) !== "pro") {
+      if (role.baseRole !== "admin") {
+        throw new ORPCError("FORBIDDEN", {
+          message: "On the Free plan, every member is an admin",
+          data: { requiredPlan: "pro", hints: ["Invite the member with the Admin role."] }
+        });
+      }
+
+      const members = await countMembers(tx, workspaceID);
+      const invites = await countPendingInvites(tx, workspaceID);
+
+      if (members + invites >= FREE_MEMBER_LIMIT) throwFreeMemberLimit();
+    }
+
+    const [existingUser] = await tx
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, normalizedEmail));
+
+    if (existingUser) {
+      const [existingMember] = await tx
+        .select({ id: memberships.id })
+        .from(memberships)
+        .where(
+          and(eq(memberships.workspaceID, workspaceID), eq(memberships.userID, existingUser.id))
+        );
+
+      if (existingMember) {
+        throw new ORPCError("MEMBERSHIP_ALREADY_EXISTS", {
+          status: 409,
+          message: "This user is already a member of the workspace",
+          data: {
+            membershipID: toMembershipID(existingMember.id),
+            hints: ["Use memberships.update to change the existing member role."]
+          }
+        });
+      }
+    }
+
+    const [existingInvite] = await tx
+      .select({ id: invitations.id })
+      .from(invitations)
+      .where(
+        and(
+          eq(invitations.workspaceID, workspaceID),
+          eq(invitations.email, normalizedEmail),
+          eq(invitations.status, "pending")
+        )
+      );
+
+    if (existingInvite) {
+      throw new ORPCError("INVITE_ALREADY_PENDING", {
+        status: 409,
+        message: "An invite has already been sent to this email",
+        data: {
+          inviteID: toInviteID(existingInvite.id),
+          hints: ["Use memberships.resendInvite to send the pending invitation again."]
+        }
+      });
+    }
+
+    const [invite] = await tx
+      .insert(invitations)
+      .values({
+        workspaceID,
+        email: normalizedEmail,
+        roleID,
+        invitedBy: input.inviterID ? toUUID(input.inviterID) : null,
+        expiresAt
+      })
+      .returning();
+
+    return { invite, workspaceName: workspace.name };
+  });
+  const { emailDelivery, inviteLink } = await deliverInvite({
+    invite: result.invite,
+    workspaceName: result.workspaceName
+  });
+
+  return {
+    inviteID: toInviteID(result.invite.id),
+    inviteLink,
+    emailDelivery,
+    invite: {
+      id: toInviteID(result.invite.id),
+      email: result.invite.email,
+      roleID: toRoleID(result.invite.roleID),
+      invitedBy: result.invite.invitedBy ? toMembershipID(result.invite.invitedBy) : undefined,
+      status: result.invite.status,
+      createdAt: result.invite.createdAt.toISOString(),
+      expiresAt: result.invite.expiresAt.toISOString()
+    }
+  };
+};
+const inviteMember = withAuthorization<
+  Omit<InviteMemberInput, "inviterID">,
+  undefined,
+  Awaited<ReturnType<typeof inviteMemberOperation>>
+>(
+  { permissions: { session: ["memberships"], key: ["memberships"] } },
+  async ({ auth, input, workspaceID }) => {
+    return inviteMemberOperation({
+      ...input,
+      auth,
+      inviterID: getUserAuthorization(auth)?.memberID,
+      workspaceID
+    });
+  }
+);
+
+export { inviteMember };

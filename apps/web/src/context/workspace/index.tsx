@@ -1,0 +1,384 @@
+import {
+  createContext,
+  createEffect,
+  createSignal,
+  on,
+  onCleanup,
+  type ParentComponent,
+  useContext
+} from "solid-js";
+import { createAsync, query, revalidate, useParams } from "@solidjs/router";
+import { client, authClient, type Permission, type WorkspaceEvent } from "#web/lib/api";
+import { validateWorkspaceID } from "#web/lib/validation";
+import { useWorkspaceContent } from "./content";
+import { createMutation } from "@tanstack/solid-query";
+import { toUserID } from "#web/lib/primitives";
+import { hasPermission as hasGrantedPermission } from "#web/lib/policy";
+import { isWorkspaceEvent } from "#web/lib/validation";
+import { clearPersistenceData } from "./indexeddb";
+import { isOffline, readOfflineState, saveOfflineWorkspace } from "#web/lib/offline";
+
+interface WorkspaceInfo {
+  id: string;
+  name: string;
+  logo?: string;
+  userID: string;
+  currentEntryID?: string;
+  exampleCollectionID?: string;
+  permissions: Permission[];
+  admin: boolean;
+  subscriptionPlan: string;
+  billingEnabled: boolean;
+}
+
+interface OpenedEntry {
+  workspaceID: string;
+  entryID: string;
+}
+interface SessionInfo {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    image?: string | null;
+  };
+  sessionToken: string;
+}
+
+interface WorkspaceContextValue {
+  currentWorkspace(): WorkspaceInfo | undefined;
+  currentSession(): SessionInfo | undefined;
+  workspaces(): WorkspaceInfo[];
+  refreshWorkspaces(): Promise<void>;
+  workspaceID(): string;
+  /** The last opened entry; the workspace list has it only from its last load. */
+  currentEntryID(): string | undefined;
+  setCurrentEntry(entryID: string): void;
+  sessions(): SessionInfo[];
+  hasPermission(required: Permission): boolean;
+  subscribeToUpdates(listener: (event: WorkspaceEvent) => void): () => void;
+  switchWorkspace(id: string): Promise<void>;
+  content: ReturnType<typeof useWorkspaceContent>;
+}
+
+const listSessionsQuery = query(async () => {
+  const offlineUser = readOfflineState()?.user;
+
+  if (isOffline()) return offlineUser ? [{ user: offlineUser, sessionToken: "" }] : [];
+
+  const { data, error } = await authClient.multiSession.listDeviceSessions();
+
+  if (error && isOffline() && offlineUser) return [{ user: offlineUser, sessionToken: "" }];
+
+  if (error || !data) return [] as SessionInfo[];
+
+  return data.map(
+    (entry: {
+      session: { token: string };
+      user: { id: string; name: string; email: string; image?: string | null };
+    }) => ({
+      user: {
+        // entry.user.id returned from authClient is a UUID, convert it to the API user ID format
+        id: toUserID(entry.user.id),
+        name: entry.user.name,
+        email: entry.user.email,
+        image: entry.user.image
+      },
+      sessionToken: entry.session.token
+    })
+  ) as SessionInfo[];
+}, "sessions");
+const listWorkspacesQuery = query(async () => {
+  if (isOffline()) return readOfflineState()?.workspaces || [];
+
+  try {
+    const workspaceList = await client.workspaces.list();
+
+    if (typeof window !== "undefined") {
+      const sessions = await listSessionsQuery();
+
+      for (const session of sessions) {
+        const userID = session.user.id;
+
+        void clearPersistenceData({
+          userID,
+          persist: workspaceList
+            .filter((workspace) => workspace.userID === userID)
+            .map(({ id }) => id)
+        });
+      }
+    }
+
+    return workspaceList;
+  } catch (error) {
+    if (isOffline()) return readOfflineState()?.workspaces || [];
+    throw error;
+  }
+}, "workspaces");
+const WorkspaceContext = createContext<WorkspaceContextValue>();
+const WorkspaceProvider: ParentComponent = (props) => {
+  const params = useParams<{ workspaceID: string }>();
+  const workspaceID = () => (validateWorkspaceID(params.workspaceID) ? params.workspaceID : "");
+  const updateListeners = new Set<(event: WorkspaceEvent) => void>();
+  const sessions = createAsync(() => listSessionsQuery());
+  const workspaces = createAsync(() => listWorkspacesQuery());
+  const [openedEntry, setOpenedEntry] = createSignal<OpenedEntry | null>(null);
+  const refreshWorkspaces = () => revalidate("workspaces");
+  const switchWorkspaceMutation = createMutation(() => ({
+    mutationFn: async (input: {
+      workspaceID: string;
+      targetSessionToken?: string;
+      previousSessionToken?: string;
+    }) => {
+      if (input.targetSessionToken) {
+        const { error } = await authClient.multiSession.setActive({
+          sessionToken: input.targetSessionToken
+        });
+
+        if (error) throw error;
+      }
+
+      await client.workspaces.switch({ workspaceID: input.workspaceID });
+
+      return input.workspaceID;
+    },
+    onSuccess: (workspaceID) => {
+      window.location.href = `/${workspaceID}/`;
+    },
+    onError: async (_error, input) => {
+      if (!input.targetSessionToken || !input.previousSessionToken) return;
+
+      const { error } = await authClient.multiSession.setActive({
+        sessionToken: input.previousSessionToken
+      });
+
+      if (error) {
+        console.error("Failed to restore the previous session", error);
+      }
+    }
+  }));
+  // Plain functions, not memos: server memos compute once, before the workspaces may have loaded.
+  const currentWorkspace = () => {
+    const workspaceList = workspaces() ?? [];
+    const id = workspaceID();
+
+    return workspaceList.find((workspace) => workspace.id === id);
+  };
+  const currentEntryID = () => {
+    const entry = openedEntry();
+
+    return entry?.workspaceID === workspaceID()
+      ? entry.entryID
+      : currentWorkspace()?.currentEntryID;
+  };
+  const setCurrentEntry = (entryID: string) => {
+    const entry = openedEntry();
+
+    if (entry?.workspaceID === workspaceID() && entry.entryID === entryID) return;
+
+    setOpenedEntry({ workspaceID: workspaceID(), entryID });
+    void client.sync.setCurrentEntry({ entryID }).catch(() => {});
+  };
+  const currentSession = () => {
+    const sessionList = sessions() ?? [];
+    const id = currentWorkspace()?.userID;
+
+    return sessionList.find((session) => session.user.id === id);
+  };
+  const hasPermission = (required: Permission) => {
+    const workspace = currentWorkspace();
+
+    return Boolean(
+      workspace?.admin || hasGrantedPermission(workspace?.permissions || [], required)
+    );
+  };
+  const content = useWorkspaceContent(workspaceID, () => currentSession()?.user.id || "");
+  createEffect(() => {
+    const workspace = currentWorkspace();
+    const session = currentSession();
+    const workspaceList = workspaces();
+
+    if (!isOffline() && workspace && session?.sessionToken && workspaceList) {
+      saveOfflineWorkspace(session.user, workspace.id, workspaceList);
+      content.persistOfflineAccess();
+    }
+  });
+  createEffect(
+    on(isOffline, (offline, previous) => {
+      if (!offline && previous === true) {
+        void revalidate(["sessions", "workspaces", "root-redirect"]);
+      }
+    })
+  );
+  const subscribeToUpdates = (listener: (event: WorkspaceEvent) => void) => {
+    updateListeners.add(listener);
+
+    return () => updateListeners.delete(listener);
+  };
+  createEffect(() => {
+    const workspaceList = workspaces();
+    const currentWorkspaceID = workspaceID();
+
+    if (workspaceList === undefined || isOffline()) return;
+
+    if (
+      typeof window === "undefined" ||
+      !currentWorkspaceID ||
+      workspaceList.some(({ id }) => id === currentWorkspaceID)
+    ) {
+      return;
+    }
+
+    void content.disposeWorkspaceContent(currentWorkspaceID).finally(() => {
+      const fallbackWorkspace = workspaceList[0];
+
+      window.location.replace(fallbackWorkspace ? `/${fallbackWorkspace.id}/` : "/new-workspace");
+    });
+  });
+  createEffect(() => {
+    const currentWorkspaceID = workspaceID();
+    const currentUserID = currentSession()?.user.id;
+
+    if (typeof window === "undefined" || !currentWorkspaceID || !currentUserID) return;
+
+    const abortController = new AbortController();
+    const waitForRetry = (delay: number) => {
+      return new Promise<void>((resolve) => {
+        const finish = () => {
+          window.clearTimeout(timeout);
+          abortController.signal.removeEventListener("abort", finish);
+          resolve();
+        };
+        const timeout = window.setTimeout(finish, delay);
+
+        abortController.signal.addEventListener("abort", finish, { once: true });
+      });
+    };
+
+    onCleanup(() => abortController.abort());
+
+    void (async () => {
+      let retryDelay = 1_000;
+
+      while (!abortController.signal.aborted && workspaceID() === currentWorkspaceID) {
+        try {
+          const updates = await client.sync.workspaceUpdates(undefined, {
+            signal: abortController.signal
+          });
+
+          try {
+            await content.syncWorkspaceContent(currentWorkspaceID);
+            retryDelay = 1_000;
+
+            for await (const event of updates) {
+              if (abortController.signal.aborted || workspaceID() !== currentWorkspaceID) {
+                break;
+              }
+
+              if (!isWorkspaceEvent(event)) continue;
+
+              if (
+                event.action.startsWith("entry:") ||
+                event.action.startsWith("collection:") ||
+                event.action.startsWith("schema:") ||
+                event.action.startsWith("schema-migration:") ||
+                event.action.startsWith("publishing:")
+              ) {
+                content.applyWorkspaceEvent(currentWorkspaceID, event);
+              }
+
+              if (
+                event.action.startsWith("membership:") ||
+                event.action.startsWith("role:") ||
+                event.action.startsWith("workspace:")
+              ) {
+                void refreshWorkspaces();
+              }
+
+              for (const listener of updateListeners) {
+                try {
+                  listener(event);
+                } catch (error) {
+                  console.error("Workspace update listener failed", error);
+                }
+              }
+            }
+          } finally {
+            await updates.return?.();
+          }
+        } catch (error) {
+          if (!abortController.signal.aborted) {
+            if (!isOffline()) console.error("Workspace update stream disconnected", error);
+
+            if (content.accessLoading()) {
+              await content.syncWorkspaceContent(currentWorkspaceID).catch(() => {});
+            }
+          }
+        }
+
+        if (!abortController.signal.aborted) {
+          await waitForRetry(retryDelay);
+          retryDelay = Math.min(retryDelay * 2, 30_000);
+        }
+      }
+    })();
+  });
+  const switchWorkspace = async (workspaceID: string) => {
+    if (isOffline()) throw new Error("Workspace switching is unavailable while offline");
+    if (workspaceID === params.workspaceID) return;
+
+    const targetWorkspace = (workspaces() ?? []).find((workspace) => workspace.id === workspaceID);
+    const current = currentWorkspace();
+
+    if (!targetWorkspace) {
+      throw new Error("Workspace not found");
+    }
+
+    let targetSessionToken: string | undefined;
+    const previousSessionToken = currentSession()?.sessionToken;
+
+    if (targetWorkspace.userID !== current?.userID) {
+      const targetSession = (sessions() ?? []).find((session) => {
+        return session.user.id === targetWorkspace.userID;
+      });
+
+      if (!targetSession || !previousSessionToken) {
+        throw new Error("Workspace account session not found");
+      }
+
+      targetSessionToken = targetSession.sessionToken;
+    }
+
+    await switchWorkspaceMutation.mutateAsync({
+      workspaceID,
+      targetSessionToken,
+      previousSessionToken
+    });
+  };
+
+  return (
+    <WorkspaceContext.Provider
+      value={{
+        currentWorkspace,
+        currentSession,
+        workspaceID,
+        currentEntryID,
+        setCurrentEntry,
+        workspaces: () => workspaces() ?? [],
+        refreshWorkspaces,
+        sessions: () => sessions() ?? [],
+        hasPermission,
+        subscribeToUpdates,
+        switchWorkspace,
+        content
+      }}
+    >
+      {props.children}
+    </WorkspaceContext.Provider>
+  );
+};
+
+const useWorkspace = () => useContext(WorkspaceContext)!;
+
+export { WorkspaceProvider, useWorkspace };
+export type { WorkspaceInfo, SessionInfo };

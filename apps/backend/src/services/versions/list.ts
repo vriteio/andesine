@@ -1,0 +1,122 @@
+import { entries, entryVersionContributors, entryVersions } from "@andesine/server/database";
+import { mapVersionSummary } from "@andesine/server/data";
+import { DEFAULT_PAGE_SIZE } from "@andesine/contracts/limits";
+import { type VersionSummary } from "@andesine/contracts/versions";
+import { toUUID, toVersionID } from "@andesine/contracts/primitives";
+import { ORPCError } from "@orpc/server";
+import { and, desc, eq, inArray, lt, or } from "drizzle-orm";
+import { withAuthorization } from "#backend/lib/policy";
+
+interface ListVersionsInput {
+  entryID: string;
+  cursor?: string;
+  limit?: number;
+}
+interface ResolvedVersionList {
+  collectionID: string | null;
+}
+
+const listVersions = withAuthorization<
+  ListVersionsInput,
+  ResolvedVersionList,
+  { versions: VersionSummary[]; nextCursor: string | null }
+>(
+  {
+    actions: ({ resolved }) => ({
+      entries: [{ action: "version:read", collectionID: resolved.collectionID }]
+    }),
+    includeDeleted: true,
+    resolve: async ({ database, input, workspaceID }) => {
+      const [entry] = await database
+        .select({ collectionID: entries.collectionID })
+        .from(entries)
+        .where(and(eq(entries.id, toUUID(input.entryID)), eq(entries.workspaceID, workspaceID)));
+
+      if (!entry) throw new ORPCError("NOT_FOUND", { message: "Entry not found" });
+
+      return entry;
+    }
+  },
+  async ({ database, input, workspaceID }) => {
+    const limit = input.limit ?? DEFAULT_PAGE_SIZE;
+    const entryID = toUUID(input.entryID);
+    const filters = [
+      eq(entryVersions.workspaceID, workspaceID),
+      eq(entryVersions.entryID, entryID)
+    ];
+
+    if (input.cursor) {
+      const cursorID = toUUID(input.cursor);
+      const [cursor] = await database
+        .select({ createdAt: entryVersions.createdAt })
+        .from(entryVersions)
+        .where(
+          and(
+            eq(entryVersions.id, cursorID),
+            eq(entryVersions.workspaceID, workspaceID),
+            eq(entryVersions.entryID, entryID)
+          )
+        );
+
+      if (!cursor) {
+        throw new ORPCError("BAD_REQUEST", {
+          message: "Cursor version not found",
+          data: {
+            hints: [
+              "Start a new listing without cursor and use pagination.nextCursor from that response. Keep the same filters while paging."
+            ]
+          }
+        });
+      }
+
+      filters.push(
+        or(
+          lt(entryVersions.createdAt, cursor.createdAt),
+          and(eq(entryVersions.createdAt, cursor.createdAt), lt(entryVersions.id, cursorID))
+        )!
+      );
+    }
+
+    const rows = await database
+      .select({ version: entryVersions })
+      .from(entryVersions)
+      .where(and(...filters))
+      .orderBy(desc(entryVersions.createdAt), desc(entryVersions.id))
+      .limit(limit + 1);
+    const hasMore = rows.length > limit;
+    const pageRows = hasMore ? rows.slice(0, limit) : rows;
+    const versionIDs = pageRows.map(({ version }) => version.id);
+    const contributorRows =
+      versionIDs.length > 0
+        ? await database
+            .select({
+              versionID: entryVersionContributors.versionID,
+              membershipID: entryVersionContributors.membershipID
+            })
+            .from(entryVersionContributors)
+            .where(
+              and(
+                eq(entryVersionContributors.workspaceID, workspaceID),
+                inArray(entryVersionContributors.versionID, versionIDs)
+              )
+            )
+        : [];
+    const contributorsByVersion = new Map<string, string[]>();
+
+    for (const contributor of contributorRows) {
+      const contributors = contributorsByVersion.get(contributor.versionID) || [];
+
+      contributors.push(contributor.membershipID);
+      contributorsByVersion.set(contributor.versionID, contributors);
+    }
+
+    return {
+      versions: pageRows.map(({ version }) => {
+        return mapVersionSummary(version, contributorsByVersion.get(version.id) || []);
+      }),
+      nextCursor: hasMore ? toVersionID(pageRows[pageRows.length - 1].version.id) : null
+    };
+  }
+);
+
+export { listVersions };

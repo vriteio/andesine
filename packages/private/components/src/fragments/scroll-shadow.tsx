@@ -1,0 +1,181 @@
+import clsx from "clsx";
+import { type Component, createSignal, onCleanup, onMount } from "solid-js";
+import { debounce } from "@solid-primitives/scheduled";
+import { type Ref } from "../ref";
+
+type ProcessScrollHandler = () => void;
+
+interface ScrollShadowController {
+  processScrollState(): void;
+  onProcessScrollState(handler: ProcessScrollHandler): void;
+}
+interface ScrollShadowProps {
+  scrollableContainerRef: Ref<HTMLElement | null>[0];
+  controller?: ScrollShadowController;
+  direction?: "horizontal" | "vertical";
+  /** The background the shadow fades from, e.g. `white` in a white card. */
+  color?: "contrast" | "base" | "white" | "panel";
+  offset?: string | { top?: string; right?: string; bottom?: string; left?: string };
+  show?: boolean | { top?: boolean; right?: boolean; bottom?: boolean; left?: boolean };
+  onScrollEnd?(): void;
+}
+
+const createScrollShadowController = (): ScrollShadowController => {
+  const handlers: ProcessScrollHandler[] = [];
+
+  return {
+    onProcessScrollState(handler) {
+      handlers.push(handler);
+    },
+    processScrollState() {
+      handlers.forEach((handler) => {
+        handler();
+      });
+    }
+  };
+};
+const shadowColors = {
+  contrast: "from-gray-100 to-gray-100/0",
+  base: "from-gray-50 to-gray-50/0",
+  white: "from-white to-white/0",
+  // Side panels are in white mobile sheets below `md`
+  panel: "from-white to-white/0 md:from-gray-100 md:to-gray-100/0"
+};
+const ScrollShadow: Component<ScrollShadowProps> = (props) => {
+  const controller = props.controller || createScrollShadowController();
+  const [scrollState, setScrollState] = createSignal<"start" | "mid" | "end" | "none">("none");
+  const onScrollEnd = debounce(() => props.onScrollEnd?.(), 250);
+  const processScrollState = (element: HTMLElement): void => {
+    onScrollEnd.clear();
+
+    if (props.direction === "horizontal") {
+      element.toggleAttribute("data-overflowing", element.clientWidth < element.scrollWidth);
+
+      if (element.clientWidth >= element.scrollWidth) {
+        setScrollState("none");
+      } else if (element.scrollLeft === 0) {
+        setScrollState("start");
+      } else if (Math.abs(element.scrollLeft + element.clientWidth - element.scrollWidth) < 10) {
+        setScrollState("end");
+        onScrollEnd();
+      } else {
+        setScrollState("mid");
+      }
+
+      return;
+    }
+
+    element.toggleAttribute("data-overflowing", element.clientHeight < element.scrollHeight);
+
+    if (element.clientHeight >= element.scrollHeight) {
+      setScrollState("none");
+    } else if (element.scrollTop === 0) {
+      setScrollState("start");
+    } else if (Math.abs(element.scrollTop + element.clientHeight - element.scrollHeight) < 10) {
+      setScrollState("end");
+      onScrollEnd?.();
+    } else {
+      setScrollState("mid");
+    }
+  };
+  const debouncedScrollStateUpdate = debounce(() => {
+    controller.processScrollState();
+  }, 250);
+  const handleWindowResize = (): void => {
+    debouncedScrollStateUpdate.clear();
+    debouncedScrollStateUpdate();
+  };
+  const firstAnchor = (): "left" | "top" => {
+    return props.direction === "horizontal" ? "left" : "top";
+  };
+  const secondAnchor = (): "right" | "bottom" => {
+    return props.direction === "horizontal" ? "right" : "bottom";
+  };
+  const firstOffset = (): string => {
+    return typeof props.offset === "string" ? props.offset : props.offset?.[firstAnchor()] || "0";
+  };
+  const secondOffset = (): string => {
+    return typeof props.offset === "string" ? props.offset : props.offset?.[secondAnchor()] || "0";
+  };
+
+  controller.onProcessScrollState(() => {
+    const scrollableContainer = props.scrollableContainerRef();
+
+    if (scrollableContainer) {
+      processScrollState(scrollableContainer);
+    }
+  });
+  onMount(() => {
+    const scrollableContainer = props.scrollableContainerRef();
+    const resizeObserver = new ResizeObserver(() => {
+      controller.processScrollState();
+    });
+    // Content size changes the scroll state without resizing the container
+    const observeContent = (): void => {
+      if (!scrollableContainer) return;
+
+      resizeObserver.disconnect();
+      resizeObserver.observe(scrollableContainer);
+      for (const child of scrollableContainer.children) resizeObserver.observe(child);
+    };
+    const mutationObserver = new MutationObserver(() => {
+      observeContent();
+      controller.processScrollState();
+    });
+
+    if (scrollableContainer) {
+      scrollableContainer.addEventListener("scroll", () => {
+        controller.processScrollState();
+      });
+      observeContent();
+      mutationObserver.observe(scrollableContainer, { childList: true });
+      controller.processScrollState();
+    }
+
+    window.addEventListener("resize", handleWindowResize);
+    onCleanup(() => {
+      window.removeEventListener("resize", handleWindowResize);
+      resizeObserver.disconnect();
+      mutationObserver.disconnect();
+    });
+  });
+
+  return (
+    <>
+      <div
+        class={clsx(
+          "pointer-events-none absolute z-1 duration-150 transition-opacity",
+          props.direction === "horizontal" && "h-full w-8 bg-gradient-to-r",
+          props.direction !== "horizontal" && "h-16 w-full bg-gradient-to-b",
+          shadowColors[props.color ?? "base"],
+          ["start", "none"].includes(scrollState()) && "opacity-0",
+          (props.show === false ||
+            (typeof props.show === "object" && props.show[firstAnchor()] === false)) &&
+            "hidden!"
+        )}
+        style={{
+          [firstAnchor()]: firstOffset(),
+          [firstAnchor() === "left" ? "top" : "left"]: 0
+        }}
+      />
+      <div
+        class={clsx(
+          "pointer-events-none absolute z-1 duration-150 transition-opacity",
+          props.direction === "horizontal" && "h-full w-8 bg-gradient-to-l",
+          props.direction !== "horizontal" && "h-16 w-full bg-gradient-to-t",
+          shadowColors[props.color ?? "base"],
+          ["end", "none"].includes(scrollState()) && "opacity-0",
+          (props.show === false ||
+            (typeof props.show === "object" && props.show[secondAnchor()] === false)) &&
+            "hidden!"
+        )}
+        style={{
+          [secondAnchor()]: secondOffset(),
+          [secondAnchor() === "right" ? "top" : "left"]: 0
+        }}
+      />
+    </>
+  );
+};
+
+export { ScrollShadow, createScrollShadowController };

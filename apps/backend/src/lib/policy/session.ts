@@ -1,0 +1,164 @@
+import { getEffectivePlan } from "#backend/lib/billing";
+import {
+  keyPermissionType,
+  permissionType,
+  type KeyPermission,
+  type Permission
+} from "@andesine/contracts/entities";
+import { type WorkspaceEvent } from "@andesine/contracts/events";
+import {
+  type ExtensionPermission,
+  type PUBLISHABLE_KEYS_PERMISSION
+} from "@andesine/contracts/extensions";
+import * as z from "zod";
+
+interface UserAuthorization {
+  memberID: string;
+  userID: string;
+  roleID: string;
+  permissions: Permission[];
+  admin?: boolean;
+}
+
+/** The scope of a publishable key: short collection IDs (all when unset), and the browser origins. */
+interface PublishableKeyScope {
+  collectionIDs?: string[];
+  allowedOrigins: string[];
+}
+
+/** An extension backend, authenticated with its JWT; it has the extension grant only. */
+interface ExtensionAuthorization {
+  extensionID: string;
+  name: string;
+  version: string;
+  generation: number;
+  permissions: Array<Exclude<ExtensionPermission, typeof PUBLISHABLE_KEYS_PERMISSION>>;
+  publishableKeys: boolean;
+  /** Enabled, without a disabled reason, and installed. */
+  active: boolean;
+  uninstalled: boolean;
+}
+
+interface SessionData {
+  id: string;
+  type: "key" | "session" | "oauth" | "extension";
+  workspaceID: string;
+  subscriptionPlan: string;
+  customerID?: string;
+  session?: UserAuthorization;
+  /** For MCP clients, scopes limit the role's permissions. */
+  oauth?: UserAuthorization & {
+    clientID: string;
+    /** Registered client name, for webhook actors. */
+    clientName?: string;
+    scopes?: string[];
+    workspaceID?: string;
+  };
+  key?: { keyID: string; permissions: KeyPermission[]; publishable?: PublishableKeyScope };
+  extension?: ExtensionAuthorization;
+  /** Extension frontend requests without read:restricted_collections see no restricted content. */
+  hideRestricted?: boolean;
+}
+
+const userAuthorizationType = z.object({
+  memberID: z.string(),
+  userID: z.string(),
+  roleID: z.string(),
+  permissions: z.array(permissionType),
+  admin: z.boolean().optional()
+});
+const getUserAuthorization = (auth: SessionData): UserAuthorization | undefined => {
+  return auth.type === "oauth" ? auth.oauth : auth.session;
+};
+
+const sessionDataBaseType = z.object({
+  id: z.string(),
+  workspaceID: z.string(),
+  subscriptionPlan: z.string(),
+  customerID: z.string().optional()
+});
+const sessionDataType: z.ZodType<SessionData> = z.discriminatedUnion("type", [
+  sessionDataBaseType.extend({
+    type: z.literal("session"),
+    session: userAuthorizationType
+  }),
+  sessionDataBaseType.extend({
+    type: z.literal("oauth"),
+    oauth: userAuthorizationType.extend({
+      clientID: z.string(),
+      clientName: z.string().optional(),
+      scopes: z.array(z.string()).optional(),
+      workspaceID: z.string().optional()
+    })
+  }),
+  sessionDataBaseType.extend({
+    type: z.literal("key"),
+    key: z.object({
+      keyID: z.string(),
+      permissions: z.array(keyPermissionType),
+      publishable: z
+        .object({
+          collectionIDs: z.array(z.string()).optional(),
+          allowedOrigins: z.array(z.string())
+        })
+        .optional()
+    })
+  })
+]);
+
+const getUserSessionCacheKey = (userID: string, workspaceID: string) => {
+  return `session:user:${userID}:${workspaceID}`;
+};
+const parseSessionData = (serialized: string): SessionData | null => {
+  try {
+    const result = sessionDataType.safeParse(JSON.parse(serialized));
+
+    return result.success ? result.data : null;
+  } catch {
+    return null;
+  }
+};
+const isSessionAuthorizationEvent = (auth: SessionData, event: WorkspaceEvent): boolean => {
+  if (auth.type === "key" && auth.key) {
+    const keyID = auth.key.keyID;
+
+    if (event.action === "key:delete") return event.data.ids.includes(keyID);
+    if (event.action === "key:rotate") return event.data.previousKeyID === keyID;
+
+    return event.action === "key:update" && event.data.id === keyID;
+  }
+
+  const user = getUserAuthorization(auth);
+
+  if (!user) return false;
+
+  if (
+    event.action === "workspace:update" &&
+    event.data.id === auth.workspaceID &&
+    event.data.subscriptionPlan === "free" &&
+    getEffectivePlan(event.data.subscriptionPlan) === "free"
+  ) {
+    return !user.admin;
+  }
+
+  if (event.action === "membership:update" || event.action === "membership:remove") {
+    return event.data.id === user.memberID;
+  }
+
+  if (event.action === "role:delete") return event.data.id === user.roleID;
+
+  return (
+    event.action === "role:update" &&
+    event.data.permissions !== undefined &&
+    event.data.id === user.roleID
+  );
+};
+
+export {
+  getUserAuthorization,
+  getUserSessionCacheKey,
+  isSessionAuthorizationEvent,
+  parseSessionData,
+  sessionDataType
+};
+export type { ExtensionAuthorization, PublishableKeyScope, SessionData, UserAuthorization };

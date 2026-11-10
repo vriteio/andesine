@@ -1,0 +1,126 @@
+import {
+  type DatabaseTransaction as Database,
+  collectionGroupRoles,
+  collectionMemberRoles,
+  groupMembers,
+  memberships,
+  roles
+} from "@andesine/server/database";
+import { assertRoleAssignmentsDelegation } from "#backend/lib/policy/delegation-collections";
+import { assertRoleDelegation } from "#backend/lib/policy/delegation";
+import type { SessionData } from "#backend/lib/policy/session";
+import { toUUID, toUserID } from "@andesine/contracts/primitives";
+import { type Permission } from "@andesine/contracts/entities";
+import { withAuthorization } from "#backend/lib/policy";
+import { and, eq } from "drizzle-orm";
+import { ORPCError } from "@orpc/server";
+import {
+  duplicateRoleNameError,
+  isRoleNameUniqueViolation,
+  validateRoleName
+} from "#backend/lib/data";
+
+interface UpdateRoleInput {
+  id: string;
+  name?: string;
+  permissions?: Permission[];
+}
+
+const updateRoleOperation = async (
+  input: UpdateRoleInput & { workspaceID: string; auth: SessionData; database: Database }
+): Promise<{ affectedUserIDs: string[] }> => {
+  const roleID = toUUID(input.id);
+  const workspaceID = toUUID(input.workspaceID);
+  const role = await input.database.query.roles.findFirst({
+    where: and(eq(roles.id, roleID), eq(roles.workspaceID, workspaceID))
+  });
+
+  if (!role) throw new ORPCError("NOT_FOUND", { message: "Role not found" });
+  if (role.baseRole)
+    throw new ORPCError("BAD_REQUEST", { message: "Base roles cannot be modified" });
+  assertRoleDelegation(input.auth, role);
+  await assertRoleAssignmentsDelegation(
+    input.auth,
+    role.id,
+    input.permissions ?? role.permissions,
+    input.database
+  );
+  if (input.permissions) assertRoleDelegation(input.auth, { permissions: input.permissions });
+  if (input.name === undefined && input.permissions === undefined) {
+    return { affectedUserIDs: [] };
+  }
+  const name =
+    input.name === undefined
+      ? undefined
+      : await validateRoleName({
+          database: input.database,
+          excludeRoleID: input.id,
+          name: input.name,
+          workspaceID: input.workspaceID
+        });
+
+  try {
+    await input.database
+      .update(roles)
+      .set({
+        ...(name !== undefined && { name }),
+        ...(input.permissions !== undefined && { permissions: input.permissions }),
+        updatedAt: new Date()
+      })
+      .where(and(eq(roles.id, roleID), eq(roles.workspaceID, workspaceID)));
+  } catch (error) {
+    if (isRoleNameUniqueViolation(error)) throw duplicateRoleNameError();
+
+    throw error;
+  }
+
+  if (input.permissions !== undefined) {
+    const [baseAffected, directAffected, groupAffected] = await Promise.all([
+      input.database
+        .select({ userID: memberships.userID })
+        .from(memberships)
+        .where(and(eq(memberships.roleID, roleID), eq(memberships.workspaceID, workspaceID))),
+      input.database
+        .select({ userID: memberships.userID })
+        .from(collectionMemberRoles)
+        .innerJoin(memberships, eq(memberships.id, collectionMemberRoles.membershipID))
+        .where(
+          and(
+            eq(collectionMemberRoles.workspaceID, workspaceID),
+            eq(collectionMemberRoles.roleID, roleID)
+          )
+        ),
+      input.database
+        .select({ userID: memberships.userID })
+        .from(collectionGroupRoles)
+        .innerJoin(groupMembers, eq(groupMembers.groupID, collectionGroupRoles.groupID))
+        .innerJoin(memberships, eq(memberships.id, groupMembers.membershipID))
+        .where(
+          and(
+            eq(collectionGroupRoles.workspaceID, workspaceID),
+            eq(collectionGroupRoles.roleID, roleID)
+          )
+        )
+    ]);
+    const affectedUserIDs = [
+      ...new Set(
+        [...baseAffected, ...directAffected, ...groupAffected].map(({ userID }) => toUserID(userID))
+      )
+    ];
+
+    return { affectedUserIDs };
+  }
+
+  return { affectedUserIDs: [] };
+};
+const updateRole = withAuthorization<UpdateRoleInput, undefined, { affectedUserIDs: string[] }>(
+  {
+    permissions: { session: ["roles"], key: ["roles"] },
+    plan: "pro",
+    transaction: "locked-workspace"
+  },
+  async ({ auth, database, input, workspaceID }) =>
+    updateRoleOperation({ ...input, auth, database, workspaceID })
+);
+
+export { updateRole };

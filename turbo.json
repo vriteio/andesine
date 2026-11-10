@@ -1,26 +1,93 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": ["**/.env.*local"],
-  "ui": "stream",
+  "envMode": "loose",
+  "ui": "tui",
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
       "cache": false
     },
-    "@vrite/app#build": {
-      "dependsOn": ["@vrite/web#build"]
-    },
-    "lint": {
-      "outputs": []
-    },
-    "dev": {
+    "build:client": {
+      "dependsOn": ["^build"],
       "cache": false
     },
-    "start": {
-      "outputs": []
+    "build:server": {
+      "dependsOn": ["^build"],
+      "cache": false
     },
-    "publish": {
-      "outputs": []
+    "build:runtime": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
+    "dev": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true,
+      "interactive": true
+    },
+    "start": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "persistent": true
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
+    "preview": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "persistent": true
+    },
+    "deploy": {
+      "dependsOn": ["build", "typecheck"],
+      "cache": false,
+      "interactive": true
+    },
+    "dev:email": {
+      "cache": false,
+      "persistent": true,
+      "interactive": true
+    },
+    "db:generate": {
+      "cache": false,
+      "interactive": true
+    },
+    "db:migrate": {
+      "cache": false,
+      "interactive": true
+    },
+    "db:studio": {
+      "cache": false,
+      "persistent": true,
+      "interactive": true
+    },
+    "lint:package": {
+      "dependsOn": ["build", "typecheck"],
+      "cache": false
+    },
+    "@andesine/backend#migrate": {
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "@andesine/usage-reporter#start": {
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "@andesine/backend#openapi:export": {
+      "cache": false
+    },
+    "@andesine/sdk#generate": {
+      "dependsOn": ["@andesine/backend#openapi:export"],
+      "cache": false
+    },
+    "andesine#generate:api": {
+      "dependsOn": ["@andesine/sdk#generate"],
+      "cache": false
+    },
+    "andesine#typecheck": {
+      "dependsOn": ["build"],
+      "cache": false
     }
   }
 }

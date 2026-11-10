@@ -1,0 +1,37 @@
+import { foreignKey, index, pgTable, unique, uuid } from "drizzle-orm/pg-core";
+import { entries } from "./entries";
+import { roles } from "./roles";
+import { timestamps } from "./shared";
+import { users } from "./users";
+import { workspaces } from "./workspaces";
+
+const memberships = pgTable(
+  "memberships",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceID: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    userID: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    roleID: uuid("role_id").notNull(),
+    currentEntryID: uuid("current_entry_id").references(() => entries.id, {
+      onDelete: "set null"
+    }),
+    ...timestamps
+  },
+  (table) => [
+    unique("memberships_workspace_id_id_unique").on(table.workspaceID, table.id),
+    unique("memberships_workspace_user_unique").on(table.workspaceID, table.userID),
+    foreignKey({
+      name: "memberships_workspace_role_fk",
+      columns: [table.workspaceID, table.roleID],
+      foreignColumns: [roles.workspaceID, roles.id]
+    }).onDelete("restrict"),
+    index("memberships_user_id_idx").on(table.userID),
+    index("memberships_role_id_idx").on(table.roleID)
+  ]
+);
+
+export { memberships };

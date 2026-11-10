@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">
+  <!-- The app's dotted background, 1.5 times larger, fading out from the top-right corner. -->
+  <defs>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="12" r="3" fill="rgb(229, 231, 235)" fill-opacity="0.8" />
+    </pattern>
+    <radialGradient id="fade" cx="1200" cy="0" r="900" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="white" />
+      <stop offset="1" stop-color="white" stop-opacity="0" />
+    </radialGradient>
+    <mask id="mask"><rect width="1200" height="630" fill="url(#fade)" /></mask>
+  </defs>
+  <rect width="1200" height="630" fill="url(#dots)" mask="url(#mask)" />
+</svg>

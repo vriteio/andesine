@@ -1,0 +1,27 @@
+---
+import type { Fact } from "@andesine/pages";
+
+interface Props {
+  facts: Fact[];
+}
+
+const { facts } = Astro.props;
+---
+
+{
+  facts.length > 0 && (
+    <div class="flex flex-wrap gap-x-3 text-base leading-7 text-gray-500">
+      {facts.map((fact) => (
+        <span>
+          <span class="text-sm">{fact.label}:</span>{" "}
+          {fact.values.map((value, index) => (
+            <>
+              {index > 0 && ", "}
+              <code>{value}</code>
+            </>
+          ))}
+        </span>
+      ))}
+    </div>
+  )
+}

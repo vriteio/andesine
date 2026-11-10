@@ -1,0 +1,66 @@
+// Native accordion
+.item {
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary:focus-visible {
+    @apply outline outline-2 outline-primary -outline-offset-2;
+  }
+
+  &[open] .indicator {
+    transform: rotate(45deg);
+  }
+
+  &[open] .answer {
+    animation: reveal 250ms ease-out;
+  }
+}
+
+.indicator {
+  transition: transform 250ms ease;
+}
+
+@supports (interpolate-size: allow-keywords) {
+  .item {
+    interpolate-size: allow-keywords;
+
+    &::details-content {
+      @apply overflow-hidden;
+      block-size: 0;
+      transition:
+        block-size 250ms ease,
+        content-visibility 250ms allow-discrete;
+    }
+
+    &[open]::details-content {
+      block-size: auto;
+    }
+  }
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    translate: 0 -0.25rem;
+  }
+
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+// Reduced motion
+@media (prefers-reduced-motion: reduce) {
+  .item {
+    &::details-content,
+    .indicator {
+      transition: none;
+    }
+
+    &[open] .answer {
+      animation: none;
+    }
+  }
+}

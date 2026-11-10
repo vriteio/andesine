@@ -1,0 +1,185 @@
+import { collections, effectiveSchemaRevisions } from "@andesine/server/database";
+import { createStructureWebhookRecorder } from "@andesine/server/webhooks/recording";
+import { loadCurrentContentPaths, getAvailableContentName } from "@andesine/server/content";
+import { loadCollectionTree } from "@andesine/server/data";
+import { webhookRetentionPolicy } from "#backend/lib/webhooks/policy";
+import { rankBetweenNeighbors, toCollectionID, toUUID } from "@andesine/contracts/primitives";
+import { type Collection } from "@andesine/contracts/entities";
+import { and, desc, eq, isNull } from "drizzle-orm";
+import { ORPCError } from "@orpc/server";
+import { loadAuthorizedCollectionTree, withAuthorization } from "#backend/lib/policy";
+import { resolveCollectionTarget } from "#backend/lib/content";
+import { normalizeCollectionName, ROOT_COLLECTION_NAME } from "@andesine/contracts/content";
+
+interface CreateCollectionInput extends Partial<Pick<Collection, "id" | "name" | "restricted">> {
+  parentID?: string;
+  parentPath?: string;
+  parentSlugPath?: string;
+}
+interface ResolvedCreateCollection {
+  parentID: string | null;
+}
+const createCollection = withAuthorization<
+  CreateCollectionInput,
+  ResolvedCreateCollection,
+  Collection & { path: string; slugPath: string }
+>(
+  {
+    actions: ({ resolved }) => ({
+      collections: [{ action: "collection:create-child", collectionID: resolved.parentID }]
+    }),
+    resolve: async ({ database, input, workspaceID }) => {
+      const parentID = await resolveCollectionTarget(database, workspaceID, {
+        collectionID: input.parentID,
+        collectionPath: input.parentPath,
+        collectionSlugPath: input.parentSlugPath
+      });
+
+      return { parentID: parentID ?? null };
+    },
+    permissions: (input) =>
+      input.restricted ? { session: ["restricted_collections"] } : undefined,
+    plan: (input) => (input.restricted ? "pro" : undefined),
+    transaction: "locked-workspace"
+  },
+  async ({ auth, database, input, resolved, workspaceID }) => {
+    const requestedName = normalizeCollectionName(input.name ?? "Untitled");
+
+    if (requestedName === ROOT_COLLECTION_NAME) {
+      throw new ORPCError("BAD_REQUEST", {
+        message: "Reserved collection name",
+        data: {
+          hints: [
+            "Choose a collection name other than ~, which is reserved for the workspace root."
+          ]
+        }
+      });
+    }
+
+    const collectionID = input.id ? toUUID(input.id) : crypto.randomUUID();
+    const [root] = await database
+      .select({ id: collections.id })
+      .from(collections)
+      .where(
+        and(
+          eq(collections.workspaceID, workspaceID),
+          isNull(collections.parentID),
+          isNull(collections.deletedAt)
+        )
+      );
+
+    if (!root) {
+      throw new ORPCError("INTERNAL_SERVER_ERROR", {
+        message: "Workspace content tree is unavailable"
+      });
+    }
+
+    const parentID = resolved.parentID ?? root.id;
+    const [parent] = await database
+      .select({ id: collections.id })
+      .from(collections)
+      .where(
+        and(
+          eq(collections.id, parentID),
+          eq(collections.workspaceID, workspaceID),
+          isNull(collections.deletedAt)
+        )
+      );
+
+    if (!parent) throw new ORPCError("BAD_REQUEST", { message: "Parent collection not found" });
+
+    const name = await getAvailableContentName(database, workspaceID, {
+      kind: "collection",
+      id: collectionID,
+      parentID,
+      name: requestedName
+    });
+    const [lastSibling] = await database
+      .select({ rank: collections.rank })
+      .from(collections)
+      .where(
+        and(
+          eq(collections.workspaceID, workspaceID),
+          eq(collections.parentID, parentID),
+          isNull(collections.deletedAt)
+        )
+      )
+      .orderBy(desc(collections.rank))
+      .limit(1);
+    const rank = rankBetweenNeighbors(lastSibling?.rank);
+
+    const webhooks = await createStructureWebhookRecorder({
+      retentionPolicy: webhookRetentionPolicy,
+      database,
+      workspaceID,
+      collectionIDs: [collectionID]
+    });
+    const [created] = await database
+      .insert(collections)
+      .values({
+        id: collectionID,
+        workspaceID,
+        parentID,
+        name,
+        rank,
+        restricted: input.restricted
+      })
+      .onConflictDoNothing({ target: collections.id })
+      .returning({ id: collections.id });
+
+    if (created) {
+      const [parentRevision] = await database
+        .select()
+        .from(effectiveSchemaRevisions)
+        .where(
+          and(
+            eq(effectiveSchemaRevisions.workspaceID, workspaceID),
+            eq(effectiveSchemaRevisions.collectionID, parentID),
+            eq(effectiveSchemaRevisions.active, true)
+          )
+        );
+
+      if (parentRevision) {
+        await database.insert(effectiveSchemaRevisions).values({
+          workspaceID,
+          collectionID,
+          definition: {
+            ...parentRevision.definition,
+            fields: parentRevision.definition.fields.map((field) => ({
+              ...field,
+              source: { ...field.source, inherited: true }
+            }))
+          },
+          hash: parentRevision.hash,
+          active: true
+        });
+      }
+    }
+
+    // Returning an existing collection is a read of it.
+    if (!created) {
+      const authorization = await loadAuthorizedCollectionTree({ auth, database });
+
+      authorization.assertCollectionAction(collectionID, "collection:read");
+    }
+
+    const tree = await loadCollectionTree(workspaceID, false, database);
+    const result = tree.collections.find(
+      (collection) => collection.id === toCollectionID(collectionID)
+    );
+
+    if (!result)
+      throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create collection" });
+
+    await webhooks.record();
+
+    const paths = await loadCurrentContentPaths(database, workspaceID);
+    return {
+      ...result,
+      path: paths.collectionPath(collectionID),
+      slugPath: paths.collectionSlugPath(collectionID)
+    };
+  }
+);
+
+export { createCollection };

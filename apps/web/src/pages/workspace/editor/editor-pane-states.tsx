@@ -1,0 +1,136 @@
+import { IconButton, Skeleton, DotsBackground } from "@andesine/components";
+import { type Component, type JSX, type ParentComponent, Show } from "solid-js";
+import clsx from "clsx";
+import type { DocumentLoadState } from "./document-load-state";
+
+interface EditorPaneMessageProps {
+  /** Without a title, only the background shows, e.g. while content loads. */
+  title?: string;
+  description?: string;
+}
+interface EditorLoadErrorViewProps {
+  actionIcon: string;
+  actionLabel: string;
+  description: string;
+  note?: JSX.Element;
+  onAction(): void;
+  title: string;
+}
+
+interface DocumentLoadErrorProps {
+  problem: Exclude<DocumentLoadState["problem"], null>;
+  localTimeoutCount: number;
+  onRetry(): void;
+  onBack(): void;
+  resourceLabel?: string;
+}
+
+interface EditorContentSkeletonProps {
+  class?: string;
+}
+
+const EDITOR_CONTENT_PADDING = "px-2.5 pb-5 pt-5 md:px-10 md:pb-10 md:pt-9";
+
+/** A message over a dot grid that fades around it, as in the error views; children are actions. */
+const EditorPaneMessage: ParentComponent<EditorPaneMessageProps> = (props) => (
+  <div class="relative flex h-full w-full items-center justify-center overflow-hidden md:px-5">
+    <DotsBackground class="absolute mask-edge-fading-16" contrast />
+    <div class="relative p-4 lg:p-24">
+      <div class="absolute left-0 top-0 h-full w-full rounded-2xl bg-gray-50 mask-edge-fading-4 lg:mask-edge-fading-24" />
+      <Show when={props.title}>
+        <div class="relative flex w-72 flex-col gap-4">
+          <div>
+            <h1 class="text-2xl font-semibold">{props.title}</h1>
+            <p class="mt-1 text-sm leading-5 text-gray-400">{props.description}</p>
+          </div>
+          {props.children}
+        </div>
+      </Show>
+    </div>
+  </div>
+);
+const EditorLoadErrorView: Component<EditorLoadErrorViewProps> = (props) => {
+  return (
+    <div class="absolute inset-0 z-10 flex items-center justify-center bg-gray-50 md:px-5">
+      <DotsBackground class="absolute mask-edge-fading-16" contrast />
+      <div class="relative p-4 lg:p-24">
+        <div class="absolute left-0 top-0 h-full w-full rounded-2xl bg-gray-100 mask-edge-fading-4 lg:mask-edge-fading-24" />
+        <div class="relative flex w-72 flex-col gap-4">
+          <div>
+            <h1 class="text-2xl font-semibold">{props.title}</h1>
+            <p class="mt-1 text-sm leading-5 text-gray-400">{props.description}</p>
+            {props.note}
+          </div>
+          <IconButton
+            icon={props.actionIcon}
+            class="w-full gap-1"
+            iconProps={{ class: "h-5 w-5 text-gray-400" }}
+            text="base"
+            size="medium"
+            label={props.actionLabel}
+            onClick={props.onAction}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const DocumentLoadError: Component<DocumentLoadErrorProps> = (props) => {
+  const isUnauthorized = () => props.problem === "unauthorized";
+  const isLocalTimeout = () => props.problem === "local-timeout";
+  const isNotCached = () => props.problem === "not-cached";
+
+  return (
+    <EditorLoadErrorView
+      title={
+        isUnauthorized()
+          ? "Access lost"
+          : isNotCached()
+            ? "Not available offline"
+            : isLocalTimeout()
+              ? "Local content unavailable"
+              : "Sync failed"
+      }
+      description={
+        isUnauthorized()
+          ? `You no longer have access to this ${props.resourceLabel || "entry"}.`
+          : isNotCached()
+            ? "This document has not been saved on this device. Reconnect to open it."
+            : isLocalTimeout()
+              ? "The editor could not finish loading the local copy of this document."
+              : "The editor could not initialize collaboration for this document."
+      }
+      actionIcon={isUnauthorized() ? "i-lucide:arrow-left" : "i-lucide:rotate-cw"}
+      actionLabel={isUnauthorized() ? "Back" : "Retry"}
+      onAction={isUnauthorized() ? props.onBack : props.onRetry}
+      note={
+        <Show when={isLocalTimeout() && props.localTimeoutCount >= 2}>
+          <p class="mt-2 text-xs leading-5 text-amber-600">
+            Your local content is kept. Close other tabs for this workspace, then retry.
+          </p>
+        </Show>
+      }
+    />
+  );
+};
+
+const EditorContentSkeleton: Component<EditorContentSkeletonProps> = (props) => (
+  <div class={clsx("absolute inset-0 z-10 bg-gray-50", props.class)}>
+    <div class="relative mx-auto flex w-full max-w-[44rem] flex-col gap-2">
+      <Skeleton class={["h-12 w-4/5", "h-32 w-full", "h-24 w-full", "h-8 w-3/5", "h-40 w-full"]} />
+      <div
+        class="pointer-events-none absolute inset-0 text-gray-50"
+        style={{ background: "linear-gradient(to bottom, transparent 15%, currentColor 100%)" }}
+      />
+    </div>
+  </div>
+);
+
+export {
+  DocumentLoadError,
+  EDITOR_CONTENT_PADDING,
+  EditorContentSkeleton,
+  EditorLoadErrorView,
+  EditorPaneMessage
+};

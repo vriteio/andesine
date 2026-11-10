@@ -1,0 +1,198 @@
+import { useDelegationPermissions } from "#web/lib/policy/delegation";
+import { type Membership, type Role, type UserProfile } from "@andesine/contracts/entities";
+import { useTree, TreeItem } from "#web/components/tree";
+import { type Card, DropdownArea, DropdownMenu, IconButton } from "@andesine/components";
+import clsx from "clsx";
+import {
+  type Component,
+  createSignal,
+  createMemo,
+  createEffect,
+  Show,
+  type ComponentProps
+} from "solid-js";
+
+const MemberItem: Component<{
+  canManage: boolean;
+  canManageRoles: boolean;
+  currentUser?: boolean;
+  disabled?: boolean;
+  loading?: boolean;
+  member: Membership & { profile: UserProfile; admin?: boolean };
+  members: Array<Membership & { profile: UserProfile; admin?: boolean }>;
+  onRemove(ids: string[]): void;
+  onUpdateRole(roleID: string, ids: string[]): void;
+  roles: Role[];
+}> = (props) => {
+  const { canGrantRole } = useDelegationPermissions();
+  const canManageMember = (id: string) => {
+    const member = props.members.find((member) => member.id === id);
+    const role = props.roles.find((role) => role.id === member?.roleID);
+    return Boolean(role && canGrantRole(role));
+  };
+  const [{ selection }, { setSelection }] = useTree();
+  const [menuOpened, setMenuOpened] = createSignal(false);
+  const memberName = () => props.member.profile.name || props.member.profile.email;
+  const memberEmail = () => {
+    if (props.member.profile.email && props.member.profile.email !== memberName()) {
+      return props.member.profile.email;
+    }
+
+    return "";
+  };
+  const roleName = () => {
+    return props.roles.find((role) => role.id === props.member.roleID)?.name || "";
+  };
+  const affectsEveryAdmin = (ids: string[]) => {
+    const adminIDs = props.members.filter((member) => member.admin).map((member) => member.id);
+
+    return adminIDs.length > 0 && adminIDs.every((id) => ids.includes(id));
+  };
+  const dropdownOptions = createMemo(() => {
+    const selectedIDs = selection();
+    const isMulti = selectedIDs.length > 1;
+    const targetIDs = isMulti ? selectedIDs : [props.member.id];
+
+    return [
+      ...(props.canManageRoles
+        ? [
+            [
+              {
+                label: "Set role",
+                icon: "i-lucide:shield",
+                items: props.roles.map((role) => ({
+                  label: role.name,
+                  disabled:
+                    !canGrantRole(role) || !targetIDs.every(canManageMember)
+                      ? "You cannot assign roles beyond your own permissions"
+                      : role.baseRole !== "admin" && affectsEveryAdmin(targetIDs)
+                        ? "At least one workspace admin is required"
+                        : undefined,
+                  selected: !isMulti && props.member.roleID === role.id,
+                  onClick: () => props.onUpdateRole(role.id, targetIDs)
+                }))
+              }
+            ]
+          ]
+        : []),
+      [
+        {
+          label: isMulti ? `Remove ${selectedIDs.length} members` : "Remove",
+          icon: "i-lucide:trash",
+          color: "danger" as const,
+          shortcut: "$mod+backspace",
+          disabled: !targetIDs.every(canManageMember)
+            ? "You cannot manage members beyond your own permissions"
+            : affectsEveryAdmin(targetIDs)
+              ? "At least one workspace admin is required"
+              : undefined,
+          onClick: () => {
+            props.onRemove(targetIDs);
+            setSelection([]);
+          }
+        }
+      ]
+    ];
+  });
+
+  createEffect(() => {
+    if (menuOpened()) {
+      setSelection((selectedIDs) =>
+        selectedIDs.includes(props.member.id) ? selectedIDs : [props.member.id]
+      );
+    }
+  });
+
+  return (
+    <DropdownArea>
+      <TreeItem
+        keyboardMenu={
+          props.canManage && canManageMember(props.member.id) && !props.loading
+            ? dropdownOptions().flat()
+            : []
+        }
+        onOpenMenu={() => {
+          if (props.canManage && canManageMember(props.member.id) && !props.loading)
+            setMenuOpened(true);
+        }}
+        id={props.member.id}
+        label={memberName()}
+        topLevel
+        checkbox={props.canManage && canManageMember(props.member.id) && !props.loading}
+        selectable={props.canManage && canManageMember(props.member.id) && !props.loading}
+        class={clsx("px-1 py-0.5", props.loading && "animate-pulse")}
+        icon={
+          <Show
+            when={props.member.profile.image}
+            fallback={<div class="i-lucide:id-card h-5 w-5 text-gray-400" />}
+          >
+            {(image) => <img src={image()} alt="" class="h-5 w-5 rounded-md object-cover" />}
+          </Show>
+        }
+        renderLabel={(label) => (
+          <div
+            class="flex min-w-0 flex-1 items-center gap-1.5"
+            title={[memberName(), memberEmail()].filter(Boolean).join(" | ")}
+          >
+            <div class="min-w-0 max-w-48 truncate">{label}</div>
+            <Show when={memberEmail()}>
+              <div class="hidden h-4 w-px shrink-0 rounded-full bg-gray-200 md:block" />
+              <span class="hidden max-w-48 shrink-0 truncate text-xs text-gray-400 md:inline">
+                {memberEmail()}
+              </span>
+            </Show>
+            <Show when={props.currentUser}>
+              <span class="text-xs px-1 py-px rounded-md from-secondary via-primary to-secondary bg-gradient-to-tr text-white border border-tertiary">
+                You
+              </span>
+            </Show>
+            <Show when={props.disabled}>
+              <span class="shrink-0 rounded-md bg-gray-100 border border-gray-200 px-1 py-px text-xs text-gray-500">
+                Disabled
+              </span>
+            </Show>
+            <div class="flex-1" />
+            <Show when={roleName()}>
+              <span class="shrink-0 text-xs text-gray-400">{roleName()}</span>
+            </Show>
+          </div>
+        )}
+        actions={
+          <Show when={props.canManage && canManageMember(props.member.id)}>
+            <div onClick={(event: MouseEvent) => event.stopPropagation()}>
+              <DropdownMenu
+                title={memberName()}
+                cardProps={
+                  { "class": "w-48", "data-tree-interaction": "" } as Partial<
+                    ComponentProps<typeof Card>
+                  >
+                }
+                opened={menuOpened()}
+                portal={false}
+                setOpened={setMenuOpened}
+                trigger={() => (
+                  <div
+                    class={clsx(
+                      !menuOpened() &&
+                        !props.loading &&
+                        "opacity-20 media-mouse:group-hover:opacity-100"
+                    )}
+                  >
+                    <IconButton
+                      icon="i-lucide:ellipsis-vertical"
+                      variant="ghost"
+                      loading={props.loading}
+                    />
+                  </div>
+                )}
+                items={dropdownOptions()}
+              />
+            </div>
+          </Show>
+        }
+      />
+    </DropdownArea>
+  );
+};
+
+export { MemberItem };

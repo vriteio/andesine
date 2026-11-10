@@ -1,0 +1,102 @@
+---
+import type { FieldView, VariantView } from "@andesine/pages";
+import Facts from "./facts.astro";
+import { descriptionClass, labelClass, nameClass, requiredClass } from "./styles";
+
+interface Props {
+  fields: FieldView[];
+  variants?: VariantView[];
+  expanded?: boolean;
+}
+
+const { fields, variants = [], expanded = false } = Astro.props;
+const kindLabels = { oneOf: "One of", anyOf: "Any of" };
+// A schema can have both kinds; each gets its own label.
+const variantGroups = (["oneOf", "anyOf"] as const)
+  .map((kind) => variants.filter((variant) => variant.kind === kind))
+  .filter((group) => group.length > 0);
+// Nested fields have no card: a toggle, and a line below its chevron.
+const toggleClass =
+  "flex w-fit cursor-pointer list-none items-center gap-1.5 py-0.5 text-sm font-medium text-gray-500 transition duration-200 ease-out @hover:text-gray-700 focus-visible:text-gray-700 [&::-webkit-details-marker]:hidden";
+const chevronClass =
+  "i-lucide:chevron-right h-3.5 w-3.5 shrink-0 transition-transform duration-200 [[open]>summary>&]:rotate-90";
+const nestedClass = "ml-[0.4375rem] mt-2 border-l border-gray-200 pl-4";
+const countLabel = (count: number): string => `${count} ${count === 1 ? "field" : "fields"}`;
+---
+
+{
+  fields.length > 0 && (
+    <div role="list" class="divide-y divide-gray-200">
+      {fields.map((field) => {
+        const nestedCount = field.fields.length + field.variants.length;
+
+        return (
+          <div
+            role="listitem"
+            id={field.id}
+            class="flex scroll-mt-30 flex-col gap-1 py-3 first:pt-0 last:pb-0"
+          >
+            <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <code class={nameClass}>
+                {field.name}
+                {field.required && (
+                  <span title="Required" class={requiredClass}>
+                    *
+                  </span>
+                )}
+              </code>
+              <span class="font-mono text-xs text-gray-500">{field.type}</span>
+              {field.deprecated && (
+                <span class="text-sm font-medium text-amber-600">deprecated</span>
+              )}
+              {field.readOnly && <span class="text-sm text-gray-400">read-only</span>}
+              {field.writeOnly && <span class="text-sm text-gray-400">write-only</span>}
+            </div>
+            {field.description && <div class={descriptionClass} set:html={field.description} />}
+            <Facts facts={field.facts} />
+            {field.recursive && (
+              <a
+                href={field.recursive.href}
+                class="not-prose self-start text-sm font-medium text-gray-500 underline decoration-gray-300 underline-offset-2 @hover:text-gray-700"
+              >
+                Repeats {field.recursive.name}
+              </a>
+            )}
+            {nestedCount > 0 && (
+              <details open={expanded}>
+                <summary class={toggleClass}>
+                  <span aria-hidden="true" class={chevronClass} />
+                  {field.fields.length > 0 ? countLabel(field.fields.length) : "Options"}
+                </summary>
+                <div class={nestedClass}>
+                  <Astro.self fields={field.fields} variants={field.variants} />
+                </div>
+              </details>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  )
+}
+{
+  variantGroups.map((group, index) => (
+    <div class:list={["flex flex-col gap-1", (fields.length > 0 || index > 0) && "mt-3"]}>
+      <p class={labelClass}>{kindLabels[group[0]!.kind]}</p>
+      {group.map((variant) => (
+        <details id={variant.id} class="scroll-mt-30">
+          <summary class={toggleClass}>
+            <span aria-hidden="true" class={chevronClass} />
+            <span class="font-mono text-gray-700">{variant.label}</span>
+            <span class="font-mono text-xs font-normal">{variant.type}</span>
+          </summary>
+          <div class:list={[nestedClass, "flex flex-col gap-2"]}>
+            {variant.description && <div class={descriptionClass} set:html={variant.description} />}
+            <Facts facts={variant.facts} />
+            <Astro.self fields={variant.fields} variants={variant.variants} />
+          </div>
+        </details>
+      ))}
+    </div>
+  ))
+}

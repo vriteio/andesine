@@ -1,0 +1,110 @@
+import { Dropdown, IconButton } from "@andesine/components";
+import { type Component, createSignal, For, Show, Suspense } from "solid-js";
+import { Dynamic } from "solid-js/web";
+import { usePublishing } from "#web/context/publishing";
+import { MenuSection } from "#web/components/menu-section";
+import { useWorkspace } from "#web/context/workspace";
+import { PublishingMenu } from "./publishing-menu";
+import { RightSidePanelIcon, useRightSidePanelOptions } from "./right-side-panel";
+
+interface MobileRightSidePanelMenuProps {
+  entryID?: string;
+  entryTitle?: string;
+}
+
+const MobileRightSidePanelMenu: Component<MobileRightSidePanelMenuProps> = (props) => {
+  const { content } = useWorkspace();
+  const publishing = usePublishing();
+  const options = useRightSidePanelOptions();
+  const [opened, setOpened] = createSignal(false);
+  const publishingAvailable = () => {
+    const entryID = props.entryID;
+
+    if (!entryID || content.offline()) return false;
+
+    const status = content.getEntryPublishingStatus(entryID);
+
+    return (
+      status !== null &&
+      (status !== "outside" || Boolean(publishing.getPublishedEntryRoot(entryID)))
+    );
+  };
+  const available = () => publishingAvailable() || options().length > 0;
+  const title = () => props.entryTitle || "Current entry";
+
+  return (
+    <Show when={available()}>
+      <Dropdown
+        title={title()}
+        opened={opened()}
+        setOpened={setOpened}
+        mobileSheetDragFromContent={false}
+        trigger={() => (
+          <IconButton
+            icon="i-lucide:ellipsis-vertical"
+            variant="ghost"
+            aria-label="Open document tools"
+          />
+        )}
+        class="md:hidden"
+      >
+        <Show when={opened()}>
+          <div class="flex min-h-0 w-full flex-col overflow-y-auto px-1 pb-1 scrollbar-sm scrollbar-white">
+            <h2 class="my-0.5 truncate text-2xl font-semibold">{title()}</h2>
+            <div class="flex flex-col gap-3">
+              <Show when={publishingAvailable() ? props.entryID : undefined} keyed>
+                {(entryID) => (
+                  <MenuSection label="Actions">
+                    <PublishingMenu entryID={entryID} triggerVariant="menu" />
+                  </MenuSection>
+                )}
+              </Show>
+              <Show when={options().length > 0}>
+                <MenuSection label="Activity">
+                  <For each={options()}>
+                    {(option) => {
+                      const [panelOpened, setPanelOpened] = createSignal(false);
+
+                      return (
+                        <Dropdown
+                          title={option.label}
+                          opened={panelOpened()}
+                          setOpened={setPanelOpened}
+                          mobileSheetDragFromContent={false}
+                          class="w-full"
+                          trigger={() => (
+                            <button
+                              type="button"
+                              class="group relative flex min-h-7 w-full flex-1 select-none items-center gap-1 overflow-hidden rounded-lg pl-0.5 text-left font-medium outline-none @hover:bg-gradient-to-r @hover:from-gray-500/10 @hover:to-transparent"
+                            >
+                              <div class="flex h-6 w-6 items-center justify-center">
+                                <RightSidePanelIcon option={option}>
+                                  <div class={`${option.icon} h-5 w-5 text-gray-400`} />
+                                </RightSidePanelIcon>
+                              </div>
+                              <span class="min-w-0 flex-1 truncate">{option.label}</span>
+                            </button>
+                          )}
+                        >
+                          <Show when={panelOpened()}>
+                            <div class="flex min-h-[50dvh] w-full min-w-0 flex-1 flex-col overflow-hidden px-1">
+                              <Suspense fallback={<Dynamic component={option.fallback} />}>
+                                <Dynamic component={option.component} opened />
+                              </Suspense>
+                            </div>
+                          </Show>
+                        </Dropdown>
+                      );
+                    }}
+                  </For>
+                </MenuSection>
+              </Show>
+            </div>
+          </div>
+        </Show>
+      </Dropdown>
+    </Show>
+  );
+};
+
+export { MobileRightSidePanelMenu };

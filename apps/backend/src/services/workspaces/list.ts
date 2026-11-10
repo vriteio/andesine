@@ -1,0 +1,122 @@
+import { entries, memberships, roles, workspaces } from "@andesine/server/database";
+import { getProfileImageURL } from "@andesine/server/assets";
+import { config } from "#backend/lib/config";
+import { getEffectivePlan } from "#backend/lib/billing";
+import { type Permission, type Workspace } from "@andesine/contracts/entities";
+import {
+  toCollectionID,
+  toEntryID,
+  toMembershipID,
+  toRoleID,
+  toUserID,
+  toUUID,
+  toWorkspaceID
+} from "@andesine/contracts/primitives";
+import { db } from "#backend/lib/adapters";
+import { loadAuthorizedCollectionTree, type SessionData } from "#backend/lib/policy";
+import { and, eq, inArray, isNull } from "drizzle-orm";
+
+interface WorkspaceListItem extends Pick<Workspace, "id" | "name" | "logo"> {
+  userID: string;
+  currentEntryID?: string;
+  exampleCollectionID?: string;
+  permissions: Permission[];
+  admin: boolean;
+  subscriptionPlan: string;
+  billingEnabled: boolean;
+}
+
+const listWorkspaces = async (input: {
+  activeUserID: string;
+  userIDs: string[];
+}): Promise<{ workspaces: WorkspaceListItem[] }> => {
+  const userIDs = input.userIDs.map(toUUID);
+
+  if (userIDs.length === 0) return { workspaces: [] };
+
+  const rows = await db
+    .select({
+      id: workspaces.id,
+      name: workspaces.name,
+      logoAssetID: workspaces.logoAssetID,
+      userID: memberships.userID,
+      membershipID: memberships.id,
+      currentEntryID: entries.id,
+      currentEntryCollectionID: entries.collectionID,
+      permissions: roles.permissions,
+      roleID: roles.id,
+      baseRole: roles.baseRole,
+      subscriptionPlan: workspaces.subscriptionPlan,
+      exampleCollectionID: workspaces.exampleCollectionID
+    })
+    .from(memberships)
+    .innerJoin(workspaces, eq(workspaces.id, memberships.workspaceID))
+    .innerJoin(roles, eq(roles.id, memberships.roleID))
+    .leftJoin(
+      entries,
+      and(
+        eq(entries.id, memberships.currentEntryID),
+        eq(entries.workspaceID, memberships.workspaceID),
+        isNull(entries.deletedAt)
+      )
+    )
+    .where(and(inArray(memberships.userID, userIDs), isNull(workspaces.deletingAt)));
+
+  const availableRows = rows.filter((row) => {
+    return row.baseRole === "admin" || getEffectivePlan(row.subscriptionPlan) === "pro";
+  });
+  const items = await Promise.all(
+    availableRows.map(async (row): Promise<WorkspaceListItem> => {
+      const auth: SessionData = {
+        id: `workspace-list:${row.membershipID}`,
+        type: "session",
+        workspaceID: toWorkspaceID(row.id),
+        subscriptionPlan: getEffectivePlan(row.subscriptionPlan),
+        session: {
+          admin: row.baseRole === "admin",
+          memberID: toMembershipID(row.membershipID),
+          permissions: row.permissions,
+          roleID: toRoleID(row.roleID),
+          userID: toUserID(row.userID)
+        }
+      };
+      let currentEntryID: string | undefined;
+
+      if (row.currentEntryID) {
+        const authorization = await loadAuthorizedCollectionTree({ auth });
+        const collectionID = row.currentEntryCollectionID
+          ? toCollectionID(row.currentEntryCollectionID)
+          : null;
+
+        if (authorization.canEntry(collectionID, "entry:read")) {
+          currentEntryID = toEntryID(row.currentEntryID);
+        }
+      }
+
+      return {
+        id: toWorkspaceID(row.id),
+        name: row.name,
+        logo: row.logoAssetID
+          ? getProfileImageURL(config.PUBLIC_API_URL, row.logoAssetID)
+          : undefined,
+        userID: toUserID(row.userID),
+        currentEntryID,
+        exampleCollectionID: row.exampleCollectionID
+          ? toCollectionID(row.exampleCollectionID)
+          : undefined,
+        permissions: row.permissions,
+        admin: row.baseRole === "admin",
+        subscriptionPlan: getEffectivePlan(row.subscriptionPlan),
+        billingEnabled: config.BILLING_ENABLED
+      };
+    })
+  );
+
+  items.sort(
+    (a, b) => Number(b.userID === input.activeUserID) - Number(a.userID === input.activeUserID)
+  );
+
+  return { workspaces: items };
+};
+
+export { listWorkspaces };

@@ -1,0 +1,168 @@
+import {
+  schemaDraftContributors,
+  schemaVersionContributors,
+  schemaVersions
+} from "@andesine/server/database";
+import {
+  assertSchemaFieldKeys,
+  hashSchemaDefinition,
+  createEffectiveSchemaChange
+} from "@andesine/server/schema";
+import { getUserAuthorization, withAuthorization } from "#backend/lib/policy";
+import {
+  type SchemaApplicationResult,
+  schemaDefinitionType,
+  type SchemaDefinition
+} from "@andesine/contracts/schema";
+import {
+  toCollectionID,
+  toSchemaMigrationID,
+  toSchemaVersionID,
+  toUUID
+} from "@andesine/contracts/primitives";
+import { ORPCError } from "@orpc/server";
+import { and, eq, max } from "drizzle-orm";
+import { resolveEnabledSchema, type ResolvedEnabledSchema } from "../../resolve";
+
+interface PlanSchemaApplicationInput {
+  schemaID: string;
+  name?: string;
+  definition: SchemaDefinition;
+}
+
+const createSchemaApplicationPlan = withAuthorization<
+  PlanSchemaApplicationInput,
+  ResolvedEnabledSchema,
+  SchemaApplicationResult
+>(
+  {
+    actions: ({ resolved }) => ({
+      collections: [{ action: "collection:update", collectionID: resolved.collectionID }]
+    }),
+    resolve: resolveEnabledSchema,
+    transaction: "locked-workspace",
+    tree: true
+  },
+  async ({ auth, authorization, database, input, resolved, workspaceID }) => {
+    authorization.assertFullyVisibleSubtree(resolved.collectionID);
+    assertSchemaFieldKeys(input.definition.fields);
+
+    const parsedDefinition = schemaDefinitionType.safeParse(input.definition);
+
+    if (!parsedDefinition.success) {
+      throw new ORPCError("BAD_REQUEST", {
+        message: parsedDefinition.error.issues[0]?.message || "Schema is invalid",
+        data: {
+          issues: parsedDefinition.error.issues,
+          hints: ["Correct the schema draft fields listed in issues, then apply the schema again."]
+        }
+      });
+    }
+
+    const definition = parsedDefinition.data;
+    const definitionHash = hashSchemaDefinition(definition);
+    const [activeLocalVersion] = await database
+      .select({ id: schemaVersions.id, hash: schemaVersions.hash })
+      .from(schemaVersions)
+      .where(
+        and(
+          eq(schemaVersions.workspaceID, workspaceID),
+          eq(schemaVersions.schemaID, resolved.id),
+          eq(schemaVersions.active, true)
+        )
+      );
+
+    if (activeLocalVersion?.hash === definitionHash) {
+      return {
+        changed: false,
+        migrationID: null,
+        schemaVersionID: toSchemaVersionID(activeLocalVersion.id),
+        affectedCollectionIDs: [],
+        totalEntries: 0
+      };
+    }
+
+    const [{ nextVersion }] = await database
+      .select({ nextVersion: max(schemaVersions.version) })
+      .from(schemaVersions)
+      .where(eq(schemaVersions.schemaID, resolved.id));
+    const appliedBy = getUserAuthorization(auth)?.memberID
+      ? toUUID(getUserAuthorization(auth)!.memberID)
+      : null;
+    const [createdVersion] = await database
+      .insert(schemaVersions)
+      .values({
+        workspaceID,
+        schemaID: resolved.id,
+        version: (nextVersion || 0) + 1,
+        definition,
+        hash: definitionHash,
+        name: input.name,
+        reason: "manual",
+        active: false,
+        appliedBy
+      })
+      .returning();
+    const draftContributors = await database
+      .select({ membershipID: schemaDraftContributors.membershipID })
+      .from(schemaDraftContributors)
+      .where(
+        and(
+          eq(schemaDraftContributors.workspaceID, workspaceID),
+          eq(schemaDraftContributors.schemaID, resolved.id)
+        )
+      );
+    const contributorIDs = [
+      ...new Set([
+        ...draftContributors.map(({ membershipID }) => membershipID),
+        ...(appliedBy ? [appliedBy] : [])
+      ])
+    ];
+
+    if (contributorIDs.length > 0) {
+      await database.insert(schemaVersionContributors).values(
+        contributorIDs.map((membershipID) => ({
+          workspaceID,
+          versionID: createdVersion.id,
+          membershipID
+        }))
+      );
+    }
+
+    const plan = await createEffectiveSchemaChange({
+      database,
+      initiatedBy: appliedBy,
+      rootCollectionIDs: [resolved.collectionID],
+      schemaID: resolved.id,
+      schemaVersionID: createdVersion.id,
+      sourceOverrides: [
+        {
+          collectionID: resolved.collectionID,
+          schemaID: resolved.id,
+          versionID: createdVersion.id,
+          definition
+        }
+      ],
+      workspaceID
+    });
+
+    authorization.assertCollectionSources(plan.affectedCollectionIDs, "collection:update");
+
+    if (!plan.migrationID) {
+      throw new ORPCError("INTERNAL_SERVER_ERROR", {
+        message: "Failed to create an effective schema revision"
+      });
+    }
+
+    return {
+      changed: true,
+      migrationID: toSchemaMigrationID(plan.migrationID),
+      schemaVersionID: toSchemaVersionID(createdVersion.id),
+      affectedCollectionIDs: plan.affectedCollectionIDs.map(toCollectionID),
+      totalEntries: plan.totalEntries
+    };
+  }
+);
+
+export { createSchemaApplicationPlan };
+export type { PlanSchemaApplicationInput };

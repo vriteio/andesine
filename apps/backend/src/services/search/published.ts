@@ -1,0 +1,44 @@
+import { type PublishedSearchInput, type PublishedSearchResult } from "@andesine/server/search";
+import { withAuthorization } from "#backend/lib/policy";
+import {
+  createDocumentAuthorizer,
+  resolvePublishedScope
+} from "#backend/lib/search/published-scope";
+import { search } from "#backend/lib/search/retrieval";
+import { normalizePublishingChannelCode } from "#backend/lib/publishing";
+import { toSnapshotID } from "@andesine/contracts/primitives";
+
+const searchPublished = withAuthorization<PublishedSearchInput, undefined, PublishedSearchResult>(
+  {
+    permissions: { session: true, key: ["read:publishing"] }
+  },
+  async ({ auth, database, input, workspaceID }) => {
+    const channel = normalizePublishingChannelCode(input.channel);
+
+    const scope = await resolvePublishedScope(
+      channel,
+      input,
+      database,
+      workspaceID,
+      auth.key?.publishable?.collectionIDs
+    );
+
+    return search({
+      ...input,
+      collectionID: scope.collectionID,
+      allowedCollectionIDs: scope.allowedCollectionIDs,
+      snapshotID: toSnapshotID(scope.snapshotID),
+      channel,
+      authorizeDocuments: createDocumentAuthorizer(
+        channel,
+        scope.snapshotID,
+        database,
+        workspaceID
+      ),
+      scope: "published",
+      workspaceID: auth.workspaceID
+    });
+  }
+);
+
+export { searchPublished };

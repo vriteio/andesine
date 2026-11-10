@@ -1,37 +1,42 @@
 {
-  "name": "vrite",
-  "version": "0.4.4",
+  "version": "1.0.0",
   "license": "AGPL-3.0-only",
   "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "scripts": {
-    "build": "dotenv -- turbo run build --env-mode=loose",
-    "publish": "turbo run publish",
-    "start": "dotenv -- turbo run start --env-mode=loose",
-    "dev": "dotenv -- turbo run dev --env-mode=loose",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "start": "dotenv -- turbo start",
+    "build": "dotenv -- turbo build",
+    "check": "pnpm lint && pnpm format:check",
+    "dev": "dotenv -- turbo dev --filter=@andesine/backend --filter=@andesine/web --filter=@andesine/worker",
+    "services": "docker compose -f compose.dev.yaml up -d --wait",
+    "services:stop": "docker compose -f compose.dev.yaml stop",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix && prettier --write .",
+    "openapi:export": "turbo run openapi:export --filter=@andesine/backend",
+    "api:generate": "turbo run generate:api --filter=andesine",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "turbo run db:generate --filter=@andesine/backend",
+    "db:migrate": "turbo run db:migrate --filter=@andesine/backend",
+    "db:studio": "turbo run db:studio --filter=@andesine/backend",
+    "dev:email": "dotenv -- turbo run dev:email --filter=@andesine/templates",
+    "dev:landing": "dotenv -- turbo dev --filter=@andesine/landing"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^6.2.0",
-    "@typescript-eslint/parser": "^6.2.0",
-    "eslint": "^8.45.0",
-    "eslint-config-prettier": "^8.8.0",
-    "eslint-config-xtrict": "^3.0.1",
-    "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-solid": "^0.12.1",
-    "prettier": "^3.0.2",
-    "prettier-plugin-astro": "^0.11.0",
-    "turbo": "^2.0.3",
-    "typescript": "^5.1.6"
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.1.2",
+    "dotenv-cli": "^11.0.0",
+    "eslint": "^10.8.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.9.0",
+    "prettier": "^3.9.6",
+    "prettier-plugin-astro": "^0.14.1",
+    "turbo": "^2.10.8",
+    "typescript": "6.0.3",
+    "typescript-eslint": "^8.66.0"
   },
   "engines": {
-    "node": ">=18.14.1"
+    "node": ">=24"
   },
-  "dependencies": {
-    "dotenv-cli": "^7.2.1"
-  },
-  "packageManager": "pnpm@8.4.0"
+  "packageManager": "pnpm@11.1.2"
 }

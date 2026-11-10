@@ -1,0 +1,190 @@
+import { useDelegationPermissions } from "#web/lib/policy/delegation";
+import {
+  Button,
+  Fragment,
+  IconButton,
+  Input,
+  Select,
+  Skeleton,
+  Tooltip
+} from "@andesine/components";
+import { createAsync, revalidate, useNavigate, useParams } from "@solidjs/router";
+import { createMutation } from "@tanstack/solid-query";
+import { type Component, createEffect, createSignal, Suspense } from "solid-js";
+import { Dynamic } from "solid-js/web";
+
+import { useNotify } from "#web/context/notifications";
+import { useWorkspace } from "#web/context/workspace";
+import { client } from "#web/lib/api";
+import { Setting } from "../setting";
+import { SettingsSection } from "../settings-section";
+import { NewInviteDialog } from "./new-invite-dialog";
+import { rolesQuery } from "#web/lib/data";
+
+const InviteSettingsPage: Component = () => {
+  const notify = useNotify();
+  const { currentWorkspace } = useWorkspace();
+  const { canGrantRole } = useDelegationPermissions();
+  const navigate = useNavigate();
+  const params = useParams<{ workspaceID?: string }>();
+  const navigateToPeople = () => navigate(`/${params.workspaceID || ""}/settings/people`);
+  const roles = createAsync(() => rolesQuery());
+  const [email, setEmail] = createSignal("");
+  const [selectedRoleID, setSelectedRoleID] = createSignal("");
+  const [inviteLink, setInviteLink] = createSignal("");
+  const [delivery, setDelivery] = createSignal<"sent" | "manual" | "failed">("sent");
+  const isPro = () => currentWorkspace()?.subscriptionPlan === "pro";
+  // On the Free plan, every member is an admin.
+  const availableRoles = () => {
+    return (roles() || []).filter((role) => {
+      return canGrantRole(role) && (isPro() || role.baseRole === "admin");
+    });
+  };
+  const roleOptions = () => {
+    return availableRoles().map((role) => ({ label: role.name, value: role.id }));
+  };
+  const fillError = () => {
+    if (!email().trim()) return "Email address is required";
+    if (!/^\S+@\S+\.\S+$/.test(email().trim())) return "Enter a valid email address";
+    if (!selectedRoleID()) return "Select a role";
+    if (!availableRoles().some((role) => role.id === selectedRoleID())) {
+      return "Select a role within your permissions";
+    }
+
+    return "";
+  };
+  const inviteMutation = createMutation(() => ({
+    mutationFn: (input: { email: string; roleID: string }) => client.memberships.invite(input),
+    onSuccess: async (data) => {
+      setDelivery(data.emailDelivery);
+      setInviteLink(data.inviteLink);
+      await revalidate("invites");
+
+      notify({
+        type: data.emailDelivery === "failed" ? "error" : "success",
+        text:
+          data.emailDelivery === "sent"
+            ? "Invitation email sent"
+            : data.emailDelivery === "manual"
+              ? "Invitation created — share the link manually"
+              : "Invitation created, but its email could not be delivered"
+      });
+    },
+    onError: (error) => {
+      console.error(error);
+      const code =
+        error && typeof error === "object" && "code" in error && typeof error.code === "string"
+          ? error.code
+          : "";
+      notify({
+        type: "error",
+        text:
+          code === "INVITE_ALREADY_PENDING"
+            ? "An invitation is already pending. You can resend or copy it from People."
+            : code === "MEMBERSHIP_ALREADY_EXISTS"
+              ? "This person is already a workspace member."
+              : code === "FORBIDDEN" && error instanceof Error
+                ? error.message
+                : "Failed to create invitation"
+      });
+
+      if (code === "INVITE_ALREADY_PENDING" || code === "MEMBERSHIP_ALREADY_EXISTS") {
+        navigateToPeople();
+      }
+    }
+  }));
+
+  createEffect(() => {
+    const options = availableRoles();
+
+    if (!options.some((role) => role.id === selectedRoleID())) {
+      setSelectedRoleID(options[0]?.id || "");
+    }
+  });
+
+  return (
+    <>
+      <NewInviteDialog
+        link={inviteLink()}
+        delivery={delivery()}
+        onClose={() => {
+          setInviteLink("");
+          navigateToPeople();
+        }}
+      />
+      <div class="flex min-w-0 flex-col">
+        <SettingsSection label="Invitation details">
+          <Setting
+            label="Email address"
+            description="The teammate who should receive this invite"
+            fade={false}
+          >
+            <Input
+              type="email"
+              autocomplete="email"
+              placeholder="colleague@example.com"
+              value={email()}
+              setValue={setEmail}
+              class="w-full max-w-md"
+              onEnter={() => {
+                if (!fillError()) {
+                  inviteMutation.mutate({ email: email().trim(), roleID: selectedRoleID() });
+                }
+              }}
+            />
+          </Setting>
+          <Setting
+            label="Role"
+            description={
+              isPro()
+                ? "Role assigned when the invitation is accepted"
+                : "On the Free plan, every member is an admin"
+            }
+            fade={false}
+          >
+            <Select
+              class="w-full max-w-md"
+              disabled={inviteMutation.isPending || roleOptions().length === 0}
+              options={roleOptions()}
+              placeholder="Select a role"
+              value={selectedRoleID()}
+              setValue={setSelectedRoleID}
+            />
+          </Setting>
+        </SettingsSection>
+        <div class="flex h-4 w-full items-center justify-center">
+          <div class="h-px flex-1 bg-gray-200" />
+        </div>
+        <Suspense fallback={<Skeleton class="h-7 w-full rounded-lg" />}>
+          <div class="flex items-center justify-end gap-2">
+            <Tooltip content="Go back">
+              <IconButton
+                icon="i-lucide:chevron-left"
+                onClick={navigateToPeople}
+                disabled={inviteMutation.isPending}
+              />
+            </Tooltip>
+            <Dynamic
+              component={fillError() ? Tooltip : Fragment}
+              content={fillError()}
+              wrapperClass="flex-1"
+            >
+              <Button
+                class="flex w-full items-center justify-center gap-1"
+                disabled={Boolean(fillError())}
+                loading={inviteMutation.isPending}
+                onClick={() => {
+                  inviteMutation.mutate({ email: email().trim(), roleID: selectedRoleID() });
+                }}
+              >
+                Send invitation
+              </Button>
+            </Dynamic>
+          </div>
+        </Suspense>
+      </div>
+    </>
+  );
+};
+
+export default InviteSettingsPage;

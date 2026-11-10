@@ -1,0 +1,66 @@
+{
+  "name": "@andesine/editor",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./highlight-code": {
+      "types": "./src/lib/highlight-code.ts",
+      "default": "./src/lib/highlight-code.ts"
+    }
+  },
+  "dependencies": {
+    "@andesine/components": "workspace:*",
+    "@andesine/document": "workspace:*",
+    "@codemirror/autocomplete": "^6.20.3",
+    "@codemirror/commands": "^6.11.0",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/language-data": "^6.5.2",
+    "@codemirror/merge": "^6.12.2",
+    "@codemirror/state": "^6.7.4",
+    "@codemirror/view": "^6.43.11",
+    "@hocuspocus/provider": "^4.4.0",
+    "@lezer/highlight": "^1.2.3",
+    "@replit/codemirror-lang-solidity": "^6.0.2",
+    "@solid-primitives/media": "^2.3.6",
+    "@solid-primitives/scheduled": "^1.5.3",
+    "@tiptap/core": "catalog:",
+    "@tiptap/extension-bubble-menu": "catalog:",
+    "@tiptap/extension-collaboration": "catalog:",
+    "@tiptap/extension-collaboration-caret": "catalog:",
+    "@tiptap/extension-drag-handle": "catalog:",
+    "@tiptap/extension-gapcursor": "catalog:",
+    "@tiptap/extension-node-range": "catalog:",
+    "@tiptap/extension-table": "catalog:",
+    "@tiptap/extension-unique-id": "catalog:",
+    "@tiptap/pm": "catalog:",
+    "@tiptap/suggestion": "catalog:",
+    "@tiptap/y-tiptap": "catalog:",
+    "clsx": "^2.1.1",
+    "nanoid": "^6.0.1",
+    "prettier": "^3.9.6",
+    "solid-js": "^1.9.18",
+    "tippy.js": "^6.3.7",
+    "yjs": "catalog:"
+  },
+  "devDependencies": {
+    "vite": "^8.2.0"
+  },
+  "imports": {
+    "#editor/*": {
+      "types": [
+        "./src/*.ts",
+        "./src/*.tsx",
+        "./src/*/index.ts",
+        "./src/*/index.tsx"
+      ],
+      "default": "./src/*"
+    }
+  }
+}

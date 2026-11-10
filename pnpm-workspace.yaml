@@ -1,6 +1,67 @@
 packages:
+  - "packages/**/*"
   - "apps/*"
-  - "apps/**/*"
-  - "packages/*"
-  - "packages/extensions/*"
-  - "packages/sdk/*"
+catalog:
+  "@aws-sdk/client-s3": "^3.1127.0"
+  "@orpc/client": "^1.14.14"
+  "@orpc/contract": "^1.14.14"
+  "@orpc/openapi": "^1.14.14"
+  "@orpc/server": "^1.14.14"
+  "@orpc/zod": "^1.14.14"
+  "@types/pg": "^8.20.3"
+  "base-x": "^5.0.1"
+  "bullmq": "^6.3.1"
+  "drizzle-orm": "^0.45.2"
+  "lexorank": "^1.0.5"
+  "pg": "^8.22.0"
+  "yjs": "^13.6.32"
+  "zod": "4.6.7"
+  "@tiptap/core": "3.30.6"
+  "@tiptap/extension-blockquote": "3.30.6"
+  "@tiptap/extension-bold": "3.30.6"
+  "@tiptap/extension-bubble-menu": "3.30.6"
+  "@tiptap/extension-bullet-list": "3.30.6"
+  "@tiptap/extension-code": "3.30.6"
+  "@tiptap/extension-code-block": "3.30.6"
+  "@tiptap/extension-collaboration": "3.30.6"
+  "@tiptap/extension-collaboration-caret": "3.30.6"
+  "@tiptap/extension-document": "3.30.6"
+  "@tiptap/extension-drag-handle": "3.30.6"
+  "@tiptap/extension-gapcursor": "3.30.6"
+  "@tiptap/extension-hard-break": "3.30.6"
+  "@tiptap/extension-highlight": "3.30.6"
+  "@tiptap/extension-horizontal-rule": "3.30.6"
+  "@tiptap/extension-italic": "3.30.6"
+  "@tiptap/extension-link": "3.30.6"
+  "@tiptap/extension-list-item": "3.30.6"
+  "@tiptap/extension-node-range": "3.30.6"
+  "@tiptap/extension-ordered-list": "3.30.6"
+  "@tiptap/extension-paragraph": "3.30.6"
+  "@tiptap/extension-strike": "3.30.6"
+  "@tiptap/extension-subscript": "3.30.6"
+  "@tiptap/extension-superscript": "3.30.6"
+  "@tiptap/extension-table": "3.30.6"
+  "@tiptap/extension-task-item": "3.30.6"
+  "@tiptap/extension-task-list": "3.30.6"
+  "@tiptap/extension-text": "3.30.6"
+  "@tiptap/extension-unique-id": "3.30.6"
+  "@tiptap/pm": "3.30.6"
+  "@tiptap/suggestion": "3.30.6"
+  "@tiptap/y-tiptap": "3.0.9"
+  "@modelcontextprotocol/sdk": "1.32.2"
+allowBuilds:
+  "@parcel/watcher": false
+  core-js: false
+  esbuild: true
+  msgpackr-extract: false
+  sharp: true
+  sqlite3: false
+  workerd: true
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - "@andesine/sdk@0.1.0"
+  - "@andesine/converters@0.1.0"
+patchedDependencies:
+  '@tiptap/y-tiptap@3.0.9': patches/@tiptap__y-tiptap@3.0.9.patch
+overrides:
+  prosemirror-model: 1.25.12

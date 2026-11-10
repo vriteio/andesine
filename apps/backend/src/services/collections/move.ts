@@ -1,0 +1,372 @@
+import {
+  collections,
+  effectiveSchemaRevisions,
+  schemaMigrationCollections,
+  schemaMigrations
+} from "@andesine/server/database";
+import { createStructureWebhookRecorder } from "@andesine/server/webhooks/recording";
+import { assertContentNameAvailable } from "@andesine/server/content";
+import {
+  createEffectiveSchemaChange,
+  type EffectiveSchemaChangePlan
+} from "@andesine/server/schema";
+import { webhookRetentionPolicy } from "#backend/lib/webhooks/policy";
+import {
+  rankBetweenNeighbors,
+  toCollectionID,
+  toEntryID,
+  toUUID
+} from "@andesine/contracts/primitives";
+import {
+  getDisabledEntryIDs,
+  getSubtreeEntryIDs,
+  isCollectionPublishingEnabled,
+  lockPublishingEntries,
+  loadPublishingTree,
+  type PublishingEntryStatus
+} from "#backend/lib/publishing";
+import { and, asc, eq, isNull, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
+import { ORPCError } from "@orpc/server";
+import {
+  filterAuthorizedEntryIDs,
+  withAuthorization,
+  type AuthorizedServiceInput
+} from "#backend/lib/policy";
+import { prepareSchemaMigrationConnections } from "#backend/collaboration";
+import { submitSchemaMigration } from "#backend/lib/queue";
+import { assertExpectedValue, resolveCollectionTarget } from "#backend/lib/content";
+
+interface MoveCollectionInput {
+  confirmedDataLoss?: boolean;
+  id: string;
+  newParentID?: string | null;
+  newParentPath?: string;
+  newParentSlugPath?: string;
+  expectedParentID?: string | null;
+  index?: number;
+}
+interface ResolvedMoveCollection {
+  newParentID: string | null;
+}
+interface MoveCollectionResult {
+  index: number;
+  newParentID: string | null;
+  publishingEntries: PublishingEntryStatus[];
+  restrictedBoundaryChanged: boolean;
+  schemaMigration: EffectiveSchemaChangePlan;
+}
+
+const parents = alias(collections, "parents");
+
+const planCollectionMove = withAuthorization<
+  MoveCollectionInput,
+  ResolvedMoveCollection,
+  MoveCollectionResult
+>(
+  {
+    actions: ({ input, resolved }) => ({
+      collections: [
+        { action: "collection:move", collectionID: input.id },
+        { action: "collection:create-child", collectionID: resolved.newParentID }
+      ]
+    }),
+    resolve: async ({ database, input, workspaceID }) => {
+      const target = await resolveCollectionTarget(database, workspaceID, {
+        collectionID: input.newParentID,
+        collectionPath: input.newParentPath,
+        collectionSlugPath: input.newParentSlugPath
+      });
+
+      if (target !== undefined) return { newParentID: target };
+
+      // Without a new parent, the collection stays in its parent; the root's children are top level.
+      const [collection] = await database
+        .select({ parentID: collections.parentID, grandparentID: parents.parentID })
+        .from(collections)
+        .innerJoin(parents, eq(parents.id, collections.parentID))
+        .where(
+          and(
+            eq(collections.id, toUUID(input.id)),
+            eq(collections.workspaceID, workspaceID),
+            isNull(collections.deletedAt)
+          )
+        );
+
+      return { newParentID: collection?.grandparentID ? collection.parentID : null };
+    },
+    tree: true,
+    transaction: "locked-workspace"
+  },
+  async ({ auth, authorization, database, input, resolved, workspaceID }) => {
+    const collectionID = toUUID(input.id);
+    const requestedParentID = resolved.newParentID;
+
+    const [collection] = await database
+      .select()
+      .from(collections)
+      .where(
+        and(
+          eq(collections.id, collectionID),
+          eq(collections.workspaceID, workspaceID),
+          isNull(collections.deletedAt)
+        )
+      )
+      .for("update");
+
+    if (!collection) throw new ORPCError("NOT_FOUND");
+    if (!collection.parentID) {
+      throw new ORPCError("NOT_FOUND");
+    }
+
+    const [root] = await database
+      .select({ id: collections.id })
+      .from(collections)
+      .where(
+        and(
+          eq(collections.workspaceID, workspaceID),
+          isNull(collections.parentID),
+          isNull(collections.deletedAt)
+        )
+      );
+    const parentID = requestedParentID || root?.id;
+
+    assertExpectedValue(
+      "parentID",
+      input.expectedParentID,
+      collection.parentID === root?.id ? null : toCollectionID(collection.parentID)
+    );
+
+    if (!parentID || parentID === collectionID) {
+      throw new ORPCError("BAD_REQUEST", { message: "Cannot move a collection into itself" });
+    }
+
+    const [parent] = await database
+      .select({ id: collections.id })
+      .from(collections)
+      .where(
+        and(
+          eq(collections.id, parentID),
+          eq(collections.workspaceID, workspaceID),
+          isNull(collections.deletedAt)
+        )
+      );
+
+    if (!parent) throw new ORPCError("NOT_FOUND", { message: "Parent collection not found" });
+
+    const cycle = await database.execute<{ id: string }>(sql`
+      with recursive subtree as (
+        select id from ${collections}
+        where workspace_id = ${workspaceID}::uuid
+          and id = ${collectionID}::uuid
+          and deleted_at is null
+        union all
+        select child.id
+        from ${collections} child
+        inner join subtree parent on child.parent_id = parent.id
+        where child.workspace_id = ${workspaceID}::uuid
+          and child.deleted_at is null
+      )
+      select id from subtree where id = ${parentID}::uuid limit 1
+    `);
+
+    if (cycle.rows.length > 0) {
+      throw new ORPCError("BAD_REQUEST", {
+        message: "Cannot move a collection into one of its descendants"
+      });
+    }
+
+    await assertContentNameAvailable(database, workspaceID, {
+      kind: "collection",
+      id: collectionID,
+      parentID,
+      name: collection.name
+    });
+
+    const publishingTree = await loadPublishingTree(database, workspaceID);
+    const wasPublishingEnabled = isCollectionPublishingEnabled(publishingTree, collectionID);
+    const parentPublishingEnabled = isCollectionPublishingEnabled(publishingTree, parentID);
+    const willBePublishingEnabled = collection.publishingEnabled || parentPublishingEnabled;
+    const restrictedBoundaryChanged =
+      authorization.getRestrictedBoundaryID(collection.parentID) !==
+      authorization.getRestrictedBoundaryID(parentID);
+
+    if (wasPublishingEnabled && !willBePublishingEnabled) {
+      authorization.assertFullyVisibleSubtree(input.id);
+    }
+
+    const siblings = await database
+      .select({ id: collections.id, rank: collections.rank })
+      .from(collections)
+      .where(
+        and(
+          eq(collections.workspaceID, workspaceID),
+          eq(collections.parentID, parentID),
+          isNull(collections.deletedAt)
+        )
+      )
+      .orderBy(asc(collections.rank));
+    const destination = siblings.filter((sibling) => sibling.id !== collectionID);
+    const existingIndex = siblings.findIndex((sibling) => sibling.id === collectionID);
+    const requestedIndex = input.index ?? (existingIndex >= 0 ? existingIndex : destination.length);
+    const index = Math.min(Math.max(requestedIndex, 0), destination.length);
+    const rank =
+      parentID === collection.parentID && index === existingIndex
+        ? collection.rank
+        : rankBetweenNeighbors(destination[index - 1]?.rank, destination[index]?.rank);
+    const webhooks = await createStructureWebhookRecorder({
+      retentionPolicy: webhookRetentionPolicy,
+      database,
+      workspaceID,
+      collectionIDs: [collectionID],
+      includeDescendants: true
+    });
+
+    await database
+      .update(collections)
+      .set({ parentID, rank, updatedAt: new Date() })
+      .where(
+        and(
+          eq(collections.id, collectionID),
+          eq(collections.workspaceID, workspaceID),
+          isNull(collections.deletedAt)
+        )
+      );
+
+    const treeCollection = publishingTree.collections.find((item) => item.id === collectionID);
+    let publishingEntryIDs: string[] = [];
+
+    if (treeCollection) treeCollection.parentID = parentID;
+
+    if (wasPublishingEnabled && !willBePublishingEnabled) {
+      const disabledEntryIDs = await getDisabledEntryIDs(
+        database,
+        workspaceID,
+        publishingTree,
+        collectionID
+      );
+
+      if (disabledEntryIDs.length > 0) {
+        await lockPublishingEntries(database, workspaceID, disabledEntryIDs);
+      }
+
+      publishingEntryIDs = disabledEntryIDs;
+    } else if (!wasPublishingEnabled && willBePublishingEnabled) {
+      publishingEntryIDs = await getSubtreeEntryIDs(
+        database,
+        workspaceID,
+        publishingTree,
+        collectionID
+      );
+    }
+
+    const affectedPublishingEntryIDs = await filterAuthorizedEntryIDs({
+      action: "publishing:publish",
+      authorization,
+      database,
+      entryIDs: publishingEntryIDs,
+      workspaceID
+    });
+    const schemaMigration = await createEffectiveSchemaChange({
+      database,
+      initiatedBy: auth.session?.memberID ? toUUID(auth.session.memberID) : null,
+      rootCollectionIDs: [collectionID],
+      schemaID: null,
+      schemaVersionID: null,
+      workspaceID
+    });
+
+    // A move migrates the moved subtree, so it needs update rights on all of it.
+    authorization.assertCollectionSources(
+      schemaMigration.affectedCollectionIDs,
+      "collection:update"
+    );
+
+    if (schemaMigration.migrationID && !input.confirmedDataLoss) {
+      throw new ORPCError("PRECONDITION_FAILED", {
+        message: "Schema migrations require explicit data-loss confirmation",
+        data: {
+          hints: [
+            "Review the affected content first. Set confirmedDataLoss to true only after accepting the possible data loss."
+          ]
+        }
+      });
+    }
+
+    if (schemaMigration.migrationID) {
+      const entryIDs = await getSubtreeEntryIDs(
+        database,
+        workspaceID,
+        publishingTree,
+        collectionID
+      );
+      const [sourceParentRevision] = await database
+        .select({ id: effectiveSchemaRevisions.id })
+        .from(effectiveSchemaRevisions)
+        .where(
+          and(
+            eq(effectiveSchemaRevisions.collectionID, collection.parentID),
+            eq(effectiveSchemaRevisions.active, true)
+          )
+        );
+
+      await database
+        .update(schemaMigrations)
+        .set({
+          collectionMove: {
+            collectionID,
+            sourceParentID: collection.parentID,
+            sourceOrder: collection.rank,
+            entryIDs
+          }
+        })
+        .where(eq(schemaMigrations.id, schemaMigration.migrationID));
+      // Keep the original parent available and unchanged until recovery is no longer needed.
+      await database
+        .insert(schemaMigrationCollections)
+        .values({
+          workspaceID,
+          migrationID: schemaMigration.migrationID,
+          collectionID: collection.parentID,
+          sourceRevisionID: sourceParentRevision?.id || null,
+          targetRevisionID: sourceParentRevision?.id || null
+        })
+        .onConflictDoNothing();
+      schemaMigration.affectedCollectionIDs = [
+        ...new Set([...schemaMigration.affectedCollectionIDs, collection.parentID])
+      ];
+      schemaMigration.moveSourceCollectionID = collection.parentID;
+    }
+
+    await webhooks.record();
+
+    return {
+      index,
+      newParentID: requestedParentID ? toCollectionID(requestedParentID) : null,
+      publishingEntries: affectedPublishingEntryIDs.map((entryID) => ({
+        entryID: toEntryID(entryID),
+        hasUnpublishedChanges: true,
+        versionID: null
+      })),
+      restrictedBoundaryChanged,
+      schemaMigration
+    };
+  }
+);
+const moveCollection = async (
+  input: MoveCollectionInput & AuthorizedServiceInput
+): Promise<MoveCollectionResult> => {
+  const result = await planCollectionMove(input);
+
+  await submitSchemaMigration({
+    ...result.schemaMigration,
+    prepareAffectedContent: () => {
+      return prepareSchemaMigrationConnections(result.schemaMigration.affectedCollectionIDs);
+    },
+    workspaceID: input.auth.workspaceID
+  });
+
+  return result;
+};
+
+export { moveCollection };

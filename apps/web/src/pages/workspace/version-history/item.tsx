@@ -1,0 +1,300 @@
+import {
+  type Card,
+  DropdownArea,
+  DropdownMenu,
+  IconButton,
+  type MenuItem,
+  Tooltip,
+  useDropdown
+} from "@andesine/components";
+import { type Component, type ComponentProps, createSignal, For, Show } from "solid-js";
+import { TimeAgo } from "#web/components/time-ago";
+import { TreeItem, useTree } from "#web/components/tree";
+import { usePublishing } from "#web/context/publishing";
+import { type VersionReason } from "#web/lib/data";
+import { MAX_VERSION_NAME_LENGTH } from "../version-dialogs";
+import clsx from "clsx";
+
+interface VersionHistoryVersion {
+  active?: boolean;
+  contributorIDs: string[];
+  createdAt: string;
+  entryName?: string;
+  id: string;
+  name: string | null;
+  reason: VersionReason;
+  version?: number;
+}
+interface VersionHistoryItemProps {
+  active: boolean;
+  assignedChannels?: string[];
+  canManage: boolean;
+  canManagePublishing?: boolean;
+  contributorNames: string[];
+  expanded?: boolean;
+  onAssign?(channel: string): void;
+  onCompare?(): void;
+  onOpen(): void;
+  onRename(name: string): void;
+  onRevert?(): void;
+  onToggleTimeframe?(): void;
+  onUnpublish?(channel: string): void;
+  timeframe?: string;
+  version: VersionHistoryVersion;
+  fallbackLabel?: string;
+}
+
+const versionReasonLabels: Record<VersionReason, string> = {
+  "auto": "Automatic",
+  "manual": "Manual",
+  "revert": "Revert",
+  "schema-migration": "Schema migration",
+  "import": "Import"
+};
+
+const VersionHistoryItem: Component<VersionHistoryItemProps> = (props) => {
+  const [, { setRenaming }] = useTree();
+  const publishing = usePublishing();
+  const { closeMobileDropdowns } = useDropdown();
+  const [menuOpened, setMenuOpened] = createSignal(false);
+  const label = () =>
+    props.version.name || props.version.entryName || props.fallbackLabel || "Version";
+  const assignedChannels = () => props.assignedChannels || [];
+  const publishedToCurrentChannel = () => {
+    return assignedChannels().includes(publishing.channel());
+  };
+  const timeframeToggleLabel = () => `${props.expanded ? "Hide" : "Show"} ${props.timeframe}`;
+  const versionIcon = () => (
+    <div
+      class={clsx(
+        "h-5 w-5",
+        props.version.reason === "auto" && "i-lucide:circle-dot-dashed",
+        props.version.reason === "manual" && "i-lucide:circle-dot",
+        props.version.reason === "revert" && "i-lucide:refresh-ccw-dot",
+        props.version.reason === "schema-migration" && "i-lucide:database-backup",
+        props.version.reason === "import" && "i-lucide:import",
+        props.active || (props.expanded && props.onToggleTimeframe)
+          ? "bg-gradient-to-tr from-secondary via-primary to-secondary"
+          : publishedToCurrentChannel()
+            ? "text-green-500"
+            : "text-gray-400 media-mouse:group-hover/version-icon:text-gray-600"
+      )}
+    />
+  );
+  const startRenaming = () => {
+    setMenuOpened(false);
+    queueMicrotask(() => setRenaming(props.version.id));
+  };
+  const navigate = (callback: () => void) => {
+    callback();
+    closeMobileDropdowns();
+  };
+  const options = (): Array<MenuItem[]> => {
+    const onCompare = props.onCompare;
+    const itemOptions: MenuItem[] = onCompare
+      ? [
+          {
+            label: "Compare with current",
+            icon: "i-lucide:git-compare-arrows",
+            onClick: () => navigate(onCompare)
+          }
+        ]
+      : [];
+
+    if (props.canManage) {
+      itemOptions.push({
+        label: "Rename version",
+        icon: "i-lucide:pencil",
+        onClick: startRenaming
+      });
+
+      if (props.onRevert) {
+        itemOptions.push({
+          label: "Revert to version",
+          icon: "i-lucide:history",
+          onClick: props.onRevert
+        });
+      }
+    }
+
+    const groups: Array<MenuItem[]> = [itemOptions];
+
+    if (props.onToggleTimeframe) {
+      groups.unshift([
+        {
+          label: timeframeToggleLabel(),
+          icon: props.expanded ? "i-lucide:chevrons-down-up" : "i-lucide:chevrons-up-down",
+          onClick: props.onToggleTimeframe
+        }
+      ]);
+    }
+
+    if (props.canManagePublishing && props.onAssign && props.onUnpublish) {
+      const channel = publishing.channel();
+      const published = assignedChannels().includes(channel);
+      const onAssign = props.onAssign;
+      const onUnpublish = props.onUnpublish;
+      const publishingOptions: MenuItem[] = [];
+
+      if (published) {
+        publishingOptions.push({
+          label: "Unpublish",
+          icon: "i-material-symbols:unpublished-outline-rounded",
+          onClick: () => onUnpublish(channel)
+        });
+      } else {
+        publishingOptions.push({
+          label: "Publish",
+          icon: "i-material-symbols:publish-rounded",
+          onClick: () => onAssign(channel)
+        });
+      }
+
+      groups.push(publishingOptions);
+    }
+
+    return groups.filter((group) => group.length > 0);
+  };
+
+  return (
+    <DropdownArea>
+      <TreeItem
+        id={props.version.id}
+        label={label()}
+        labelMaxLength={MAX_VERSION_NAME_LENGTH}
+        topLevel
+        selectable
+        highlighted={props.active}
+        icon={
+          <Show
+            when={props.onToggleTimeframe}
+            fallback={<div class="h-6 w-6 flex justify-center items-center">{versionIcon()}</div>}
+          >
+            {(onToggle) => (
+              <button
+                type="button"
+                aria-label={timeframeToggleLabel()}
+                title={timeframeToggleLabel()}
+                class="group/version-icon absolute inset-y-0 left-0 flex w-7 items-start pl-0.5 pt-0.5"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onToggle()();
+                }}
+              >
+                <div class="relative h-6 w-6 flex justify-center items-center">
+                  {versionIcon()}
+                  <div class="absolute -bottom-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-[0.1875rem] bg-gray-200 media-mouse:group-hover:bg-gray-300">
+                    <div
+                      class={clsx(
+                        "h-2.5 w-2.5 text-gray-500",
+                        props.expanded ? "i-lucide:chevron-down" : "i-lucide:chevron-right"
+                      )}
+                    />
+                  </div>
+                </div>
+              </button>
+            )}
+          </Show>
+        }
+        iconClass="self-start mt-0.5"
+        onClick={() => navigate(props.onOpen)}
+        onRename={props.onRename}
+        renderLabel={(currentLabel) => (
+          <div class="flex min-w-0 flex-1 flex-col leading-tight">
+            <div class="flex min-w-0 flex-1">{currentLabel}</div>
+            <div class="flex w-full min-w-0 items-center gap-1 text-left text-xs font-normal text-gray-400">
+              <TimeAgo
+                class="!items-start !justify-start"
+                date={props.version.createdAt}
+                meta={versionReasonLabels[props.version.reason]}
+                enabled={!menuOpened()}
+                offset={{ mainAxis: 8 }}
+                placement="bottom-start"
+              />
+              <Show when={props.version.contributorIDs.length > 0}>
+                <span class="h-3 w-px shrink-0 bg-gray-400 opacity-20" />
+                <Tooltip
+                  content={
+                    <div class="flex flex-col items-start gap-px">
+                      <span class="font-mono text-[80%] opacity-50 mb-0.5">Contributors</span>
+                      <For each={props.contributorNames}>
+                        {(name) => <span class="text-xs">{name}</span>}
+                      </For>
+                    </div>
+                  }
+                  enabled={!menuOpened()}
+                  offset={{ mainAxis: 8 }}
+                  placement="bottom-start"
+                  fixed
+                >
+                  <span class="flex shrink-0 items-center gap-0.5">
+                    <span>{props.version.contributorIDs.length}</span>
+                    <span class="i-lucide:users h-3 w-3" />
+                  </span>
+                </Tooltip>
+              </Show>
+              <Show when={assignedChannels().length > 0}>
+                <span class="h-3 w-px shrink-0 bg-gray-400 opacity-20" />
+                <Tooltip
+                  content={
+                    <div class="flex flex-col items-start gap-px">
+                      <span class="font-mono text-[80%] opacity-50 mb-0.5">Published to</span>
+                      <For each={assignedChannels()}>
+                        {(channel) => (
+                          <span class="text-xs">{publishing.getChannelName(channel)}</span>
+                        )}
+                      </For>
+                    </div>
+                  }
+                  enabled={!menuOpened()}
+                  offset={{ mainAxis: 8 }}
+                  placement="bottom-start"
+                  fixed
+                >
+                  <span class="flex shrink-0 items-center gap-0.5">
+                    <span>{assignedChannels().length}</span>
+                    <span class="i-lucide:radio h-3 w-3" />
+                  </span>
+                </Tooltip>
+              </Show>
+            </div>
+          </div>
+        )}
+        actions={
+          <Show when={options().length > 0}>
+            <DropdownMenu
+              class="self-start"
+              title={label()}
+              cardProps={
+                {
+                  "class": "w-48",
+                  "data-tree-interaction": ""
+                } as Partial<ComponentProps<typeof Card>>
+              }
+              items={options()}
+              opened={menuOpened()}
+              mobileSheetDragFromContent={false}
+              portal={false}
+              setOpened={setMenuOpened}
+              onClick={(event) => event.stopPropagation()}
+              trigger={() => (
+                <div
+                  class={
+                    !menuOpened()
+                      ? "shrink-0 opacity-20 media-mouse:hidden media-mouse:group-hover:flex media-mouse:group-hover:opacity-100"
+                      : "shrink-0"
+                  }
+                >
+                  <IconButton icon="i-lucide:ellipsis-vertical" variant="ghost" />
+                </div>
+              )}
+            />
+          </Show>
+        }
+      />
+    </DropdownArea>
+  );
+};
+
+export { VersionHistoryItem };
+export type { VersionHistoryVersion };

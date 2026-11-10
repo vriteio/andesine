@@ -1,0 +1,323 @@
+import { useDelegationPermissions } from "#web/lib/policy/delegation";
+import {
+  Button,
+  Fragment,
+  IconButton,
+  Input,
+  Skeleton,
+  ToggleGroup,
+  Tooltip
+} from "@andesine/components";
+import { createAsync, useNavigate, useParams } from "@solidjs/router";
+import { type Component, createEffect, createSignal, Suspense, For, Show } from "solid-js";
+import { Dynamic } from "solid-js/web";
+
+import { useNotify } from "#web/context/notifications";
+import { config, type Permission } from "#web/lib/api";
+import { Setting } from "../setting";
+import { SettingsSection } from "../settings-section";
+import { rolesQuery, useRoleMutations } from "#web/lib/data";
+import { type AccessLevel, createPermissionAccessMapper } from "#web/lib/permissions";
+
+type Resource =
+  | "api_keys"
+  | "billing"
+  | "content"
+  | "publishing"
+  | "restricted_collections"
+  | "memberships"
+  | "roles"
+  | "webhooks"
+  | "extensions"
+  | "workspace";
+type ResourceAccess = Record<Resource, AccessLevel>;
+
+const resources: Array<{
+  description: string;
+  id: Resource;
+  label: string;
+  defaultView?: boolean;
+}> = [
+  {
+    id: "content",
+    label: "Content",
+    description: "Create, edit, and delete entries and collections",
+    defaultView: true
+  },
+  {
+    id: "publishing",
+    label: "Publishing",
+    description: "Enable publishing and manage publishing channels",
+    defaultView: true
+  },
+  {
+    id: "restricted_collections",
+    label: "Restricted collections",
+    description: "View restricted content and manage restriction boundaries"
+  },
+  {
+    id: "api_keys",
+    label: "API keys",
+    description: "View or manage workspace API credentials"
+  },
+  {
+    id: "billing",
+    label: "Billing",
+    description: "View or manage subscriptions and payments"
+  },
+  {
+    id: "webhooks",
+    label: "Webhooks",
+    description: "View or manage webhooks"
+  },
+  {
+    id: "extensions",
+    label: "Extensions",
+    description: "Install, configure, and remove workspace extensions",
+    defaultView: true
+  },
+  {
+    id: "memberships",
+    label: "Members",
+    description: "Invite and remove members, manage groups, and assign permitted roles",
+    defaultView: true
+  },
+  {
+    id: "roles",
+    label: "Roles",
+    description: "Manage custom roles within your own permissions",
+    defaultView: true
+  },
+  {
+    id: "workspace",
+    label: "Workspace",
+    description: "Manage workspace settings",
+    defaultView: true
+  }
+];
+const visibleResources = resources.filter((resource) => {
+  return resource.id !== "extensions" || config.PUBLIC_EXTENSIONS_ENABLED;
+});
+const { accessToPermissions, emptyAccess, permissionsToAccess } = createPermissionAccessMapper<
+  Resource,
+  Permission
+>({
+  resources: [
+    { id: "api_keys", read: "read:api_keys", write: "api_keys" },
+    { id: "billing", read: "read:billing", write: "billing" },
+    { id: "webhooks", read: "read:webhooks", write: "webhooks" },
+    { id: "content", write: "content" },
+    { id: "publishing", write: "publishing" },
+    {
+      id: "restricted_collections",
+      read: "read:restricted_collections",
+      write: "restricted_collections"
+    },
+    { id: "memberships", write: "memberships" },
+    { id: "roles", write: "roles" },
+    { id: "extensions", write: "extensions" },
+    { id: "workspace", write: "workspace" }
+  ]
+});
+
+const RoleSettingsPage: Component = () => {
+  const notify = useNotify();
+  const { canGrantRole, canGrantRolePermission } = useDelegationPermissions();
+  const navigate = useNavigate();
+  const params = useParams<{ workspaceID?: string; roleID?: string }>();
+  const roleID = () => params.roleID || null;
+  const navigateToPeople = () => navigate(`/${params.workspaceID || ""}/settings/people`);
+  const roles = createAsync(async () => {
+    try {
+      return await rolesQuery();
+    } catch (error) {
+      console.error(error);
+
+      return null;
+    }
+  });
+  const currentRole = () => {
+    return roleID() ? roles()?.find((role) => role.id === roleID()) : null;
+  };
+  const [roleName, setRoleName] = createSignal("");
+  const [roleNameServerError, setRoleNameServerError] = createSignal("");
+  const { createRoleMutation, updateRoleMutation } = useRoleMutations({
+    navigateToPeople,
+    setDuplicateNameError: setRoleNameServerError
+  });
+  const [resourceAccess, setResourceAccess] = createSignal<ResourceAccess>(emptyAccess());
+  const formUnavailable = () => {
+    const role = currentRole();
+
+    return Boolean(roleID() && roles() && (!role || role.baseRole || !canGrantRole(role)));
+  };
+  const roleNameError = () => {
+    if (!roleName().trim()) return "Role name is required";
+    if (roleName().trim().length > 50) return "Role name must be 50 characters or fewer";
+    const normalizedName = roleName().trim().toLowerCase();
+    const duplicate = roles()?.some((role) => {
+      return role.id !== roleID() && role.name.trim().toLowerCase() === normalizedName;
+    });
+
+    if (duplicate) return "A role with this name already exists";
+
+    return roleNameServerError();
+  };
+  const fillError = () => {
+    if (roleID() && roles() && !currentRole()) return "Role could not be found";
+    if (currentRole()?.baseRole) return "System roles cannot be edited";
+    if (!canGrantRole({ permissions: accessToPermissions(resourceAccess()) }))
+      return "You cannot grant permissions beyond your own role";
+    if (roleNameError()) return roleNameError();
+
+    return "";
+  };
+  const mutationPending = () => createRoleMutation.isPending || updateRoleMutation.isPending;
+
+  createEffect(() => {
+    const availableRoles = roles();
+    const role = currentRole();
+
+    if (
+      roleID() &&
+      availableRoles !== undefined &&
+      (!role || role.baseRole || !canGrantRole(role))
+    ) {
+      const text =
+        availableRoles === null
+          ? "Role is unavailable"
+          : role?.baseRole
+            ? "System roles cannot be edited"
+            : role
+              ? "You cannot manage a role with permissions beyond your own"
+              : "Role not found";
+
+      notify({ type: "error", text });
+      navigate(`/${params.workspaceID || ""}/settings/people`, { replace: true });
+
+      return;
+    }
+
+    if (role) {
+      setRoleName(role.name);
+      setResourceAccess(permissionsToAccess(role.permissions));
+    }
+  });
+
+  return (
+    <>
+      <div class="flex min-w-0 flex-col">
+        <SettingsSection label="Role details">
+          <Setting label="Name" description="A clear name for this role" fade={false}>
+            <Input
+              maxlength={50}
+              placeholder="Content manager"
+              value={roleName()}
+              setValue={(name) => {
+                setRoleName(name);
+                setRoleNameServerError("");
+              }}
+              class="min-w-0"
+              slotWrapperClass="w-full max-w-md"
+              slot={() => (
+                <Show when={roleNameError()}>
+                  {(error) => (
+                    <div class="absolute right-2">
+                      <Tooltip content={error()} placement="top">
+                        <div
+                          class="i-lucide:triangle-alert h-4.5 w-4.5 text-red-500"
+                          title={error()}
+                          aria-label={error()}
+                          tabindex="0"
+                        />
+                      </Tooltip>
+                    </div>
+                  )}
+                </Show>
+              )}
+              disabled={formUnavailable() || mutationPending()}
+            />
+          </Setting>
+        </SettingsSection>
+        <SettingsSection label="Permissions">
+          <For each={visibleResources}>
+            {(resource) => (
+              <Setting label={resource.label} description={resource.description} fade={false} hover>
+                <ToggleGroup
+                  disabled={formUnavailable() || mutationPending()}
+                  value={resourceAccess()[resource.id]}
+                  setValue={(value) => {
+                    setResourceAccess((previous) => ({
+                      ...previous,
+                      [resource.id]: value as AccessLevel
+                    }));
+                  }}
+                  options={(resource.defaultView === true
+                    ? [
+                        { value: "default", label: "View" },
+                        { value: "write", label: "Manage" }
+                      ]
+                    : [
+                        { value: "default", label: "None" },
+                        { value: "read", label: "View" },
+                        { value: "write", label: "Manage" }
+                      ]
+                  ).filter(
+                    (option) =>
+                      option.value === "default" ||
+                      canGrantRolePermission(
+                        (option.value === "write"
+                          ? resource.id
+                          : `read:${resource.id}`) as Permission
+                      )
+                  )}
+                />
+              </Setting>
+            )}
+          </For>
+        </SettingsSection>
+        <div class="flex h-4 w-full items-center justify-center">
+          <div class="h-px flex-1 bg-gray-200" />
+        </div>
+        <Suspense fallback={<Skeleton class="h-9 w-full rounded-lg" />}>
+          <div class="flex items-center justify-end gap-2">
+            <Tooltip content="Go back">
+              <IconButton
+                icon="i-lucide:chevron-left"
+                onClick={navigateToPeople}
+                disabled={mutationPending()}
+              />
+            </Tooltip>
+            <Dynamic
+              component={fillError() ? Tooltip : Fragment}
+              content={fillError()}
+              wrapperClass="flex-1"
+            >
+              <Button
+                class="flex w-full items-center justify-center gap-1"
+                disabled={Boolean(fillError())}
+                loading={mutationPending()}
+                onClick={() => {
+                  const input = {
+                    name: roleName().trim(),
+                    permissions: accessToPermissions(resourceAccess())
+                  };
+
+                  if (roleID()) {
+                    updateRoleMutation.mutate({ id: roleID()!, ...input });
+                  } else {
+                    createRoleMutation.mutate(input);
+                  }
+                }}
+              >
+                {roleID() ? "Save changes" : "Create role"}
+              </Button>
+            </Dynamic>
+          </div>
+        </Suspense>
+      </div>
+    </>
+  );
+};
+
+export default RoleSettingsPage;

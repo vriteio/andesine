@@ -1,0 +1,127 @@
+import { versionRetentionConfigSchema } from "@andesine/server/versioning/config";
+import { searchConfigSchema } from "@andesine/server/search/config";
+import { assetConfigSchema } from "@andesine/server/assets/config";
+import { encryptionConfigSchema } from "@andesine/server/security/config";
+import { webhookDestinationConfigSchema } from "@andesine/server/webhooks/destination/config";
+import { billingConfigSchema } from "#backend/lib/billing/config-schema";
+import * as z from "zod";
+import { extensionsConfigSchema } from "@andesine/server/extensions/config";
+
+const cookieDomain = z.preprocess(
+  (value) => {
+    if (typeof value !== "string") return value;
+
+    return value.trim().toLowerCase().replace(/^\.+/, "") || undefined;
+  },
+  z
+    .string()
+    .regex(
+      /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)(?:\.(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?))*$/
+    )
+    .optional()
+);
+const secret = z.string().trim().min(32, "SECRET must contain at least 32 characters");
+const configSchema = billingConfigSchema.safeExtend({
+  NODE_ENV: z.string().optional().describe("Node environment"),
+  // Hosts
+  PUBLIC_API_HOST: z.string().describe("Public host of the API"),
+  PUBLIC_APP_HOST: z.string().describe("Public host of the app"),
+  PUBLIC_COOKIE_DOMAIN: cookieDomain.describe(
+    "Domain to set for cookies in cross-subdomain setups"
+  ),
+  PUBLIC_SECURE: z
+    .stringbool()
+    .optional()
+    .describe("Whether to use secure connections for public URLs"),
+  TRUST_PROXY: z
+    .string()
+    .trim()
+    .optional()
+    .describe(
+      "Addresses or CIDR ranges of the proxies in front of the API, comma-separated, to read client IPs from X-Forwarded-For"
+    ),
+  ORIGIN_SECRET: z
+    .string()
+    .trim()
+    .min(32, "ORIGIN_SECRET must contain at least 32 characters")
+    .optional()
+    .describe("Secret that the proxy adds as X-Origin-Secret; other requests are refused"),
+  TRUSTED_CLIENT_IP_HEADER: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .optional()
+    .describe("Header with the client IP that the proxy sets; trusted only with ORIGIN_SECRET"),
+  SSR_SECRET: z
+    .string()
+    .trim()
+    .min(32, "SSR_SECRET must contain at least 32 characters")
+    .optional()
+    .describe("Secret that server rendering adds as X-SSR-Secret, so its X-Visitor-IP counts"),
+  ...extensionsConfigSchema.shape,
+  // Secrets
+  SECRET: secret.describe("Secret for signing tokens and encrypting data"),
+  ...encryptionConfigSchema.shape,
+  ...webhookDestinationConfigSchema.shape,
+  // Database
+  DATABASE_URL: z.string().describe("PostgreSQL connection URL"),
+  QUEUE_REDIS_URL: z.string().describe("Background job Redis connection URL"),
+  REDIS_URL: z.string().describe("Redis connection URL"),
+  // Search
+  ...searchConfigSchema.shape,
+  // Email
+  SENDER_EMAIL: z.string().describe("Email address to send emails from"),
+  SENDER_NAME: z.string().describe("Name to send emails from"),
+  // UserCheck
+  USER_CHECK: z
+    .union([z.stringbool(), z.string()])
+    .optional()
+    .describe("UserCheck configuration (`true` or API key to enable)"),
+  // Resend
+  RESEND_API_KEY: z.string().optional().describe("Resend API key"),
+  // SMTP
+  SMTP_HOST: z.string().optional().describe("SMTP host for sending emails"),
+  SMTP_PORT: z.coerce.number().optional().describe("SMTP port for sending emails"),
+  SMTP_USERNAME: z.string().optional().describe("SMTP username for sending emails"),
+  SMTP_PASSWORD: z.string().optional().describe("SMTP password for sending emails"),
+  SMTP_SECURE: z.stringbool().optional().describe("Use secure connection for SMTP"),
+  // Google OAuth
+  GOOGLE_CLIENT_ID: z.string().optional().describe("Google OAuth client ID"),
+  GOOGLE_CLIENT_SECRET: z.string().optional().describe("Google OAuth client secret"),
+  // GitHub App
+  GITHUB_CLIENT_ID: z.string().optional().describe("GitHub OAuth client ID"),
+  GITHUB_CLIENT_SECRET: z.string().optional().describe("GitHub OAuth client secret"),
+  // Passkeys (WebAuthn)
+  PASSKEY_RP_ID: z.string().optional().describe("WebAuthn Relying Party ID"),
+  PASSKEY_ORIGIN: z.string().optional().describe("WebAuthn expected origin"),
+  OPENAI_APPS_CHALLENGE: z
+    .string()
+    .optional()
+    .describe("Domain check token from the OpenAI plugin dashboard, served on the API host"),
+  GLAMA_CLAIM: z
+    .string()
+    .regex(/^glama_claim_[\w-]{32}$/)
+    .optional()
+    .describe("Glama listing claim token, served at /.well-known/glama.json on the API host"),
+  // Product analytics (cloud); off when unset
+  PUBLIC_POSTHOG_KEY: z.string().min(1).optional().describe("PostHog project API key (public)"),
+  POSTHOG_HOST: z
+    .url()
+    .optional()
+    .describe("PostHog host for servers, e.g. https://us.i.posthog.com"),
+  POSTHOG_PERSONAL_API_KEY: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("PostHog personal API key with the person:write scope"),
+  POSTHOG_PROJECT_ID: z.string().min(1).optional().describe("PostHog project ID"),
+  POSTHOG_API_HOST: z
+    .url()
+    .optional()
+    .describe("PostHog app host for private API requests, e.g. https://us.posthog.com"),
+  // Version retention
+  ...versionRetentionConfigSchema.shape,
+  ...assetConfigSchema.shape
+});
+
+export { configSchema };

@@ -1,0 +1,35 @@
+import {
+  SEARCH_INDEXING_DEFAULT_JOB_OPTIONS,
+  SEARCH_INDEXING_QUEUE_NAME
+} from "@andesine/server/queue";
+import { config } from "#backend/lib/config";
+import { Queue, createNodeRedisClient } from "bullmq";
+import { createClient } from "redis";
+
+const queueRedisClient = createClient({ url: config.QUEUE_REDIS_URL });
+
+queueRedisClient.on("error", (error) => {
+  console.error("Background job Redis client error", { error });
+});
+// BullMQ can't recover when its first connection attempt fails, e.g. before Redis starts.
+await queueRedisClient.connect();
+
+const queueRedisConnection = createNodeRedisClient(queueRedisClient);
+const searchIndexingQueue = new Queue(SEARCH_INDEXING_QUEUE_NAME, {
+  connection: queueRedisConnection,
+  defaultJobOptions: SEARCH_INDEXING_DEFAULT_JOB_OPTIONS,
+  skipWaitingForReady: true
+});
+const closeQueues = async (): Promise<void> => {
+  await searchIndexingQueue.close();
+
+  if (queueRedisClient.isOpen) {
+    await queueRedisConnection.quit();
+  }
+};
+
+searchIndexingQueue.on("error", (error) => {
+  console.error("Search indexing queue error", { error });
+});
+
+export { closeQueues, searchIndexingQueue };

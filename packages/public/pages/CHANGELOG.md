@@ -1,0 +1,146 @@
+# Changelog
+
+## 0.10.0
+
+- Files sources read an optional `meta.json` file in each folder, in the Fumadocs format: `title`
+  sets the folder's navigation label, and `pages` sets the order of its pages and subfolders.
+
+## 0.9.0
+
+- **Breaking:** links in the configuration (`links`, `cta`, `socialLinks`, a section's `links`, and
+  icon links) must be an `entry:` link, a site path, or an `http:`, `https:`, `mailto:`, or `tel:`
+  URL. The build refuses others, e.g. `javascript:` URLs.
+- A card's `href` that isn't such a URL, e.g. a `javascript:` URL, no longer makes the card a link.
+- `astro` 7.3.8 (an XSS fix in JSX and MDX rendering), `zod` 4.6.7, `@scalar/openapi-parser`
+  0.29.20, and `@scalar/json-magic` 0.18.0 (with a fixed `undici`).
+
+## 0.8.0
+
+- **Breaking:** icon classes, in the configuration and in content, e.g. a card's `icon`, use only
+  Lucide, Tabler, or Simple Icons (`i-lucide:…`, `i-tabler:…`, `i-simple-icons:…`). The package
+  depends on their `@iconify-json/*` packages in place of all of `@iconify/json`.
+- A card's `href` can be an `entry:<entryID>` link, which the build links to the entry's page.
+- `poweredBy: false` hides the "Powered by Andesine Pages" credit at the end of the navigation.
+- Links in the configuration (`links`, `cta`, `socialLinks`, and a section's `links`) can point to
+  an entry with `entry:<entryID>`, with an optional `#anchor`: the build links the entry's page in
+  an Andesine source. A link to an entry without a page, e.g. an unpublished one, is left out.
+- **Breaking:** `<Disclosure>` is renamed to `<Accordion>`, with the same props; the template's
+  component is `accordion.astro`.
+- Andesine code blocks have titles: the code card shows the title in place of the language, and
+  a `<CodeGroup>` tab label is the title, then the language. A repeated label gets a number, as
+  in the editor.
+- **Breaking:** `<Steps>` contains `<Step title>` elements, and `<FileTree>` contains `<Folder name>`
+  (with more folders and files) and `<File name />` elements, in place of Markdown lists. The
+  `FileTreeItem` type and the list parsing are removed. The template has `step.astro`,
+  `folder.astro`, and `file.astro`.
+- **Breaking:** the template's `<Card>` has no `description` prop; its content is the card's text.
+- Add `channel` to Andesine sources (default `published`). The build reads that channel's
+  publication, and search and AI answers use it too.
+- Redirects to the first page use status 307, so static builds redirect at once; with the
+  default 302, Astro's redirect page waited 2 seconds.
+
+## 0.7.0
+
+- No changes; versioned with the other public Andesine packages.
+
+## 0.6.0
+
+- No changes; versioned with the other public Andesine packages.
+
+## 0.4.0
+
+First release. The version follows the other Andesine packages.
+
+- Add `defineConfig()` with config validation.
+- Add the `andesine()` Astro integration. It reads `andesine.config.ts`, sets the
+  Astro site options, and renders pages with the template layout.
+- Add the files source: Markdown and MDX pages from a directory, with folder
+  groups, index landing pages, frontmatter validation, and slugs.
+- Add sections, source mounts, URL collision checks, and redirects to the first
+  page.
+- Add `PageContext` with navigation, breadcrumbs, headings, and previous and next
+  links.
+- Add MDX content components: a Sätteri plugin prepares `Tabs`, `CodeGroup`, and
+  `FileTree`, and a Shiki transformer adds code block titles. Pages render with the
+  template's component map.
+- Add Andesine sources: build-time loading with copied images, entry property
+  mapping, collection navigation, and content rendering with the MDX component map
+  and Andesine heading anchors.
+- Add search: a Pagefind index of local pages (build and development), a server
+  endpoint for Andesine published search, and a browser client with results
+  grouped by source.
+- Add AI answers: a streaming server endpoint for Andesine sources, with cited
+  pages mapped to page URLs and follow-up history, the `answers` source option,
+  a browser answer client, and `renderAnswer` for safe answer Markdown.
+- Add outputs: Markdown alternatives at `index.md`, `sitemap.xml`, `llms.txt`,
+  `robots.txt`, and a not-found page.
+- Add canonical URLs, Markdown URLs, and page actions to `PageContext`, and the
+  `pageActions` option.
+- Add the `summary` and `aside` slots for Andesine entry fragments.
+- Remove the `slug`, `navigationLabel`, and `navigationHidden` Andesine properties.
+  URLs and labels come from the publication tree, and an `index` entry is its
+  collection's landing page.
+- Support Cloudflare Workers for build-time Andesine sources: no social renderer
+  externals with the Cloudflare adapter, and `@iconify/json` loads on first use.
+- Read the API key with `getSecret()` from `astro:env/server`, so each adapter
+  supplies it from its platform. Hashing uses Web Crypto, fonts decode with
+  `atob`, and the build-time image cache is a separate module, so server routes
+  do not import Node.js modules.
+- Add the OpenAPI source (`type: "openapi"`): OpenAPI 3.0 and 3.1 specs from a
+  file or an HTTPS URL, validated and normalized at build time, with overview,
+  tag, and operation pages, navigation, Markdown alternatives, and search.
+- Add `OperationView` for the template's `Operation` component: descriptions,
+  parameters, request bodies, responses with field trees, and generated cURL,
+  JavaScript, and Python examples, which `x-codeSamples` can replace. Add
+  `method` to navigation items.
+- Add operation embeds: `<Operation source id />` in MDX and the `Operation`
+  element in Andesine content, resolved with `getOperationView()` from
+  `@andesine/pages/astro`. Markdown alternatives link to the operations. Boolean
+  props show or hide the description, authentication, parameters, request body,
+  responses, and examples; embeds hide the examples by default.
+- Add OpenAPI operation pages to the development search index.
+- Add the `tagPages` option of OpenAPI sources, to leave out tag landing pages.
+- Add `links` to sections, shown after the site's links on the section's pages, and
+  `PageContext.links` with the links of the current page.
+- Replace the git commit dates of file pages with an optional `updatedAt`
+  frontmatter field. Pages without it have no date.
+- Add agent outputs: `llms-full.txt`, `/.well-known/llms.txt`, `.md` page aliases,
+  an index note in each Markdown page, the `agents.instructions` option,
+  absolute links in file page Markdown, an "Optional" section in `llms.txt`, and
+  `lastmod` in the sitemap.
+- Serve Markdown for requests with `Accept: text/markdown` in development.
+- Add `<Visibility for="agents">` and `<Visibility for="humans">` for MDX files
+  and Andesine content.
+- Add schema.org JSON-LD, the last update date, and `noindex` for pages hidden
+  from search to `PageContext`.
+- Add social images: a generated image for each page from the template's social
+  card, the `social` option, and `page.image`. `satori` and `@resvg/resvg-js`
+  are optional peer dependencies.
+- The integration no longer sets `trailingSlash: "always"`, so pages answer with
+  and without the trailing slash. Package URLs still end with a slash.
+- The answers endpoint allows 10 questions a minute for each client address.
+- The integration inlines a script into each page's `<head>` that restores saved
+  navigation tree groups before the first paint.
+- Add the `socialLinks` option for footer icon links. `links` are icon links at the
+  top of the navigation, and need an `icon`.
+- Add `PageContext.meta`, `PageContext.fragments`, and `site.storageKey`;
+  `renderTabs` and `readFileTreeItems` in `@andesine/pages/astro` (replacing
+  `renderPanels`); and `groupAnswerSources`. The answer client takes earlier
+  turns and enforces the API history limits. Social card fonts accept data URLs, and
+  `SocialCardData.showSiteName` follows `logo.title`.
+- Add the `html` template tag for social card markup: it escapes values and
+  leaves out `false`, `null`, and `undefined`. Card markup can use `tw` classes.
+- Add `format` (`icon` or `full`) and `alt` to the `logo` option, also in social
+  cards.
+- Add the `sectionsDisplay` option: sections as header tabs, or as links at the
+  top of the navigation.
+- The development search index uses the plain text of MDX pages, without JSX tags and
+  Markdown syntax, like the built index.
+- Add a generated `skill.md` with agentskills.io and `skills` CLI discovery
+  indexes, and the `agents.skill` option for your own skill file.
+- Add the `publicKey` option to Andesine sources. With a publishable key, search and
+  AI answers call the Andesine API from browsers, and the build writes a JSON map of
+  entry URLs in place of the `/_andesine/` server routes, so the site stays static.
+  Without a secret key, the build also reads the content with the publishable key.
+- Search and AI answers show "Too many…" only for short rate limits. Used-up monthly
+  quotas and spending limits show that the feature is not available now.

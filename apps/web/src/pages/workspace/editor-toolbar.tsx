@@ -1,0 +1,294 @@
+import { useParams, useSearchParams } from "@solidjs/router";
+import { type Component, createMemo, For, Show, Suspense } from "solid-js";
+import { useWorkspace } from "#web/context/workspace";
+import { useRouteData } from "#web/lib/navigation";
+import { Button, IconButton, Skeleton, Tooltip } from "@andesine/components";
+import { MobileRightSidePanelMenu } from "./mobile-right-side-panel-menu";
+import { RightSidePanelToggle, useRightSidePanelOptions } from "./right-side-panel";
+import {
+  createPublishedVersionDetailsResponse,
+  createSchemaVersionDetailsResponse,
+  createVersionDetailsResponse
+} from "#web/lib/data";
+import { PublishingMenu } from "./publishing-menu";
+import { SchemaApplication } from "./schema-application";
+import clsx from "clsx";
+import { usePublishing } from "#web/context/publishing";
+
+const EditorToolbar: Component = () => {
+  const params = useParams<{ slug?: string; workspaceID?: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { content, currentWorkspace } = useWorkspace();
+  const publishing = usePublishing();
+  const routeData = useRouteData();
+  const versionID = () => (typeof searchParams.version === "string" ? searchParams.version : "");
+  const snapshotID = () => {
+    return typeof searchParams.snapshotID === "string" ? searchParams.snapshotID : "";
+  };
+  const comparing = () => searchParams.compare === "current";
+  const inlineComparison = () => searchParams.compareView === "inline";
+  const comparisonLayoutLabel = () => (inlineComparison() ? "Show side by side" : "Show inline");
+  const versionResponse = createVersionDetailsResponse(() => {
+    return params.slug?.startsWith("ent_") && !snapshotID() ? versionID() : "";
+  });
+  const publishedVersionResponse = createPublishedVersionDetailsResponse(
+    () => (params.slug?.startsWith("ent_") && snapshotID() ? params.slug : ""),
+    snapshotID
+  );
+  const schemaVersionResponse = createSchemaVersionDetailsResponse(() => {
+    return params.slug?.startsWith("sch_") ? versionID() : "";
+  });
+  const version = () => {
+    return snapshotID() ? publishedVersionResponse()?.result : versionResponse()?.result;
+  };
+  const schemaVersion = () => schemaVersionResponse()?.result;
+  const collection = createMemo(() => {
+    if (!params.slug?.startsWith("coll_") || routeData()) return null;
+
+    return content.collections.get({ collectionID: params.slug });
+  });
+  const entry = createMemo(() => {
+    if (!params.slug?.startsWith("ent_") || routeData()) return null;
+
+    return content.entriesCollection().findOne({ id: params.slug });
+  });
+  const deletedEntry = createMemo(() => {
+    if (!params.slug?.startsWith("ent_") || routeData()) return null;
+
+    return publishing.getDeletedEntry(params.slug);
+  });
+  const schema = createMemo(() => {
+    if (!params.slug?.startsWith("sch_") || routeData()) return null;
+
+    return content.schemasCollection().findOne({ id: params.slug });
+  });
+  const schemaCollection = createMemo(() => {
+    const collectionID = schema()?.collectionID;
+
+    return collectionID ? content.collections.get({ collectionID }) : null;
+  });
+  const rightSidePanelOptions = useRightSidePanelOptions();
+  // No document is open, or it wasn't found; those views show their own message.
+  const documentMissing = () => {
+    if (routeData() || versionID()) return false;
+    if (!params.slug) return true;
+
+    const documentSlug = params.slug.startsWith("ent_") || params.slug.startsWith("sch_");
+    const documentFound = Boolean(entry() || deletedEntry() || schema());
+
+    return documentSlug && !documentFound && !content.loading();
+  };
+  const isContentTitleLoading = () => {
+    return Boolean(
+      params.slug && !routeData() && !collection() && !entry() && !schema() && content.loading()
+    );
+  };
+  const items = createMemo(() => {
+    const data = routeData();
+
+    if (data) {
+      return data.breadcrumbs;
+    }
+
+    if (!params.slug) return [];
+
+    const currentCollection = collection();
+    const currentEntry = entry();
+    const currentDeletedEntry = deletedEntry();
+
+    if (currentCollection) return [{ label: currentCollection.name }];
+    if (currentEntry) return [{ label: currentEntry.name }];
+    if (currentDeletedEntry) return [{ label: currentDeletedEntry.name }];
+    if (schema()) {
+      return [{ label: schemaCollection()?.name || "Collection" }, { label: "Schema" }];
+    }
+    if (content.loading()) return [];
+
+    return [
+      {
+        label: params.slug.startsWith("coll_")
+          ? "Collection not found"
+          : params.slug.startsWith("sch_")
+            ? "Schema not found"
+            : "Entry not found"
+      }
+    ];
+  });
+  const returnToCurrent = () => {
+    setSearchParams({
+      version: undefined,
+      snapshotID: undefined,
+      compare: undefined,
+      compareView: undefined
+    });
+  };
+
+  return (
+    <Show when={!documentMissing() || rightSidePanelOptions().length > 0}>
+      <div class="relative z-20 h-11 w-full shrink-0 items-center justify-center gap-1 p-2 flex">
+        <Show when={items().length > 0 || isContentTitleLoading()}>
+          <span class="flex-1 inline-flex items-center justify-center text-base font-medium leading-[1] bg-gray-50/2.5 backdrop-blur-sm rounded-lg overflow-hidden mr-4">
+            <Show
+              when={currentWorkspace()?.logo}
+              fallback={<IconButton icon="i-lucide:hexagon" variant="ghost" badge />}
+            >
+              {(logo) => (
+                <span class="flex h-7 w-7 shrink-0 items-center justify-center">
+                  <img
+                    src={logo()}
+                    alt={currentWorkspace()?.name || "Workspace"}
+                    class="h-4 w-4 rounded object-contain"
+                  />
+                </span>
+              )}
+            </Show>
+            <For each={items()}>
+              {(item, index) => {
+                const currentEntry = () => {
+                  return Boolean(versionID() && index() === items().length - 1);
+                };
+
+                return (
+                  <>
+                    <span class="h-4 text-gray-200 flex justify-center items-center w-2">/</span>
+                    <Button
+                      variant="ghost"
+                      hover={Boolean(item.path || currentEntry())}
+                      link={
+                        item.path && !currentEntry()
+                          ? `/${params.workspaceID || ""}${item.path}`
+                          : undefined
+                      }
+                      onClick={currentEntry() ? returnToCurrent : undefined}
+                      badge={!item.path}
+                      class={clsx(
+                        "text-sm p-0.5 m-0.5 max-w-64 truncate",
+                        currentEntry() && "cursor-pointer"
+                      )}
+                      title={item.label}
+                    >
+                      {item.label}
+                    </Button>
+                  </>
+                );
+              }}
+            </For>
+            <Show when={isContentTitleLoading()}>
+              <span class="h-4 text-gray-200 flex justify-center items-center w-2">/</span>
+              <Skeleton class="m-0.5 h-4 w-20 rounded" />
+            </Show>
+            <Show when={versionID()}>
+              <Suspense
+                fallback={
+                  <>
+                    <span class="flex h-4 w-2 items-center justify-center text-gray-200">/</span>
+                    <Skeleton class="m-0.5 h-4 w-24 rounded" />
+                  </>
+                }
+              >
+                <Show when={version()?.entryID === params.slug ? version() : undefined}>
+                  {(currentVersion) => (
+                    <>
+                      <span class="flex h-4 w-2 items-center justify-center text-gray-200">/</span>
+                      <Button
+                        badge
+                        variant="ghost"
+                        class="m-0.5 max-w-64 gap-1 p-0.5 text-sm"
+                        title={currentVersion().name || currentVersion().entryName}
+                      >
+                        <span
+                          class={clsx(
+                            "h-3.5 w-3.5 shrink-0 text-gray-400",
+                            comparing() ? "i-lucide:git-compare-arrows" : "i-lucide:eye"
+                          )}
+                        />
+                        <span class="truncate">
+                          {currentVersion().name || currentVersion().entryName}
+                        </span>
+                      </Button>
+                    </>
+                  )}
+                </Show>
+                <Show
+                  when={schemaVersion()?.schemaID === params.slug ? schemaVersion() : undefined}
+                >
+                  {(currentVersion) => (
+                    <>
+                      <span class="flex h-4 w-2 items-center justify-center text-gray-200">/</span>
+                      <Button
+                        badge
+                        variant="ghost"
+                        class="m-0.5 max-w-64 gap-1 p-0.5 text-sm"
+                        title={currentVersion().name || `Version ${currentVersion().version}`}
+                      >
+                        <span
+                          class={clsx(
+                            "h-3.5 w-3.5 shrink-0 text-gray-400",
+                            comparing() ? "i-lucide:git-compare-arrows" : "i-lucide:eye"
+                          )}
+                        />
+                        <span class="truncate">
+                          {currentVersion().name || `Version ${currentVersion().version}`}
+                        </span>
+                      </Button>
+                    </>
+                  )}
+                </Show>
+              </Suspense>
+            </Show>
+            <div class="flex-1" />
+          </span>
+        </Show>
+        <Show when={comparing()}>
+          <Tooltip
+            content={comparisonLayoutLabel()}
+            placement="bottom"
+            wrapperClass="hidden @7xl/editor:flex"
+            fixed
+          >
+            <IconButton
+              icon={inlineComparison() ? "i-lucide:columns-2" : "i-lucide:rows-2"}
+              variant="ghost"
+              onClick={() => {
+                setSearchParams({ compareView: inlineComparison() ? undefined : "inline" });
+              }}
+              aria-label={comparisonLayoutLabel()}
+            />
+          </Tooltip>
+        </Show>
+        <Show when={versionID()}>
+          <Tooltip content="Return to current" placement="bottom" fixed>
+            <IconButton
+              icon="i-lucide:file-output"
+              variant="ghost"
+              onClick={returnToCurrent}
+              aria-label="Return to current"
+            />
+          </Tooltip>
+        </Show>
+        <Show when={!versionID() && entry()}>
+          {(currentEntry) => (
+            <div class="hidden md:block">
+              <PublishingMenu entryID={currentEntry().id} />
+            </div>
+          )}
+        </Show>
+        <Show when={!content.offline() && !versionID() && schema() && schemaCollection()}>
+          <SchemaApplication
+            schemaID={schema()!.id}
+            collectionID={schemaCollection()!.id}
+            collectionName={schemaCollection()!.name}
+            hasUnappliedChanges={schema()!.hasUnappliedChanges}
+          />
+        </Show>
+        <RightSidePanelToggle />
+        <MobileRightSidePanelMenu
+          entryID={!versionID() ? entry()?.id : undefined}
+          entryTitle={items().at(-1)?.label}
+        />
+      </div>
+    </Show>
+  );
+};
+
+export { EditorToolbar };
