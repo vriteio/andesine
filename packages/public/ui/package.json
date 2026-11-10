@@ -1,6 +1,6 @@
 {
   "name": "@andesine/ui",
-  "version": "0.9.0",
+  "version": "0.11.0",
   "description": "Headless documentation components for Andesine Pages",
   "type": "module",
   "license": "MIT",

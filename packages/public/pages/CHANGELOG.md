@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.0
+
+- Redirect pages (the site root and each source mount without a page) are blank, so no
+  "Redirecting" text shows before the redirect. They have an `andesine:redirect` meta tag, so a host
+  can send an HTTP redirect instead.
+
 ## 0.10.0
 
 - Files sources read an optional `meta.json` file in each folder, in the Fumadocs format: `title`

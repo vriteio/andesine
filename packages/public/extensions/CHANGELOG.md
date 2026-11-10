@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.0
+
+- No changes; versioned with the other public Andesine packages.
+
 ## 0.9.0
 
 - **Breaking:** the `zod` peer dependency is `^4.6.7`, which fixes memory exhaustion on large

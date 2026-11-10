@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.0
+
+- The `api` commands use the current API spec: updated summaries and descriptions, and ID
+  patterns and URL formats are checked by the API instead of the CLI.
+- Requires `@andesine/sdk` 0.11.0.
+
 ## 0.9.0
 
 - **Breaking:** `ANDESINE_API_KEY` is sent to a `baseURL` from `andesine.json` only when it is the

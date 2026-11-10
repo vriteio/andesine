@@ -1,6 +1,6 @@
 {
   "name": "andesine",
-  "version": "0.9.0",
+  "version": "0.11.0",
   "description": "Command-line tools for Andesine",
   "mcpName": "app.andesine/andesine",
   "type": "module",

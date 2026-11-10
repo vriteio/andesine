@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.0
+
+- The Ask AI methods state the current cost: 10 AI credits per answer.
+- The bundled OpenAPI spec has an SDK code sample (`x-codeSamples`) for each operation with an
+  example, so API references built from it show an SDK tab.
+
 ## 0.9.0
 
 - `schemas.updateDraft` replaces the fields of a schema draft; people editing the draft see the
