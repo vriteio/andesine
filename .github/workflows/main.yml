@@ -1,7 +1,6 @@
 name: Build & publish
-on:  
+on:
   workflow_dispatch:
-    branches: [main]
 
 env:
   REGISTRY: ghcr.io
@@ -46,6 +45,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
+            type=ref,event=branch
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5

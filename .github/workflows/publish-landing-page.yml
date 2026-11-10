@@ -1,4 +1,7 @@
-on: [push, workflow_dispatch]
+on:
+  push:
+    branches: [vrite]
+  workflow_dispatch:
 
 jobs:
   publish:
@@ -18,9 +21,7 @@ jobs:
       - name: Build
         run: pnpm install && pnpm run build --filter @vrite/landing-page
       - name: Publish to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: vrite-landing-page
-          directory: apps/landing-page/dist
+        run: npx -y wrangler@4 pages deploy apps/landing-page/dist --project-name=vrite-landing-page
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
