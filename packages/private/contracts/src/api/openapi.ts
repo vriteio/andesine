@@ -5,6 +5,11 @@ import { publicSchemas } from "./schemas/public";
 import { isPublicAPI, type ORPCMeta } from "./base";
 import { type APIContract } from "./index";
 
+const sdkSetup = `import { createClient } from "@andesine/sdk";
+
+const client = createClient({ apiKey: process.env.ANDESINE_API_KEY });
+
+`;
 const generateOpenAPI = async (contract: APIContract, baseURL: string) => {
   const metadata = new Map<string, ORPCMeta>();
   const document = await new OpenAPIGenerator({
@@ -96,6 +101,23 @@ const generateOpenAPI = async (contract: APIContract, baseURL: string) => {
 
       if (example) {
         Object.assign(operation, { "x-sdk-example": example });
+
+        if (!extensionOnly) {
+          const input = JSON.stringify(example, null, 2)
+            .replace('"<binary file>"', 'new Blob([imageBytes], { type: "image/png" })')
+            .replace(/"([A-Za-z_$][\w$]*)":/g, "$1:");
+
+          Object.assign(operation, {
+            "x-codeSamples": [
+              {
+                lang: "typescript",
+                label: "SDK",
+                source: `${sdkSetup}await client.${operation.operationId}(${input});`
+              }
+            ]
+          });
+        }
+
         for (const parameter of operation.parameters || []) {
           if ("name" in parameter && parameter.name in example) {
             parameter.example = example[parameter.name];

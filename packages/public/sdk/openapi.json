@@ -4385,7 +4385,14 @@
             }
           }
         },
-        "x-sdk-example": { "query": "mountains", "limit": 10 }
+        "x-sdk-example": { "query": "mountains", "limit": 10 },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.assets.search({\n  query: \"mountains\",\n  limit: 10\n});"
+          }
+        ]
       }
     },
     "/assets/imports": {
@@ -4748,7 +4755,14 @@
           "entryID": "ent_example",
           "url": "https://example.com/image.png",
           "checkDuplicates": true
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.assets.importURL({\n  assetID: \"ast_example\",\n  entryID: \"ent_example\",\n  url: \"https://example.com/image.png\",\n  checkDuplicates: true\n});"
+          }
+        ]
       }
     },
     "/assets/uploads": {
@@ -5102,7 +5116,14 @@
           "filename": "image.png",
           "byteSize": 1024,
           "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.assets.register({\n  assetID: \"ast_example\",\n  entryID: \"ent_example\",\n  filename: \"image.png\",\n  byteSize: 1024,\n  checksum: \"0000000000000000000000000000000000000000000000000000000000000000\"\n});"
+          }
+        ]
       }
     },
     "/assets/{assetID}/upload": {
@@ -5445,7 +5466,14 @@
             }
           }
         },
-        "x-sdk-example": { "assetID": "ast_example", "file": "<binary file>" }
+        "x-sdk-example": { "assetID": "ast_example", "file": "<binary file>" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.assets.upload({\n  assetID: \"ast_example\",\n  file: new Blob([imageBytes], { type: \"image/png\" })\n});"
+          }
+        ]
       }
     },
     "/assets/{assetID}": {
@@ -5753,7 +5781,14 @@
             }
           }
         },
-        "x-sdk-example": { "assetID": "ast_example", "entryID": "ent_example" }
+        "x-sdk-example": { "assetID": "ast_example", "entryID": "ent_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.assets.get({\n  assetID: \"ast_example\",\n  entryID: \"ent_example\"\n});"
+          }
+        ]
       }
     },
     "/identity": {
@@ -6323,7 +6358,14 @@
             "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
-        "x-sdk-example": {}
+        "x-sdk-example": {},
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.instance.get({});"
+          }
+        ]
       }
     },
     "/entries": {
@@ -6863,7 +6905,14 @@
             "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
-        "x-sdk-example": { "name": "Getting started", "collectionID": "coll_example" }
+        "x-sdk-example": { "name": "Getting started", "collectionID": "coll_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.entries.create({\n  name: \"Getting started\",\n  collectionID: \"coll_example\"\n});"
+          }
+        ]
       }
     },
     "/entries/bulk/delete": {
@@ -7197,7 +7246,14 @@
             "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
-        "x-sdk-example": { "ids": ["ent_example"] }
+        "x-sdk-example": { "ids": ["ent_example"] },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.entries.bulkDelete({\n  ids: [\n    \"ent_example\"\n  ]\n});"
+          }
+        ]
       }
     },
     "/entries/{id}": {
@@ -7519,7 +7575,14 @@
             }
           }
         },
-        "x-sdk-example": { "id": "ent_example" }
+        "x-sdk-example": { "id": "ent_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.entries.delete({\n  id: \"ent_example\"\n});"
+          }
+        ]
       },
       "put": {
         "operationId": "entries.update",
@@ -8240,7 +8303,14 @@
           }
         },
         "x-idempotent": true,
-        "x-sdk-example": { "id": "ent_example", "name": "Installation" }
+        "x-sdk-example": { "id": "ent_example", "name": "Installation" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.entries.update({\n  id: \"ent_example\",\n  name: \"Installation\"\n});"
+          }
+        ]
       }
     },
     "/entries/bulk/update": {
@@ -8995,7 +9065,14 @@
               "operations": [{ "type": "replaceText", "find": "v1", "replace": "v2" }]
             }
           ]
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.entries.bulkUpdate({\n  items: [\n    {\n      id: \"ent_example\",\n      operations: [\n        {\n          type: \"replaceText\",\n          find: \"v1\",\n          replace: \"v2\"\n        }\n      ]\n    }\n  ]\n});"
+          }
+        ]
       }
     },
     "/entries/{id}/move": {
@@ -9402,7 +9479,14 @@
             }
           }
         },
-        "x-sdk-example": { "id": "ent_example", "collectionID": "coll_example" }
+        "x-sdk-example": { "id": "ent_example", "collectionID": "coll_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.entries.move({\n  id: \"ent_example\",\n  collectionID: \"coll_example\"\n});"
+          }
+        ]
       }
     },
     "/entries/bulk/move": {
@@ -9825,7 +9909,14 @@
             "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
-        "x-sdk-example": { "items": [{ "id": "ent_example", "collectionPath": "/Guides" }] }
+        "x-sdk-example": { "items": [{ "id": "ent_example", "collectionPath": "/Guides" }] },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.entries.bulkMove({\n  items: [\n    {\n      id: \"ent_example\",\n      collectionPath: \"/Guides\"\n    }\n  ]\n});"
+          }
+        ]
       }
     },
     "/entries/get": {
@@ -10306,7 +10397,14 @@
             }
           }
         },
-        "x-sdk-example": { "id": "ent_example" }
+        "x-sdk-example": { "id": "ent_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.entries.get({\n  id: \"ent_example\"\n});"
+          }
+        ]
       }
     },
     "/entries/list": {
@@ -10651,7 +10749,14 @@
             }
           }
         },
-        "x-sdk-example": { "collectionID": "coll_example", "limit": 20 }
+        "x-sdk-example": { "collectionID": "coll_example", "limit": 20 },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.entries.list({\n  collectionID: \"coll_example\",\n  limit: 20\n});"
+          }
+        ]
       }
     },
     "/extensions/self": {
@@ -18136,7 +18241,14 @@
             "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
-        "x-sdk-example": { "name": "Documentation", "parentID": "coll_example" }
+        "x-sdk-example": { "name": "Documentation", "parentID": "coll_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.collections.create({\n  name: \"Documentation\",\n  parentID: \"coll_example\"\n});"
+          }
+        ]
       }
     },
     "/collections/bulk/delete": {
@@ -18470,7 +18582,14 @@
             "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
-        "x-sdk-example": { "ids": ["coll_example"] }
+        "x-sdk-example": { "ids": ["coll_example"] },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.collections.bulkDelete({\n  ids: [\n    \"coll_example\"\n  ]\n});"
+          }
+        ]
       }
     },
     "/collections/{id}": {
@@ -18792,7 +18911,14 @@
             }
           }
         },
-        "x-sdk-example": { "id": "coll_example" }
+        "x-sdk-example": { "id": "coll_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.collections.delete({\n  id: \"coll_example\"\n});"
+          }
+        ]
       },
       "put": {
         "operationId": "collections.update",
@@ -19170,7 +19296,14 @@
             }
           }
         },
-        "x-sdk-example": { "id": "coll_example", "name": "Guides" }
+        "x-sdk-example": { "id": "coll_example", "name": "Guides" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.collections.update({\n  id: \"coll_example\",\n  name: \"Guides\"\n});"
+          }
+        ]
       }
     },
     "/collections/{id}/move": {
@@ -19579,7 +19712,14 @@
             }
           }
         },
-        "x-sdk-example": { "id": "coll_example", "newParentID": "coll_parent" }
+        "x-sdk-example": { "id": "coll_example", "newParentID": "coll_parent" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.collections.move({\n  id: \"coll_example\",\n  newParentID: \"coll_parent\"\n});"
+          }
+        ]
       }
     },
     "/collections/get": {
@@ -19897,7 +20037,14 @@
             }
           }
         },
-        "x-sdk-example": { "collectionID": "coll_example" }
+        "x-sdk-example": { "collectionID": "coll_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.collections.get({\n  collectionID: \"coll_example\"\n});"
+          }
+        ]
       }
     },
     "/collections/list": {
@@ -20242,7 +20389,14 @@
             }
           }
         },
-        "x-sdk-example": { "collectionID": "coll_example", "limit": 20 }
+        "x-sdk-example": { "collectionID": "coll_example", "limit": 20 },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.collections.list({\n  collectionID: \"coll_example\",\n  limit: 20\n});"
+          }
+        ]
       }
     },
     "/content/collections": {
@@ -20614,7 +20768,14 @@
             }
           }
         },
-        "x-sdk-example": { "channel": "published", "limit": 20 }
+        "x-sdk-example": { "channel": "published", "limit": 20 },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.content.listCollections({\n  channel: \"published\",\n  limit: 20\n});"
+          }
+        ]
       }
     },
     "/content/entries": {
@@ -21032,7 +21193,14 @@
             }
           }
         },
-        "x-sdk-example": { "channel": "published", "limit": 20 }
+        "x-sdk-example": { "channel": "published", "limit": 20 },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.content.listEntries({\n  channel: \"published\",\n  limit: 20\n});"
+          }
+        ]
       }
     },
     "/content/entries/schema": {
@@ -21382,7 +21550,14 @@
             }
           }
         },
-        "x-sdk-example": { "entryID": "ent_example", "channel": "published" }
+        "x-sdk-example": { "entryID": "ent_example", "channel": "published" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.content.getSchema({\n  entryID: \"ent_example\",\n  channel: \"published\"\n});"
+          }
+        ]
       }
     },
     "/content/assets/{workspaceID}/{snapshotID}/{entryID}/{assetID}/{variant}": {
@@ -21710,6 +21885,13 @@
           "assetID": "ast_example",
           "variant": "display"
         },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.content.getAsset({\n  workspaceID: \"ws_example\",\n  snapshotID: \"snp_example\",\n  entryID: \"ent_example\",\n  assetID: \"ast_example\",\n  variant: \"display\"\n});"
+          }
+        ],
         "security": []
       }
     },
@@ -22106,7 +22288,14 @@
             }
           }
         },
-        "x-sdk-example": { "entryID": "ent_example", "channel": "published" }
+        "x-sdk-example": { "entryID": "ent_example", "channel": "published" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.content.get({\n  entryID: \"ent_example\",\n  channel: \"published\"\n});"
+          }
+        ]
       }
     },
     "/content/tree": {
@@ -22458,7 +22647,14 @@
             }
           }
         },
-        "x-sdk-example": { "collectionID": "coll_example", "channel": "published" }
+        "x-sdk-example": { "collectionID": "coll_example", "channel": "published" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.content.getTree({\n  collectionID: \"coll_example\",\n  channel: \"published\"\n});"
+          }
+        ]
       }
     },
     "/webhooks": {
@@ -27618,7 +27814,14 @@
             "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
-        "x-sdk-example": {}
+        "x-sdk-example": {},
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.roles.list({});"
+          }
+        ]
       },
       "post": {
         "operationId": "roles.create",
@@ -27946,7 +28149,14 @@
             "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
-        "x-sdk-example": { "name": "Editor", "permissions": ["content"] }
+        "x-sdk-example": { "name": "Editor", "permissions": ["content"] },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.roles.create({\n  name: \"Editor\",\n  permissions: [\n    \"content\"\n  ]\n});"
+          }
+        ]
       }
     },
     "/roles/{id}": {
@@ -28284,7 +28494,14 @@
             }
           }
         },
-        "x-sdk-example": { "id": "rl_example", "name": "Content editor" }
+        "x-sdk-example": { "id": "rl_example", "name": "Content editor" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.roles.update({\n  id: \"rl_example\",\n  name: \"Content editor\"\n});"
+          }
+        ]
       },
       "delete": {
         "operationId": "roles.delete",
@@ -28579,7 +28796,14 @@
             }
           }
         },
-        "x-sdk-example": { "id": "rl_example" }
+        "x-sdk-example": { "id": "rl_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.roles.delete({\n  id: \"rl_example\"\n});"
+          }
+        ]
       }
     },
     "/search/current": {
@@ -28904,7 +29128,14 @@
             "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
-        "x-sdk-example": { "query": "installation", "limit": 10 }
+        "x-sdk-example": { "query": "installation", "limit": 10 },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.search.current({\n  query: \"installation\",\n  limit: 10\n});"
+          }
+        ]
       }
     },
     "/search/published": {
@@ -29241,7 +29472,14 @@
             "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
-        "x-sdk-example": { "query": "installation", "channel": "published", "limit": 10 }
+        "x-sdk-example": { "query": "installation", "channel": "published", "limit": 10 },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.search.published({\n  query: \"installation\",\n  channel: \"published\",\n  limit: 10\n});"
+          }
+        ]
       }
     },
     "/search/current/ask": {
@@ -29565,7 +29803,14 @@
             "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
-        "x-sdk-example": { "question": "How do I install Andesine?" }
+        "x-sdk-example": { "question": "How do I install Andesine?" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.search.askCurrent({\n  question: \"How do I install Andesine?\"\n});"
+          }
+        ]
       }
     },
     "/search/published/ask": {
@@ -29890,7 +30135,14 @@
             "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
-        "x-sdk-example": { "question": "How do I install Andesine?", "channel": "published" }
+        "x-sdk-example": { "question": "How do I install Andesine?", "channel": "published" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.search.askPublished({\n  question: \"How do I install Andesine?\",\n  channel: \"published\"\n});"
+          }
+        ]
       }
     },
     "/search/current/ask/stream": {
@@ -30929,7 +31181,14 @@
             }
           }
         },
-        "x-sdk-example": { "collectionID": "coll_example" }
+        "x-sdk-example": { "collectionID": "coll_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.schemas.create({\n  collectionID: \"coll_example\"\n});"
+          }
+        ]
       }
     },
     "/schemas/{schemaID}": {
@@ -31279,7 +31538,14 @@
             }
           }
         },
-        "x-sdk-example": { "schemaID": "sch_example", "confirmedDataLoss": false }
+        "x-sdk-example": { "schemaID": "sch_example", "confirmedDataLoss": false },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.schemas.delete({\n  schemaID: \"sch_example\",\n  confirmedDataLoss: false\n});"
+          }
+        ]
       }
     },
     "/schema-revisions/{revisionID}": {
@@ -31576,7 +31842,14 @@
             }
           }
         },
-        "x-sdk-example": { "revisionID": "schr_example" }
+        "x-sdk-example": { "revisionID": "schr_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.schemas.getRevision({\n  revisionID: \"schr_example\"\n});"
+          }
+        ]
       }
     },
     "/schemas/collection": {
@@ -31894,7 +32167,14 @@
             }
           }
         },
-        "x-sdk-example": { "collectionID": "coll_example" }
+        "x-sdk-example": { "collectionID": "coll_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.schemas.get({\n  collectionID: \"coll_example\"\n});"
+          }
+        ]
       }
     },
     "/schemas/{schemaID}/draft": {
@@ -32328,7 +32608,14 @@
               }
             ]
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.schemas.updateDraft({\n  schemaID: \"sch_example\",\n  definition: {\n    formatVersion: 1,\n    fields: [\n      {\n        id: \"summary\",\n        kind: \"property\",\n        label: \"Summary\",\n        type: \"text\",\n        initialValue: \"\",\n        options: []\n      }\n    ]\n  }\n});"
+          }
+        ]
       }
     },
     "/schemas/{schemaID}/apply": {
@@ -32742,7 +33029,14 @@
           "schemaID": "sch_example",
           "confirmedDataLoss": true,
           "name": "Reviewed schema"
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.schemas.apply({\n  schemaID: \"sch_example\",\n  confirmedDataLoss: true,\n  name: \"Reviewed schema\"\n});"
+          }
+        ]
       }
     },
     "/schema-migrations/{id}/content-loss-entries": {
@@ -33069,7 +33363,14 @@
             }
           }
         },
-        "x-sdk-example": { "id": "smg_example", "limit": 20 }
+        "x-sdk-example": { "id": "smg_example", "limit": 20 },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.schemaMigrations.listContentLossEntries({\n  id: \"smg_example\",\n  limit: 20\n});"
+          }
+        ]
       }
     },
     "/collections/{collectionID}/schema-migration": {
@@ -33370,7 +33671,14 @@
             }
           }
         },
-        "x-sdk-example": { "collectionID": "coll_example" }
+        "x-sdk-example": { "collectionID": "coll_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.schemaMigrations.getActive({\n  collectionID: \"coll_example\"\n});"
+          }
+        ]
       }
     },
     "/schema-migrations/{id}": {
@@ -33667,7 +33975,14 @@
             }
           }
         },
-        "x-sdk-example": { "id": "smg_example" }
+        "x-sdk-example": { "id": "smg_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.schemaMigrations.get({\n  id: \"smg_example\"\n});"
+          }
+        ]
       }
     },
     "/schemas/{schemaID}/versions": {
@@ -33991,7 +34306,14 @@
             }
           }
         },
-        "x-sdk-example": { "schemaID": "sch_example", "limit": 20 }
+        "x-sdk-example": { "schemaID": "sch_example", "limit": 20 },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.schemaVersions.list({\n  schemaID: \"sch_example\",\n  limit: 20\n});"
+          }
+        ]
       }
     },
     "/schema-versions/{id}": {
@@ -34288,7 +34610,14 @@
             }
           }
         },
-        "x-sdk-example": { "id": "schv_example" }
+        "x-sdk-example": { "id": "schv_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.schemaVersions.get({\n  id: \"schv_example\"\n});"
+          }
+        ]
       },
       "patch": {
         "operationId": "schemaVersions.update",
@@ -34626,7 +34955,14 @@
             }
           }
         },
-        "x-sdk-example": { "id": "schv_example", "name": "Reviewed schema" }
+        "x-sdk-example": { "id": "schv_example", "name": "Reviewed schema" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.schemaVersions.update({\n  id: \"schv_example\",\n  name: \"Reviewed schema\"\n});"
+          }
+        ]
       }
     },
     "/schema-versions/{id}/revert": {
@@ -34969,7 +35305,14 @@
             }
           }
         },
-        "x-sdk-example": { "id": "schv_example", "confirmedDataLoss": true }
+        "x-sdk-example": { "id": "schv_example", "confirmedDataLoss": true },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.schemaVersions.revert({\n  id: \"schv_example\",\n  confirmedDataLoss: true\n});"
+          }
+        ]
       }
     },
     "/memberships": {
@@ -35288,7 +35631,14 @@
             }
           }
         },
-        "x-sdk-example": {}
+        "x-sdk-example": {},
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.memberships.list({});"
+          }
+        ]
       },
       "post": {
         "operationId": "memberships.invite",
@@ -35619,7 +35969,14 @@
             "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
-        "x-sdk-example": { "email": "editor@example.com", "roleID": "rl_example" }
+        "x-sdk-example": { "email": "editor@example.com", "roleID": "rl_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.memberships.invite({\n  email: \"editor@example.com\",\n  roleID: \"rl_example\"\n});"
+          }
+        ]
       }
     },
     "/memberships/{id}": {
@@ -35929,7 +36286,14 @@
             }
           }
         },
-        "x-sdk-example": { "id": "ms_example", "roleID": "rl_example" }
+        "x-sdk-example": { "id": "ms_example", "roleID": "rl_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.memberships.update({\n  id: \"ms_example\",\n  roleID: \"rl_example\"\n});"
+          }
+        ]
       },
       "delete": {
         "operationId": "memberships.remove",
@@ -36224,7 +36588,14 @@
             }
           }
         },
-        "x-sdk-example": { "id": "ms_example" }
+        "x-sdk-example": { "id": "ms_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.memberships.remove({\n  id: \"ms_example\"\n});"
+          }
+        ]
       }
     },
     "/memberships/invites": {
@@ -36540,7 +36911,14 @@
             }
           }
         },
-        "x-sdk-example": {}
+        "x-sdk-example": {},
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.memberships.listInvites({});"
+          }
+        ]
       }
     },
     "/memberships/invites/{id}/resend": {
@@ -36839,7 +37217,14 @@
             }
           }
         },
-        "x-sdk-example": { "id": "inv_example" }
+        "x-sdk-example": { "id": "inv_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.memberships.resendInvite({\n  id: \"inv_example\"\n});"
+          }
+        ]
       }
     },
     "/memberships/invites/{id}": {
@@ -37136,7 +37521,14 @@
             }
           }
         },
-        "x-sdk-example": { "id": "inv_example" }
+        "x-sdk-example": { "id": "inv_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.memberships.revokeInvite({\n  id: \"inv_example\"\n});"
+          }
+        ]
       }
     },
     "/publishing/collections/{collectionID}": {
@@ -37496,7 +37888,14 @@
             }
           }
         },
-        "x-sdk-example": { "collectionID": "coll_example", "enabled": true, "publish": false }
+        "x-sdk-example": { "collectionID": "coll_example", "enabled": true, "publish": false },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.publishing.setCollection({\n  collectionID: \"coll_example\",\n  enabled: true,\n  publish: false\n});"
+          }
+        ]
       },
       "post": {
         "operationId": "publishing.publishCollection",
@@ -37848,7 +38247,14 @@
             }
           }
         },
-        "x-sdk-example": { "collectionID": "coll_example", "channel": "published" }
+        "x-sdk-example": { "collectionID": "coll_example", "channel": "published" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.publishing.publishCollection({\n  collectionID: \"coll_example\",\n  channel: \"published\"\n});"
+          }
+        ]
       },
       "delete": {
         "operationId": "publishing.unpublishCollection",
@@ -38189,7 +38595,14 @@
             }
           }
         },
-        "x-sdk-example": { "collectionID": "coll_example", "channel": "published" }
+        "x-sdk-example": { "collectionID": "coll_example", "channel": "published" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.publishing.unpublishCollection({\n  collectionID: \"coll_example\",\n  channel: \"published\"\n});"
+          }
+        ]
       }
     },
     "/publishing/collections/bulk/set": {
@@ -38547,7 +38960,14 @@
             "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
-        "x-sdk-example": { "ids": ["coll_example"], "enabled": true, "publish": false }
+        "x-sdk-example": { "ids": ["coll_example"], "enabled": true, "publish": false },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.publishing.bulkSetCollections({\n  ids: [\n    \"coll_example\"\n  ],\n  enabled: true,\n  publish: false\n});"
+          }
+        ]
       }
     },
     "/publishing/collections/bulk/publish": {
@@ -38900,7 +39320,14 @@
             "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
-        "x-sdk-example": { "ids": ["coll_example"], "channel": "published" }
+        "x-sdk-example": { "ids": ["coll_example"], "channel": "published" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.publishing.bulkPublishCollections({\n  ids: [\n    \"coll_example\"\n  ],\n  channel: \"published\"\n});"
+          }
+        ]
       }
     },
     "/publishing/collections/bulk/unpublish": {
@@ -39242,7 +39669,14 @@
             "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
-        "x-sdk-example": { "ids": ["coll_example"], "channel": "published" }
+        "x-sdk-example": { "ids": ["coll_example"], "channel": "published" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.publishing.bulkUnpublishCollections({\n  ids: [\n    \"coll_example\"\n  ],\n  channel: \"published\"\n});"
+          }
+        ]
       }
     },
     "/publishing/entries/{entryID}": {
@@ -39595,7 +40029,14 @@
             }
           }
         },
-        "x-sdk-example": { "entryID": "ent_example", "channel": "published" }
+        "x-sdk-example": { "entryID": "ent_example", "channel": "published" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.publishing.publishEntry({\n  entryID: \"ent_example\",\n  channel: \"published\"\n});"
+          }
+        ]
       },
       "delete": {
         "operationId": "publishing.unpublishEntry",
@@ -39942,7 +40383,14 @@
           "entryID": "ent_example",
           "channel": "published",
           "versionID": "ver_example"
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.publishing.unpublishEntry({\n  entryID: \"ent_example\",\n  channel: \"published\",\n  versionID: \"ver_example\"\n});"
+          }
+        ]
       }
     },
     "/publishing/entries/bulk/publish": {
@@ -40293,7 +40741,14 @@
             "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
-        "x-sdk-example": { "entries": [{ "entryID": "ent_example" }], "channel": "published" }
+        "x-sdk-example": { "entries": [{ "entryID": "ent_example" }], "channel": "published" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.publishing.bulkPublishEntries({\n  entries: [\n    {\n      entryID: \"ent_example\"\n    }\n  ],\n  channel: \"published\"\n});"
+          }
+        ]
       }
     },
     "/publishing/entries/bulk/unpublish": {
@@ -40633,7 +41088,14 @@
             "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
-        "x-sdk-example": { "ids": ["ent_example"], "channel": "published" }
+        "x-sdk-example": { "ids": ["ent_example"], "channel": "published" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.publishing.bulkUnpublishEntries({\n  ids: [\n    \"ent_example\"\n  ],\n  channel: \"published\"\n});"
+          }
+        ]
       }
     },
     "/publishing/changes/revert": {
@@ -41042,7 +41504,14 @@
           "snapshotID": "snp_example",
           "entryIDs": ["ent_example"],
           "channel": "published"
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.publishing.revertChanges({\n  collectionID: \"coll_example\",\n  snapshotID: \"snp_example\",\n  entryIDs: [\n    \"ent_example\"\n  ],\n  channel: \"published\"\n});"
+          }
+        ]
       }
     },
     "/publishing/entries/{entryID}/version": {
@@ -41392,7 +41861,14 @@
             }
           }
         },
-        "x-sdk-example": { "entryID": "ent_example", "channel": "published" }
+        "x-sdk-example": { "entryID": "ent_example", "channel": "published" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.publishing.getEntryVersion({\n  entryID: \"ent_example\",\n  channel: \"published\"\n});"
+          }
+        ]
       }
     },
     "/publishing/entries/{entryID}/publications": {
@@ -41694,7 +42170,14 @@
             }
           }
         },
-        "x-sdk-example": { "entryID": "ent_example" }
+        "x-sdk-example": { "entryID": "ent_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.publishing.listEntryPublications({\n  entryID: \"ent_example\"\n});"
+          }
+        ]
       }
     },
     "/publishing/channels": {
@@ -42000,7 +42483,14 @@
             }
           }
         },
-        "x-sdk-example": { "includeAssignmentCount": true }
+        "x-sdk-example": { "includeAssignmentCount": true },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.publishing.listChannels({\n  includeAssignmentCount: true\n});"
+          }
+        ]
       },
       "post": {
         "operationId": "publishing.createChannel",
@@ -42325,7 +42815,14 @@
             "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
-        "x-sdk-example": { "name": "Preview" }
+        "x-sdk-example": { "name": "Preview" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.publishing.createChannel({\n  name: \"Preview\"\n});"
+          }
+        ]
       }
     },
     "/publishing/channels/{channel}/content": {
@@ -42653,7 +43150,14 @@
             }
           }
         },
-        "x-sdk-example": { "channel": "published", "collectionID": "coll_example" }
+        "x-sdk-example": { "channel": "published", "collectionID": "coll_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.publishing.getChannelContent({\n  channel: \"published\",\n  collectionID: \"coll_example\"\n});"
+          }
+        ]
       }
     },
     "/publishing/channels/{code}": {
@@ -42965,7 +43469,14 @@
             }
           }
         },
-        "x-sdk-example": { "code": "preview", "name": "Staging" }
+        "x-sdk-example": { "code": "preview", "name": "Staging" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.publishing.updateChannel({\n  code: \"preview\",\n  name: \"Staging\"\n});"
+          }
+        ]
       },
       "delete": {
         "operationId": "publishing.deleteChannel",
@@ -43299,7 +43810,14 @@
             }
           }
         },
-        "x-sdk-example": { "code": "preview" }
+        "x-sdk-example": { "code": "preview" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.publishing.deleteChannel({\n  code: \"preview\"\n});"
+          }
+        ]
       }
     },
     "/workspaces": {
@@ -44071,7 +44589,14 @@
           }
         },
         "x-idempotent": true,
-        "x-sdk-example": { "entryID": "ent_example", "name": "Before release" }
+        "x-sdk-example": { "entryID": "ent_example", "name": "Before release" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.versions.create({\n  entryID: \"ent_example\",\n  name: \"Before release\"\n});"
+          }
+        ]
       },
       "get": {
         "operationId": "versions.list",
@@ -44393,7 +44918,14 @@
             }
           }
         },
-        "x-sdk-example": { "entryID": "ent_example", "limit": 20 }
+        "x-sdk-example": { "entryID": "ent_example", "limit": 20 },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.versions.list({\n  entryID: \"ent_example\",\n  limit: 20\n});"
+          }
+        ]
       }
     },
     "/versions/{id}": {
@@ -44859,7 +45391,14 @@
             }
           }
         },
-        "x-sdk-example": { "id": "ver_example" }
+        "x-sdk-example": { "id": "ver_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.versions.get({\n  id: \"ver_example\"\n});"
+          }
+        ]
       },
       "patch": {
         "operationId": "versions.update",
@@ -45172,7 +45711,14 @@
             }
           }
         },
-        "x-sdk-example": { "id": "ver_example", "name": "Release candidate" }
+        "x-sdk-example": { "id": "ver_example", "name": "Release candidate" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.versions.update({\n  id: \"ver_example\",\n  name: \"Release candidate\"\n});"
+          }
+        ]
       }
     },
     "/versions/{id}/revert": {
@@ -45516,7 +46062,14 @@
             }
           }
         },
-        "x-sdk-example": { "id": "ver_example" }
+        "x-sdk-example": { "id": "ver_example" },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.versions.revert({\n  id: \"ver_example\"\n});"
+          }
+        ]
       }
     },
     "/type-metadata/current": {
@@ -45878,7 +46431,14 @@
             "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
-        "x-sdk-example": { "collections": ["/Tutorials"], "includeEntries": false }
+        "x-sdk-example": { "collections": ["/Tutorials"], "includeEntries": false },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.typeMetadata.getCurrent({\n  collections: [\n    \"/Tutorials\"\n  ],\n  includeEntries: false\n});"
+          }
+        ]
       }
     },
     "/type-metadata/published": {
@@ -46217,7 +46777,14 @@
             "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
           }
         ],
-        "x-sdk-example": { "channel": "published", "collections": ["/Tutorials"] }
+        "x-sdk-example": { "channel": "published", "collections": ["/Tutorials"] },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.typeMetadata.getPublished({\n  channel: \"published\",\n  collections: [\n    \"/Tutorials\"\n  ]\n});"
+          }
+        ]
       }
     }
   }
