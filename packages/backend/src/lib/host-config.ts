@@ -9,7 +9,8 @@ const hostConfig = z.object({
   aiSearch: z.boolean().describe("Whether Weaviate and OpenAI is configured for Q&A search"),
   extensions: z.boolean().describe("Whether extensions are enabled"),
   analytics: z.boolean().describe("Whether analytics are enabled"),
-  billing: z.boolean().describe("Whether subscription billing is enabled")
+  billing: z.boolean().describe("Whether subscription billing is enabled"),
+  signUps: z.boolean().describe("Whether new accounts can sign up")
 });
 
 interface HostConfig extends z.infer<typeof hostConfig> {}

@@ -11,13 +11,15 @@ import {
   validatePassword,
   validateUsername
 } from "#lib/utils";
-import { useClient } from "#context";
+import { useClient, useHostConfig } from "#context";
 
 const PasswordForm: AuthFormComponent = (props) => {
   const client = useClient();
+  const hostConfig = useHostConfig();
   const [hidePassword, setHidePassword] = createSignal(true);
   const [formContainerRef, setFormContainerRef] = createRef<HTMLElement | null>(null);
   const isRegisterForm = (): boolean => props.formData.formType === "register";
+  const isWorkspaceInvite = props.redirect?.includes("type=workspace-invite");
   const setLoading = (loading: boolean): void => props.setFormData("loading", loading);
   const loading = (): boolean => props.formData.loading;
   const filled = (): boolean => {
@@ -193,16 +195,25 @@ const PasswordForm: AuthFormComponent = (props) => {
         <div class="flex gap-1">{props.footer}</div>
       </div>
       <div class="flex-col absolute left-0 flex items-center justify-center w-full m-0 transform -bottom-8">
-        <Button
-          variant="text"
-          text="soft"
-          size="small"
-          onClick={() => {
-            props.setFormData("formType", isRegisterForm() ? "login" : "register");
-          }}
+        <Show
+          when={hostConfig.signUps || isWorkspaceInvite}
+          fallback={
+            <Button variant="text" text="soft" size="small" link="https://andesine.app">
+              New here? Vrite continues as Andesine
+            </Button>
+          }
         >
-          {isRegisterForm() ? "I already have an account" : "I don't have an account"}
-        </Button>
+          <Button
+            variant="text"
+            text="soft"
+            size="small"
+            onClick={() => {
+              props.setFormData("formType", isRegisterForm() ? "login" : "register");
+            }}
+          >
+            {isRegisterForm() ? "I already have an account" : "I don't have an account"}
+          </Button>
+        </Show>
       </div>
     </div>
   );

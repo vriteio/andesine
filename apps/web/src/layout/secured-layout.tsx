@@ -4,6 +4,7 @@ import { SidebarMenu } from "./sidebar-menu";
 import { BottomMenu } from "./bottom-menu";
 import { SidePanelRight } from "./side-panel-right";
 import { WalkthroughProvider } from "./walkthrough";
+import { AndesineBanner } from "./andesine-banner";
 import { Component, ParentComponent, Show, createEffect } from "solid-js";
 import { useLocation } from "@solidjs/router";
 import { mdiFullscreenExit } from "@mdi/js";
@@ -68,6 +69,9 @@ const SecuredLayout: ParentComponent = (props) => {
                   <CommandPaletteProvider>
                     <WalkthroughProvider>
                       <div class="flex flex-col h-full w-full">
+                        <Show when={!hostConfig.signUps}>
+                          <AndesineBanner />
+                        </Show>
                         <Show when={hostConfig.billing}>
                           <SubscriptionBanner />
                         </Show>

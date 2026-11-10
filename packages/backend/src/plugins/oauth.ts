@@ -7,6 +7,7 @@ import { generateSalt } from "#lib/hash";
 import { createPlugin } from "#lib/plugin";
 import { createSession } from "#lib/session";
 import { createWorkspace } from "#lib/workspace";
+import { canSignUp } from "#lib/auth";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -73,6 +74,10 @@ const registerGitHubOAuth = (fastify: FastifyInstance): void => {
 
         return res.redirect("/");
       } else {
+        if (!(await canSignUp(fastify, db, primaryEmail))) {
+          return res.redirect(`/auth?error=${user ? "useEmailSignIn" : "signUpsClosed"}`);
+        }
+
         const newUser = {
           _id: new ObjectId(),
           email: primaryEmail,

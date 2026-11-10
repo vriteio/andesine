@@ -16,7 +16,7 @@ const CTAGrid: Component = () => {
       ),
       icon: mdiPlayCircle,
       highlight: true,
-      link: "https://app.vrite.io"
+      link: "https://andesine.app"
     },
     {
       title: "Documentation",

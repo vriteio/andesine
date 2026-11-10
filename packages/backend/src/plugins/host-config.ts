@@ -28,6 +28,8 @@ const hostConfigPlugin = createPlugin(async (fastify) => {
     // Disable when self-hosting, until extension platform is ready
     extensions: Boolean(fastify.config.VRITE_CLOUD || false),
     analytics: Boolean(fastify.config.VRITE_CLOUD || false),
+    // Vrite Cloud continues as Andesine, so it takes no new accounts
+    signUps: !fastify.config.VRITE_CLOUD,
     billing: Boolean(
       fastify.config.STRIPE_SECRET_KEY &&
         fastify.config.STRIPE_TEAM_PRICE_ID &&

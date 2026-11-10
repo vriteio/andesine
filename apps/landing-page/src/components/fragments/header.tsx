@@ -179,6 +179,12 @@ const Header: Component = () => {
           </Button>
         </div>
       </div>
+      <a
+        href="https://andesine.app"
+        class="fixed bottom-0 left-0 z-50 w-screen p-2 text-center text-sm md:text-base text-white bg-gradient-to-tr from-red-500 to-orange-500"
+      >
+        Vrite continues as Andesine. <span class="font-semibold underline">Try Andesine</span>
+      </a>
     </div>
   );
 };

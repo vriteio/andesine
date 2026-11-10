@@ -12,6 +12,7 @@ import {
 import type { MarkdownHeading } from "astro";
 import menu from "./menu.json";
 import { Button } from "#components/primitives";
+import { Info } from "#components/content";
 import { mdiBookOpenBlankVariant, mdiConsoleLine, mdiGithub } from "@mdi/js";
 import { discordIcon } from "#assets/icons";
 
@@ -123,6 +124,12 @@ type Props = {
             >
               <div class="sticky top-0 w-full left-0 z-1"><Header client:load /></div>
               <div class="pt-24">
+                <Info>
+                  Vrite continues as Andesine.
+                  <a href="https://andesine.app/docs" class="underline font-semibold">
+                    Read the Andesine docs
+                  </a>
+                </Info>
                 {
                   (currentEntry?.labels.length || 0) > 1 && (
                     <Button

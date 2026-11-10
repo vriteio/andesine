@@ -8,6 +8,18 @@ const errorMessages: Record<string, JSX.Element> = {
   totpTokenInvalid: "Invalid 2FA code",
   resourceNotFound: "User not found",
   alreadyExists: "User already exists",
+  useEmailSignIn: "This GitHub account is not linked. Sign in with your email",
+  signUpsClosed: (
+    <>
+      Vrite Cloud no longer takes new accounts.
+      <br />
+      Vrite continues as{" "}
+      <a href="https://andesine.app" class="underline">
+        Andesine
+      </a>
+      .
+    </>
+  ),
   disposableEmail: (
     <>
       Disposable email addresses are not allowed.

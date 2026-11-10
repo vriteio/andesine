@@ -13,8 +13,8 @@ const PricingPlans: Component = () => {
       icon: mdiAccount,
       description: "For individuals and small teams",
       price: { price: 6 },
-      action: "Try for free",
-      link: "https://app.vrite.io/auth?plan=personal",
+      action: "Try Andesine",
+      link: "https://andesine.app",
       features: [
         "Single member",
         "Unlimited content pieces",
@@ -32,8 +32,8 @@ const PricingPlans: Component = () => {
       icon: mdiAccountMultiple,
       description: "For small to medium-sized teams",
       price: { price: 12, perSeat: true },
-      action: "Try for free",
-      link: "https://app.vrite.io/auth?plan=team",
+      action: "Try Andesine",
+      link: "https://andesine.app",
       features: [
         "All features from Personal",
         "Unlimited members",

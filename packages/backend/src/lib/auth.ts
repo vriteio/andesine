@@ -1,7 +1,14 @@
 import { Context } from "./context";
 import { SessionData, getSessionId } from "./session";
 import { verifyValue } from "./hash";
-import { TokenPermission, getTokensCollection, getWorkspacesCollection } from "#collections";
+import { Db } from "mongodb";
+import { FastifyInstance } from "fastify";
+import {
+  TokenPermission,
+  getTokensCollection,
+  getWorkspaceMembershipsCollection,
+  getWorkspacesCollection
+} from "#collections";
 
 interface TokenData {
   permissions: TokenPermission[];
@@ -86,4 +93,16 @@ const processAuth = async (
   }
 };
 
-export { processAuth };
+/** Vrite Cloud takes no new accounts, except for people with a pending workspace invite. */
+const canSignUp = async (fastify: FastifyInstance, db: Db, email: string): Promise<boolean> => {
+  if (fastify.hostConfig.signUps) return true;
+
+  const invite = await getWorkspaceMembershipsCollection(db).findOne({
+    email,
+    inviteVerificationCodeExpireAt: { $gt: new Date() }
+  });
+
+  return Boolean(invite);
+};
+
+export { processAuth, canSignUp };

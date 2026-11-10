@@ -8,6 +8,7 @@ import { errors } from "#lib/errors";
 import { generateSalt, hashValue } from "#lib/hash";
 import { UnderscoreID } from "#lib/mongo";
 import { Context } from "#lib/context";
+import { canSignUp } from "#lib/auth";
 
 const emailDomainBlacklist = [
   ...blacklistDomains,
@@ -32,6 +33,10 @@ const inputSchema = z.object({
   plan: z.string().describe("Identifier for the selected subscription plan").optional()
 });
 const handler = async (ctx: Context, input: z.infer<typeof inputSchema>): Promise<void> => {
+  if (!(await canSignUp(ctx.fastify, ctx.db, input.email))) {
+    throw errors.unauthorized("signUpsClosed");
+  }
+
   const users = getUsersCollection(ctx.db);
   const salt = await generateSalt();
   const hash = await hashValue(input.password, salt);
