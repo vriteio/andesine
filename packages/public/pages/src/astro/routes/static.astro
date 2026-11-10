@@ -8,9 +8,20 @@ import { getStaticPaths as getPaths, renderRoute } from "../../runtime.js";
 export const getStaticPaths = () => getPaths(config);
 
 const { route } = Astro.props;
+const escape = (value: string) => value.replace(/[&"<>]/g, (char) => `&#${char.charCodeAt(0)};`);
 
-// Temporary, as the first page can change; static builds wait 2 seconds only for 302.
-if (route.type === "redirect") return Astro.redirect(route.target, 307);
+// Astro's static redirect page shows text before it redirects, so this one has no body.
+// Hosts can read `andesine:redirect` to send an HTTP redirect instead.
+if (route.type === "redirect") {
+  const target = escape(route.target);
+  const canonical = escape(new URL(route.target, config.site).href);
+  const script = `location.replace(${JSON.stringify(route.target).replace(/</g, "\\u003c")})`;
+
+  return new Response(
+    `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=${target}"><meta name="andesine:redirect" content="${target}"><meta name="robots" content="noindex"><link rel="canonical" href="${canonical}"><script>${script}</script>`,
+    { headers: { "content-type": "text/html; charset=utf-8" } }
+  );
+}
 
 const {
   Content: FileContent,
