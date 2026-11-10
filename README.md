@@ -1,66 +1,51 @@
-> [!IMPORTANT]
-> This is a WIP branch for _Andesine_ (the v2 rewrite of Vrite). For the latest stable version of Vrite, please check out the [main branch](https://github.com/vriteio/andesine/tree/main)
+# Andesine
 
-<h4 align="center">
-  <a href="https://docs.vrite.io">Usage Guide</a> |
-  <a href="https://vrite.io">Website</a> |
-  <a href="https://app.vrite.io">Vrite Cloud</a>
-</h4>
-<p align="center">
-  <a href="https://github.com/vriteio/andesine/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/vriteio/andesine" alt="Vrite is available under the AGPL-3.0 license." />
-  </a>
-  <a href="https://discord.gg/yYqDWyKnqE">
-    <img src="https://img.shields.io/badge/chat-on%20discord-7289DA.svg" alt="Discord Chat" />
-  </a>
-  <a href="https://twitter.com/intent/follow?screen_name=vriteio">
-    <img src="https://img.shields.io/twitter/follow/vriteio.svg?label=Follow%20@vriteio" alt="Follow @vriteio" />
-  </a>
-</p>
+[![Andesine: the versatile content workspace](apps/landing/public/_landing/social.jpg)](https://andesine.app)
 
-Vrite is an open-source, collaborative space to create, manage, and deploy product documentation, technical blogs, and knowledge bases. It aims to provide a high-quality, integrated user and developer experience, with features like:
+**The versatile content workspace.** Write with your team, give your content a structure, and
+publish it to websites, apps, and AI agents.
 
-- **Built-in management dashboard** for managing content production and delivery using Kanban or List view;
-- Modern **WYSIWYG** editing experience with support for **Markdown**, integrated **code editor**, code formatting and real-time collaboration;
-- AI-powered **semantic search** for organizing and searching through your content base;
-- Versitile **API** and **Extension System** for customizing your experience and delivering content to any frontend;
-- **Open-source**, with options to both self-host and use [Vrite Cloud](https://app.vrite.io).
+[Website](https://andesine.app) · [Docs](https://andesine.app/docs) ·
+[Changelog](https://github.com/vriteio/andesine/releases) ·
+[Discussions](https://github.com/vriteio/andesine/discussions) · [X](https://x.com/andesineapp) ·
+[LinkedIn](https://www.linkedin.com/company/andesineapp)
 
-Learn more about all the features of Vrite and how to use them from the [official Usage Guide](https://docs.vrite.io).
+## Features
 
-## Server configuration
+- **Real-time editor** with Markdown shortcuts, tables, code blocks, images, and components.
+- **Structured content**: collections, schemas with properties and fragments, and versions.
+- **Publishing** to channels, with hosted documentation sites, an API and SDK, and two-way GitHub
+  sync.
+- **AI**: search and answers with sources, and an MCP server for Claude, ChatGPT, Cursor, and
+  other AI apps.
+- **Teams**: roles, groups, restricted collections, and extensions.
 
-Product analytics are off unless `PUBLIC_POSTHOG_KEY` is set, together with `POSTHOG_HOST` for
-server events (backend, usage reporter) or `PUBLIC_POSTHOG_HOST` for client analytics (web app,
-landing page). Self-hosted instances send nothing by default. See [.env.example](.env.example).
+## Get started
 
-Billing is off unless `BILLING_ENABLED=true` is set in the backend, worker, and usage reporter.
-All three deployments must use the same value, and an invalid value stops startup. Use a shared
-deployment variable where possible. With billing disabled, all Pro features remain available and
-the reporter skips Stripe usage reporting.
+- **Andesine Cloud**: sign up at [andesine.app](https://andesine.app).
+- **Self-hosting**: run Andesine with Docker Compose. See
+  [Self-hosting](https://andesine.app/docs/self-hosting/).
 
-| Application    | Stripe settings required when billing is enabled                                                                                                 |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Backend        | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRO_SEAT_PRICE_ID`, `STRIPE_PRO_API_CALL_PRICE_ID`, `STRIPE_PRO_API_CALL_METER_EVENT_NAME` |
-| Worker         | None                                                                                                                                             |
-| Usage reporter | `STRIPE_SECRET_KEY`, `STRIPE_PRO_API_CALL_METER_EVENT_NAME`                                                                                      |
+## Packages
 
-The reporter always requires `DATABASE_URL`. It does not require backend host, authentication,
-email, Redis, or search configuration. Match its database, Stripe account, and meter event name
-to the backend. Match `VERSION_RETENTION_DAYS` and `PRO_VERSION_RETENTION_DAYS` between backend
-and worker; both version cleanup and webhook recording use these durations. See [.env.example](.env.example)
-for the other settings.
+| Package                                              | Description                         | Docs                                                                       |
+| ---------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------- |
+| [`andesine`](packages/public/cli)                    | Command-line tools and MCP server   | [CLI](https://andesine.app/docs/developers/cli/)                           |
+| [`@andesine/sdk`](packages/public/sdk)               | TypeScript API client               | [SDK](https://andesine.app/docs/developers/sdk/)                           |
+| [`@andesine/converters`](packages/public/converters) | Content format converters           | [Converters](https://andesine.app/docs/developers/converters/)             |
+| [`@andesine/extensions`](packages/public/extensions) | Authoring tools for extensions      | [Build extensions](https://andesine.app/docs/extensions/build-extensions/) |
+| [`@andesine/pages`](packages/public/pages)           | Documentation site framework        | [Pages framework](https://andesine.app/docs/publishing/pages-framework/)   |
+| [`@andesine/ui`](packages/public/ui)                 | Headless components for Pages sites | [Pages framework](https://andesine.app/docs/publishing/pages-framework/)   |
 
-Before deploying this refactor, set the explicit billing mode on all three applications. Stripe
-credentials no longer select the mode. Existing deployments without this variable will fail startup.
+## Support
 
-## Links
+- Questions and ideas: [GitHub Discussions](https://github.com/vriteio/andesine/discussions).
+- Bugs: [GitHub Issues](https://github.com/vriteio/andesine/issues).
+- Security issues and other requests: [support@andesine.app](mailto:support@andesine.app). Do
+  not report security issues in public.
 
-- 🔥 [**Try out Vrite**](https://app.vrite.io)
-- ℹ️ [**Usage guide**](https://docs.vrite.io)
-- 🚀 [**Blog**](https://vrite.io/blog)
-- 📝 [**Report a bug**](https://github.com/vriteio/andesine/issues)
-- 🙋‍♀️ [**Request a feature**](https://github.com/vriteio/andesine/discussions)
-- 💬 [**Join Discord**](https://discord.gg/yYqDWyKnqE)
-- 🐦 [**Follow on Twitter**](https://twitter.com/vriteio)
-- 💼 [**Follow on LinkedIn**](https://www.linkedin.com/company/vrite)
+## License
+
+The code is under the [AGPL-3.0](LICENSE) unless a file or folder says otherwise. The public
+packages and templates are under the MIT license, and the billing code is under the Elastic
+License 2.0. Copyright © Vrite, Inc.

@@ -84,7 +84,7 @@
     "url": "git+https://github.com/vriteio/andesine.git",
     "directory": "packages/public/converters"
   },
-  "homepage": "https://github.com/vriteio/andesine/tree/andesine/packages/public/converters#readme",
+  "homepage": "https://andesine.app/docs/developers/converters/",
   "bugs": {
     "url": "https://github.com/vriteio/andesine/issues"
   },

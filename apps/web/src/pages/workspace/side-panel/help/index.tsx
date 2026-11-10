@@ -13,7 +13,6 @@ interface HelpMenuSection {
   items: HelpMenuItem[];
 }
 
-// TODO: Update links once new resources are available
 const menu: HelpMenuSection[] = [
   {
     label: "Resources",
@@ -21,12 +20,17 @@ const menu: HelpMenuSection[] = [
       {
         icon: "i-lucide:book-open",
         label: "Documentation",
-        href: "https://docs.vrite.io"
+        href: "https://andesine.app/docs"
       },
       {
         icon: "i-lucide:square-terminal",
         label: "API Reference",
-        href: "https://docs.vrite.io/api/authentication"
+        href: "https://andesine.app/docs/api"
+      },
+      {
+        icon: "i-lucide:bot",
+        label: "Connect an AI App",
+        href: "https://andesine.app/docs/ai-agents/connect-an-ai-app/"
       }
     ]
   },
@@ -39,9 +43,9 @@ const menu: HelpMenuSection[] = [
         href: "https://github.com/vriteio/andesine"
       },
       {
-        icon: "i-tabler:brand-discord",
-        label: "Join Discord",
-        href: "https://discord.gg/yYqDWyKnqE"
+        icon: "i-tabler:messages",
+        label: "Join Discussions",
+        href: "https://github.com/vriteio/andesine/discussions"
       }
     ]
   }

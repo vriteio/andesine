@@ -40,7 +40,7 @@ const EmailFooter: React.FC = () => {
       </Row>
       <Row className="mb-[24px]">
         <Column className="text-[12px] leading-[16px] text-gray-400 my-0 font-mono">
-          Andesine, the adaptive
+          Andesine, the versatile
           <br /> content workspace.
         </Column>
       </Row>

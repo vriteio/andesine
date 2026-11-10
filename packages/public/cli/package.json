@@ -69,7 +69,7 @@
     "url": "git+https://github.com/vriteio/andesine.git",
     "directory": "packages/public/cli"
   },
-  "homepage": "https://github.com/vriteio/andesine/tree/andesine/packages/public/cli#readme",
+  "homepage": "https://andesine.app/docs/developers/cli/",
   "bugs": {
     "url": "https://github.com/vriteio/andesine/issues"
   },

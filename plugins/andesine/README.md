@@ -4,9 +4,11 @@ Work with your Andesine knowledge base, headless CMS, and docs content from Clau
 
 With it, the agent can search and read entries, create and edit them as MDX, upload local images, move and delete content, save and restore versions, and publish to your channels. Changes appear live for people editing the same entries, and the agent saves a version before its first edit of an entry.
 
+See [Local server and plugin](https://andesine.app/docs/ai-agents/local-server-and-plugin/) for setup and the tools.
+
 ## Requirements
 
-- Node.js 20 or later.
+- Node.js 22.12 or later.
 - An Andesine account. Sign in once with `npx andesine auth login`, or set `ANDESINE_API_KEY`.
 - A workspace for the project: run `npx andesine init --mcp` in the project, which saves it in `andesine.json`.
 

@@ -33,14 +33,13 @@ const FormatMenu: Component<{
       icon: "i-lucide:strikethrough",
       mark: "strike",
       label: "Strikethrough",
-      shortcut: "$mod+Shift+X"
+      shortcut: "$mod+Shift+S"
     },
     { icon: "i-lucide:code", mark: "code", label: "Code", shortcut: "$mod+E" },
     {
       icon: "i-lucide:link-2",
       mark: "link",
       label: "Link",
-      shortcut: "$mod+K",
       onClick() {
         props.setMode("link");
       }

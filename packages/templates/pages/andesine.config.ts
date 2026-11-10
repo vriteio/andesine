@@ -13,18 +13,18 @@ export default defineConfig({
   links: [
     {
       label: "Changelog",
-      href: "https://github.com/vriteio/vrite/releases",
+      href: "https://github.com/vriteio/andesine/releases",
       icon: "i-lucide:scroll-text"
     },
     {
       label: "Community",
-      href: "https://github.com/vriteio/vrite/discussions",
+      href: "https://github.com/vriteio/andesine/discussions",
       icon: "i-lucide:messages-square"
     }
   ],
   cta: { label: "Andesine", href: "https://andesine.app", icon: "i-lucide:arrow-up-right" },
   socialLinks: [
-    { label: "GitHub", href: "https://github.com/vriteio/vrite", icon: "i-simple-icons:github" }
+    { label: "GitHub", href: "https://github.com/vriteio/andesine", icon: "i-simple-icons:github" }
   ],
   sections: [
     { id: "guides", label: "Guides", icon: "i-lucide:book-open", sources: ["docs"] },

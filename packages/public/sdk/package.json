@@ -72,7 +72,7 @@
     "url": "git+https://github.com/vriteio/andesine.git",
     "directory": "packages/public/sdk"
   },
-  "homepage": "https://github.com/vriteio/andesine/tree/andesine/packages/public/sdk#readme",
+  "homepage": "https://andesine.app/docs/developers/sdk/",
   "bugs": {
     "url": "https://github.com/vriteio/andesine/issues"
   },

@@ -39,6 +39,9 @@ const getAuthMethod = (context: AuthHookContext | null): string | undefined => {
   return path.includes("email-otp") ? "email" : path || undefined;
 };
 
+const getSocialProvider = (clientId?: string, clientSecret?: string) => {
+  return clientId && clientSecret ? { clientId, clientSecret } : undefined;
+};
 const auth = betterAuth({
   appName: "Andesine",
   baseURL: config.PUBLIC_API_URL,
@@ -131,14 +134,8 @@ const auth = betterAuth({
     storeInDatabase: true
   },
   socialProviders: {
-    google: {
-      clientId: config.GOOGLE_CLIENT_ID,
-      clientSecret: config.GOOGLE_CLIENT_SECRET
-    },
-    github: {
-      clientId: config.GITHUB_CLIENT_ID,
-      clientSecret: config.GITHUB_CLIENT_SECRET
-    }
+    google: getSocialProvider(config.GOOGLE_CLIENT_ID, config.GOOGLE_CLIENT_SECRET),
+    github: getSocialProvider(config.GITHUB_CLIENT_ID, config.GITHUB_CLIENT_SECRET)
   },
   user: {
     additionalFields: {

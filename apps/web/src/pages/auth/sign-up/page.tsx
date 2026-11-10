@@ -1,7 +1,7 @@
-import { type Component } from "solid-js";
+import { type Component, Show } from "solid-js";
 import { Title } from "@solidjs/meta";
 import { IconButton, Button } from "@andesine/components";
-import { authClient } from "#web/lib/api";
+import { authClient, config } from "#web/lib/api";
 import { useSearchParams } from "@solidjs/router";
 import { appendRedirectTo, normalizeRedirectTo, toCallbackURL } from "#web/lib/navigation";
 import { useNotify } from "#web/context/notifications";
@@ -56,42 +56,48 @@ const SignUpPage: Component = () => {
           </Button>{" "}
           and{" "}
           <Button link="https://andesine.app/tos" variant="link" class="px-0">
-            terms of use
+            terms of service
           </Button>
           .
         </div>
       </div>
       <div class="flex flex-col gap-2.5">
-        <IconButton
-          icon="i-devicon:google"
-          class="w-full gap-1"
-          iconProps={{ class: "h-5.5 w-5.5" }}
-          text="base"
-          size="medium"
-          label={signingUpWithGoogle() ? "Continuing with Google..." : "Continue with Google"}
-          disabled={signingUpWithGoogle() || signingUpWithGitHub()}
-          onClick={() => {
-            void signUpWithProvider("google");
-          }}
-        />
-        <IconButton
-          icon="i-mdi:github"
-          class="w-full gap-1"
-          iconProps={{ class: "text-black" }}
-          text="base"
-          size="medium"
-          label={signingUpWithGitHub() ? "Continuing with GitHub..." : "Continue with GitHub"}
-          disabled={signingUpWithGoogle() || signingUpWithGitHub()}
-          onClick={() => {
-            void signUpWithProvider("github");
-          }}
-        />
+        <Show when={config.PUBLIC_GOOGLE_AUTH_ENABLED}>
+          <IconButton
+            icon="i-devicon:google"
+            class="w-full gap-1"
+            iconProps={{ class: "h-5.5 w-5.5" }}
+            text="base"
+            size="medium"
+            label={signingUpWithGoogle() ? "Continuing with Google..." : "Continue with Google"}
+            disabled={signingUpWithGoogle() || signingUpWithGitHub()}
+            onClick={() => {
+              void signUpWithProvider("google");
+            }}
+          />
+        </Show>
+        <Show when={config.PUBLIC_GITHUB_AUTH_ENABLED}>
+          <IconButton
+            icon="i-mdi:github"
+            class="w-full gap-1"
+            iconProps={{ class: "text-black" }}
+            text="base"
+            size="medium"
+            label={signingUpWithGitHub() ? "Continuing with GitHub..." : "Continue with GitHub"}
+            disabled={signingUpWithGoogle() || signingUpWithGitHub()}
+            onClick={() => {
+              void signUpWithProvider("github");
+            }}
+          />
+        </Show>
 
-        <div class="flex items-center justify-start gap-2 text-gray-400 text-xs">
-          <div class="h-px flex-1 bg-gray-200"></div>
-          Or sign up with
-          <div class="h-px flex-1 bg-gray-200"></div>
-        </div>
+        <Show when={config.PUBLIC_GOOGLE_AUTH_ENABLED || config.PUBLIC_GITHUB_AUTH_ENABLED}>
+          <div class="flex items-center justify-start gap-2 text-gray-400 text-xs">
+            <div class="h-px flex-1 bg-gray-200"></div>
+            Or sign up with
+            <div class="h-px flex-1 bg-gray-200"></div>
+          </div>
+        </Show>
         <div class="flex items-center justify-center gap-1">
           <IconButton
             label="Email"

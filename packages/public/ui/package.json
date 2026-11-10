@@ -50,7 +50,7 @@
     "url": "git+https://github.com/vriteio/andesine.git",
     "directory": "packages/public/ui"
   },
-  "homepage": "https://github.com/vriteio/andesine/tree/andesine/packages/public/ui#readme",
+  "homepage": "https://andesine.app/docs/publishing/pages-framework/",
   "bugs": {
     "url": "https://github.com/vriteio/andesine/issues"
   },

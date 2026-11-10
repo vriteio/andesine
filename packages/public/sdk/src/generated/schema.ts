@@ -1202,7 +1202,7 @@ export interface paths {
     put?: never;
     /**
      * Ask AI about current content
-     * @description Returns a complete answer with numbered sources. Requires explicit ai-answers permission in addition to content read permissions. Accepts up to 1,000 question characters, 10 history messages of up to 4,000 characters each, and 20 property filters. Uses 3 AI credits and the Ask AI rate limit. Use a secret key on your server, or a publishable key for published content.
+     * @description Returns a complete answer with numbered sources. Requires explicit ai-answers permission in addition to content read permissions. Accepts up to 1,000 question characters, 10 history messages of up to 4,000 characters each, and 20 property filters. Uses 10 AI credits and the Ask AI rate limit. Use a secret key on your server, or a publishable key for published content.
      *
      *     Required API key permissions: ai-answers, read:entries, read:collections. Write permissions also grant read access for the same resource.
      */
@@ -1224,7 +1224,7 @@ export interface paths {
     put?: never;
     /**
      * Ask AI about published content
-     * @description Returns a complete answer with numbered sources. Requires explicit ai-answers permission in addition to content read permissions. Accepts up to 1,000 question characters, 10 history messages of up to 4,000 characters each, and 20 property filters. Uses 3 AI credits and the Ask AI rate limit. Use a secret key on your server, or a publishable key for published content.
+     * @description Returns a complete answer with numbered sources. Requires explicit ai-answers permission in addition to content read permissions. Accepts up to 1,000 question characters, 10 history messages of up to 4,000 characters each, and 20 property filters. Uses 10 AI credits and the Ask AI rate limit. Use a secret key on your server, or a publishable key for published content.
      *
      *     Required API key permissions: ai-answers, read:publishing. Write permissions also grant read access for the same resource.
      */

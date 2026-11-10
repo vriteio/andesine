@@ -52,7 +52,7 @@
     "url": "git+https://github.com/vriteio/andesine.git",
     "directory": "packages/public/extensions"
   },
-  "homepage": "https://github.com/vriteio/andesine/tree/andesine/packages/public/extensions#readme",
+  "homepage": "https://andesine.app/docs/extensions/build-extensions/",
   "bugs": {
     "url": "https://github.com/vriteio/andesine/issues"
   },

@@ -1,9 +1,9 @@
 import { useSearchParams } from "@solidjs/router";
 import { Title } from "@solidjs/meta";
-import { type Component, createMemo } from "solid-js";
+import { type Component, createMemo, Show } from "solid-js";
 import { IconButton, Button } from "@andesine/components";
 import { useNotify } from "#web/context/notifications";
-import { authClient } from "#web/lib/api";
+import { authClient, config } from "#web/lib/api";
 import {
   appendRedirectTo,
   normalizeRedirectTo,
@@ -103,35 +103,41 @@ const SignInPage: Component = () => {
         </div>
       </div>
       <div class="flex flex-col gap-2.5">
-        <IconButton
-          icon="i-devicon:google"
-          class="w-full gap-1"
-          iconProps={{ class: "h-5.5 w-5.5" }}
-          text="base"
-          size="medium"
-          label={signingInWithGoogle() ? "Continuing with Google..." : "Continue with Google"}
-          disabled={signingInWithGoogle() || signingInWithGitHub()}
-          onClick={() => {
-            void signInWithProvider("google");
-          }}
-        />
-        <IconButton
-          icon="i-mdi:github"
-          class="w-full"
-          iconProps={{ class: "text-black" }}
-          text="base"
-          size="medium"
-          label={signingInWithGitHub() ? "Continuing with GitHub..." : "Continue with GitHub"}
-          disabled={signingInWithGoogle() || signingInWithGitHub()}
-          onClick={() => {
-            void signInWithProvider("github");
-          }}
-        />
-        <div class="flex items-center justify-start gap-2 text-gray-400 text-xs">
-          <div class="h-px flex-1 bg-gray-200"></div>
-          Or sign in with
-          <div class="h-px flex-1 bg-gray-200"></div>
-        </div>
+        <Show when={config.PUBLIC_GOOGLE_AUTH_ENABLED}>
+          <IconButton
+            icon="i-devicon:google"
+            class="w-full gap-1"
+            iconProps={{ class: "h-5.5 w-5.5" }}
+            text="base"
+            size="medium"
+            label={signingInWithGoogle() ? "Continuing with Google..." : "Continue with Google"}
+            disabled={signingInWithGoogle() || signingInWithGitHub()}
+            onClick={() => {
+              void signInWithProvider("google");
+            }}
+          />
+        </Show>
+        <Show when={config.PUBLIC_GITHUB_AUTH_ENABLED}>
+          <IconButton
+            icon="i-mdi:github"
+            class="w-full"
+            iconProps={{ class: "text-black" }}
+            text="base"
+            size="medium"
+            label={signingInWithGitHub() ? "Continuing with GitHub..." : "Continue with GitHub"}
+            disabled={signingInWithGoogle() || signingInWithGitHub()}
+            onClick={() => {
+              void signInWithProvider("github");
+            }}
+          />
+        </Show>
+        <Show when={config.PUBLIC_GOOGLE_AUTH_ENABLED || config.PUBLIC_GITHUB_AUTH_ENABLED}>
+          <div class="flex items-center justify-start gap-2 text-gray-400 text-xs">
+            <div class="h-px flex-1 bg-gray-200"></div>
+            Or sign in with
+            <div class="h-px flex-1 bg-gray-200"></div>
+          </div>
+        </Show>
         <IconButton
           icon="i-lucide:fingerprint"
           class="w-full gap-1"

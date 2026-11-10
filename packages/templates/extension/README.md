@@ -1,6 +1,8 @@
 # Andesine extension
 
-An Andesine extension with a Solid frontend and a Node backend.
+An Andesine extension with a Solid frontend and a Node backend. See
+[Build extensions](https://andesine.app/docs/extensions/build-extensions/) for the concepts and
+publishing to the registry.
 
 - `andesine.config.ts` — the manifest: name, permissions, backend, webhooks, configuration, and views.
 - `AGENTS.md` — practices for building the extension and its element views, for coding agents and people.

@@ -33,11 +33,10 @@ sticky headers.
 Each component part renders `data-scope` and `data-part` attributes. State is in
 `data-*` and ARIA attributes. Use these attributes to style the parts.
 
-## Build
+## Documentation
 
-```sh
-pnpm build --filter=@andesine/ui
-```
+- [Pages framework](https://andesine.app/docs/publishing/pages-framework/)
 
-The Solid export has 4 conditions: `solid` (JSX source for Solid-aware bundlers),
-`browser`, `node`, and `types`.
+## License
+
+MIT

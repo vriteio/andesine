@@ -41,26 +41,9 @@ The template uses the design language of the Andesine app:
 
 ## Andesine content
 
-Set `ANDESINE_COLLECTION_ID` and `ANDESINE_PUBLIC_KEY`, a publishable key, to show a
-published Andesine collection in place of the included guide, as a fully static site.
-`andesine.config.ts` reads them from `process.env`, so export them in the shell or load them
-with a tool such as `dotenv-cli`. With a secret `ANDESINE_API_KEY` in place of the publishable
-key, Andesine sources need a Node.js server or a serverless platform such as Vercel or
-Netlify. See the Deployment page of the guide.
-
-## New sites
-
-Create a new site from this template with the Andesine CLI:
-
-```sh
-npx andesine pages init docs
-cd docs
-npm install
-```
-
-The CLI copies the template of its release, with `@andesine/pages` and
-`@andesine/ui` pinned to the same version. The `overrides` field fixes an npm peer
-conflict of `solid-devtools`, an optional dependency of `@astrojs/solid-js`.
+To show a published Andesine collection, or to deploy the site, see
+[Pages framework](https://andesine.app/docs/publishing/pages-framework/). The example pages in
+`src/content/docs/` also explain the configuration, the components, and each host.
 
 ## Commands
 

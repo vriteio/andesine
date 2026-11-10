@@ -88,7 +88,7 @@
     "url": "git+https://github.com/vriteio/andesine.git",
     "directory": "packages/public/pages"
   },
-  "homepage": "https://github.com/vriteio/andesine/tree/andesine/packages/public/pages#readme",
+  "homepage": "https://andesine.app/docs/publishing/pages-framework/",
   "bugs": {
     "url": "https://github.com/vriteio/andesine/issues"
   },

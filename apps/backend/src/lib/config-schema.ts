@@ -86,11 +86,11 @@ const configSchema = billingConfigSchema.safeExtend({
   SMTP_PASSWORD: z.string().optional().describe("SMTP password for sending emails"),
   SMTP_SECURE: z.stringbool().optional().describe("Use secure connection for SMTP"),
   // Google OAuth
-  GOOGLE_CLIENT_ID: z.string().min(1).describe("Google OAuth client ID"),
-  GOOGLE_CLIENT_SECRET: z.string().min(1).describe("Google OAuth client secret"),
+  GOOGLE_CLIENT_ID: z.string().optional().describe("Google OAuth client ID"),
+  GOOGLE_CLIENT_SECRET: z.string().optional().describe("Google OAuth client secret"),
   // GitHub App
-  GITHUB_CLIENT_ID: z.string().min(1).describe("GitHub OAuth client ID"),
-  GITHUB_CLIENT_SECRET: z.string().min(1).describe("GitHub OAuth client secret"),
+  GITHUB_CLIENT_ID: z.string().optional().describe("GitHub OAuth client ID"),
+  GITHUB_CLIENT_SECRET: z.string().optional().describe("GitHub OAuth client secret"),
   // Passkeys (WebAuthn)
   PASSKEY_RP_ID: z.string().optional().describe("WebAuthn Relying Party ID"),
   PASSKEY_ORIGIN: z.string().optional().describe("WebAuthn expected origin"),
