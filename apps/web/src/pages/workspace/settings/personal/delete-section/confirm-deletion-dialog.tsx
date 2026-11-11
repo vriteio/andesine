@@ -58,7 +58,7 @@ const AccountDeletionDialog: Component<AccountDeletionDialogProps> = (props) => 
   const deleteAccountMutation = createMutation(() => ({
     mutationFn: async (userID: string) => {
       // Data that PostHog gets after the request isn't erased, so capture pauses first.
-      const resumeAnalytics = await pauseAnalytics();
+      const resumeAnalytics = pauseAnalytics();
 
       try {
         await client.auth.deleteAccount({ userID });

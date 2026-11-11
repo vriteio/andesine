@@ -22,7 +22,7 @@ const { title, description, path } = Astro.props;
   </head>
   <body style="background-color: #f9fafb">
     <PageScrollShadows client:load />
-    <Analytics client:load />
+    <Analytics client:only="solid-js" />
     <header
       class="mx-auto flex w-full max-w-5xl px-4 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] md:px-8"
     >

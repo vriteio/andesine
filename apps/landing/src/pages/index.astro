@@ -22,7 +22,7 @@ const description =
   </head>
   <body style="background-color: #f9fafb">
     <PageScrollShadows client:load />
-    <Analytics client:load />
+    <Analytics client:only="solid-js" />
     <LandingPage>
       <SiteHeader slot="header" client:load />
       <HeroRibbon slot="ribbon" client:load />

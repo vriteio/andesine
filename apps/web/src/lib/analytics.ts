@@ -1,4 +1,4 @@
-import type { PostHog } from "posthog-js";
+import { type PostHog, posthog } from "posthog-js";
 import { createSignal } from "solid-js";
 import { config } from "#web/lib/api";
 
@@ -18,16 +18,18 @@ const CONTENT_PROPERTIES = ["title", "$title"];
 
 const [identifiedWorkspaceID, setIdentifiedWorkspaceID] = createSignal<string | null>(null);
 
-let client: Promise<PostHog> | null = null;
 let capturePaused = false;
 
-const loadClient = (): Promise<PostHog> | null => {
+const loadClient = (): PostHog | null => {
   if (!ANALYTICS_ENABLED || typeof window === "undefined") return null;
 
-  client ??= import("posthog-js").then(({ posthog }) => {
+  if (!posthog.__loaded) {
     posthog.init(config.PUBLIC_POSTHOG_KEY!, {
       api_host: config.PUBLIC_POSTHOG_HOST,
       ui_host: "https://us.posthog.com",
+      // Pageviews are captured by hand, once the workspace is known.
+      capture_pageview: false,
+      capture_pageleave: true,
       capture_heatmaps: true,
       advanced_disable_feature_flags: true,
       cross_subdomain_cookie: true,
@@ -46,54 +48,57 @@ const loadClient = (): Promise<PostHog> | null => {
       }
     });
 
-    return posthog;
-  });
+    // shortcut: consent banner is off while capture is debugged; restore it before release.
+    if (!posthog.has_opted_in_capturing()) posthog.opt_in_capturing();
+  }
 
-  return client;
+  return posthog;
 };
 const initAnalytics = (): void => {
-  void loadClient();
+  loadClient();
 };
 const capturePageview = (): void => {
-  void loadClient()?.then((posthog) => posthog.capture("$pageview"));
+  loadClient()?.capture("$pageview");
 };
 const captureEvent = (event: string, properties?: Record<string, string>): void => {
-  void loadClient()?.then((posthog) => posthog.capture(event, properties));
+  loadClient()?.capture(event, properties);
 };
 /** Signed-in users agreed to the privacy policy at registration, so capture is full. */
 const identifyAnalytics = (user: AnalyticsUser, workspace: AnalyticsWorkspace): void => {
-  void loadClient()?.then((posthog) => {
-    const previousUserID = posthog.get_property("$user_id");
-    const switchedAccount = Boolean(previousUserID) && previousUserID !== user.id;
+  const client = loadClient();
 
-    if (switchedAccount) posthog.reset();
-    if (!posthog.has_opted_in_capturing()) posthog.opt_in_capturing();
+  if (!client) return;
 
-    posthog.identify(user.id, { name: user.name, email: user.email });
-    posthog.group("workspace", workspace.id, { name: workspace.name });
-    setIdentifiedWorkspaceID(workspace.id);
-  });
+  const previousUserID = client.get_property("$user_id");
+  const switchedAccount = Boolean(previousUserID) && previousUserID !== user.id;
+
+  if (switchedAccount) client.reset();
+  if (!client.has_opted_in_capturing()) client.opt_in_capturing();
+
+  client.identify(user.id, { name: user.name, email: user.email });
+  client.group("workspace", workspace.id, { name: workspace.name });
+  setIdentifiedWorkspaceID(workspace.id);
 };
 const resetAnalytics = (): void => {
-  void loadClient()?.then((posthog) => {
-    if (!posthog.get_property("$user_id")) return;
+  const client = loadClient();
 
-    posthog.reset();
-    setIdentifiedWorkspaceID(null);
-  });
+  if (!client?.get_property("$user_id")) return;
+
+  client.reset();
+  setIdentifiedWorkspaceID(null);
 };
 /** Drops events without changing the identity or consent; the result resumes capture. */
-const pauseAnalytics = async (): Promise<() => void> => {
-  const posthog = await loadClient();
-  const recording = Boolean(posthog?.sessionRecordingStarted());
+const pauseAnalytics = (): (() => void) => {
+  const client = loadClient();
+  const recording = Boolean(client?.sessionRecordingStarted());
 
   capturePaused = true;
-  posthog?.stopSessionRecording();
+  client?.stopSessionRecording();
 
   return () => {
     capturePaused = false;
 
-    if (recording) posthog?.startSessionRecording();
+    if (recording) client?.startSessionRecording();
   };
 };
 
