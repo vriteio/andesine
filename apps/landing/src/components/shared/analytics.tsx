@@ -25,9 +25,6 @@ const Analytics: Component = () => {
         api_host: POSTHOG_HOST,
         // The host can be a relay path, e.g. `/relay`; links still open PostHog.
         ui_host: "https://us.posthog.com",
-        autocapture: false,
-        capture_pageview: false,
-        capture_pageleave: false,
         advanced_disable_feature_flags: true,
         cross_subdomain_cookie: true,
         cookieless_mode: "on_reject",
@@ -60,14 +57,6 @@ const Analytics: Component = () => {
     setConsent(storedConsent);
     void loadClient().then((posthog) => {
       const identified = Boolean(posthog.get_property("$user_id"));
-      const declinedWhileSignedIn = identified && storedConsent === "declined";
-
-      // An opt-out would reset a signed-in user's app identity, so the website sends nothing.
-      if (declinedWhileSignedIn) {
-        posthog.set_config({ disable_session_recording: true });
-
-        return;
-      }
 
       if (!identified) applyConsent(posthog, storedConsent ?? "declined");
 

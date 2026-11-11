@@ -1,6 +1,5 @@
 import type { PostHog } from "posthog-js";
 import { createSignal } from "solid-js";
-import { type Consent, readConsent } from "@andesine/components";
 import { config } from "#web/lib/api";
 
 interface AnalyticsUser {
@@ -29,15 +28,9 @@ const loadClient = (): Promise<PostHog> | null => {
     posthog.init(config.PUBLIC_POSTHOG_KEY!, {
       api_host: config.PUBLIC_POSTHOG_HOST,
       ui_host: "https://us.posthog.com",
-      autocapture: false,
-      capture_pageview: false,
-      capture_pageleave: false,
-      rageclick: false,
-      capture_dead_clicks: false,
-      enable_heatmaps: false,
+      capture_heatmaps: true,
       advanced_disable_feature_flags: true,
       cross_subdomain_cookie: true,
-      cookieless_mode: "on_reject",
       mask_personal_data_properties: true,
       custom_personal_data_properties: ["signature", "sig", "user_code"],
       session_recording: {
@@ -58,20 +51,8 @@ const loadClient = (): Promise<PostHog> | null => {
 
   return client;
 };
-const applyConsent = (posthog: PostHog, choice: Consent): void => {
-  const accepted = choice === "accepted";
-
-  // Each opt-in call sends a `$opt_in` event, so only changes are applied.
-  if (accepted && !posthog.has_opted_in_capturing()) posthog.opt_in_capturing();
-  if (!accepted && !posthog.has_opted_out_capturing()) posthog.opt_out_capturing();
-};
 const initAnalytics = (): void => {
-  const storedConsent = readConsent();
-
-  void loadClient()?.then((posthog) => {
-    // An identified user stays opted in until sign-out; opting in again would reset the session.
-    if (!posthog.get_property("$user_id")) applyConsent(posthog, storedConsent ?? "declined");
-  });
+  void loadClient();
 };
 const capturePageview = (): void => {
   void loadClient()?.then((posthog) => posthog.capture("$pageview"));
@@ -99,7 +80,6 @@ const resetAnalytics = (): void => {
 
     posthog.reset();
     setIdentifiedWorkspaceID(null);
-    applyConsent(posthog, readConsent() ?? "declined");
   });
 };
 /** Drops events without changing the identity or consent; the result resumes capture. */
