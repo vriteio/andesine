@@ -106,7 +106,8 @@ header[data-type="title"] {
   @apply relative w-full min-w-0 my-0!;
 }
 
-.ProseMirror :where(*):has(+ [data-table-node-view]) {
+.ProseMirror
+  :where(*):has(+ [data-table-node-view], + .ProseMirror-gapcursor + [data-table-node-view]) {
   @apply mb-0!;
 }
 
@@ -379,8 +380,8 @@ header[data-type="title"] {
 
 .ProseMirror-gapcursor::after {
   @apply w-full! border-0!;
-  // The cursor sits at the next block's top: centered in the blocks' 0.5rem margin, less its 2px.
-  top: calc(-0.25rem - 1px) !important;
+  // Its plugin places it in the middle of the gap; centered on that line, less its 2px.
+  top: -1px !important;
 }
 
 // Collaboration
@@ -654,11 +655,6 @@ header:only-of-type.is-empty:first-child::before,
     & > [data-property-node-view] + .ProseMirror-gapcursor + [data-fragment-node-view] {
       @apply my-0!;
     }
-
-    // Blocks after properties have no margin to center the cursor in.
-    & > [data-property-node-view] + .ProseMirror-gapcursor::after {
-      top: -1px !important;
-    }
   }
 
   :where(blockquote):not(:where(.not-prose, .not-prose *)) {
@@ -751,10 +747,16 @@ header:only-of-type.is-empty:first-child::before,
 .prose-editor .element-node[data-drag-handle-target] > .element-content-badge {
   @apply hidden;
 }
-.prose-editor .element-node:has(+ .element-node) {
+/* Consecutive tags stack; views keep the block margin, which holds the gap cursor and its clicks. */
+.prose-editor
+  .element-node:not([data-element-view-active]):has(
+    + .element-node:not([data-element-view-active])
+  ) {
   @apply mb-0;
 }
-.prose-editor .element-node + .element-node {
+.prose-editor
+  .element-node:not([data-element-view-active])
+  + .element-node:not([data-element-view-active]) {
   @apply mt-0;
 }
 .prose-editor .element-content > .element-node {
@@ -853,8 +855,9 @@ header:only-of-type.is-empty:first-child::before,
 }
 
 /* Code blocks */
+/* The padding holds the background, which reaches past the code; margins are as for other blocks. */
 .prose-editor .code-block-node {
-  @apply relative my-2 font-mono text-sm text-gray-700;
+  @apply relative my-2 py-2 font-mono text-sm text-gray-700;
   min-width: 0;
 }
 .prose-editor .code-block-node .cm-editor,
@@ -917,7 +920,7 @@ header:only-of-type.is-empty:first-child::before,
 
 /* A plain code block, e.g. in a code group, has no margins or background; its view frames it. */
 .prose-editor [data-element-plain].code-block-node {
-  @apply my-0;
+  @apply my-0 py-0;
 }
 .prose-editor [data-element-plain].code-block-node .cm-editor::before {
   @apply hidden;

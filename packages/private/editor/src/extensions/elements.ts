@@ -19,9 +19,12 @@ import { getDropSlot } from "#editor/ui/element-view-drop";
 import {
   activateSelectedBlock,
   findNextStop,
+  getGapAt,
   getSelectedBlock,
+  isBlockStop,
   isShown,
   leaveBlock,
+  moveToStop,
   selectStop
 } from "#editor/ui/keyboard-stops";
 import type { ElementViews } from "#editor/client-types";
@@ -183,6 +186,22 @@ const findShownText = (view: EditorView, $from: ResolvedPos, dir: number): Selec
 
   return found;
 };
+/** The gap cursor at a click in the space between two blocks, e.g. the margin between callouts. */
+const findGapAtClick = (view: EditorView, event: MouseEvent): GapCursor | null => {
+  const parent = event.target instanceof HTMLElement ? event.target : null;
+  const children = parent ? Array.from(parent.children) : [];
+  const index = children.findIndex((child) => child.getBoundingClientRect().top > event.clientY);
+  const isBetween =
+    index > 0 && children[index - 1].getBoundingClientRect().bottom <= event.clientY;
+
+  if (!parent || !isBetween) return null;
+
+  try {
+    return getGapAt(view, view.posAtDOM(parent, index));
+  } catch {
+    return null;
+  }
+};
 const Elements = Extension.create<ElementsOptions>({
   name: "elements",
   priority: 110,
@@ -240,8 +259,9 @@ const Elements = Extension.create<ElementsOptions>({
             // The arrow keys stop on blocks without text too, e.g. file rows, as block selections.
             if (selected) {
               const stop = findNextStop(editor, { ...selected, block: true }, dir);
+              const from = forward ? selected.pos + selected.node.nodeSize : selected.pos;
 
-              if (stop) selectStop(editor, stop, dir);
+              if (stop) moveToStop(editor, from, stop, dir);
 
               return true;
             }
@@ -255,7 +275,11 @@ const Elements = Extension.create<ElementsOptions>({
               ? findNextStop(editor, { pos: selection.$head.before(), block: false }, dir)
               : null;
 
-            if (next?.kind === "block") return selectStop(editor, next, dir);
+            if (next?.kind === "block") {
+              const from = forward ? selection.$head.after() : selection.$head.before();
+
+              return moveToStop(editor, from, next, dir);
+            }
 
             // Elements with a view keep it; the native caret moves through their content.
             if (selection instanceof NodeSelection && selection.node.type.name === "element") {
@@ -277,7 +301,13 @@ const Elements = Extension.create<ElementsOptions>({
 
             if (adjacent?.type.name === "element") {
               const pos = forward ? $position.pos : $position.pos - adjacent.nodeSize;
+              // From a gap, onto the view's own UI first, as from the text before it.
+              const entersBlockStop =
+                forward && selection instanceof GapCursor && isBlockStop(editor, pos);
 
+              if (entersBlockStop) {
+                return selectStop(editor, { pos, node: adjacent, kind: "block" }, dir);
+              }
               if (showsView(view, pos)) return false;
 
               return editor.commands.editElement(pos, false, forward ? "start" : "end");
@@ -289,6 +319,13 @@ const Elements = Extension.create<ElementsOptions>({
               return editor.commands.editElement($position.before(), false, "end");
             }
             return false;
+          },
+          handleClick(view, _pos, event) {
+            const gap = view.editable ? findGapAtClick(view, event) : null;
+
+            if (gap) view.dispatch(view.state.tr.setSelection(gap));
+
+            return Boolean(gap);
           },
           transformCopied: unwrapOpenElements,
           transformPasted: unwrapOpenElements,

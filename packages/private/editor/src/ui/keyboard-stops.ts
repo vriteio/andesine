@@ -1,6 +1,8 @@
 import type { Editor } from "@tiptap/core";
+import { GapCursor } from "@tiptap/pm/gapcursor";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { NodeSelection, TextSelection } from "@tiptap/pm/state";
+import type { EditorView } from "@tiptap/pm/view";
 import { isBlockSelection } from "#editor/extensions/block-selection";
 import { OPEN_BLOCK_MENU_META } from "#editor/ui/constants";
 
@@ -92,6 +94,35 @@ const findNextStop = (
     ? (stops.find((stop) => stop.pos > pos) ?? null)
     : (stops.findLast((stop) => stop.pos < pos) ?? null);
 };
+/** The gap cursor at the position, if one fits there; not in a view, which lays out its content. */
+const getGapAt = (view: EditorView, pos: number): GapCursor | null => {
+  const { doc } = view.state;
+  const $pos = doc.resolve(pos);
+  const parentDOM = $pos.depth > 0 ? view.nodeDOM($pos.before()) : null;
+  const isInView =
+    parentDOM instanceof HTMLElement && parentDOM.hasAttribute("data-element-view-active");
+  // Resolving a bookmark checks whether this position supports a gap cursor.
+  const gap = isInView ? null : new GapCursor($pos).getBookmark().resolve(doc);
+
+  return gap instanceof GapCursor ? gap : null;
+};
+/** The first gap cursor on the way to the stop, e.g. between two callouts, to add blocks there. */
+const findGapToStop = (
+  view: EditorView,
+  from: number,
+  stop: KeyboardStop,
+  dir: 1 | -1
+): GapCursor | null => {
+  const to = dir > 0 ? stop.pos : stop.pos + stop.node.nodeSize;
+
+  for (let pos = from; dir > 0 ? pos <= to : pos >= to; pos += dir) {
+    const gap = getGapAt(view, pos);
+
+    if (gap) return gap;
+  }
+
+  return null;
+};
 
 /** Activates the block's shown UI by the view's `onActivate`, e.g. a tab button; false without. */
 const activateBlock = (editor: Editor, node: ProseMirrorNode): boolean => {
@@ -164,6 +195,16 @@ const selectStop = (editor: Editor, stop: KeyboardStop, dir: 1 | -1): boolean =>
 
   return true;
 };
+/** Moves from the position to the stop, stopping first at a gap on the way, e.g. between callouts. */
+const moveToStop = (editor: Editor, from: number, stop: KeyboardStop, dir: 1 | -1): boolean => {
+  const gap = findGapToStop(editor.view, from, stop, dir);
+
+  if (!gap) return selectStop(editor, stop, dir);
+
+  editor.view.dispatch(editor.state.tr.setSelection(gap).scrollIntoView());
+
+  return true;
+};
 
 /**
  * Enter or Space on a selected block stop, e.g. a tab reached with the arrow keys: the view's
@@ -182,5 +223,15 @@ const activateSelectedBlock = (editor: Editor, key: string): boolean => {
   return true;
 };
 
-export { activateSelectedBlock, findNextStop, getSelectedBlock, isShown, leaveBlock, selectStop };
+export {
+  activateSelectedBlock,
+  findNextStop,
+  getGapAt,
+  getSelectedBlock,
+  isBlockStop,
+  isShown,
+  leaveBlock,
+  moveToStop,
+  selectStop
+};
 export type { KeyboardStop };

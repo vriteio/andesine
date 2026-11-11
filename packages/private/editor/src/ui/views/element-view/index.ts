@@ -113,6 +113,7 @@ const createElementViewRenderer =
       badge.update();
       closing.hidden = node.attrs.selfClosing || extensionView.active();
       opening.hidden = extensionView.active();
+      dom.toggleAttribute("data-element-view-active", extensionView.active());
       dom.toggleAttribute("data-element-editing", editing);
       dom.toggleAttribute("data-element-locked", !!remote);
       opening.title = closing.title = remote ? `${remote.name} is editing this tag.` : "";

@@ -252,7 +252,7 @@ const ImageView = (props: ImageViewProps) => {
 
   return (
     <figure
-      class="not-prose relative my-3 [-webkit-touch-callout:none]"
+      class="not-prose relative my-2 [-webkit-touch-callout:none]"
       contentEditable={false}
       data-image-block
       ref={figure}

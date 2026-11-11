@@ -12,4 +12,4 @@ export * from "./field-keyboard";
 export * from "./version-diff";
 export * from "./collaboration";
 export { NodeRange } from "@tiptap/extension-node-range";
-export { Gapcursor } from "@tiptap/extension-gapcursor";
+export * from "./gap-cursor";

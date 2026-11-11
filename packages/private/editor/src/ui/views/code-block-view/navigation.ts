@@ -7,7 +7,7 @@ import { Plugin, PluginKey, Selection, TextSelection, type EditorState } from "@
 import { Decoration, DecorationSet, type EditorView as ProseMirrorView } from "@tiptap/pm/view";
 import { rangeContainsCode } from "../../block-utils";
 import { createVerticalAutoScroll, type ClientPosition } from "../../auto-scroll";
-import { findNextStop, selectStop } from "../../keyboard-stops";
+import { findNextStop, moveToStop } from "../../keyboard-stops";
 
 interface CodeBlockBridge {
   editor: Editor;
@@ -129,7 +129,7 @@ const handleNavigationKey = (editor: Editor, view: ProseMirrorView, event: Keybo
       ? findNextStop(editor, { pos: selection.$head.before(), block: false }, dir)
       : null;
 
-    if (stop) return selectStop(editor, stop, dir);
+    if (stop) return moveToStop(editor, boundary, stop, dir);
 
     const head =
       moved.head !== offset

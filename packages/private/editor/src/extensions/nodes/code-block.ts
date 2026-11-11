@@ -46,6 +46,10 @@ const getClosedDepth = (slice: Slice, open: number, side: "firstChild" | "lastCh
 };
 
 const CodeBlock = BaseCodeBlock.extend({
+  // A gap cursor goes between code blocks, else nothing can be added between two of them.
+  extendNodeSchema(extension) {
+    return extension.name === "codeBlock" ? { createGapCursor: true } : {};
+  },
   addKeyboardShortcuts() {
     return {
       ...this.parent?.(),
