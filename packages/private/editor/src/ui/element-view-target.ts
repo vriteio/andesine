@@ -23,6 +23,14 @@ const getContentAtPoint = (editor: Editor, x: number, y: number): HTMLElement | 
 const hasControls = (content: Element | null): content is HTMLElement => {
   return Boolean(content?.parentElement?.matches("[data-content-slot][data-block-controls]"));
 };
+/** Whether the content holds top-level blocks: the editor's, or a fragment's, as at the top. */
+const isTopLevelContent = (root: HTMLElement, content: Element | null): boolean => {
+  const isFragmentContent =
+    content?.matches("[data-node-view-content]") &&
+    content.closest("[data-node-view]")?.matches("[data-fragment-node-view]");
+
+  return content === root || Boolean(isFragmentContent);
+};
 const getContentBlocks = (editor: Editor, content: HTMLElement) => {
   return Array.from(content.children)
     .filter((dom): dom is HTMLElement => dom instanceof HTMLElement)
@@ -87,10 +95,10 @@ const getChildTargetByID = (
   return node ? { dom, node, pos: pos! } : null;
 };
 /**
- * The block under the point in an element view, from the view's DOM: the top-level block, unless
- * the view opts a block in: a block in a `ContentSlot` with `controls`, e.g. a tab's paragraph,
- * or a `BlockArea`'s block with the mode's option: `controls`, or `menu` for a right click; drops
- * use `controls` too. Undefined outside element views.
+ * The block under the point in an element view, from the view's DOM: the top-level block, or a
+ * fragment's block, unless the view opts a block in: a block in a `ContentSlot` with `controls`,
+ * e.g. a tab's paragraph, or a `BlockArea`'s block with the mode's option: `controls`, or `menu`
+ * for a right click; drops use `controls` too. Undefined outside element views.
  */
 const getViewTargetAtPoint = (
   editor: Editor,
@@ -110,7 +118,7 @@ const getViewTargetAtPoint = (
     dom && dom !== root;
     child = dom, dom = dom.parentElement
   ) {
-    const isBlock = dom.parentElement === root || hasControls(dom.parentElement);
+    const isBlock = isTopLevelContent(root, dom.parentElement) || hasControls(dom.parentElement);
     const isArea =
       dom.dataset.blockArea &&
       dom.hasAttribute(mode === "menu" ? "data-block-menu" : "data-block-controls");
