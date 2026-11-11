@@ -18,7 +18,7 @@ const PasskeyItem: Component<{
   onDelete: (ids: string[]) => void;
   onRename: (name: string) => void;
 }> = (props) => {
-  const [{ selection }, { setRenaming, setSelection }] = useTree();
+  const [{ selection, isRenaming }, { setRenaming, setSelection }] = useTree();
   const [menuOpened, setMenuOpened] = createSignal(false);
   const dropdownOptions = createMemo(() => {
     const selectedIDs = selection();
@@ -76,7 +76,9 @@ const PasskeyItem: Component<{
         renderLabel={(label) => (
           <div class="flex min-w-0 flex-1 items-center gap-1.5">
             <div class="flex min-w-0 flex-1 items-center gap-1.5" title={props.name}>
-              <div class="min-w-0 truncate">{label}</div>
+              <div class={isRenaming(props.id) ? "flex min-w-0 flex-1" : "min-w-0 truncate"}>
+                {label}
+              </div>
               <div class="hidden h-4 w-px shrink-0 rounded-full bg-gray-200 md:block" />
               <span class="hidden shrink-0 text-xs text-gray-400 md:inline">
                 {formatDate(props.createdAt)}
