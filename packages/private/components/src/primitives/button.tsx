@@ -52,7 +52,7 @@ const buttonElements = {
 
 const baseClasses =
   ":base: transition-[background-position,opacity] relative ease-out duration-200 font-medium !ring-0 !focus:ring-0 disabled:opacity-70";
-const outlinedClasses = ":base: outline outline-1 -outline-offset-1 shadow-md disabled:shadow-none";
+const outlinedClasses = ":base: outline outline-1 -outline-offset-1 shadow-md";
 const flatClasses = ":base: bg-transparent !focus:outline-none !focus-visible:outline-none";
 const gradientClasses = ":base: bg-gradient-to-tr from-secondary via-primary to-secondary";
 const sizeClasses: Record<ButtonSize, string> = {
