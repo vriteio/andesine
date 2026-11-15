@@ -1,0 +1,15 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://api.andesine.app",
+      "service-desc": [
+        { "href": "https://api.andesine.app/openapi.json", "type": "application/vnd.oai.openapi+json" }
+      ],
+      "service-doc": [
+        { "href": "https://andesine.app/docs/developers/api-overview/", "type": "text/html" },
+        { "href": "https://andesine.app/docs/api/", "type": "text/html" }
+      ],
+      "status": [{ "href": "https://api.andesine.app/health", "type": "application/json" }]
+    }
+  ]
+}
