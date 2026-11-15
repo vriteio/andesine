@@ -11,17 +11,17 @@ const links = {
     linkedin: "https://www.linkedin.com/company/andesineapp"
   },
   legal: {
-    privacy: "/privacy",
-    terms: "/tos",
-    support: "/support"
+    privacy: "/privacy/",
+    terms: "/tos/",
+    support: "/support/"
   },
   vrite: "https://vrite.io/",
   sections: {
     home: "#top",
     main: "#main",
-    editor: "#editor",
-    features: "#features",
-    pricing: "#pricing"
+    editor: "/#editor",
+    features: "/#features",
+    pricing: "/#pricing"
   }
 };
 

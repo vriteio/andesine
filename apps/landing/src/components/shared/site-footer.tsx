@@ -3,6 +3,7 @@ import { Button, IconButton } from "@andesine/components/primitives";
 import { type Component, For } from "solid-js";
 
 const footerLinks = [
+  { label: "Docs", href: links.docs },
   { label: "Changelog", href: links.changelog },
   { label: "Support", href: links.legal.support },
   { label: "Privacy policy", href: links.legal.privacy },
@@ -55,7 +56,13 @@ const SiteFooter: Component = () => (
       >
         <For each={footerLinks}>
           {(link) => (
-            <Button link={link.href} target="_blank" variant="ghost" text="softer" size="medium">
+            <Button
+              link={link.href}
+              target={link.href.startsWith("http") ? "_blank" : undefined}
+              variant="ghost"
+              text="softer"
+              size="medium"
+            >
               {link.label}
             </Button>
           )}

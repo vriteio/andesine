@@ -8,17 +8,59 @@ import { Publishing } from "../components/sections/publishing";
 import DocumentHead from "../components/shared/document-head/index.astro";
 import { PageScrollShadows } from "../components/shared/page-scroll-shadows";
 import { Analytics } from "../components/shared/analytics";
+import { faqItems } from "../components/sections/faq";
+import { links } from "../links";
 import "../styles.scss";
 
 const title = "Andesine — The versatile content workspace";
 const description =
   "Write, organize, and publish docs, guides, and knowledge bases in one shared workspace.";
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://andesine.app/#organization",
+      name: "Andesine",
+      url: "https://andesine.app/",
+      logo: "https://andesine.app/favicon.svg",
+      sameAs: [links.repository, links.social.x, links.social.linkedin]
+    },
+    {
+      "@type": "WebSite",
+      name: "Andesine",
+      url: "https://andesine.app/",
+      publisher: { "@id": "https://andesine.app/#organization" }
+    },
+    {
+      "@type": "SoftwareApplication",
+      name: "Andesine",
+      url: "https://andesine.app/",
+      description,
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      publisher: { "@id": "https://andesine.app/#organization" },
+      offers: [
+        { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD" },
+        { "@type": "Offer", name: "Pro", price: "12", priceCurrency: "USD" }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: faqItems.map((item) => ({
+        "@type": "Question",
+        name: item.question,
+        acceptedAnswer: { "@type": "Answer", text: item.answer }
+      }))
+    }
+  ]
+};
 ---
 
 <!doctype html>
 <html lang="en" class="scrollbar-contrast" style="background-color: #f9fafb">
   <head>
-    <DocumentHead title={title} description={description} path="/" />
+    <DocumentHead title={title} description={description} path="/" jsonLd={jsonLd} />
   </head>
   <body style="background-color: #f9fafb">
     <PageScrollShadows client:load />

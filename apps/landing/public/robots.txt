@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /auth/
+
+Sitemap: https://andesine.app/sitemap.xml
+Sitemap: https://andesine.app/docs/sitemap.xml

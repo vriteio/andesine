@@ -3,9 +3,10 @@ interface Props {
   title: string;
   description: string;
   path: string;
+  jsonLd?: object;
 }
 
-const { title, description, path } = Astro.props;
+const { title, description, path, jsonLd } = Astro.props;
 const canonicalUrl = new URL(path, Astro.site).toString();
 const imageUrl = new URL("/_landing/social.jpg", Astro.site).toString();
 ---
@@ -51,3 +52,4 @@ const imageUrl = new URL("/_landing/social.jpg", Astro.site).toString();
   crossorigin
 />
 <title>{title}</title>
+{jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}

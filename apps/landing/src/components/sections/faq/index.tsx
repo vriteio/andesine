@@ -10,7 +10,7 @@ interface FAQItem {
 }
 
 // Cloud allowances match the backend billing defaults and billing settings.
-const items: FAQItem[] = [
+const faqItems: FAQItem[] = [
   {
     question: "Can I self-host Andesine?",
     answer:
@@ -46,7 +46,7 @@ const FAQ: Component = () => (
     subtitle="Before you start writing."
   >
     <Card shade class="bg-white! p-0" data-entry="up">
-      <For each={items}>
+      <For each={faqItems}>
         {(item) => (
           <details
             name="landing-faq"
@@ -74,4 +74,4 @@ const FAQ: Component = () => (
   </Section>
 );
 
-export { FAQ };
+export { FAQ, faqItems };

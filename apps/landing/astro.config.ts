@@ -20,9 +20,6 @@ export default defineConfig({
   build: { assets: "_landing" },
   server: { host: true, port: 43213, allowedHosts: [".local"] },
   integrations: [unoCSS(), solid()],
-  build: {
-    assets: "_landing"
-  },
   vite: {
     ssr: { noExternal: ["@andesine/components"] },
     resolve: { tsconfigPaths: true },
