@@ -1,0 +1,53 @@
+---
+import DocumentHead from "../document-head/index.astro";
+import { SiteHeader } from "../site-header";
+import { SiteFooter } from "../site-footer";
+import { PageScrollShadows } from "../page-scroll-shadows";
+import { Analytics } from "../analytics";
+import { CallToAction } from "../../sections/call-to-action";
+import "../../../styles.scss";
+
+interface Props {
+  title: string;
+  description: string;
+  path: string;
+  heading: string;
+  subheading: string;
+  jsonLd?: object;
+}
+
+const { title, description, path, heading, subheading, jsonLd } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" class="scrollbar-contrast" style="background-color: #f9fafb">
+  <head>
+    <DocumentHead title={title} description={description} path={path} jsonLd={jsonLd} />
+  </head>
+  <body style="background-color: #f9fafb">
+    <PageScrollShadows client:load />
+    <Analytics client:only="solid-js" />
+    <div id="top" class="overflow-clip">
+      <SiteHeader client:load />
+      <main id="main" class="flex flex-col gap-16 md:gap-24">
+        <section
+          aria-labelledby="page-title"
+          class="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 pt-32 md:px-8 md:pt-40"
+        >
+          <h1 id="page-title" class="max-w-3xl text-4xl font-semibold leading-tight md:text-5xl">
+            {heading}
+          </h1>
+          <p class="max-w-xl text-base leading-relaxed text-gray-500">{subheading}</p>
+        </section>
+        <slot />
+        <CallToAction />
+      </main>
+      <SiteFooter />
+    </div>
+    <script>
+      import { initEntryAnimations } from "../../../entry-animations";
+
+      initEntryAnimations();
+    </script>
+  </body>
+</html>

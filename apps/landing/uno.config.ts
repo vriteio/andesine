@@ -11,6 +11,10 @@ const componentsRoot = fileURLToPath(
 export default defineConfig({
   ...webConfig,
   content: {
+    // Icon names in navigation.ts; other plain .ts files stay out, as transforming them changes compiled classes.
+    pipeline: {
+      include: [/\.(vue|svelte|[jt]sx|mdx?|astro|html)($|\?)/, /\/navigation\.ts($|\?)/]
+    },
     filesystem: [
       `${projectRoot}src/**/*.{astro,ts,tsx,scss}`,
       `${componentsRoot}/**/*.{ts,tsx,scss}`

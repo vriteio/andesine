@@ -16,12 +16,26 @@ const links = {
     support: "/support/"
   },
   vrite: "https://vrite.io/",
-  sections: {
-    home: "#top",
-    main: "#main",
-    editor: "/#editor",
-    features: "/#features",
-    pricing: "/#pricing"
+  llms: "/llms.txt",
+  pages: {
+    home: "/?landing=1",
+    pricing: "/pricing/",
+    openSource: "/open-source/",
+    about: "/about/"
+  },
+  product: {
+    editor: "/product/editor/",
+    contentModel: "/product/content-model/",
+    publishing: "/product/publishing/",
+    aiAgents: "/product/ai-agents/",
+    extensions: "/product/extensions/",
+    developers: "/product/developers/"
+  },
+  useCases: {
+    documentation: "/use-cases/documentation/",
+    knowledgeBase: "/use-cases/knowledge-base/",
+    headlessCms: "/use-cases/headless-cms/",
+    agentKnowledge: "/use-cases/agent-knowledge/"
   }
 };
 
