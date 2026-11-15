@@ -4,10 +4,10 @@ How AI agents and apps get access to an Andesine workspace. Agents act for a use
 
 ## MCP with OAuth (recommended for agents)
 
-- MCP server: `https://api.andesine.app/mcp`, or `https://api.andesine.app/mcp/<workspace ID>` for one workspace.
-- Protected resource metadata (RFC 9728): `https://api.andesine.app/.well-known/oauth-protected-resource/mcp`
-- Authorization server: `https://api.andesine.app/auth`, with metadata at `https://api.andesine.app/.well-known/oauth-authorization-server/auth`
-- Client registration: dynamic client registration (RFC 7591), or an HTTPS client ID URL that points to a client metadata document.
+- MCP server: <https://api.andesine.app/mcp>, or `https://api.andesine.app/mcp/<workspace ID>` for one workspace.
+- Protected resource metadata (RFC 9728): <https://api.andesine.app/.well-known/oauth-protected-resource/mcp>
+- Authorization server: <https://api.andesine.app/auth>, with metadata at <https://api.andesine.app/.well-known/oauth-authorization-server/auth>
+- Client registration: dynamic client registration (RFC 7591) at <https://api.andesine.app/auth/oauth2/register>, or an HTTPS client ID URL that points to a client metadata document.
 - Scopes: `andesine:read`, `andesine:write`, and `offline_access` for refresh tokens.
 - The user signs in, picks a workspace, and approves the access. Send the access token as `Authorization: Bearer <token>`.
 
