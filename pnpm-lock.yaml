@@ -459,6 +459,9 @@ importers:
       '@andesine/components':
         specifier: workspace:*
         version: link:../../packages/private/components
+      '@andesine/pages':
+        specifier: workspace:*
+        version: link:../../packages/public/pages
       '@astrojs/solid-js':
         specifier: ^7.0.2
         version: 7.0.2(@types/node@26.1.2)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.100.0)(sass@1.100.0)(solid-js@1.9.18)(terser@5.51.2)(tsx@4.23.5)(yaml@2.9.1)
@@ -554,6 +557,9 @@ importers:
       '@andesine/editor':
         specifier: workspace:*
         version: link:../../packages/private/editor
+      '@andesine/mcp':
+        specifier: workspace:*
+        version: link:../../packages/private/mcp
       '@ark-ui/solid':
         specifier: ^5.38.0
         version: 5.38.0(solid-js@1.9.18)
@@ -641,6 +647,9 @@ importers:
       yjs:
         specifier: 'catalog:'
         version: 13.6.32
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
     devDependencies:
       '@andesine/sdk':
         specifier: workspace:*

@@ -62,7 +62,9 @@ const agentsSchema = z
     skill: z
       .string()
       .regex(/^\.\.?\//, "Use a path relative to the config, e.g. ./SKILL.md.")
-      .optional()
+      .optional(),
+    /** Tools for in-browser AI agents (WebMCP): docs tree, page reads, search, and answers. */
+    webmcp: z.boolean().default(true)
   })
   .strict();
 const socialSchema = z

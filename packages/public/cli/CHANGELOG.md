@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.12.0
+
+- New Pages projects use `@andesine/pages` 0.12.0, with WebMCP tools for browser agents.
+
 ## 0.11.0
 
 - The `api` commands use the current API spec: updated summaries and descriptions, and ID

@@ -1,7 +1,13 @@
 import type { PagesConfig, SourceConfig } from "../config";
 import { createLinkResolver } from "../navigation/links";
 import type { SourceData } from "../sources";
-import type { AndesineAPIContext, SearchSourceContext, SiteContext } from "./types";
+import type {
+  AndesineAPIContext,
+  SearchContext,
+  SearchSourceContext,
+  SiteContext,
+  WebMCPContext
+} from "./types";
 
 const defaultAPIURL = "https://api.andesine.app";
 
@@ -32,11 +38,30 @@ const createSearchSources = (config: PagesConfig): SearchSourceContext[] => {
     };
   });
 };
-const createSiteContext = (config: PagesConfig, loaded: SourceData[]): SiteContext => {
+/** Undefined when no source is searchable. */
+const createSearchContext = (config: PagesConfig): SearchContext | undefined => {
   const sources = createSearchSources(config);
-  const links = createLinkResolver(loaded);
   // The API answers about one collection, so the first source with answers is used.
   const answers = config.sources.find((source) => source.type === "andesine" && source.answers);
+
+  if (!sources.length) return undefined;
+
+  return {
+    sources,
+    endpoint: `${config.base}_andesine/search/`,
+    pagefind: `${config.base}pagefind/`,
+    answers: answers && {
+      endpoint: `${config.base}_andesine/answers/`,
+      source: answers.id,
+      api: toAPIContext(config, answers)
+    }
+  };
+};
+const createWebMCPContext = (config: PagesConfig): WebMCPContext => {
+  return { base: config.base, search: createSearchContext(config) };
+};
+const createSiteContext = (config: PagesConfig, loaded: SourceData[]): SiteContext => {
+  const links = createLinkResolver(loaded);
 
   return {
     name: config.name,
@@ -52,19 +77,8 @@ const createSiteContext = (config: PagesConfig, loaded: SourceData[]): SiteConte
     cta: config.cta && links.resolve(config.cta),
     socialLinks: links.resolveAll(config.socialLinks),
     poweredBy: config.poweredBy,
-    search: sources.length
-      ? {
-          sources,
-          endpoint: `${config.base}_andesine/search/`,
-          pagefind: `${config.base}pagefind/`,
-          answers: answers && {
-            endpoint: `${config.base}_andesine/answers/`,
-            source: answers.id,
-            api: toAPIContext(config, answers)
-          }
-        }
-      : undefined
+    search: createSearchContext(config)
   };
 };
 
-export { createSiteContext };
+export { createSiteContext, createWebMCPContext };

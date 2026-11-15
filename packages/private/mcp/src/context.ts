@@ -1,4 +1,4 @@
-import { AndesineAPIError, type createClient } from "@andesine/sdk";
+import type { createClient } from "@andesine/sdk";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 interface ToolContext {
@@ -14,6 +14,10 @@ interface ToolContext {
 interface CheckpointStore {
   claim: (entryID: string) => Promise<boolean>;
 }
+interface APIError extends Error {
+  code: unknown;
+  data?: unknown;
+}
 
 type AndesineClient = ReturnType<typeof createClient>;
 
@@ -25,17 +29,18 @@ const toolResult = (value: Record<string, unknown>): CallToolResult => ({
 });
 /** API errors become tool results with the code, message, and hints, so agents can correct calls. */
 const toolError = (error: unknown): CallToolResult => {
+  // The SDK's `AndesineAPIError` and the web app's `ORPCError` both have `code` and `data`.
+  const apiError = error instanceof Error && "code" in error ? (error as APIError) : undefined;
   const data =
-    error instanceof AndesineAPIError && error.data && typeof error.data === "object"
-      ? (error.data as Record<string, unknown>)
+    apiError?.data && typeof apiError.data === "object"
+      ? (apiError.data as Record<string, unknown>)
       : {};
   const { hints, ...details } = data;
-  const message =
-    error instanceof AndesineAPIError
-      ? `${error.code}: ${error.message}`
-      : error instanceof Error
-        ? error.message
-        : String(error);
+  const message = apiError
+    ? `${String(apiError.code)}: ${apiError.message}`
+    : error instanceof Error
+      ? error.message
+      : String(error);
   const lines = [
     message,
     ...(Array.isArray(hints) ? hints.map((hint) => `Hint: ${String(hint)}`) : []),

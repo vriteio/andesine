@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@andesine/components": "workspace:*",
+    "@andesine/pages": "workspace:*",
     "@astrojs/solid-js": "^7.0.2",
     "astro": "^7.3.8",
     "clsx": "^2.1.1",

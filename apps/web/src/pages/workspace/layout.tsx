@@ -37,6 +37,7 @@ import { ExtensionLoader } from "#web/components/extensions/extension-loader";
 import { ExtensionMember } from "#web/components/extensions/extension-member";
 import { ExtensionNotices } from "#web/components/extensions/extension-notices";
 import { isOffline } from "#web/lib/offline";
+import { registerWebMCPTools } from "#web/lib/webmcp";
 import { createMediaQuery } from "@solid-primitives/media";
 import { useNotify } from "#web/context/notifications";
 import {
@@ -177,6 +178,18 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
       unregisterSearch();
       unregister();
     });
+  });
+
+  createEffect(() => {
+    const controller = new AbortController();
+
+    registerWebMCPTools({
+      workspaceID: params.workspaceID,
+      openEntryID: () => (params.slug?.startsWith("ent_") ? params.slug : undefined),
+      openEntry: (entryID) => navigate(`${workspacePath()}/${entryID}`),
+      signal: controller.signal
+    });
+    onCleanup(() => controller.abort());
   });
 
   createEffect(() => {

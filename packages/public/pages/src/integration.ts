@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { AstroIntegration } from "astro";
 import type { PagesConfig } from "./config";
+import { createWebMCPContext } from "./context";
 import { mdxComponents } from "./content/mdx-components";
 import { shikiCodeTitle } from "./content/shiki-code-title";
 import { copyAssets, serveAssets } from "./integration/assets";
@@ -118,6 +119,21 @@ const andesine = (options: AndesineOptions = {}): AstroIntegration => {
           "head-inline",
           readFileSync(new URL("./scripts/restore-navigation.js", import.meta.url), "utf8")
         );
+
+        // Tools for in-browser AI agents; other pages on the origin can load them with the JSON.
+        if (config.agents.webmcp) {
+          const context = JSON.stringify(createWebMCPContext(config));
+
+          injectScript(
+            "page",
+            `import { registerWebMCPTools } from "@andesine/pages/webmcp";\nregisterWebMCPTools(${context});`
+          );
+          injectRoute({
+            pattern: "/_andesine/webmcp.json",
+            entrypoint: new URL("./astro/routes/webmcp-context.js", import.meta.url),
+            prerender: true
+          });
+        }
 
         addMiddleware({
           entrypoint: new URL("./astro/middleware.js", import.meta.url),

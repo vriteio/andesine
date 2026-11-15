@@ -50,6 +50,14 @@ interface SearchContext {
   answers?: AnswersContext;
 }
 
+/** What the WebMCP tools of a site need, in the page script and `_andesine/webmcp.json`. */
+interface WebMCPContext {
+  /** Base-prefixed URL of the site. */
+  base: string;
+  /** Undefined when no source is searchable. */
+  search?: SearchContext;
+}
+
 interface SiteContext {
   name: string;
   description?: string;
@@ -183,6 +191,7 @@ export type {
   AndesineAPIContext,
   AnswersContext,
   SearchContext,
+  WebMCPContext,
   SiteLogo,
   SiteContext,
   SectionContext,

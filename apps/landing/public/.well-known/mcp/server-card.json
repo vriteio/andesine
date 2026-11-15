@@ -1,0 +1,12 @@
+{
+  "serverInfo": { "name": "andesine", "title": "Andesine", "version": "0.0.0" },
+  "description": "Read, search, write, and publish content in an Andesine workspace.",
+  "documentationUrl": "https://andesine.app/docs/ai-agents/connect-an-ai-app/",
+  "transport": { "type": "streamable-http", "endpoint": "https://api.andesine.app/mcp" },
+  "capabilities": { "tools": {}, "resources": {}, "prompts": {} },
+  "authentication": {
+    "required": true,
+    "schemes": ["oauth2"],
+    "resourceMetadata": "https://api.andesine.app/.well-known/oauth-protected-resource/mcp"
+  }
+}

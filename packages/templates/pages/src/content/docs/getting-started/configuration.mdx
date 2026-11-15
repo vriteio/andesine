@@ -22,7 +22,7 @@ stops with a list of errors when a setting is not valid.
 | `cta`         | The main action link in the header, with an optional icon.                     |
 | `socialLinks` | Icon links in the footer, with a `label` and an `icon`.                        |
 | `pageActions` | The page actions menu, or `false` to hide it.                                  |
-| `agents`      | `instructions` and a `skill` file for AI agents.                               |
+| `agents`      | `instructions`, a `skill` file, and `webmcp` tools for AI agents.              |
 | `social`      | Images for link previews. See below.                                           |
 
 A logo with `format: "icon"` is a square mark next to the site name. A logo with
@@ -55,6 +55,20 @@ its path. The file needs frontmatter with a `name` and a `description`:
 agents: {
   skill: "./SKILL.md";
 }
+```
+
+Each page also registers tools for AI agents in the browser, with
+[WebMCP](https://webmachinelearning.github.io/webmcp/): `get_docs_tree` lists the
+pages, `get_page` reads a page as Markdown, `search_docs` searches the site, and
+`ask_docs` gives AI answers when they are on. Browsers without WebMCP ignore them.
+To turn the tools off, set `agents.webmcp` to `false`. Other pages on the same
+origin, for example a landing page at `/` for docs at `/docs/`, can register the
+same tools:
+
+```ts
+import { loadWebMCPTools } from "@andesine/pages/webmcp";
+
+loadWebMCPTools("/docs/").catch(console.warn);
 ```
 
 Each page has an image for link previews at its URL plus `social.png`. The

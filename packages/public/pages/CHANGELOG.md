@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.0
+
+- Pages register tools for AI agents in the browser, with WebMCP: `get_docs_tree`, `get_page`,
+  `search_docs`, and `ask_docs` (with AI answers). `agents.webmcp: false` turns them off.
+- `loadWebMCPTools(siteURL)` from `@andesine/pages/webmcp` registers a site's tools on another page
+  of the same origin, e.g. a landing page, from the site's `_andesine/webmcp.json`.
+
 ## 0.11.0
 
 - Redirect pages (the site root and each source mount without a page) are blank, so no

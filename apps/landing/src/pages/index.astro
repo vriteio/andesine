@@ -74,8 +74,10 @@ const jsonLd = {
     </LandingPage>
     <script>
       import { initEntryAnimations } from "../entry-animations";
+      import { loadWebMCPTools } from "@andesine/pages/webmcp";
 
       initEntryAnimations();
+      loadWebMCPTools("/docs/").catch((error: unknown) => console.warn(error));
     </script>
   </body>
 </html>

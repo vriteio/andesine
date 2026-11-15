@@ -7,6 +7,14 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./context": {
+      "types": "./src/context.ts",
+      "default": "./src/context.ts"
+    },
+    "./tools/read": {
+      "types": "./src/tools/read.ts",
+      "default": "./src/tools/read.ts"
     }
   },
   "scripts": {

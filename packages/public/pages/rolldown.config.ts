@@ -28,6 +28,7 @@ export default defineConfig([
       "collections": "src/collections.ts",
       "astro": "src/astro.ts",
       "client": "src/client.ts",
+      "webmcp": "src/webmcp.ts",
       "astro/routes/search": "src/astro/routes/search.ts",
       "astro/routes/answers": "src/astro/routes/answers.ts",
       "astro/middleware": "src/astro/middleware.ts",
@@ -41,6 +42,7 @@ export default defineConfig([
       "astro/routes/sitemap": "src/astro/routes/sitemap.ts",
       "astro/routes/llms": "src/astro/routes/llms.ts",
       "astro/routes/robots": "src/astro/routes/robots.ts",
+      "astro/routes/webmcp-context": "src/astro/routes/webmcp-context.ts",
       "astro/routes/entry-pages": "src/astro/routes/entry-pages.ts",
       "runtime": "src/runtime.ts"
     },

@@ -16,6 +16,7 @@
     "@andesine/contracts": "workspace:*",
     "@andesine/document": "workspace:*",
     "@andesine/editor": "workspace:*",
+    "@andesine/mcp": "workspace:*",
     "@ark-ui/solid": "^5.38.0",
     "@atlaskit/pragmatic-drag-and-drop": "2.0.1",
     "@atlaskit/pragmatic-drag-and-drop-hitbox": "2.0.0",
@@ -44,7 +45,8 @@
     "posthog-js": "1.438.10",
     "solid-js": "^1.9.18",
     "tinykeys": "^4.0.0",
-    "yjs": "catalog:"
+    "yjs": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@andesine/sdk": "workspace:*",
