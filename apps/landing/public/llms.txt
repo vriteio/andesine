@@ -4,7 +4,7 @@
 
 ## Product
 
-- [Home](https://andesine.app/): Features, pricing, and FAQ.
+- [Home](https://andesine.app/index.md): Features and pricing.
 - [Documentation](https://andesine.app/docs): Setup, editor, collections, publishing, API, MCP, and self-hosting.
 - [Documentation for LLMs](https://andesine.app/docs/llms.txt): Index of the docs as Markdown pages.
 
