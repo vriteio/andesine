@@ -13,14 +13,24 @@ import { IconButton } from "@andesine/components/primitives";
 import { type Component, createSignal, For, onCleanup, onMount } from "solid-js";
 import clsx from "clsx";
 
-const stages: FeatureCardProps[] = [
+interface PublishingProps {
+  compact?: boolean;
+}
+
+interface PublishingStage extends FeatureCardProps {
+  featured?: boolean;
+}
+
+const stages: PublishingStage[] = [
   {
     title: "Hosted docs sites.",
+    featured: true,
     text: "Turn a collection into a documentation site with search and AI answers. Andesine builds it each time you publish.",
     graphic: HostedSiteGraphic
   },
   {
     title: "Content API.",
+    featured: true,
     text: "Read documents, properties, and fragments from your website or app. Build your own content experience.",
     graphic: ContentAPIGraphic
   },
@@ -41,14 +51,18 @@ const stages: FeatureCardProps[] = [
   },
   {
     title: "Sync with GitHub.",
+    featured: true,
     text: "Keep Markdown or MDX files in your repository. Publishes become commits, and pushes update your content.",
     graphic: GitHubSyncGraphic
   }
 ];
 
-const Publishing: Component = () => {
+const Publishing: Component<PublishingProps> = (props) => {
   const [atStart, setAtStart] = createSignal(true);
   const [atEnd, setAtEnd] = createSignal(true);
+  const visibleStages = (): PublishingStage[] => {
+    return props.compact ? stages.filter((stage) => stage.featured) : stages;
+  };
 
   let viewport: HTMLDivElement | undefined;
   let track: HTMLOListElement | undefined;
@@ -128,10 +142,15 @@ const Publishing: Component = () => {
         onScroll={updateControls}
       >
         <ol ref={track} class="grid w-max grid-flow-col auto-cols-[min(82vw,25rem)] gap-8 py-3">
-          <For each={stages}>
+          <For each={visibleStages()}>
             {(stage, index) => (
               <li class="relative min-w-0 snap-start">
-                <FeatureCard {...stage} entryDelay={Math.min(index(), 2) * 125} />
+                <FeatureCard
+                  title={stage.title}
+                  text={stage.text}
+                  graphic={stage.graphic}
+                  entryDelay={Math.min(index(), 2) * 125}
+                />
               </li>
             )}
           </For>

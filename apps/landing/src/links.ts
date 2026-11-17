@@ -26,7 +26,7 @@ const links = {
   product: {
     editor: "/product/editor/",
     contentModel: "/product/content-model/",
-    publishing: "/product/publishing/",
+    pages: "/pages/",
     aiAgents: "/product/ai-agents/",
     extensions: "/product/extensions/",
     developers: "/product/developers/"
@@ -35,7 +35,7 @@ const links = {
     documentation: "/use-cases/documentation/",
     knowledgeBase: "/use-cases/knowledge-base/",
     headlessCms: "/use-cases/headless-cms/",
-    agentKnowledge: "/use-cases/agent-knowledge/"
+    centralHub: "/use-cases/central-hub/"
   }
 };
 

@@ -1,8 +1,12 @@
 ---
 import SitePage from "../../components/shared/site-page/index.astro";
+import { Workflow } from "../../components/sections/workflow";
+import { SearchSection } from "../../components/sections/search-section";
+import { TeamSection } from "../../components/sections/team-section";
 
 const title = "Knowledge base — Andesine";
-const description = "Keep team knowledge in one place, with roles, restricted collections, and AI answers.";
+const description =
+  "Keep team knowledge in one place, with roles, restricted collections, and AI answers.";
 ---
 
 <SitePage
@@ -11,4 +15,8 @@ const description = "Keep team knowledge in one place, with roles, restricted co
   path="/use-cases/knowledge-base/"
   heading="Team knowledge, in one place."
   subheading="Find answers fast. Control who sees what."
-/>
+>
+  <Workflow />
+  <SearchSection />
+  <TeamSection />
+</SitePage>

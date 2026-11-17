@@ -1,9 +1,11 @@
 ---
-title: Andesine — The versatile content workspace
-description: Write, organize, and publish docs, guides, and knowledge bases in one shared workspace.
+title: Andesine — Bring your content together
+description: Docs, knowledge, and structured content in one open-source workspace. Write with your team and AI agents, and publish anywhere.
 ---
 
 # Andesine
+
+Your content is everywhere. Bring it together.
 
 Andesine is an open-source content workspace. Teams and AI agents write, organize, and publish docs, guides, and knowledge bases in one place. Use the cloud app or self-host it.
 

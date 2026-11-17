@@ -1,8 +1,11 @@
 ---
 import SitePage from "../../components/shared/site-page/index.astro";
+import { SearchSection } from "../../components/sections/search-section";
+import { TeamSection } from "../../components/sections/team-section";
 
 const title = "AI and agents — Andesine";
-const description = "Let AI agents read and edit your content through MCP and the API, with the same roles and access as people.";
+const description =
+  "Let AI agents read and edit your content through MCP and the API, with the same roles and access as people.";
 ---
 
 <SitePage
@@ -11,4 +14,7 @@ const description = "Let AI agents read and edit your content through MCP and th
   path="/product/ai-agents/"
   heading="Agents work where your team works."
   subheading="MCP, the API, and AI answers, with the same access rules as people."
-/>
+>
+  <SearchSection />
+  <TeamSection />
+</SitePage>

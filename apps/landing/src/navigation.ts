@@ -24,7 +24,7 @@ const productSections: NavigationSection[] = [
     links: [
       { label: "Editor", href: links.product.editor, icon: "i-lucide:files" },
       { label: "Content model", href: links.product.contentModel, icon: "i-tabler:pyramid" },
-      { label: "Publishing", href: links.product.publishing, icon: "i-lucide:radio" }
+      { label: "Pages", href: links.product.pages, icon: "i-lucide:globe" }
     ]
   },
   {
@@ -53,14 +53,14 @@ const useCaseLinks: NavigationLink[] = [
     description: "Blogs, changelogs, and in-app content."
   },
   {
-    label: "Knowledge base",
+    label: "Team knowledge base",
     href: links.useCases.knowledgeBase,
     description: "Team knowledge with access control."
   },
   {
-    label: "Agent knowledge",
-    href: links.useCases.agentKnowledge,
-    description: "One source of truth for your agents."
+    label: "Centralized hub",
+    href: links.useCases.centralHub,
+    description: "One source for your agents and apps."
   }
 ];
 const menuGroups: NavigationGroup[] = [

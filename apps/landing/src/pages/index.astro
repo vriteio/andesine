@@ -2,55 +2,53 @@
 import { LandingPage } from "../components/landing-page";
 import { HeroRibbon } from "../components/sections/hero/hero-ribbon";
 import { SiteHeader } from "../components/shared/site-header";
-import { Pricing } from "../components/sections/pricing";
-import { HeroHeading } from "../components/sections/hero/hero-heading";
 import { Publishing } from "../components/sections/publishing";
 import DocumentHead from "../components/shared/document-head/index.astro";
 import { PageScrollShadows } from "../components/shared/page-scroll-shadows";
 import { Analytics } from "../components/shared/analytics";
-import { faqItems } from "../components/sections/faq";
+import { generalFaqItems } from "../components/sections/faq";
 import { links } from "../links";
 import "../styles.scss";
 
-const title = "Andesine — The versatile content workspace";
+const title = "Andesine — Bring your content together";
 const description =
-  "Write, organize, and publish docs, guides, and knowledge bases in one shared workspace.";
+  "Docs, knowledge, and structured content in one open-source workspace. Write with your team and AI agents, and publish anywhere.";
 const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [
     {
       "@type": "Organization",
       "@id": "https://andesine.app/#organization",
-      name: "Andesine",
-      url: "https://andesine.app/",
-      logo: "https://andesine.app/favicon.svg",
-      sameAs: [links.repository, links.social.x, links.social.linkedin]
+      "name": "Andesine",
+      "url": "https://andesine.app/",
+      "logo": "https://andesine.app/favicon.svg",
+      "sameAs": [links.repository, links.social.x, links.social.linkedin]
     },
     {
       "@type": "WebSite",
-      name: "Andesine",
-      url: "https://andesine.app/",
-      publisher: { "@id": "https://andesine.app/#organization" }
+      "name": "Andesine",
+      "url": "https://andesine.app/",
+      "publisher": { "@id": "https://andesine.app/#organization" }
     },
     {
       "@type": "SoftwareApplication",
-      name: "Andesine",
-      url: "https://andesine.app/",
+      "name": "Andesine",
+      "url": "https://andesine.app/",
       description,
-      applicationCategory: "BusinessApplication",
-      operatingSystem: "Web",
-      publisher: { "@id": "https://andesine.app/#organization" },
-      offers: [
-        { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD" },
-        { "@type": "Offer", name: "Pro", price: "12", priceCurrency: "USD" }
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web",
+      "publisher": { "@id": "https://andesine.app/#organization" },
+      "offers": [
+        { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "USD" },
+        { "@type": "Offer", "name": "Pro", "price": "12", "priceCurrency": "USD" }
       ]
     },
     {
       "@type": "FAQPage",
-      mainEntity: faqItems.map((item) => ({
+      "mainEntity": generalFaqItems.map((item) => ({
         "@type": "Question",
-        name: item.question,
-        acceptedAnswer: { "@type": "Answer", text: item.answer }
+        "name": item.question,
+        "acceptedAnswer": { "@type": "Answer", "text": item.answer }
       }))
     }
   ]
@@ -68,9 +66,7 @@ const jsonLd = {
     <LandingPage>
       <SiteHeader slot="header" client:load />
       <HeroRibbon slot="ribbon" client:load />
-      <HeroHeading slot="heading" client:load />
-      <Publishing slot="publishing" client:visible />
-      <Pricing slot="pricing" client:visible />
+      <Publishing slot="publishing" compact client:visible />
     </LandingPage>
     <script>
       import { initEntryAnimations } from "../entry-animations";

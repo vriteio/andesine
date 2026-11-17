@@ -1,8 +1,10 @@
 ---
 import SitePage from "../../components/shared/site-page/index.astro";
+import { EditorSection } from "../../components/sections/editor-section";
 
 const title = "Editor — Andesine";
-const description = "Write and review docs together in a real-time editor, with roles, comments, and version history.";
+const description =
+  "Write and review docs together in a real-time editor, with roles, comments, and version history.";
 ---
 
 <SitePage
@@ -11,4 +13,6 @@ const description = "Write and review docs together in a real-time editor, with 
   path="/product/editor/"
   heading="Write together in real time."
   subheading="One editor for writers, developers, and agents."
-/>
+>
+  <EditorSection />
+</SitePage>

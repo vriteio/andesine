@@ -1,26 +1,65 @@
 import { Screenshot, ScreenshotDots } from "../../shared/screenshot";
+import { links } from "../../../links";
 import styles from "./hero-section.module.scss";
+import { Button } from "@andesine/components/primitives";
 import { type Component, type JSX } from "solid-js";
 import clsx from "clsx";
 
 interface HeroSectionProps {
-  heading?: JSX.Element;
   ribbon?: JSX.Element;
 }
 
 const HeroSection: Component<HeroSectionProps> = (props) => (
   <section aria-labelledby="hero-title" class="relative isolate pt-32 md:pt-40">
     <div class="relative z-2 mx-auto w-full max-w-5xl px-4 md:px-8">
-      <div class="flex max-w-3xl flex-col gap-3">
-        {props.heading}
+      <div class="relative isolate mx-auto flex max-w-4xl flex-col items-center gap-3 text-center">
+        <h1
+          id="hero-title"
+          class="relative z-1 text-4xl font-medium leading-tight md:text-6xl"
+          data-entry="up"
+        >
+          Your content is everywhere.
+          <br />
+          <span class="bg-gradient-to-tr bg-clip-text text-transparent font-bold">
+            Bring it together.
+          </span>
+        </h1>
         <p
-          class="max-w-xl text-base leading-relaxed text-gray-500"
+          class="relative max-w-2xl text-lg leading-relaxed text-gray-500 md:text-xl"
           data-entry="up"
           data-entry-delay="125"
         >
-          Write with your team, shape content around your product, and publish it wherever your
-          audience needs it.
+          {/* Soft page-colored halos keep the ribbon from cutting the contrast of the line and buttons. */}
+          <span
+            aria-hidden="true"
+            class="absolute -inset-x-4 -inset-y-2 -z-1 rounded-full bg-gray-50 blur-lg"
+          />
+          Docs, knowledge, and structured content in one open-source workspace. Write with your team
+          and AI agents, and publish anywhere.
         </p>
+        <div
+          class="relative mt-3 flex flex-wrap justify-center gap-2"
+          data-entry="up"
+          data-entry-delay="250"
+        >
+          <div
+            aria-hidden="true"
+            class="absolute -inset-x-6 -inset-y-3 -z-1 rounded-full bg-gray-50 blur-lg"
+          />
+          <Button link={links.cloudSignUp} variant="primary" size="medium" class="px-3">
+            Start writing
+          </Button>
+          <Button
+            link={links.repository}
+            target="_blank"
+            variant="secondary"
+            size="medium"
+            class="flex items-center gap-1.5 px-3"
+          >
+            <span aria-hidden="true" class="i-mdi:github h-5 w-5" />
+            View on GitHub
+          </Button>
+        </div>
       </div>
     </div>
     <div class="relative z-1 h-20 md:h-32">

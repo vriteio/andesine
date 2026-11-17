@@ -1,8 +1,11 @@
 ---
 import SitePage from "../../components/shared/site-page/index.astro";
+import { Workflow } from "../../components/sections/workflow";
+import { Publishing } from "../../components/sections/publishing";
 
 const title = "Headless CMS — Andesine";
-const description = "Manage blogs, changelogs, and in-app content in Andesine and deliver it through the content API.";
+const description =
+  "Manage blogs, changelogs, and in-app content in Andesine and deliver it through the content API.";
 ---
 
 <SitePage
@@ -11,4 +14,7 @@ const description = "Manage blogs, changelogs, and in-app content in Andesine an
   path="/use-cases/headless-cms/"
   heading="Content for your blog, changelog, and app."
   subheading="Write in an editor. Deliver through the API."
-/>
+>
+  <Workflow />
+  <Publishing client:visible />
+</SitePage>

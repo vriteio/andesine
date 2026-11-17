@@ -1,8 +1,10 @@
 ---
 import SitePage from "../../components/shared/site-page/index.astro";
+import { ContentStructure } from "../../components/sections/content-structure";
 
 const title = "Content model — Andesine";
-const description = "Give every document the same shape with collections, properties, fragments, and schemas.";
+const description =
+  "Give every document the same shape with collections, properties, fragments, and schemas.";
 ---
 
 <SitePage
@@ -11,4 +13,6 @@ const description = "Give every document the same shape with collections, proper
   path="/product/content-model/"
   heading="Give every document the same shape."
   subheading="Collections, properties, and schemas keep content consistent."
-/>
+>
+  <ContentStructure />
+</SitePage>

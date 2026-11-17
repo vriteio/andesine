@@ -1,6 +1,7 @@
 ---
 import SitePage from "../components/shared/site-page/index.astro";
 import { Pricing } from "../components/sections/pricing";
+import { FAQ, pricingFaqItems } from "../components/sections/faq";
 
 const title = "Pricing — Andesine";
 const description =
@@ -14,5 +15,6 @@ const description =
   heading="Pricing"
   subheading="Free for small teams. Pro for growing ones. Free to self-host."
 >
-  <Pricing client:visible />
+  <Pricing detailed client:visible />
+  <FAQ items={pricingFaqItems} />
 </SitePage>

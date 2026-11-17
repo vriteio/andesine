@@ -1,8 +1,10 @@
 ---
 import SitePage from "../../components/shared/site-page/index.astro";
+import { Workflow } from "../../components/sections/workflow";
 
 const title = "Documentation — Andesine";
-const description = "Write product and developer docs with your team and publish them to a hosted site or GitHub.";
+const description =
+  "Write product and developer docs with your team and publish them to a hosted site or GitHub.";
 ---
 
 <SitePage
@@ -11,4 +13,6 @@ const description = "Write product and developer docs with your team and publish
   path="/use-cases/documentation/"
   heading="Docs your whole team can write."
   subheading="Product and developer docs, hosted or in GitHub."
-/>
+>
+  <Workflow />
+</SitePage>
