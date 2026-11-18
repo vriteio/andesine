@@ -54,7 +54,13 @@ const jsonLd = {
 <!doctype html>
 <html lang="en" class="scrollbar-contrast" style="background-color: #f9fafb">
   <head>
-    <DocumentHead title={title} description={description} path="/" jsonLd={jsonLd} />
+    <DocumentHead
+      title={title}
+      description={description}
+      path="/"
+      jsonLd={jsonLd}
+      markdownPath="/index.md"
+    />
   </head>
   <body style="background-color: #f9fafb">
     <PageScrollShadows client:load />

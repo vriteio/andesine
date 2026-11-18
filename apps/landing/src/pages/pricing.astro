@@ -12,6 +12,14 @@ const description =
   title={title}
   description={description}
   path="/pricing/"
+  jsonLd={{
+    "@type": "FAQPage",
+    "mainEntity": pricingFaqItems.map((item) => ({
+      "@type": "Question",
+      "name": item.question,
+      "acceptedAnswer": { "@type": "Answer", "text": item.answer }
+    }))
+  }}
   heading="Pricing"
   subheading="Free for small teams. Pro for growing ones. Free to self-host."
 >

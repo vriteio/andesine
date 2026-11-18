@@ -40,7 +40,7 @@ From editor to product: a docs site, your app, or your repo.
 Built in the open. Yours to run and shape.
 
 - No lock-in: the source is on GitHub.
-- Run it anywhere: use the cloud app or host it yourself.
+- Run it anywhere: use our cloud or host it yourself.
 - Extensions: an open extension ecosystem that makes Andesine fit the way your team works.
 
 ## Pricing
@@ -51,8 +51,17 @@ Built in the open. Yours to run and shape.
 
 ## Links
 
-- [Pricing](https://andesine.app/pricing/)
-- [Andesine Pages](https://andesine.app/pages/)
+- [Pricing](https://andesine.app/pricing/index.md)
+- [Editor](https://andesine.app/product/editor/index.md)
+- [Content model](https://andesine.app/product/content-model/index.md)
+- [Andesine Pages](https://andesine.app/pages/index.md)
+- [AI and agents](https://andesine.app/product/ai-agents/index.md)
+- [API & CLI](https://andesine.app/product/developers/index.md)
+- [Extensions](https://andesine.app/product/extensions/index.md)
+- [Product docs](https://andesine.app/use-cases/documentation/index.md)
+- [Headless CMS](https://andesine.app/use-cases/headless-cms/index.md)
+- [Team knowledge base](https://andesine.app/use-cases/knowledge-base/index.md)
+- [Centralized hub](https://andesine.app/use-cases/central-hub/index.md)
 - [Documentation](https://andesine.app/docs/)
 - [Self-hosting](https://andesine.app/docs/self-hosting/)
 - [Source code](https://github.com/vriteio/andesine)

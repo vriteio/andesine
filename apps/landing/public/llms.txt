@@ -5,8 +5,20 @@
 ## Product
 
 - [Home](https://andesine.app/index.md): Use cases, workspace, publishing, open source, and pricing.
-- [Pricing](https://andesine.app/pricing/): Plans, limits, and a plan comparison.
-- [Andesine Pages](https://andesine.app/pages/): Docs sites, hosted or built from the open-source template.
+- [Pricing](https://andesine.app/pricing/index.md): Plans, limits, and a plan comparison.
+- [Editor](https://andesine.app/product/editor/index.md): Real-time editing, blocks, Markdown shortcuts, offline work, and versions.
+- [Content model](https://andesine.app/product/content-model/index.md): Collections, properties, content areas, schemas, and generated types.
+- [Andesine Pages](https://andesine.app/pages/index.md): Docs sites, hosted or built from the open-source template.
+- [AI and agents](https://andesine.app/product/ai-agents/index.md): AI answers with sources, and AI apps connected through MCP.
+- [API & CLI](https://andesine.app/product/developers/index.md): The API, TypeScript SDK, CLI, webhooks, and API keys.
+- [Extensions](https://andesine.app/product/extensions/index.md): Andesine Pages, GitHub Sync, and building your own extensions.
+
+## Use cases
+
+- [Product docs](https://andesine.app/use-cases/documentation/index.md): Write docs together, then publish a site, sync with GitHub, or use the API.
+- [Headless CMS](https://andesine.app/use-cases/headless-cms/index.md): Blogs, changelogs, and in-app content, delivered through the API.
+- [Team knowledge base](https://andesine.app/use-cases/knowledge-base/index.md): Search, AI answers, and access control for team knowledge.
+- [Centralized hub](https://andesine.app/use-cases/central-hub/index.md): One source of facts and guides for people, apps, and agents.
 - [Documentation](https://andesine.app/docs): Setup, editor, collections, publishing, API, MCP, and self-hosting.
 - [Documentation for LLMs](https://andesine.app/docs/llms.txt): Index of the docs as Markdown pages.
 

@@ -336,33 +336,6 @@ const AccessGraphic: Component = () => (
   </Stage>
 );
 
-const AgentGraphic: Component = () => (
-  <Stage>
-    <Panel class="absolute bottom-4 left-4 top-4 flex w-[58%] flex-col gap-2 p-3 text-xs text-gray-500">
-      <span class="text-sm font-semibold text-gray-700">Connect Claude</span>
-      <span class="flex items-center justify-between rounded-lg border border-gray-200 px-2 py-1 text-gray-700">
-        Acme Docs
-        <span class="i-lucide:chevron-down h-3 w-3 text-gray-400" />
-      </span>
-      <span class="flex items-center gap-1.5">
-        <span class="flex h-3.5 w-3.5 items-center justify-center rounded border border-gray-300">
-          <span class={clsx(styles.pop, "i-lucide:check h-3 w-3 text-tertiary")} />
-        </span>
-        Enable write access
-      </span>
-      <span class="mt-auto self-end rounded-lg bg-gradient-to-tr px-2 py-1 font-medium text-white">
-        Approve
-      </span>
-    </Panel>
-    <Panel late class="absolute bottom-8 right-4 w-[40%] p-2 text-xs text-gray-500">
-      <span class="flex items-center gap-1 font-mono text-gray-700">
-        <span class="i-lucide:wrench h-3 w-3 text-tertiary" />
-        edit_entry
-      </span>
-      <p class={clsx(styles.fadeIn, "mt-1 leading-snug")}>Updated the Quickstart guide.</p>
-    </Panel>
-  </Stage>
-);
 
 // Editor for everyone: the app's format toolbar over a selection, and its publish menu.
 const DocsEditorGraphic: Component = () => (
@@ -570,7 +543,6 @@ export {
   HostedSiteGraphic,
   GitHubSyncGraphic,
   AccessGraphic,
-  AgentGraphic,
   DocsEditorGraphic,
   StructuredContentGraphic,
   AccessControlGraphic,
