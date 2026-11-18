@@ -5,7 +5,7 @@ description: Start free with up to 3 members. Pro is $12 per seat per month. Sel
 
 # Pricing
 
-Free for small teams. Pro for growing ones. Free to self-host.
+Pricing that grows with you. Starting at free. Free for small teams, Pro as you grow, or host it yourself.
 
 ## Free
 

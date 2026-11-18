@@ -20,9 +20,12 @@ const description =
       "acceptedAnswer": { "@type": "Answer", "text": item.answer }
     }))
   }}
-  heading="Pricing"
-  subheading="Free for small teams. Pro for growing ones. Free to self-host."
+  heading="Pricing that grows with you."
+  highlight="Starting at free."
+  large
+  actions={false}
+  subheading="Free for small teams, Pro as you grow, or host it yourself."
 >
-  <Pricing detailed client:visible />
+  <Pricing client:visible />
   <FAQ items={pricingFaqItems} />
 </SitePage>

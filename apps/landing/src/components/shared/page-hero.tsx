@@ -1,6 +1,7 @@
 import { links } from "../../links";
 import { Button } from "@andesine/components/primitives";
 import { type Component, Show } from "solid-js";
+import clsx from "clsx";
 
 interface PageHeroProps {
   heading: string;
@@ -8,6 +9,8 @@ interface PageHeroProps {
   subheading: string;
   secondaryLabel?: string;
   secondaryLink?: string;
+  large?: boolean;
+  actions?: boolean;
 }
 
 // The home hero, scaled down for secondary pages: no ribbon or screenshot, a smaller headline.
@@ -15,7 +18,14 @@ const PageHero: Component<PageHeroProps> = (props) => (
   <section aria-labelledby="page-title" class="relative isolate pt-32 md:pt-40">
     <div class="mx-auto w-full max-w-5xl px-4 md:px-8">
       <div class="mx-auto flex max-w-3xl flex-col items-start gap-3 text-left md:items-center md:text-center">
-        <h1 id="page-title" class="text-4xl font-medium leading-tight md:text-5xl" data-entry="up">
+        <h1
+          id="page-title"
+          class={clsx(
+            "text-4xl font-medium leading-tight",
+            props.large ? "md:text-6xl" : "md:text-5xl"
+          )}
+          data-entry="up"
+        >
           {props.heading}
           <Show when={props.highlight}>
             <br />
@@ -25,26 +35,31 @@ const PageHero: Component<PageHeroProps> = (props) => (
           </Show>
         </h1>
         <p
-          class="max-w-xl text-lg leading-relaxed text-gray-500"
+          class={clsx(
+            "text-lg leading-relaxed text-gray-500",
+            props.large ? "max-w-2xl md:text-xl" : "max-w-xl"
+          )}
           data-entry="up"
           data-entry-delay="125"
         >
           {props.subheading}
         </p>
-        <div
-          class="mt-3 flex flex-wrap gap-2 md:justify-center"
-          data-entry="up"
-          data-entry-delay="250"
-        >
-          <Button link={links.cloudSignUp} variant="primary" size="medium" class="px-3">
-            Start writing
-          </Button>
-          <Show when={props.secondaryLink}>
-            <Button link={props.secondaryLink} variant="secondary" size="medium" class="px-3">
-              {props.secondaryLabel}
+        <Show when={props.actions !== false}>
+          <div
+            class="mt-3 flex flex-wrap gap-2 md:justify-center"
+            data-entry="up"
+            data-entry-delay="250"
+          >
+            <Button link={links.cloudSignUp} variant="primary" size="medium" class="px-3">
+              Start writing
             </Button>
-          </Show>
-        </div>
+            <Show when={props.secondaryLink}>
+              <Button link={props.secondaryLink} variant="secondary" size="medium" class="px-3">
+                {props.secondaryLabel}
+              </Button>
+            </Show>
+          </div>
+        </Show>
       </div>
     </div>
   </section>

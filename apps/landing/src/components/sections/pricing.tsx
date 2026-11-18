@@ -1,4 +1,3 @@
-import { Section } from "../shared/section";
 import { links } from "../../links";
 import { AnimatedGradientCard } from "@andesine/components/fragments";
 import { Button, Card } from "@andesine/components/primitives";
@@ -9,10 +8,6 @@ interface PlanFeaturesProps {
   label: string;
   features: string[];
   inverted?: boolean;
-}
-
-interface PricingProps {
-  detailed?: boolean;
 }
 
 interface ComparisonGroup {
@@ -139,16 +134,15 @@ const PlanComparison: Component = () => (
   </details>
 );
 
-const Pricing: Component<PricingProps> = (props) => {
+const Pricing: Component = () => {
   return (
-    <Section
-      sectionId="pricing"
-      id="pricing-title"
-      title="Simple pricing."
-      subtitle="Start writing. Grow together."
+    <section
+      id="pricing"
+      aria-label="Plans"
+      class="relative mx-auto -mt-6 flex w-full max-w-5xl flex-col gap-6 px-4 md:-mt-12 md:gap-8 md:px-8"
     >
       <div class="grid gap-4 md:grid-cols-2">
-        <Card shade class="flex flex-col bg-white! p-6 md:px-8" data-entry="up">
+        <Card shade class="flex flex-col bg-white! p-6 md:px-8 md:py-10" data-entry="up">
           <h3 class="flex items-center text-2xl font-semibold">Free</h3>
           <span class="mt-1 text-gray-500">For small teams getting started.</span>
           <div class="align-start mb-4 mt-3 flex items-center gap-3">
@@ -179,7 +173,7 @@ const Pricing: Component<PricingProps> = (props) => {
             aria-hidden="true"
             class="absolute! inset-0 h-full w-full rounded-2xl"
           />
-          <div class="relative flex h-full flex-col p-6 text-white md:px-8">
+          <div class="relative flex h-full flex-col p-6 text-white md:px-8 md:py-10">
             <h3 class="flex items-center text-2xl font-semibold">Pro</h3>
             <span class="mt-1 text-white/80">For growing teams and products.</span>
             <div class="align-start mb-4 mt-3 flex items-center gap-3">
@@ -224,8 +218,8 @@ const Pricing: Component<PricingProps> = (props) => {
           </Button>
         </Card>
       </div>
-      {props.detailed && <PlanComparison />}
-    </Section>
+      <PlanComparison />
+    </section>
   );
 };
 
