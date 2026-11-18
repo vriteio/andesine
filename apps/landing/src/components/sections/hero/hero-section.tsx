@@ -2,10 +2,18 @@ import { Screenshot, ScreenshotDots } from "../../shared/screenshot";
 import { links } from "../../../links";
 import styles from "./hero-section.module.scss";
 import { Button } from "@andesine/components/primitives";
-import { type Component, type JSX } from "solid-js";
+import { type Component, type JSX, Show } from "solid-js";
 import clsx from "clsx";
 
 interface HeroSectionProps {
+  heading: string;
+  highlight: string;
+  subheading: string;
+  secondaryLabel: string;
+  secondaryLink: string;
+  secondaryIcon?: string;
+  screenshot: string;
+  screenshotLabel: string;
   ribbon?: JSX.Element;
 }
 
@@ -18,10 +26,10 @@ const HeroSection: Component<HeroSectionProps> = (props) => (
           class="relative z-1 text-4xl font-medium leading-tight md:text-6xl"
           data-entry="up"
         >
-          Your content is everywhere.
+          {props.heading}
           <br />
           <span class="bg-gradient-to-tr bg-clip-text text-transparent font-bold">
-            Bring it together.
+            {props.highlight}
           </span>
         </h1>
         <p
@@ -34,8 +42,7 @@ const HeroSection: Component<HeroSectionProps> = (props) => (
             aria-hidden="true"
             class="absolute -inset-x-4 -inset-y-2 -z-1 rounded-full bg-gray-50 blur-lg"
           />
-          Docs, knowledge, and structured content in one open-source workspace. Write with your team
-          and AI agents, and publish anywhere.
+          {props.subheading}
         </p>
         <div
           class="relative mt-3 flex flex-wrap gap-2 md:justify-center"
@@ -50,14 +57,16 @@ const HeroSection: Component<HeroSectionProps> = (props) => (
             Start writing
           </Button>
           <Button
-            link={links.repository}
-            target="_blank"
+            link={props.secondaryLink}
+            target={props.secondaryLink.startsWith("http") ? "_blank" : undefined}
             variant="secondary"
             size="medium"
             class="flex items-center gap-1.5 px-3"
           >
-            <span aria-hidden="true" class="i-mdi:github h-5 w-5" />
-            View on GitHub
+            <Show when={props.secondaryIcon}>
+              <span aria-hidden="true" class={clsx(props.secondaryIcon, "h-5 w-5")} />
+            </Show>
+            {props.secondaryLabel}
           </Button>
         </div>
       </div>
@@ -71,10 +80,10 @@ const HeroSection: Component<HeroSectionProps> = (props) => (
       <div class="relative">
         <ScreenshotDots class="z-0" />
         <div class={clsx(styles.screenshotFade, "relative z-2 w-[calc(100%+1rem)] md:w-full")}>
-          {/* Capture reference: 1440 × 900 light-theme Andesine workspace, showing the collection sidebar, a document with custom fields, and the editor. Use sample content without personal data. */}
+          {/* Capture reference: 1512 × 982 at 2x, light theme. Use sample content without personal data. */}
           <Screenshot
-            src="/_landing/screenshots/workspace.png"
-            label="Andesine workspace"
+            src={props.screenshot}
+            label={props.screenshotLabel}
             width={1440}
             height={900}
             eager

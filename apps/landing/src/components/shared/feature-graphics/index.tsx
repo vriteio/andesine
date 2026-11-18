@@ -560,6 +560,7 @@ const HubGraphic: Component = () => (
 );
 
 export {
+  Stage,
   Panel,
   CollaborationGraphic,
   HistoryGraphic,

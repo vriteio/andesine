@@ -6,6 +6,7 @@
 
 - [Home](https://andesine.app/index.md): Use cases, workspace, publishing, open source, and pricing.
 - [Pricing](https://andesine.app/pricing/): Plans, limits, and a plan comparison.
+- [Andesine Pages](https://andesine.app/pages/): Docs sites, hosted or built from the open-source template.
 - [Documentation](https://andesine.app/docs): Setup, editor, collections, publishing, API, MCP, and self-hosting.
 - [Documentation for LLMs](https://andesine.app/docs/llms.txt): Index of the docs as Markdown pages.
 

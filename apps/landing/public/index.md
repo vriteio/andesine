@@ -52,6 +52,7 @@ Built in the open. Yours to run and shape.
 ## Links
 
 - [Pricing](https://andesine.app/pricing/)
+- [Andesine Pages](https://andesine.app/pages/)
 - [Documentation](https://andesine.app/docs/)
 - [Self-hosting](https://andesine.app/docs/self-hosting/)
 - [Source code](https://github.com/vriteio/andesine)
