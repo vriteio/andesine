@@ -1,18 +1,27 @@
 ---
 import SitePage from "../../components/shared/site-page/index.astro";
-import { ContentStructure } from "../../components/sections/content-structure";
+import { HeroSection } from "../../components/sections/hero/hero-section";
+import { HeroRibbon } from "../../components/sections/hero/hero-ribbon";
+import { ContentModelFeatures } from "../../components/sections/content-model";
+import { links } from "../../links";
 
 const title = "Content model — Andesine";
 const description =
-  "Give every document the same shape with collections, properties, fragments, and schemas.";
+  "Give every entry the same shape with collections, properties, content areas, and schemas, then use them in search and in your code.";
 ---
 
-<SitePage
-  title={title}
-  description={description}
-  path="/product/content-model/"
-  heading="Give every document the same shape."
-  subheading="Collections, properties, and schemas keep content consistent."
->
-  <ContentStructure />
+<SitePage title={title} description={description} path="/product/content-model/">
+  <HeroSection
+    slot="hero"
+    heading="Structure that writers love."
+    highlight="And apps rely on."
+    subheading="Add fields to your content and keep every entry consistent."
+    secondaryLabel="Read the docs"
+    secondaryLink={links.schemasDocs}
+    screenshot="/_landing/screenshots/collections-and-schema.png"
+    screenshotLabel="Product updates schema with Category, Status, Summary, and Content"
+  >
+    <HeroRibbon slot="ribbon" client:load />
+  </HeroSection>
+  <ContentModelFeatures client:visible />
 </SitePage>
