@@ -1,18 +1,29 @@
 ---
 import SitePage from "../../components/shared/site-page/index.astro";
-import { Workflow } from "../../components/sections/workflow";
+import { HeroSection } from "../../components/sections/hero/hero-section";
+import { HeroRibbon } from "../../components/sections/hero/hero-ribbon";
+import { AgentApps } from "../../components/sections/ai-agents";
+import { HubSync } from "../../components/sections/use-cases";
+import { links } from "../../links";
 
 const title = "Centralized hub — Andesine";
 const description =
-  "Keep one source of content that your AI agents, apps, and scripts read and update through MCP, the API, and AI answers.";
+  "Keep facts, guides, and rules in one place, and let your apps and AI agents read them through MCP and the API.";
 ---
 
-<SitePage
-  title={title}
-  description={description}
-  path="/use-cases/central-hub/"
-  heading="One hub for your agents and apps."
-  subheading="MCP, the API, and AI answers, all from one source."
->
-  <Workflow />
+<SitePage title={title} description={description} path="/use-cases/central-hub/">
+  <HeroSection
+    slot="hero"
+    heading="One source of truth."
+    highlight="For people and agents."
+    subheading="Keep facts, guides, and rules in one place. Your apps and agents read them through MCP and the API."
+    secondaryLabel="See AI and agents"
+    secondaryLink={links.product.aiAgents}
+    screenshot="/_landing/screenshots/ai-answers.png"
+    screenshotLabel="An AI answer with links to its sources"
+  >
+    <HeroRibbon slot="ribbon" client:load />
+  </HeroSection>
+  <AgentApps />
+  <HubSync />
 </SitePage>
