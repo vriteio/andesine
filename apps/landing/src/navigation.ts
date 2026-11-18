@@ -43,7 +43,7 @@ const productSections: NavigationSection[] = [
 const productLinks = productSections.flatMap((section) => section.links);
 const useCaseLinks: NavigationLink[] = [
   {
-    label: "Documentation",
+    label: "Product docs",
     href: links.useCases.documentation,
     description: "Product and developer docs, hosted or in GitHub."
   },
@@ -68,9 +68,8 @@ const menuGroups: NavigationGroup[] = [
   { label: "Use cases", links: useCaseLinks }
 ];
 const menuLinks: NavigationLink[] = [
-  { label: "Open source", href: links.pages.openSource },
   { label: "Pricing", href: links.pages.pricing },
-  { label: "Docs", href: links.docs }
+  { label: "Documentation", href: links.docs }
 ];
 const footerGroups: NavigationGroup[] = [
   { label: "Product", links: [...productLinks, { label: "Pricing", href: links.pages.pricing }] },
@@ -78,7 +77,7 @@ const footerGroups: NavigationGroup[] = [
   {
     label: "Resources",
     links: [
-      { label: "Docs", href: links.docs },
+      { label: "Documentation", href: links.docs },
       { label: "Changelog", href: links.changelog },
       { label: "Source code", href: links.repository },
       { label: "llms.txt", href: links.llms }
@@ -87,8 +86,6 @@ const footerGroups: NavigationGroup[] = [
   {
     label: "Company",
     links: [
-      { label: "Open source", href: links.pages.openSource },
-      { label: "About", href: links.pages.about },
       { label: "Support", href: links.legal.support },
       { label: "Privacy policy", href: links.legal.privacy },
       { label: "Terms of service", href: links.legal.terms }

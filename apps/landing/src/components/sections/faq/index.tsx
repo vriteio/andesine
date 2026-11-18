@@ -13,13 +13,6 @@ interface FAQProps {
   items: FAQItem[];
 }
 
-const generalFaqItems: FAQItem[] = [
-  {
-    question: "Can I self-host Andesine?",
-    answer:
-      "Yes. Get the source on GitHub and run it on your infrastructure. The default setup includes Pro features. You manage hosting, storage, and connected services."
-  }
-];
 // Cloud allowances match the backend billing defaults and billing settings.
 const pricingFaqItems: FAQItem[] = [
   {
@@ -80,4 +73,4 @@ const FAQ: Component<FAQProps> = (props) => (
   </Section>
 );
 
-export { FAQ, generalFaqItems, pricingFaqItems };
+export { FAQ, pricingFaqItems };

@@ -6,7 +6,7 @@ import { type Component, For } from "solid-js";
 
 const socialLinks = [
   { label: "Email Andesine", href: links.email, icon: "i-lucide:mail" },
-  { label: "Andesine on X", href: links.social.x, icon: "i-mdi:twitter" },
+  { label: "Andesine on X", href: links.social.x, icon: "i-simple-icons:x" },
   { label: "Andesine on LinkedIn", href: links.social.linkedin, icon: "i-mdi:linkedin" },
   { label: "Andesine on GitHub", href: links.repository, icon: "i-mdi:github" }
 ];

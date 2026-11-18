@@ -29,9 +29,7 @@ const links = {
   llms: "/llms.txt",
   pages: {
     home: "/?landing=1",
-    pricing: "/pricing/",
-    openSource: "/open-source/",
-    about: "/about/"
+    pricing: "/pricing/"
   },
   product: {
     editor: "/product/editor/",
