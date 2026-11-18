@@ -10,6 +10,83 @@ interface MenuCardPosition {
   width: number;
   height: number;
 }
+interface GroupLinksProps {
+  group: NavigationGroup;
+  stacked?: boolean;
+  onNavigate(): void;
+}
+
+// Shared by the desktop dropdown and the mobile accordions; `stacked` fits the narrow mobile menu.
+const GroupLinks: Component<GroupLinksProps> = (props) => {
+  return (
+    <Show
+      when={props.group.sections}
+      fallback={
+        <div class="flex flex-col">
+          <Show when={!props.stacked}>
+            <span class="px-2 pb-1 pt-1 text-xs text-gray-400">{props.group.label}</span>
+          </Show>
+          <ul
+            class={clsx("grid gap-1", props.stacked ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-2")}
+          >
+            <For each={props.group.links}>
+              {(link) => (
+                <li>
+                  <a
+                    href={link.href}
+                    class={clsx(
+                      "flex flex-col rounded-xl px-2 py-1 @hover:bg-gradient-to-r @hover:from-gray-500/10 @hover:to-transparent",
+                      !props.stacked && "w-64"
+                    )}
+                    onClick={() => props.onNavigate()}
+                  >
+                    <span class="font-medium">{link.label}</span>
+                    <span class="text-sm text-gray-500">{link.description}</span>
+                  </a>
+                </li>
+              )}
+            </For>
+          </ul>
+        </div>
+      }
+    >
+      {(sections) => (
+        <div class={clsx("flex gap-2", props.stacked && "flex-col sm:flex-row")}>
+          <For each={sections()}>
+            {(section) => (
+              <div class={clsx("flex flex-col", props.stacked ? "flex-1" : "w-48")}>
+                <span class="px-2 pb-1 pt-1 text-xs text-gray-400">{section.label}</span>
+                <ul class="flex flex-col">
+                  <For each={section.links}>
+                    {(link) => (
+                      <li>
+                        <a
+                          href={link.href}
+                          class="group relative isolate flex items-center gap-2 rounded-lg px-2 py-1 font-medium outline-none"
+                          onClick={() => props.onNavigate()}
+                        >
+                          <span
+                            aria-hidden="true"
+                            class="pointer-events-none absolute inset-0 -z-1 rounded-lg bg-gradient-to-r from-secondary via-primary to-transparent opacity-0 transition-opacity media-mouse:group-hover:opacity-10 group-focus-visible:opacity-10"
+                          />
+                          <span
+                            aria-hidden="true"
+                            class={clsx(link.icon, "h-5 w-5 bg-gradient-to-tr")}
+                          />
+                          {link.label}
+                        </a>
+                      </li>
+                    )}
+                  </For>
+                </ul>
+              </div>
+            )}
+          </For>
+        </div>
+      )}
+    </Show>
+  );
+};
 
 // Port of the Vrite landing page's compact, fixed navigation.
 const SiteHeader: Component = () => {
@@ -17,6 +94,7 @@ const SiteHeader: Component = () => {
   const [openedGroup, setOpenedGroup] = createSignal<NavigationGroup | null>(null);
   const [menuCard, setMenuCard] = createSignal<MenuCardPosition>({ left: 0, width: 0, height: 0 });
   const [menuCardMoving, setMenuCardMoving] = createSignal(false);
+  const [expandedGroup, setExpandedGroup] = createSignal<NavigationGroup | null>(null);
   const groupPanels = new Map<NavigationGroup, HTMLElement>();
 
   let headerRef: HTMLElement | undefined;
@@ -24,6 +102,7 @@ const SiteHeader: Component = () => {
   const closeMenu = (): void => {
     setMenuOpened(false);
     setOpenedGroup(null);
+    setExpandedGroup(null);
   };
   // Moving between groups slides and resizes the open card; opening from closed places it at once.
   const openGroup = (group: NavigationGroup, trigger: HTMLElement): void => {
@@ -57,7 +136,7 @@ const SiteHeader: Component = () => {
         inert={!menuOpened()}
         tabIndex={-1}
         data-open={menuOpened()}
-        class="pointer-events-none fixed inset-0 z-30 bg-gray-50/20 opacity-0 backdrop-blur-0 transition-[opacity,backdrop-filter] duration-250 ease-out data-[open=true]:pointer-events-auto data-[open=true]:opacity-100 data-[open=true]:backdrop-blur-sm motion-reduce:transition-none md:hidden"
+        class="pointer-events-none fixed inset-0 z-30 bg-gray-50/20 opacity-0 backdrop-blur-0 transition-[opacity,backdrop-filter] duration-250 ease-out data-[open=true]:pointer-events-auto data-[open=true]:opacity-100 data-[open=true]:backdrop-blur-sm motion-reduce:transition-none lg:hidden"
         onClick={closeMenu}
       />
       <header
@@ -72,13 +151,13 @@ const SiteHeader: Component = () => {
             <a href={links.pages.home} aria-label="Andesine home" onClick={closeMenu}>
               <Logo />
             </a>
-            <nav aria-label="Main navigation" class="hidden items-center gap-1 md:flex">
+            <nav aria-label="Main navigation" class="hidden items-center gap-1 lg:flex">
               <For each={menuGroups}>
                 {(group) => (
                   <Button
                     variant="ghost"
                     size="medium"
-                    class="flex items-center gap-1"
+                    class="flex items-center gap-1 whitespace-nowrap"
                     aria-expanded={openedGroup() === group}
                     aria-controls="menu-group"
                     onMouseEnter={(event) => openGroup(group, event.currentTarget)}
@@ -99,6 +178,7 @@ const SiteHeader: Component = () => {
                     link={link.href}
                     variant="ghost"
                     size="medium"
+                    class="whitespace-nowrap"
                     onMouseEnter={() => setOpenedGroup(null)}
                   >
                     {link.label}
@@ -106,7 +186,7 @@ const SiteHeader: Component = () => {
                 )}
               </For>
             </nav>
-            <div class="hidden items-center gap-2 md:flex">
+            <div class="hidden shrink-0 items-center gap-2 lg:flex">
               <Tooltip content="Star on GitHub" fixed>
                 <IconButton
                   link={links.repository}
@@ -121,14 +201,12 @@ const SiteHeader: Component = () => {
               <IconButton
                 variant="primary"
                 size="medium"
-                class="flex-row-reverse gap-1 pr-1.5"
+                class="flex-row-reverse gap-1 whitespace-nowrap pr-1.5"
                 icon="i-lucide:log-in"
                 iconProps={{ class: "h-5 w-5 opacity-50" }}
                 label="Sign in"
                 link={links.cloudApp}
-              >
-                Sign in
-              </IconButton>
+              />
             </div>
             <IconButton
               icon={menuOpened() ? "i-lucide:x" : "i-lucide:menu"}
@@ -138,7 +216,7 @@ const SiteHeader: Component = () => {
               variant="ghost"
               text="base"
               size="medium"
-              class="md:hidden"
+              class="lg:hidden"
               onClick={() => setMenuOpened(!menuOpened())}
             />
           </div>
@@ -147,53 +225,78 @@ const SiteHeader: Component = () => {
             data-open={menuOpened()}
             aria-hidden={!menuOpened()}
             inert={!menuOpened()}
-            class="grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-250 ease-out data-[open=true]:grid-rows-[1fr] data-[open=true]:opacity-100 motion-reduce:transition-none md:hidden"
+            class="grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-250 ease-out data-[open=true]:grid-rows-[1fr] data-[open=true]:opacity-100 motion-reduce:transition-none lg:hidden"
           >
             <div class="min-h-0 overflow-hidden">
               <nav
                 aria-label="Mobile navigation"
-                class="flex max-h-[calc(100dvh-4rem)] flex-col gap-1 overflow-y-auto p-3"
+                class="scrollbar-transparent flex max-h-[calc(100dvh-4rem)] flex-col gap-1 overflow-y-auto p-3"
               >
                 <For each={menuGroups}>
                   {(group) => (
-                    <>
-                      <span class="px-2 pt-2 text-sm text-gray-400">{group.label}</span>
-                      <For each={group.links}>
-                        {(link) => (
-                          <Button
-                            link={link.href}
-                            variant="ghost"
-                            size="medium"
-                            class="flex items-center gap-2"
-                            onClick={closeMenu}
-                          >
-                            <Show when={link.icon}>
-                              <span
-                                aria-hidden="true"
-                                class={clsx(link.icon, "h-4 w-4 opacity-50")}
-                              />
-                            </Show>
-                            {link.label}
-                          </Button>
-                        )}
-                      </For>
-                    </>
+                    <div>
+                      <Button
+                        variant="ghost"
+                        size="medium"
+                        class="flex w-full items-center justify-between"
+                        aria-expanded={expandedGroup() === group}
+                        onClick={() => setExpandedGroup(expandedGroup() === group ? null : group)}
+                      >
+                        {group.label}
+                        <span
+                          aria-hidden="true"
+                          class="i-lucide:chevron-down h-4 w-4 opacity-50 transition-transform data-[open=true]:rotate-180"
+                          data-open={expandedGroup() === group}
+                        />
+                      </Button>
+                      <div
+                        data-open={expandedGroup() === group}
+                        inert={expandedGroup() !== group}
+                        class="grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-250 ease-out data-[open=true]:grid-rows-[1fr] data-[open=true]:opacity-100 motion-reduce:transition-none"
+                      >
+                        <div class="min-h-0 overflow-hidden">
+                          <GroupLinks group={group} stacked onNavigate={closeMenu} />
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </For>
-                <span class="px-2 pt-2 text-sm text-gray-400">More</span>
                 <For each={menuLinks}>
                   {(link) => (
-                    <Button link={link.href} variant="ghost" size="medium" onClick={closeMenu}>
+                    <Button
+                      link={link.href}
+                      variant="ghost"
+                      size="medium"
+                      class="text-left"
+                      onClick={closeMenu}
+                    >
                       {link.label}
                     </Button>
                   )}
                 </For>
-                <Button link={links.repository} variant="ghost" size="medium" onClick={closeMenu}>
-                  GitHub
-                </Button>
-                <Button link={links.cloudSignUp} size="medium" onClick={closeMenu}>
-                  Start writing
-                </Button>
+                <div class="mt-2 flex items-center gap-2">
+                  <Tooltip content="Star on GitHub" fixed>
+                    <IconButton
+                      link={links.repository}
+                      variant="secondary"
+                      text="base"
+                      size="medium"
+                      class="p-1.5"
+                      icon="i-mdi:github"
+                      iconProps={{ class: "h-5 w-5" }}
+                      aria-label="Star on GitHub"
+                    />
+                  </Tooltip>
+                  <IconButton
+                    variant="primary"
+                    size="medium"
+                    class="flex-1 flex-row-reverse justify-center gap-1 pr-1.5"
+                    icon="i-lucide:log-in"
+                    iconProps={{ class: "h-5 w-5 opacity-50" }}
+                    label="Sign in"
+                    link={links.cloudApp}
+                  />
+                </div>
               </nav>
             </div>
           </div>
@@ -203,7 +306,7 @@ const SiteHeader: Component = () => {
           data-open={Boolean(openedGroup())}
           aria-hidden={!openedGroup()}
           inert={!openedGroup()}
-          class="pointer-events-none absolute left-0 top-full hidden -translate-y-1 pt-2 opacity-0 transition-[opacity,transform] duration-200 ease-out data-[open=true]:pointer-events-auto data-[open=true]:translate-y-0 data-[open=true]:opacity-100 motion-reduce:transition-none md:block"
+          class="pointer-events-none absolute left-0 top-full hidden -translate-y-1 pt-2 opacity-0 transition-[opacity,transform] duration-200 ease-out data-[open=true]:pointer-events-auto data-[open=true]:translate-y-0 data-[open=true]:opacity-100 motion-reduce:transition-none lg:block"
         >
           <Card
             shade
@@ -225,67 +328,7 @@ const SiteHeader: Component = () => {
                   data-active={openedGroup() === group}
                   class="absolute left-0 top-0 w-max p-2 opacity-0 transition-opacity duration-200 data-[active=true]:opacity-100"
                 >
-                  <Show
-                    when={group.sections}
-                    fallback={
-                      <div class="flex flex-col">
-                        <span class="px-2 pb-1 pt-1 text-xs text-gray-400">{group.label}</span>
-                        <ul class="grid grid-cols-2 gap-1">
-                          <For each={group.links}>
-                            {(link) => (
-                              <li>
-                                <a
-                                  href={link.href}
-                                  class="flex w-64 flex-col rounded-xl px-2 py-1 @hover:bg-gradient-to-r @hover:from-gray-500/10 @hover:to-transparent"
-                                  onClick={closeMenu}
-                                >
-                                  <span class="font-medium">{link.label}</span>
-                                  <span class="text-sm text-gray-500">{link.description}</span>
-                                </a>
-                              </li>
-                            )}
-                          </For>
-                        </ul>
-                      </div>
-                    }
-                  >
-                    {(sections) => (
-                      <div class="flex gap-2">
-                        <For each={sections()}>
-                          {(section) => (
-                            <div class="flex w-48 flex-col">
-                              <span class="px-2 pb-1 pt-1 text-xs text-gray-400">
-                                {section.label}
-                              </span>
-                              <ul class="flex flex-col">
-                                <For each={section.links}>
-                                  {(link) => (
-                                    <li>
-                                      <a
-                                        href={link.href}
-                                        class="group relative isolate flex items-center gap-2 rounded-lg px-2 py-1 font-medium outline-none"
-                                        onClick={closeMenu}
-                                      >
-                                        <span
-                                          aria-hidden="true"
-                                          class="pointer-events-none absolute inset-0 -z-1 rounded-lg bg-gradient-to-r from-secondary via-primary to-transparent opacity-0 transition-opacity media-mouse:group-hover:opacity-10 group-focus-visible:opacity-10"
-                                        />
-                                        <span
-                                          aria-hidden="true"
-                                          class={clsx(link.icon, "h-5 w-5 bg-gradient-to-tr")}
-                                        />
-                                        {link.label}
-                                      </a>
-                                    </li>
-                                  )}
-                                </For>
-                              </ul>
-                            </div>
-                          )}
-                        </For>
-                      </div>
-                    )}
-                  </Show>
+                  <GroupLinks group={group} onNavigate={closeMenu} />
                 </div>
               )}
             </For>

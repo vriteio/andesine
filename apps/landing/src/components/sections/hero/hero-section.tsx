@@ -12,7 +12,7 @@ interface HeroSectionProps {
 const HeroSection: Component<HeroSectionProps> = (props) => (
   <section aria-labelledby="hero-title" class="relative isolate pt-32 md:pt-40">
     <div class="relative z-2 mx-auto w-full max-w-5xl px-4 md:px-8">
-      <div class="relative isolate mx-auto flex max-w-4xl flex-col items-center gap-3 text-center">
+      <div class="relative isolate mx-auto flex max-w-4xl flex-col items-start gap-3 text-left md:items-center md:text-center">
         <h1
           id="hero-title"
           class="relative z-1 text-4xl font-medium leading-tight md:text-6xl"
@@ -38,7 +38,7 @@ const HeroSection: Component<HeroSectionProps> = (props) => (
           and AI agents, and publish anywhere.
         </p>
         <div
-          class="relative mt-3 flex flex-wrap justify-center gap-2"
+          class="relative mt-3 flex flex-wrap gap-2 md:justify-center"
           data-entry="up"
           data-entry-delay="250"
         >
@@ -80,7 +80,7 @@ const HeroSection: Component<HeroSectionProps> = (props) => (
             eager
             fade
             entry="hero"
-            class="relative z-2 aspect-[8/5] w-full rounded-r-none! md:aspect-auto md:rounded-r-2xl!"
+            class="relative z-2 aspect-[8/5] w-full overflow-hidden rounded-r-none! md:aspect-auto md:overflow-visible md:rounded-r-2xl!"
             imageClass="absolute left-0 top-0 w-[150%]! max-w-none! md:static md:w-full! md:max-w-full!"
           />
         </div>

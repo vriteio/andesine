@@ -1,7 +1,7 @@
 import { HeroSection } from "./sections/hero/hero-section";
 import { Problems } from "./sections/problems";
 import { Workspace } from "./sections/workspace";
-import { FAQ, generalFaqItems } from "./sections/faq";
+import { OpenSource } from "./sections/open-source";
 import { CallToAction } from "./sections/call-to-action";
 import { SiteFooter } from "./shared/site-footer";
 import { type Component, type JSX } from "solid-js";
@@ -10,6 +10,7 @@ interface LandingPageProps {
   header?: JSX.Element;
   ribbon?: JSX.Element;
   publishing?: JSX.Element;
+  stars?: number;
 }
 
 // Interactive Astro islands enter through slots; static sections stay server-rendered.
@@ -21,7 +22,7 @@ const LandingPage: Component<LandingPageProps> = (props) => (
       <Problems />
       <Workspace />
       {props.publishing}
-      <FAQ items={generalFaqItems} />
+      <OpenSource stars={props.stars} />
       <CallToAction />
     </main>
     <SiteFooter />

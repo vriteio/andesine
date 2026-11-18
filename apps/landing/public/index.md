@@ -7,42 +7,53 @@ description: Docs, knowledge, and structured content in one open-source workspac
 
 Your content is everywhere. Bring it together.
 
-Andesine is an open-source content workspace. Teams and AI agents write, organize, and publish docs, guides, and knowledge bases in one place. Use the cloud app or self-host it.
+Docs, knowledge, and structured content in one open-source workspace. Write with your team and AI agents, and publish anywhere. Use the cloud app or self-host it.
 
-## Write
+## Use cases
 
-- Edit the same document in real time, in a rich-text editor.
-- Invite people. Set roles, groups, and collection access.
-- Connect AI tools to your workspace through MCP.
+- Product docs: an editor for everyone. Publish a site, sync with Git, or deliver to your app in a click.
+- Structured content: content and data side by side, built on your schema. Use it for blogs, changelogs, and in-app content.
+- Team knowledge base: decide who sees what, with roles, groups, and restricted collections.
+- Centralized hub: one source for your agents and apps, through MCP, the API, and AI answers with sources.
 
-## Structure
+## Workspace
 
-- Add properties such as status, category, and date. Split rich text into named fragments, such as a summary or body.
-- Define a schema once and apply it to a collection to keep its documents consistent.
-- Add custom elements and attributes for your content transformers.
+Write like a doc. Structure like a database.
 
-## Publish
+- Properties and schemas: manage content like a database, with flexible data fields and strict schemas.
+- Custom elements: view and edit any content block, from tabs to API references.
+- Extensions: add panels, integrations, and tools for anything you need.
 
-- Hosted docs sites: turn a collection into a documentation site with search and AI answers. Andesine builds it each time you publish.
-- Content API: read documents, properties, and fragments from your website or app.
-- Custom channels: serve separate versions of the same content for previews, releases, or different apps.
-- Versions: compare versions, restore earlier drafts, and publish a saved version while you edit the next one.
-- Formats: transform documents and custom elements into Markdown, MDX, or your own format.
-- GitHub Sync: keep Markdown or MDX files in your repository. Publishes become commits, and pushes update your content.
+## Publishing
 
-## Search
+From editor to product: a docs site, your app, or your repo.
 
-Search the workspace and get AI answers with links to source documents.
+- Hosted docs sites: turn any collection into a docs site, with search and AI answers built in.
+- Content API: fetch documents and properties into any website or app.
+- Custom channels: serve different versions to previews, releases, or apps.
+- Versions: choose what's published and track every step of what's in the works.
+- Formats: export documents and custom blocks as Markdown, MDX, or your own format.
+- GitHub Sync: Markdown or MDX in your repo. Publishes become commits, and pushes update your content.
+
+## Open source
+
+Built in the open. Yours to run and shape.
+
+- No lock-in: the source is on GitHub.
+- Run it anywhere: use the cloud app or host it yourself.
+- Extensions: an open extension ecosystem that makes Andesine fit the way your team works.
 
 ## Pricing
 
 - Free: up to 3 members, with 50,000 API calls and 5,000 AI credits per month.
 - Pro: $12 USD per seat per month. Unlimited members, roles and groups, restricted collections, custom domains, private repositories, and a larger shared allowance. Agents never need a seat.
-- Self-hosted: the source is on GitHub, and the default setup includes Pro features.
+- Self-hosted: the default setup includes Pro features.
 
 ## Links
 
+- [Pricing](https://andesine.app/pricing/)
 - [Documentation](https://andesine.app/docs/)
+- [Self-hosting](https://andesine.app/docs/self-hosting/)
 - [Source code](https://github.com/vriteio/andesine)
 - [Sign up](https://andesine.app/auth/sign-up)
 - [Support](https://andesine.app/support/)

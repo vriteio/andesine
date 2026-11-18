@@ -1,16 +1,18 @@
 # Andesine
 
-> Andesine is an open-source content workspace for product and developer docs. Teams write in a real-time editor, AI agents read and edit content through the API and MCP server, and content publishes to hosted docs sites, GitHub, or any app. Use the cloud app or self-host it.
+> Andesine is an open-source workspace for docs, knowledge, and structured content. Teams write in a real-time editor with properties, schemas, and custom elements. AI agents read and edit content through the API and MCP server. Content publishes to hosted docs sites, GitHub, or any app. Use the cloud app or self-host it.
 
 ## Product
 
-- [Home](https://andesine.app/index.md): Features and pricing.
+- [Home](https://andesine.app/index.md): Use cases, workspace, publishing, open source, and pricing.
+- [Pricing](https://andesine.app/pricing/): Plans, limits, and a plan comparison.
 - [Documentation](https://andesine.app/docs): Setup, editor, collections, publishing, API, MCP, and self-hosting.
 - [Documentation for LLMs](https://andesine.app/docs/llms.txt): Index of the docs as Markdown pages.
 
 ## Open source
 
-- [Source code](https://github.com/vriteio/andesine): The repository and self-hosting setup.
+- [Source code](https://github.com/vriteio/andesine): The repository.
+- [Self-hosting](https://andesine.app/docs/self-hosting/): Run Andesine on your own servers.
 - [Changelog](https://github.com/vriteio/andesine/releases): Release notes.
 
 ## Optional

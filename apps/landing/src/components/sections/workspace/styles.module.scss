@@ -1,7 +1,7 @@
 // Linked highlights
 // Hovering a label outlines its part of the document, so each feature is easy to find.
 .part {
-  @apply rounded-lg outline outline-2 outline-offset-2 outline-transparent transition-[outline-color] duration-200;
+  @apply rounded-lg outline outline-2 outline-offset-4 outline-transparent transition-[outline-color] duration-200;
 }
 
 @each $name in properties, elements, extensions {

@@ -17,30 +17,26 @@ const labels: WorkspaceLabel[] = [
     part: "properties",
     icon: "i-tabler:pyramid",
     title: "Properties & schemas.",
-    text: "Give every entry fields your apps can trust."
+    text: "Manage your content like a database with flexible data fields and strict schemas."
   },
   {
     part: "elements",
     icon: "i-lucide:component",
     title: "Custom elements.",
-    text: "Callouts, tabs, and your own components, edited in place."
+    text: "From tabs to API references, you can view and edit any of your content blocks."
   },
   {
     part: "extensions",
     icon: "i-tabler:puzzle",
     title: "Extensions.",
-    text: "Add panels, element views, and tools for your team."
+    text: "Add panels, integrations, and tools for anything you need."
   }
 ];
 
 // One document as the app shows it: schema properties, a custom element, and an extension panel.
 const WorkspaceGraphic: Component = () => (
-  <div
-    aria-hidden="true"
-    class="grid gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-3 text-sm md:grid-cols-[1fr_15rem] md:p-5"
-    data-entry="up"
-  >
-    <Panel class="min-w-0 px-5 pb-5 pt-4 md:px-8">
+  <div aria-hidden="true" class="grid gap-4 text-sm md:grid-cols-[1fr_15rem]" data-entry="up">
+    <Panel class="min-w-0 px-4 pb-5 pt-4 md:px-5">
       <div class="flex items-center gap-1.5 text-xs text-gray-400">
         Docs
         <span class="i-lucide:chevron-right h-3 w-3" />
@@ -142,7 +138,7 @@ const Workspace: Component = () => (
     sectionId="workspace"
     id="workspace-title"
     title="Write like a doc. Structure like a database."
-    subtitle="Properties, schemas, and custom elements in one editor."
+    subtitle="Editor shaped to your content, not the other way around."
     class={styles.workspace}
   >
     <WorkspaceGraphic />
@@ -153,7 +149,7 @@ const Workspace: Component = () => (
             <FeatureDescription
               title={label.title}
               text={label.text}
-              marker={<span class={clsx(label.icon, "h-4 w-4 shrink-0 text-tertiary")} />}
+              marker={<span class={clsx(label.icon, "h-5 w-5 shrink-0 text-tertiary")} />}
             />
           </div>
         )}

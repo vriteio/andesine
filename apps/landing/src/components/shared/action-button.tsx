@@ -5,7 +5,6 @@ import clsx from "clsx";
 interface ActionButtonProps {
   link: string;
   title: string;
-  description: string;
   icon: string;
   primary?: boolean;
   entryDelay?: number;
@@ -40,14 +39,6 @@ const ActionButton: Component<ActionButtonProps> = (props) => (
             props.primary ? "opacity-70" : "text-gray-400"
           )}
         />
-      </span>
-      <span
-        class={clsx(
-          "relative mt-2 w-full text-left text-base font-normal leading-relaxed",
-          props.primary ? "text-white/80" : "text-gray-500"
-        )}
-      >
-        {props.description}
       </span>
     </Button>
   </div>

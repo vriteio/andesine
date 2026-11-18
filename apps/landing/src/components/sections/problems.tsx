@@ -19,14 +19,14 @@ const problems: Problem[] = [
   {
     title: "Product docs.",
     graphic: DocsEditorGraphic,
-    text: "Editor for everyone. With results published, synced with Git or delivered to your site in a click.",
+    text: "Editor for everyone. Publish a site, sync with Git, or deliver to your app in a click.",
     icon: "i-lucide:book-open",
     link: links.useCases.documentation
   },
   {
     title: "Structured content.",
     graphic: StructuredContentGraphic,
-    text: "Content and data, side by side, shaped to your schema. Strictly enforced, flexible to work with.",
+    text: "Content and data, side by side, built on your schema. Strictly enforced, flexible to work with.",
     icon: "i-lucide:database",
     link: links.useCases.headlessCms
   },

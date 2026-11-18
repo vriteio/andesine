@@ -9,60 +9,64 @@ import {
 } from "../../shared/feature-graphics";
 import { FeatureCard, type FeatureCardProps } from "../../shared/feature-card";
 import { SectionHeadline } from "../../shared/section";
+import { links } from "../../../links";
 import { IconButton } from "@andesine/components/primitives";
 import { type Component, createSignal, For, onCleanup, onMount } from "solid-js";
 import clsx from "clsx";
 
-interface PublishingProps {
-  compact?: boolean;
-}
-
 interface PublishingStage extends FeatureCardProps {
-  featured?: boolean;
+  icon: string;
+  link: string;
 }
 
 const stages: PublishingStage[] = [
   {
     title: "Hosted docs sites.",
-    featured: true,
-    text: "Turn a collection into a documentation site with search and AI answers. Andesine builds it each time you publish.",
-    graphic: HostedSiteGraphic
+    text: "Turn any collection into a docs site, with search and AI answers built in.",
+    graphic: HostedSiteGraphic,
+    icon: "i-lucide:globe",
+    link: links.product.pages
   },
   {
     title: "Content API.",
-    featured: true,
-    text: "Read documents, properties, and fragments from your website or app. Build your own content experience.",
-    graphic: ContentAPIGraphic
+    text: "Fetch documents and properties into any website or app.",
+    graphic: ContentAPIGraphic,
+    icon: "i-lucide:code-xml",
+    link: links.product.developers
   },
   {
     title: "Custom channels.",
-    text: "Serve separate versions of the same content for previews, releases, or different apps. Choose which version each channel publishes.",
-    graphic: PublishingGraphic
+    text: "Serve different versions to previews, releases, or apps.",
+    graphic: PublishingGraphic,
+    icon: "i-lucide:radio",
+    link: links.product.developers
   },
   {
-    title: "Publish the right version.",
-    text: "Compare versions and restore earlier drafts. Publish a saved version to a channel while you keep editing the next one.",
-    graphic: HistoryGraphic
+    title: "Keep track of your work.",
+    text: "Choose what's published and know every step of what's in the works.",
+    graphic: HistoryGraphic,
+    icon: "i-lucide:history",
+    link: links.product.editor
   },
   {
     title: "Your content. Your format.",
-    text: "Transform documents and custom elements into Markdown, MDX, or your own format.",
-    graphic: TransformerGraphic
+    text: "Export documents and custom blocks as Markdown, MDX, or your own format.",
+    graphic: TransformerGraphic,
+    icon: "i-lucide:file-code",
+    link: links.product.developers
   },
   {
     title: "Sync with GitHub.",
-    featured: true,
-    text: "Keep Markdown or MDX files in your repository. Publishes become commits, and pushes update your content.",
-    graphic: GitHubSyncGraphic
+    text: "Markdown or MDX in your repo. Publishes become commits, pushes become edits.",
+    graphic: GitHubSyncGraphic,
+    icon: "i-mdi:github",
+    link: links.product.extensions
   }
 ];
 
-const Publishing: Component<PublishingProps> = (props) => {
+const Publishing: Component = () => {
   const [atStart, setAtStart] = createSignal(true);
   const [atEnd, setAtEnd] = createSignal(true);
-  const visibleStages = (): PublishingStage[] => {
-    return props.compact ? stages.filter((stage) => stage.featured) : stages;
-  };
 
   let viewport: HTMLDivElement | undefined;
   let track: HTMLOListElement | undefined;
@@ -120,12 +124,8 @@ const Publishing: Component<PublishingProps> = (props) => {
         <SectionHeadline
           id="features-title"
           title="From editor to product."
-          subtitle="Your content, delivered through the API."
+          subtitle="A docs site, your app, or your repo."
         />
-        <p class="mt-4 max-w-2xl text-base leading-relaxed text-gray-500" data-entry="left">
-          Choose a channel and read published content from your website or app. Need files instead?
-          Transform your content and sync it to GitHub.
-        </p>
       </div>
       {/* Explanatory diagrams, not product screenshots or a live repository state.
           Native scrolling remains available without JavaScript. */}
@@ -142,15 +142,23 @@ const Publishing: Component<PublishingProps> = (props) => {
         onScroll={updateControls}
       >
         <ol ref={track} class="grid w-max grid-flow-col auto-cols-[min(82vw,25rem)] gap-8 py-3">
-          <For each={visibleStages()}>
+          <For each={stages}>
             {(stage, index) => (
               <li class="relative min-w-0 snap-start">
-                <FeatureCard
-                  title={stage.title}
-                  text={stage.text}
-                  graphic={stage.graphic}
-                  entryDelay={Math.min(index(), 2) * 125}
-                />
+                <a href={stage.link} class="group block h-full">
+                  <FeatureCard
+                    title={stage.title}
+                    text={stage.text}
+                    graphic={stage.graphic}
+                    entryDelay={Math.min(index(), 2) * 125}
+                    marker={
+                      <>
+                        <span class={clsx(stage.icon, "h-4 w-4 shrink-0 text-tertiary")} />
+                        <span class="order-last i-lucide:arrow-up-right h-4 w-4 shrink-0 text-gray-400 transition-colors group-hover:text-tertiary" />
+                      </>
+                    }
+                  />
+                </a>
               </li>
             )}
           </For>

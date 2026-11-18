@@ -6,10 +6,14 @@ import { Publishing } from "../components/sections/publishing";
 import DocumentHead from "../components/shared/document-head/index.astro";
 import { PageScrollShadows } from "../components/shared/page-scroll-shadows";
 import { Analytics } from "../components/shared/analytics";
-import { generalFaqItems } from "../components/sections/faq";
 import { links } from "../links";
 import "../styles.scss";
 
+// Fetched once per build; the count is hidden when GitHub can't be reached.
+const stars = await fetch("https://api.github.com/repos/vriteio/andesine")
+  .then((response) => (response.ok ? response.json() : undefined))
+  .then((repository) => repository?.stargazers_count as number | undefined)
+  .catch(() => undefined);
 const title = "Andesine — Bring your content together";
 const description =
   "Docs, knowledge, and structured content in one open-source workspace. Write with your team and AI agents, and publish anywhere.";
@@ -42,14 +46,6 @@ const jsonLd = {
         { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "USD" },
         { "@type": "Offer", "name": "Pro", "price": "12", "priceCurrency": "USD" }
       ]
-    },
-    {
-      "@type": "FAQPage",
-      "mainEntity": generalFaqItems.map((item) => ({
-        "@type": "Question",
-        "name": item.question,
-        "acceptedAnswer": { "@type": "Answer", "text": item.answer }
-      }))
     }
   ]
 };
@@ -63,10 +59,10 @@ const jsonLd = {
   <body style="background-color: #f9fafb">
     <PageScrollShadows client:load />
     <Analytics client:only="solid-js" />
-    <LandingPage>
+    <LandingPage stars={stars}>
       <SiteHeader slot="header" client:load />
       <HeroRibbon slot="ribbon" client:load />
-      <Publishing slot="publishing" compact client:visible />
+      <Publishing slot="publishing" client:visible />
     </LandingPage>
     <script>
       import { initEntryAnimations } from "../entry-animations";

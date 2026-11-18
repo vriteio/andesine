@@ -3,6 +3,7 @@ const links = {
   cloudApp: "/auth/sign-in",
   cloudSignUp: "/auth/sign-up",
   docs: "/docs",
+  selfHosting: "/docs/self-hosting/",
   repository: "https://github.com/vriteio/andesine",
   changelog: "https://github.com/vriteio/andesine/releases",
   email: "mailto:support@andesine.app",
