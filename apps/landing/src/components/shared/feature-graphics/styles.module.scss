@@ -5,7 +5,8 @@
 
 // Panels
 // Panels draw their outline first, then unveil their content when the card enters the viewport.
-.panel {
+// Zero specificity, so utility classes win whatever the stylesheet order.
+:where(.panel) {
   @apply relative rounded-xl border border-gray-200 bg-white;
   box-shadow: 0 0 12px 0 rgb(17 24 39 / 8%);
 
