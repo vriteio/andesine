@@ -1,0 +1,28 @@
+---
+import SitePage from "../../components/shared/site-page/index.astro";
+import { HeroSection } from "../../components/sections/hero/hero-section";
+import { HeroRibbon } from "../../components/sections/hero/hero-ribbon";
+import { AgentAnswers, AgentApps } from "../../components/sections/ai-agents";
+import { links } from "../../links";
+
+const title = "AI and agents — Andesine";
+const description =
+  "Get AI answers with sources, and connect Claude, ChatGPT, Cursor, and other AI apps through MCP, with the same access rules as people.";
+---
+
+<SitePage title={title} description={description} path="/product/ai-agents/">
+  <HeroSection
+    slot="hero"
+    heading="One source for every agent."
+    highlight="And every answer."
+    subheading="Connect Claude, ChatGPT, Cursor, and more. They see only what you allow."
+    secondaryLabel="Read the docs"
+    secondaryLink={links.aiAppsDocs}
+    screenshot="/_landing/screenshots/ai-answers.png"
+    screenshotLabel="An AI answer with links to its sources"
+  >
+    <HeroRibbon slot="ribbon" client:load />
+  </HeroSection>
+  <AgentAnswers />
+  <AgentApps />
+</SitePage>

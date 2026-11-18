@@ -1,0 +1,28 @@
+---
+import SitePage from "../../components/shared/site-page/index.astro";
+import { HeroSection } from "../../components/sections/hero/hero-section";
+import { HeroRibbon } from "../../components/sections/hero/hero-ribbon";
+import { CmsStructure, CmsDelivery } from "../../components/sections/use-cases";
+import { links } from "../../links";
+
+const title = "Headless CMS — Andesine";
+const description =
+  "Manage blogs, changelogs, and in-app content with schemas and properties, and deliver it through the content API.";
+---
+
+<SitePage title={title} description={description} path="/use-cases/headless-cms/">
+  <HeroSection
+    slot="hero"
+    heading="Content for your site and app."
+    highlight="Shaped to your schema."
+    subheading="Blogs, changelogs, and in-app content, written in an editor and delivered through the API."
+    secondaryLabel="See the content model"
+    secondaryLink={links.product.contentModel}
+    screenshot="/_landing/screenshots/collections-and-schema.png"
+    screenshotLabel="A collection schema with Category, Status, Summary, and Content"
+  >
+    <HeroRibbon slot="ribbon" client:load />
+  </HeroSection>
+  <CmsStructure />
+  <CmsDelivery />
+</SitePage>

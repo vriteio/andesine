@@ -15,8 +15,18 @@ import {
   WebGLRenderer
 } from "three";
 
-const ribbonWidth = 5.4;
+const ribbonWidth = 7.2;
 const maximumTwist = Math.acos(0.75);
+const halfHeight = 7.5;
+const segments = 192;
+// Separate strands enter on the left, merge into one ribbon, and split again, less, on the right.
+const strandCount = 4;
+const mergeStart = 0.08;
+const mergeEnd = 0.42;
+const splitStart = 0.62;
+const splitEnd = 0.9;
+const splitStrength = 0.6;
+const strandSpread = 0.9;
 
 // Light follows the mesh normals, so turning folds change the surface shading.
 const vertexShader = `
@@ -36,20 +46,36 @@ const fragmentShader = `
   uniform float noiseStrength;
   uniform float noiseTileSize;
   uniform float pixelRatio;
+  uniform float bandStart;
+  uniform float bandSize;
+  uniform float mergeStart;
+  uniform float mergeEnd;
+  uniform float splitStart;
+  uniform float splitEnd;
+  uniform float splitStrength;
+  uniform float fill;
   varying vec2 ribbonUv;
   varying vec3 ribbonNormal;
 
   void main() {
     vec3 normal = normalize(ribbonNormal) * (gl_FrontFacing ? 1.0 : -1.0);
     float light = abs(dot(normal, normalize(vec3(-0.3, 0.6, 1.0))));
-    float originalBandUv = (ribbonUv.y - 0.5) * 3.0 + 0.5;
+    float merge =
+      smoothstep(mergeStart, mergeEnd, ribbonUv.x) -
+      splitStrength * smoothstep(splitStart, splitEnd, ribbonUv.x);
+    float bandUv = bandStart + ribbonUv.y * bandSize;
+    float originalBandUv = (bandUv - 0.5) * 3.0 + 0.5;
     float gradient = 0.5 + 0.5 * sin(ribbonUv.x * 12.0 + originalBandUv * 1.8);
     vec3 color = mix(primary, secondary, gradient) * (0.8 + light * 0.2);
     color += vec3(pow(light, 16.0) * 0.08);
 
-    // The original middle third is opaque; only the added outer thirds fade.
-    float edgeAlpha = 1.0 - smoothstep(1.0 / 6.0, 0.5, abs(ribbonUv.y - 0.5));
-    gl_FragColor = vec4(color, edgeAlpha);
+    // Strands and the merged ribbon both keep an opaque middle third and fade their outer thirds.
+    float strandAlpha = 1.0 - smoothstep(1.0 / 6.0, 0.5, abs(ribbonUv.y - 0.5));
+    float mergedAlpha = 1.0 - smoothstep(1.0 / 6.0, 0.5, abs(bandUv - 0.5));
+    float alpha = mix(strandAlpha, mergedAlpha, merge);
+    // The fill layer spans all strands and fills the gaps between them, lighter where they part.
+    float fillAlpha = mergedAlpha * (1.0 - 0.4 * (1.0 - merge));
+    gl_FragColor = vec4(color, mix(alpha, fillAlpha, fill));
     #include <colorspace_fragment>
 
     // Match the auth card's CSS overlay in display color space, at a fixed grain size.
@@ -61,8 +87,23 @@ const fragmentShader = `
       step(vec3(0.5), base)
     );
     gl_FragColor.rgb = mix(base, overlay, grain.a * noiseStrength);
+    // Premultiplied, so overlapping faded edges never turn lighter than the page.
+    gl_FragColor.rgb *= gl_FragColor.a;
   }
 `;
+
+const smoothstep = (edge0: number, edge1: number, value: number): number => {
+  const progress = Math.min(1, Math.max(0, (value - edge0) / (edge1 - edge0)));
+
+  return progress * progress * (3 - 2 * progress);
+};
+
+// 1 where strands are fully apart, 0 where they form one ribbon.
+const getSeparation = (u: number): number => {
+  return (
+    1 - smoothstep(mergeStart, mergeEnd, u) + splitStrength * smoothstep(splitStart, splitEnd, u)
+  );
+};
 
 const createRibbonScene = (canvas: HTMLCanvasElement, onReady: () => void): (() => void) => {
   const renderer = new WebGLRenderer({
@@ -72,11 +113,9 @@ const createRibbonScene = (canvas: HTMLCanvasElement, onReady: () => void): (() 
     powerPreference: "low-power"
   });
   const scene = new Scene();
-  const camera = new OrthographicCamera(-12, 12, 4, -4, 0.1, 40);
-  const geometry = new PlaneGeometry(1, 1, 192, 18);
-  const positions = geometry.getAttribute("position") as BufferAttribute;
-  const normals = geometry.getAttribute("normal") as BufferAttribute;
-  const uv = geometry.getAttribute("uv");
+  const camera = new OrthographicCamera(-12, 12, halfHeight, -halfHeight, 0.1, 40);
+  const centers = new Float32Array((segments + 1) * 3);
+  const widthDirections = new Float32Array((segments + 1) * 3);
   const tangent = new Vector3();
   const normal = new Vector3();
   const binormal = new Vector3();
@@ -90,27 +129,50 @@ const createRibbonScene = (canvas: HTMLCanvasElement, onReady: () => void): (() 
     }
 
     noiseLoaded = true;
-    material.uniforms.noiseStrength.value = 1;
+    uniforms.noiseStrength.value = 1;
     syncPlayback();
   });
-  const material = new ShaderMaterial({
-    side: DoubleSide,
-    transparent: true,
-    depthWrite: false,
-    uniforms: {
-      primary: { value: new Color(theme.getPropertyValue("--color-primary").trim() || "#ff3617") },
-      secondary: {
-        value: new Color(theme.getPropertyValue("--color-secondary").trim() || "#f88f52")
-      },
-      noiseMap: { value: noise },
-      noiseStrength: { value: 0 },
-      noiseTileSize: { value: Number.parseFloat(theme.fontSize) * 6 },
-      pixelRatio: { value: 1 }
+  // Shared uniform objects, so one update reaches every strand's material.
+  const uniforms = {
+    primary: { value: new Color(theme.getPropertyValue("--color-primary").trim() || "#ff3617") },
+    secondary: {
+      value: new Color(theme.getPropertyValue("--color-secondary").trim() || "#f88f52")
     },
-    vertexShader,
-    fragmentShader
+    noiseMap: { value: noise },
+    noiseStrength: { value: 0 },
+    noiseTileSize: { value: Number.parseFloat(theme.fontSize) * 6 },
+    pixelRatio: { value: 1 },
+    mergeStart: { value: mergeStart },
+    mergeEnd: { value: mergeEnd },
+    splitStart: { value: splitStart },
+    splitEnd: { value: splitEnd },
+    splitStrength: { value: splitStrength }
+  };
+  // Index -1 is the full-width fill layer, drawn under the strands.
+  const strands = Array.from({ length: strandCount + 1 }, (_, layer) => {
+    const strand = layer - 1;
+    const isFill = strand === -1;
+    const geometry = new PlaneGeometry(1, 1, segments, isFill ? 18 : 6);
+    const material = new ShaderMaterial({
+      side: DoubleSide,
+      transparent: true,
+      premultipliedAlpha: true,
+      depthWrite: false,
+      uniforms: {
+        ...uniforms,
+        bandStart: { value: isFill ? 0 : strand / strandCount },
+        bandSize: { value: isFill ? 1 : 1 / strandCount },
+        fill: { value: isFill ? 1 : 0 }
+      },
+      vertexShader,
+      fragmentShader
+    });
+    const mesh = new Mesh(geometry, material);
+
+    mesh.renderOrder = layer;
+
+    return { strand, isFill, geometry, material, mesh };
   });
-  const mesh = new Mesh(geometry, material);
 
   let span = 24;
   let elapsed = 0;
@@ -122,12 +184,12 @@ const createRibbonScene = (canvas: HTMLCanvasElement, onReady: () => void): (() 
   let hasSize = false;
   let ready = false;
 
-  // Reuse the strip's vertex buffers. The width rotates around its local tangent
-  // with a traveling twist, rather than rotating a flat picture as a whole.
-  const updateGeometry = (): void => {
-    for (let index = 0; index < positions.count; index++) {
-      const u = uv.getX(index);
-      const offset = (uv.getY(index) - 0.5) * ribbonWidth;
+  // The merged ribbon's centerline and width direction for each column, shared by all strands.
+  // The width rotates around its local tangent with a traveling twist.
+  const updatePath = (): void => {
+    for (let column = 0; column <= segments; column++) {
+      const u = column / segments;
+      const merge = 1 - getSeparation(u);
       const phase = (u - 0.5) * Math.PI * 2;
       const wave = phase + elapsed * 0.12;
       const depth = phase * 0.7 - elapsed * 0.1;
@@ -149,26 +211,52 @@ const createRibbonScene = (canvas: HTMLCanvasElement, onReady: () => void): (() 
       const endpointProgress = Math.max(0, (u - 0.8) / 0.2);
       const endpointAnchor = endpointProgress * endpointProgress * (3 - 2 * endpointProgress);
       const baseX = (u - 0.5) * span;
-      const baseY = Math.sin(wave) * 1.3;
+      // Separate strands wave less, so they stay inside the canvas.
+      const baseY = Math.sin(wave) * 1.3 * (0.4 + 0.6 * merge);
       const endpointHalfWidthX = Math.abs(widthDirection.x) * ribbonWidth * 0.5;
       const endpointHalfWidthY = Math.abs(widthDirection.y) * ribbonWidth * 0.5;
       const centerX = baseX + (camera.right - endpointHalfWidthX - baseX) * endpointAnchor;
       const centerY = baseY + (camera.top - endpointHalfWidthY - baseY) * endpointAnchor;
-      positions.setXYZ(
-        index,
-        centerX + widthDirection.x * offset,
-        centerY + widthDirection.y * offset,
-        Math.cos(depth) * 0.7 + widthDirection.z * offset
-      );
+      centers.set([centerX, centerY, Math.cos(depth) * 0.7], column * 3);
+      widthDirections.set([widthDirection.x, widthDirection.y, widthDirection.z], column * 3);
     }
+  };
+  const updateStrands = (): void => {
+    for (const { strand, isFill, geometry } of strands) {
+      const positions = geometry.getAttribute("position") as BufferAttribute;
+      const uv = geometry.getAttribute("uv");
+      const slot = isFill ? 0 : (strand + 0.5) / strandCount - 0.5;
 
-    positions.needsUpdate = true;
-    geometry.computeVertexNormals();
+      for (let index = 0; index < positions.count; index++) {
+        const column = index % (segments + 1);
+        const separation = getSeparation(column / segments);
+        // Separate strands are wider than their slot, so their faded edges overlap into soft gaps.
+        const width = isFill
+          ? ribbonWidth * (1 + separation * 0.6)
+          : (ribbonWidth / strandCount) * (1 + separation * 0.8);
+        const offset = slot * ribbonWidth + (uv.getY(index) - 0.5) * width;
+        const drift = isFill
+          ? 0
+          : slot * strandCount * strandSpread +
+            Math.sin(elapsed * 0.4 + column * 0.03 + strand) * 0.3;
+
+        positions.setXYZ(
+          index,
+          centers[column * 3] + widthDirections[column * 3] * offset,
+          centers[column * 3 + 1] + widthDirections[column * 3 + 1] * offset + drift * separation,
+          centers[column * 3 + 2] + widthDirections[column * 3 + 2] * offset
+        );
+      }
+
+      positions.needsUpdate = true;
+      geometry.computeVertexNormals();
+    }
   };
   const render = (): void => {
     if (disposed || !noiseLoaded || !hasSize) return;
 
-    updateGeometry();
+    updatePath();
+    updateStrands();
     renderer.render(scene, camera);
 
     // Reveal only after a full-size frame includes the uploaded noise texture.
@@ -210,12 +298,12 @@ const createRibbonScene = (canvas: HTMLCanvasElement, onReady: () => void): (() 
       return;
     }
 
-    camera.left = (-4 * width) / height;
-    camera.right = (4 * width) / height;
+    camera.left = (-halfHeight * width) / height;
+    camera.right = (halfHeight * width) / height;
     camera.updateProjectionMatrix();
     span = Math.max(24, (camera.right - camera.left) * 1.2);
-    material.uniforms.pixelRatio.value = pixelRatio;
-    material.uniforms.noiseTileSize.value = Number.parseFloat(theme.fontSize) * 6;
+    uniforms.pixelRatio.value = pixelRatio;
+    uniforms.noiseTileSize.value = Number.parseFloat(theme.fontSize) * 6;
     renderer.setPixelRatio(pixelRatio);
     renderer.setSize(width, height, false);
     syncPlayback();
@@ -226,8 +314,6 @@ const createRibbonScene = (canvas: HTMLCanvasElement, onReady: () => void): (() 
     syncPlayback();
   });
 
-  positions.setUsage(DynamicDrawUsage);
-  normals.setUsage(DynamicDrawUsage);
   noise.wrapS = RepeatWrapping;
   noise.wrapT = RepeatWrapping;
   // Mipmaps average this high-frequency texture to gray and erase the overlay.
@@ -235,9 +321,13 @@ const createRibbonScene = (canvas: HTMLCanvasElement, onReady: () => void): (() 
   noise.minFilter = LinearFilter;
   noise.magFilter = LinearFilter;
   camera.position.z = 12;
-  // The animated vertices extend beyond the original plane's bounds.
-  mesh.frustumCulled = false;
-  scene.add(mesh);
+  for (const { geometry, mesh } of strands) {
+    (geometry.getAttribute("position") as BufferAttribute).setUsage(DynamicDrawUsage);
+    (geometry.getAttribute("normal") as BufferAttribute).setUsage(DynamicDrawUsage);
+    // The animated vertices extend beyond the original plane's bounds.
+    mesh.frustumCulled = false;
+    scene.add(mesh);
+  }
   renderer.setClearColor(0x000000, 0);
   resizeObserver.observe(canvas);
   intersectionObserver.observe(canvas);
@@ -252,8 +342,10 @@ const createRibbonScene = (canvas: HTMLCanvasElement, onReady: () => void): (() 
     intersectionObserver.disconnect();
     motion.removeEventListener("change", syncPlayback);
     document.removeEventListener("visibilitychange", syncPlayback);
-    geometry.dispose();
-    material.dispose();
+    strands.forEach(({ geometry, material }) => {
+      geometry.dispose();
+      material.dispose();
+    });
     noise.dispose();
     renderer.dispose();
   };

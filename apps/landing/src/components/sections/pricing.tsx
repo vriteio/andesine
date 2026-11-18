@@ -11,6 +11,10 @@ interface PlanFeaturesProps {
   inverted?: boolean;
 }
 
+interface PricingProps {
+  detailed?: boolean;
+}
+
 interface ComparisonGroup {
   label: string;
   rows: Array<[feature: string, free: string, pro: string]>;
@@ -111,7 +115,10 @@ const PlanComparison: Component = () => (
           {(group) => (
             <tbody>
               <tr>
-                <th colSpan={3} class="border-t border-gray-100 bg-gray-50 px-4 py-2 font-semibold text-gray-700">
+                <th
+                  colSpan={3}
+                  class="border-t border-gray-100 bg-gray-50 px-4 py-2 font-semibold text-gray-700"
+                >
                   {group.label}
                 </th>
               </tr>
@@ -132,7 +139,7 @@ const PlanComparison: Component = () => (
   </details>
 );
 
-const Pricing: Component = () => {
+const Pricing: Component<PricingProps> = (props) => {
   return (
     <Section
       sectionId="pricing"
@@ -217,7 +224,7 @@ const Pricing: Component = () => {
           </Button>
         </Card>
       </div>
-      <PlanComparison />
+      {props.detailed && <PlanComparison />}
     </Section>
   );
 };

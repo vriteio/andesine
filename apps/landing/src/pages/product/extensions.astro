@@ -1,0 +1,37 @@
+---
+import SitePage from "../../components/shared/site-page/index.astro";
+import { HeroSection } from "../../components/sections/hero/hero-section";
+import { HeroRibbon } from "../../components/sections/hero/hero-ribbon";
+import { CallToAction } from "../../components/sections/call-to-action";
+import { ExtensionCatalog, ExtensionSurfaces } from "../../components/sections/extensions";
+import { links } from "../../links";
+
+const title = "Extensions — Andesine";
+const description =
+  "Install extensions like Andesine Pages and GitHub Sync, or build your own with panels, element views, actions, and a backend.";
+---
+
+<SitePage title={title} description={description} path="/product/extensions/">
+  <HeroSection
+    slot="hero"
+    heading="A workspace that fits you."
+    highlight="Just add extensions."
+    subheading="Install what you need, or build your own with panels, views, and actions."
+    secondaryLabel="Read the docs"
+    secondaryLink={links.extensionsDocs}
+    screenshot="/_landing/screenshots/github-sync.png"
+    screenshotLabel="The GitHub Sync extension's panel and sync details page"
+  >
+    <HeroRibbon slot="ribbon" client:load />
+  </HeroSection>
+  <ExtensionCatalog />
+  <ExtensionSurfaces client:visible />
+  <CallToAction
+    slot="cta"
+    title="Make it yours."
+    subtitle="Install an extension, or build your own."
+    secondaryTitle="Read the guide"
+    secondaryLink={links.buildExtensionsDocs}
+    secondaryIcon="i-lucide:book-open"
+  />
+</SitePage>

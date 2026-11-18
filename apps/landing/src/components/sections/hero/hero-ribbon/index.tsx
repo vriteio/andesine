@@ -34,7 +34,7 @@ const HeroRibbon: Component = () => {
       aria-hidden="true"
       class={clsx(
         styles.ribbon,
-        "pointer-events-none absolute left-1/2 top-1/2 h-32 w-[calc(112%+6rem)] -translate-x-1/2 -translate-y-1/2 -rotate-8 md:h-48"
+        "pointer-events-none absolute left-1/2 top-1/2 h-60 w-[calc(112%+6rem)] -translate-x-1/2 -translate-y-1/2 -rotate-8 md:h-88"
       )}
       data-ribbon-ready={ready()}
       style={{ opacity: ready() ? 1 : 0 }}

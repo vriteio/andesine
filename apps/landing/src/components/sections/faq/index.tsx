@@ -9,13 +9,12 @@ interface FAQItem {
   answer: string;
 }
 
+interface FAQProps {
+  items: FAQItem[];
+}
+
 // Cloud allowances match the backend billing defaults and billing settings.
-const faqItems: FAQItem[] = [
-  {
-    question: "Can I self-host Andesine?",
-    answer:
-      "Yes. Get the source on GitHub and run it on your infrastructure. The default setup includes Pro features. You manage hosting, storage, and connected services."
-  },
+const pricingFaqItems: FAQItem[] = [
   {
     question: "How do Free and Pro differ?",
     answer:
@@ -38,7 +37,7 @@ const faqItems: FAQItem[] = [
   }
 ];
 
-const FAQ: Component = () => (
+const FAQ: Component<FAQProps> = (props) => (
   <Section
     sectionId="faq"
     id="faq-title"
@@ -46,7 +45,7 @@ const FAQ: Component = () => (
     subtitle="Before you start writing."
   >
     <Card shade class="bg-white! p-0" data-entry="up">
-      <For each={faqItems}>
+      <For each={props.items}>
         {(item) => (
           <details
             name="landing-faq"
@@ -74,4 +73,4 @@ const FAQ: Component = () => (
   </Section>
 );
 
-export { FAQ, faqItems };
+export { FAQ, pricingFaqItems };

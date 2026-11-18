@@ -1,10 +1,11 @@
 import { FeatureDescription, type FeatureContentProps } from "./feature-description";
 import { Card } from "@andesine/components/primitives";
-import { type Component } from "solid-js";
+import { type Component, type JSX } from "solid-js";
 
 interface FeatureCardProps extends FeatureContentProps {
   graphic: Component;
   entryDelay?: number;
+  marker?: JSX.Element;
 }
 
 const FeatureCard: Component<FeatureCardProps> = (props) => (
@@ -14,7 +15,7 @@ const FeatureCard: Component<FeatureCardProps> = (props) => (
         <props.graphic />
       </div>
       <div class="px-6 pb-6 pt-3">
-        <FeatureDescription title={props.title} text={props.text} />
+        <FeatureDescription title={props.title} text={props.text} marker={props.marker} />
       </div>
     </Card>
   </article>

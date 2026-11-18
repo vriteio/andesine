@@ -1,0 +1,28 @@
+---
+import SitePage from "../../components/shared/site-page/index.astro";
+import { HeroSection } from "../../components/sections/hero/hero-section";
+import { HeroRibbon } from "../../components/sections/hero/hero-ribbon";
+import { KnowledgeSearch, KnowledgeAccess } from "../../components/sections/use-cases";
+import { links } from "../../links";
+
+const title = "Team knowledge base — Andesine";
+const description =
+  "Keep team knowledge in one place with search, AI answers with sources, roles, groups, and restricted collections.";
+---
+
+<SitePage title={title} description={description} path="/use-cases/knowledge-base/">
+  <HeroSection
+    slot="hero"
+    heading="Knowledge your team can find."
+    highlight="And keep safe."
+    subheading="Write together, find answers fast, and decide who sees what."
+    secondaryLabel="See AI and agents"
+    secondaryLink={links.product.aiAgents}
+    screenshot="/_landing/screenshots/workspace-search.png"
+    screenshotLabel="Workspace search with matching pages"
+  >
+    <HeroRibbon slot="ribbon" client:load />
+  </HeroSection>
+  <KnowledgeSearch />
+  <KnowledgeAccess />
+</SitePage>

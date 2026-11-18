@@ -1,0 +1,84 @@
+---
+import DocumentHead from "../document-head/index.astro";
+import { SiteHeader } from "../site-header";
+import { SiteFooter } from "../site-footer";
+import { PageScrollShadows } from "../page-scroll-shadows";
+import { Analytics } from "../analytics";
+import { CallToAction } from "../../sections/call-to-action";
+import { PageHero } from "../page-hero";
+import "../../../styles.scss";
+
+interface Props {
+  title: string;
+  description: string;
+  path: string;
+  heading?: string;
+  highlight?: string;
+  subheading?: string;
+  secondaryLabel?: string;
+  secondaryLink?: string;
+  jsonLd?: object;
+}
+
+const { title, description, path, jsonLd, ...hero } = Astro.props;
+const pageUrl = new URL(path, Astro.site).toString();
+// Every page gets WebPage and BreadcrumbList data; a page can add one more node, e.g. its FAQ.
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": pageUrl,
+      "url": pageUrl,
+      "name": title,
+      description,
+      "isPartOf": { "@type": "WebSite", "name": "Andesine", "url": "https://andesine.app/" }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Andesine", "item": "https://andesine.app/" },
+        { "@type": "ListItem", "position": 2, "name": title.split(" — ")[0], "item": pageUrl }
+      ]
+    },
+    ...(jsonLd ? [jsonLd] : [])
+  ]
+};
+---
+
+<!doctype html>
+<html lang="en" class="scrollbar-contrast" style="background-color: #f9fafb">
+  <head>
+    <DocumentHead
+      title={title}
+      description={description}
+      path={path}
+      jsonLd={structuredData}
+      markdownPath={`${path}index.md`}
+    />
+  </head>
+  <body style="background-color: #f9fafb">
+    <PageScrollShadows client:load />
+    <Analytics client:only="solid-js" />
+    <div id="top" class="overflow-clip">
+      <SiteHeader client:load />
+      <main id="main" class="flex flex-col gap-16 md:gap-24">
+        {
+          Astro.slots.has("hero") ? (
+            <slot name="hero" />
+          ) : (
+            <PageHero heading={hero.heading!} subheading={hero.subheading!} {...hero} />
+          )
+        }
+        <slot />
+        {Astro.slots.has("cta") ? <slot name="cta" /> : <CallToAction />}
+      </main>
+      <SiteFooter />
+    </div>
+    <script>
+      import { initEntryAnimations } from "../../../entry-animations";
+
+      initEntryAnimations();
+    </script>
+  </body>
+</html>

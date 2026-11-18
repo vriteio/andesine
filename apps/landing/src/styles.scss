@@ -42,6 +42,14 @@ body {
     @apply mx-2 my-2;
   }
 }
+.scrollbar-transparent {
+  &::-webkit-scrollbar {
+    @apply bg-transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    @apply border-transparent bg-clip-padding;
+  }
+}
 ::-webkit-scrollbar-thumb:horizontal {
   box-shadow: inset 2px 0 4px 0 rgb(0 0 0 / 5%);
 }

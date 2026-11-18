@@ -4,9 +4,10 @@ interface Props {
   description: string;
   path: string;
   jsonLd?: object;
+  markdownPath?: string;
 }
 
-const { title, description, path, jsonLd } = Astro.props;
+const { title, description, path, jsonLd, markdownPath } = Astro.props;
 const canonicalUrl = new URL(path, Astro.site).toString();
 const imageUrl = new URL("/_landing/social.jpg", Astro.site).toString();
 ---
@@ -43,6 +44,7 @@ const imageUrl = new URL("/_landing/social.jpg", Astro.site).toString();
 <meta name="twitter:image:alt" content="Andesine" />
 
 <link rel="canonical" href={canonicalUrl} />
+{markdownPath && <link rel="alternate" type="text/markdown" href={markdownPath} />}
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link
   rel="preload"

@@ -1,0 +1,28 @@
+---
+import SitePage from "../../components/shared/site-page/index.astro";
+import { HeroSection } from "../../components/sections/hero/hero-section";
+import { HeroRibbon } from "../../components/sections/hero/hero-ribbon";
+import { DocsWriting, DocsPublishing } from "../../components/sections/use-cases";
+import { links } from "../../links";
+
+const title = "Product docs — Andesine";
+const description =
+  "Write product and developer docs with your team, then publish a hosted site, sync with GitHub, or deliver them through the API.";
+---
+
+<SitePage title={title} description={description} path="/use-cases/documentation/">
+  <HeroSection
+    slot="hero"
+    heading="Docs your whole team can write."
+    highlight="And readers love."
+    subheading="Write in one editor, then publish a site, sync with GitHub, or ship through the API."
+    secondaryLabel="See Andesine Pages"
+    secondaryLink={links.product.pages}
+    screenshot="/_landing/screenshots/pages-docs.png"
+    screenshotLabel="A docs site built with Andesine Pages"
+  >
+    <HeroRibbon slot="ribbon" client:load />
+  </HeroSection>
+  <DocsWriting />
+  <DocsPublishing />
+</SitePage>

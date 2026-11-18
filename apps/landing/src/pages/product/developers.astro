@@ -1,0 +1,28 @@
+---
+import SitePage from "../../components/shared/site-page/index.astro";
+import { HeroSection } from "../../components/sections/hero/hero-section";
+import { HeroRibbon } from "../../components/sections/hero/hero-ribbon";
+import { DeveloperTools, DeveloperStack } from "../../components/sections/developers";
+import { links } from "../../links";
+
+const title = "API & CLI — Andesine";
+const description =
+  "Read, write, and publish Andesine content from code with the API, the TypeScript SDK, the CLI, and webhooks.";
+---
+
+<SitePage title={title} description={description} path="/product/developers/">
+  <HeroSection
+    slot="hero"
+    heading="Your content, in your code."
+    highlight="Any way you like."
+    subheading="An API, a TypeScript SDK, and a CLI, with types from your schemas."
+    secondaryLabel="Read the docs"
+    secondaryLink={links.apiDocs}
+    screenshot="/_landing/screenshots/pages-api-reference.png"
+    screenshotLabel="Andesine API reference"
+  >
+    <HeroRibbon slot="ribbon" client:load />
+  </HeroSection>
+  <DeveloperTools />
+  <DeveloperStack />
+</SitePage>

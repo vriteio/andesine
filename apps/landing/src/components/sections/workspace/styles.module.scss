@@ -1,0 +1,11 @@
+// Linked highlights
+// Hovering a label outlines its part of the document, so each feature is easy to find.
+.part {
+  @apply rounded-lg outline outline-2 outline-offset-4 outline-transparent transition-[outline-color] duration-200;
+}
+
+@each $name in properties, elements, extensions {
+  .workspace:has([data-label="#{$name}"]:hover) [data-part="#{$name}"] {
+    outline-color: rgb(252 99 53 / 45%);
+  }
+}

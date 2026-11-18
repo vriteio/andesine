@@ -1,0 +1,28 @@
+---
+import SitePage from "../components/shared/site-page/index.astro";
+import { Pricing } from "../components/sections/pricing";
+import { FAQ, pricingFaqItems } from "../components/sections/faq";
+
+const title = "Pricing — Andesine";
+const description =
+  "Start free with up to 3 members. Pro is $12 per seat per month. Self-host the open-source version for free.";
+---
+
+<SitePage
+  title={title}
+  description={description}
+  path="/pricing/"
+  jsonLd={{
+    "@type": "FAQPage",
+    "mainEntity": pricingFaqItems.map((item) => ({
+      "@type": "Question",
+      "name": item.question,
+      "acceptedAnswer": { "@type": "Answer", "text": item.answer }
+    }))
+  }}
+  heading="Pricing"
+  subheading="Free for small teams. Pro for growing ones. Free to self-host."
+>
+  <Pricing detailed client:visible />
+  <FAQ items={pricingFaqItems} />
+</SitePage>
