@@ -8,6 +8,7 @@ const links = {
   hostedSites: "/docs/publishing/hosted-sites/",
   editorDocs: "/docs/writing/editor/",
   schemasDocs: "/docs/organizing-content/schemas/",
+  aiAppsDocs: "/docs/ai-agents/connect-an-ai-app/",
   repository: "https://github.com/vriteio/andesine",
   changelog: "https://github.com/vriteio/andesine/releases",
   email: "mailto:support@andesine.app",
