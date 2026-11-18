@@ -1,18 +1,28 @@
 ---
 import SitePage from "../../components/shared/site-page/index.astro";
-import { EditorSection } from "../../components/sections/editor-section";
+import { HeroSection } from "../../components/sections/hero/hero-section";
+import { HeroRibbon } from "../../components/sections/hero/hero-ribbon";
+import { EditorWriting, EditorTeam } from "../../components/sections/editor";
+import { links } from "../../links";
 
 const title = "Editor — Andesine";
 const description =
-  "Write and review docs together in a real-time editor, with roles, comments, and version history.";
+  "Write and review docs together in a real-time editor, with blocks, Markdown shortcuts, offline editing, and version history.";
 ---
 
-<SitePage
-  title={title}
-  description={description}
-  path="/product/editor/"
-  heading="Write together in real time."
-  subheading="One editor for writers, developers, and agents."
->
-  <EditorSection />
+<SitePage title={title} description={description} path="/product/editor/">
+  <HeroSection
+    slot="hero"
+    heading="Write with your whole team."
+    highlight="In real time."
+    subheading="Blocks, shortcuts, and live editing. Even when you're offline."
+    secondaryLabel="Read the docs"
+    secondaryLink={links.editorDocs}
+    screenshot="/_landing/screenshots/workspace-editor.png"
+    screenshotLabel="Andesine editor with the slash menu open"
+  >
+    <HeroRibbon slot="ribbon" client:load />
+  </HeroSection>
+  <EditorWriting />
+  <EditorTeam />
 </SitePage>

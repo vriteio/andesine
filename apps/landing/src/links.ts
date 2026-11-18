@@ -6,6 +6,7 @@ const links = {
   selfHosting: "/docs/self-hosting/",
   pagesFramework: "/docs/publishing/pages-framework/",
   hostedSites: "/docs/publishing/hosted-sites/",
+  editorDocs: "/docs/writing/editor/",
   repository: "https://github.com/vriteio/andesine",
   changelog: "https://github.com/vriteio/andesine/releases",
   email: "mailto:support@andesine.app",
