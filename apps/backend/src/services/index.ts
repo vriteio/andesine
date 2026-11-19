@@ -1,6 +1,7 @@
 export * from "./assets";
 export * from "./auth";
 export * from "./collections";
+export * from "./comments";
 export * from "./entries";
 export * from "./groups";
 export * from "./sync";

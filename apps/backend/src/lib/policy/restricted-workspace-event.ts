@@ -140,6 +140,12 @@ const filterRestrictedWorkspaceEvent = async (
     return (await isEntryVisible(auth, authorization, event.data.id, "entry:read")) ? event : null;
   }
 
+  if (event.action === "comment-thread:update" || event.action === "comment-thread:delete") {
+    return (await isEntryVisible(auth, authorization, event.data.entryID, "entry:read"))
+      ? event
+      : null;
+  }
+
   if (event.action === "entry:delete") {
     const ids = await filterEntryIDs(auth, authorization, event.data.ids, "entry:read");
 

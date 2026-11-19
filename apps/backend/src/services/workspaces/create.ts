@@ -18,6 +18,7 @@ const DEFAULT_ROLES: Array<{
   { name: "Admin", permissions: [], baseRole: "admin" },
   { name: "Developer", permissions: ["content", "publishing", "api_keys"] },
   { name: "Editor", permissions: ["content", "publishing"] },
+  { name: "Commenter", permissions: ["comments"] },
   { name: "Viewer", permissions: [], baseRole: "viewer" }
 ];
 

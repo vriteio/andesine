@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0
+
+- `comments` methods for comment threads on entries: `list` (paginated), `createThread`, `reply`,
+  `update`, `delete`, `resolve`, and `apply`. A thread covers an entry, a block, or text found by
+  its `quote` (with an optional `blockID` or `offset`). Threads report their `status` (`active`,
+  `outdated`, or `orphaned`) and the current `text`; `apply` writes a suggestion into the entry.
+- Webhook events for comments: `comment.created`, `comment.updated`, `comment.deleted`,
+  `comment.thread_resolved`, and `comment.thread_reopened`.
+- Roles can have the `comments` permission, to comment without editing content.
+
 ## 0.11.0
 
 - The Ask AI methods state the current cost: 10 AI credits per answer.

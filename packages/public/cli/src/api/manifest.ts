@@ -1022,6 +1022,587 @@ const commands: APICommand[] = [
     response: "empty"
   },
   {
+    id: "comments.apply",
+    group: "comments",
+    command: "apply",
+    method: "post",
+    path: "/comments/{id}/apply",
+    summary: "Apply a suggestion",
+    description:
+      "Replaces the quoted text with the suggestion and resolves the thread. Fails when the quoted text changed.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "cmt_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the comment with the suggestion"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "comments.createThread",
+    group: "comments",
+    command: "create-thread",
+    method: "post",
+    path: "/entries/{entryID}/comment-threads",
+    summary: "Create a comment thread",
+    description:
+      "Starts a comment thread on an entry, a block (blockID) or a text range (quote). A quote is plain text as readers see it, with blocks and hard breaks as line breaks (\\n). It must occur once in the entry, or in the block when blockID is set, unless offset gives its position. A suggestion needs a quote within one paragraph, without line breaks.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+    example: {
+      entryID: "ent_example",
+      quote: "teh",
+      content: "Typo",
+      suggestion: "the"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "entryID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the entry"
+        },
+        flag: "entry-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "content",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string",
+          description: "Text of the comment"
+        },
+        flag: "content",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "mentionIDs",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            type: "string"
+          },
+          default: [],
+          description: "Memberships to mention"
+        },
+        flag: "mention-ids",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "suggestion",
+        location: "body",
+        required: false,
+        schema: {
+          anyOf: [
+            {
+              type: "string"
+            },
+            {
+              type: "null"
+            }
+          ],
+          description: "Suggested replacement for the quoted text of the thread"
+        },
+        flag: "suggestion",
+        kind: "string",
+        nullable: true
+      },
+      {
+        name: "blockID",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "ID of the block"
+        },
+        flag: "block-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "quote",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Commented text"
+        },
+        flag: "quote",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "offset",
+        location: "body",
+        required: false,
+        schema: {
+          type: "number",
+          description: "Position of the quote in the plain text of the block, or of the entry"
+        },
+        flag: "offset",
+        kind: "number",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "comments.delete",
+    group: "comments",
+    command: "delete",
+    method: "delete",
+    path: "/comments/{id}",
+    summary: "Delete a comment",
+    description:
+      "Deletes your own comment, or any comment with permission to resolve. Deleting the first comment deletes the thread.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "cmt_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the comment"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "comments.list",
+    group: "comments",
+    command: "list",
+    method: "get",
+    path: "/entries/{entryID}/comment-threads",
+    summary: "List comment threads",
+    description:
+      "Lists the comment threads of an entry with their comments, oldest first. Use pagination.nextCursor to continue with the same filters.\n\nRequired API key permissions: read:entries. Write permissions also grant read access for the same resource.",
+    example: {
+      entryID: "ent_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "entryID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the entry"
+        },
+        flag: "entry-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "cursor",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Cursor from the previous page; keep the same filters"
+        },
+        flag: "cursor",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "query",
+        required: false,
+        schema: {
+          type: "number",
+          default: 50
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "resolved",
+        location: "query",
+        required: false,
+        schema: {
+          type: "boolean",
+          description: "Only resolved or only open threads"
+        },
+        flag: "resolved",
+        kind: "boolean",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json",
+    pagination: "cursor"
+  },
+  {
+    id: "comments.reply",
+    group: "comments",
+    command: "reply",
+    method: "post",
+    path: "/comment-threads/{threadID}/comments",
+    summary: "Reply to a comment thread",
+    description:
+      "Required API key permissions: entries. Write permissions also grant read access for the same resource.",
+    example: {
+      threadID: "cth_example",
+      content: "Done."
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "threadID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the comment thread"
+        },
+        flag: "thread-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "content",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string",
+          description: "Text of the comment"
+        },
+        flag: "content",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "mentionIDs",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            type: "string"
+          },
+          default: [],
+          description: "Memberships to mention"
+        },
+        flag: "mention-ids",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "suggestion",
+        location: "body",
+        required: false,
+        schema: {
+          anyOf: [
+            {
+              type: "string"
+            },
+            {
+              type: "null"
+            }
+          ],
+          description: "Suggested replacement for the quoted text of the thread"
+        },
+        flag: "suggestion",
+        kind: "string",
+        nullable: true
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "comments.resolve",
+    group: "comments",
+    command: "resolve",
+    method: "post",
+    path: "/comment-threads/{id}/resolve",
+    summary: "Resolve or reopen a comment thread",
+    description:
+      "Required API key permissions: entries. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "cth_example",
+      resolved: true
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the comment thread"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "resolved",
+        location: "body",
+        required: true,
+        schema: {
+          type: "boolean",
+          description: "True to resolve, false to reopen"
+        },
+        flag: "resolved",
+        kind: "boolean",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "comments.update",
+    group: "comments",
+    command: "update",
+    method: "patch",
+    path: "/comments/{id}",
+    summary: "Update a comment",
+    description:
+      "Changes your own comment. Omitted mentions and suggestion stay unchanged. An applied suggestion cannot change.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "cmt_example",
+      content: "Please check this again."
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the comment"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "content",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string",
+          description: "Text of the comment"
+        },
+        flag: "content",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "mentionIDs",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            type: "string"
+          },
+          description: "Memberships to mention; unchanged when omitted"
+        },
+        flag: "mention-ids",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "suggestion",
+        location: "body",
+        required: false,
+        schema: {
+          anyOf: [
+            {
+              type: "string"
+            },
+            {
+              type: "null"
+            }
+          ],
+          description: "Suggested replacement for the quoted text of the thread"
+        },
+        flag: "suggestion",
+        kind: "string",
+        nullable: true
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
     id: "content.get",
     group: "content",
     command: "get",
@@ -8913,6 +9494,11 @@ const schemas: Record<string, JSONSchema> = {
       "entry.moved",
       "entry.deleted",
       "entry.restored",
+      "comment.created",
+      "comment.updated",
+      "comment.deleted",
+      "comment.thread_resolved",
+      "comment.thread_reopened",
       "collection.created",
       "collection.updated",
       "collection.moved",
@@ -8927,6 +9513,7 @@ const schemas: Record<string, JSONSchema> = {
   Permission: {
     enum: [
       "content",
+      "comments",
       "publishing",
       "api_keys",
       "read:api_keys",

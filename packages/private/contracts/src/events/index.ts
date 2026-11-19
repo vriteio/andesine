@@ -13,6 +13,8 @@ export type { SchemaMigrationEvent } from "./schema-migrations";
 export { publishingEventType } from "./publishing";
 export type { PublishingEvent } from "./publishing";
 export { collectionEventType } from "./collections";
+export { commentThreadEventType } from "./comments";
+export type { CommentThreadEvent } from "./comments";
 export type { CollectionEvent } from "./collections";
 export { schemaEventType } from "./schemas";
 export type { SchemaEvent } from "./schemas";

@@ -2,6 +2,7 @@ export * from "./assets";
 export * from "./auth";
 export * from "./oauth";
 export * from "./collections";
+export * from "./comments";
 export * from "./content-schemas";
 export * from "./contents";
 export * from "./stripe-webhook-events";

@@ -47,6 +47,20 @@ const bindings: Record<
     client.collections.move(input as OperationInput<"collections.move">, options),
   "collections.update": (client, input, options) =>
     client.collections.update(input as OperationInput<"collections.update">, options),
+  "comments.apply": (client, input, options) =>
+    client.comments.apply(input as OperationInput<"comments.apply">, options),
+  "comments.createThread": (client, input, options) =>
+    client.comments.createThread(input as OperationInput<"comments.createThread">, options),
+  "comments.delete": (client, input, options) =>
+    client.comments.delete(input as OperationInput<"comments.delete">, options),
+  "comments.list": (client, input, options) =>
+    client.comments.list(input as OperationInput<"comments.list">, options),
+  "comments.reply": (client, input, options) =>
+    client.comments.reply(input as OperationInput<"comments.reply">, options),
+  "comments.resolve": (client, input, options) =>
+    client.comments.resolve(input as OperationInput<"comments.resolve">, options),
+  "comments.update": (client, input, options) =>
+    client.comments.update(input as OperationInput<"comments.update">, options),
   "content.get": (client, input, options) =>
     client.content.get(input as OperationInput<"content.get">, options),
   "content.getAsset": (client, input, options) =>

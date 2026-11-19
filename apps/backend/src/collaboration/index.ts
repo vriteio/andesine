@@ -6,6 +6,7 @@ export {
   openDocumentContentConnection,
   prepareSchemaMigrationConnections,
   readDocumentContent,
+  readOpenDocument,
   setPersistedDocumentSchemaRevision,
   updateDocumentContent,
   updateDocumentTitle,

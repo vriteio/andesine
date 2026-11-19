@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.14.0
+
+- `api comments` commands for comment threads: list, create, reply, update, delete, resolve, and
+  apply suggestions.
+- `andesine mcp` has comment tools: `list_comments`, `add_comment` (mentions by member email),
+  `resolve_comment`, `apply_suggestion`, and `list_members`.
+- Requires `@andesine/sdk` 0.12.0.
+
 ## 0.13.0
 
 - New Pages projects use `@andesine/ui` 0.12.0: a URL hash scrolls to its section on page load.

@@ -18,6 +18,8 @@ const entryActionType = z.enum([
   "entry:update",
   "entry:move",
   "entry:delete",
+  "comment:create",
+  "comment:resolve",
   "version:read",
   "version:create",
   "version:update",

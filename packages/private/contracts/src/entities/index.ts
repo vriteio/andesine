@@ -24,3 +24,12 @@ export { workspaceType } from "./workspaces";
 export type { Workspace } from "./workspaces";
 export { usageRecordType } from "./usage";
 export type { UsageRecord } from "./usage";
+export {
+  commentAnchorStatusType,
+  commentAnchorType,
+  commentContentType,
+  commentSuggestionType,
+  commentThreadType,
+  commentType
+} from "./comments";
+export type { Comment, CommentAnchor, CommentAnchorStatus, CommentThread } from "./comments";

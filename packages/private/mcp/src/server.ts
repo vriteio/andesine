@@ -5,6 +5,7 @@ import {
   type CheckpointStore,
   type ToolContext
 } from "./context";
+import { commentReadTools, commentWriteTools } from "./tools/comments";
 import { publishTools } from "./tools/publish";
 import { readTools } from "./tools/read";
 import { schemaTools } from "./tools/schema";
@@ -34,6 +35,8 @@ type ToolName =
   | keyof typeof writeTools
   | keyof typeof schemaTools
   | keyof typeof publishTools
+  | keyof typeof commentReadTools
+  | keyof typeof commentWriteTools
   | "upload_image";
 
 // Write permissions also grant reads of the same resource; any listed permission is enough.
@@ -55,6 +58,11 @@ const TOOL_PERMISSIONS: Record<ToolName, string[]> = {
   revert_version: ["versions", "collections"],
   publish: ["publishing"],
   unpublish: ["publishing"],
+  list_comments: ["read:entries"],
+  list_members: ["read:memberships"],
+  add_comment: ["entries"],
+  resolve_comment: ["entries"],
+  apply_suggestion: ["entries"],
   upload_image: ["entries"]
 };
 const RESOURCE_PERMISSIONS: Record<ResourceName, string[]> = {
@@ -76,13 +84,15 @@ const PROMPT_PERMISSIONS: Record<PromptName, { permissions: string[]; writes: bo
 };
 const INSTRUCTIONS = `Andesine is a knowledge base, CMS, and docs platform. A workspace has a tree of collections that hold entries; an entry is a document with a title, optional schema fields (properties and fragments), and content. People edit entries live; publishing copies versions to channels (published by default) that sites read.
 
-Content is MDX: the title is the H1; properties are <Property name="..." value={...} /> elements; fragments are <Fragment name="...">...</Fragment>; images are ![alt](asset:ast_...); links to entries are [text](entry:/collection/entry). In text, escape < and { with a backslash; comments aren't supported.
+Content is MDX: the title is the H1; properties are <Property name="..." value={...} /> elements; fragments are <Fragment name="...">...</Fragment>; images are ![alt](asset:ast_...); links to entries are [text](entry:/collection/entry). In text, escape < and { with a backslash; MDX comments aren't supported.
 
-Address entries by ID (ent_...) or path (/Collection/Entry). Find content with search or get_tree, and read it with fetch; for a long entry, read its outline, then one section. Change existing content with edit_entry operations (block IDs from fetch with format blocks); use write_entry only for full rewrites. Images by URL in edit_entry and write_entry are imported. When a call fails, read the error and its hints, read the entry again, and retry. The andesine://guide/mdx resource has the full MDX syntax.`;
+Address entries by ID (ent_...) or path (/Collection/Entry). Find content with search or get_tree, and read it with fetch; for a long entry, read its outline, then one section. Change existing content with edit_entry operations (block IDs from fetch with format blocks); use write_entry only for full rewrites. To review content or propose changes for people to approve, use add_comment with a quote and an optional suggestion; list_comments shows the existing threads, and mentions take member emails (list_members lists them). Images by URL in edit_entry and write_entry are imported. When a call fails, read the error and its hints, read the entry again, and retry. The andesine://guide/mdx resource has the full MDX syntax.`;
 
 const TOOL_GROUPS = [
   { tools: readTools, writes: false },
   { tools: writeTools, writes: true },
+  { tools: commentReadTools, writes: false },
+  { tools: commentWriteTools, writes: true },
   { tools: schemaTools, writes: true },
   { tools: publishTools, writes: true }
 ];

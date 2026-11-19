@@ -426,6 +426,101 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
      */
     list: Operation<"collections.list", Workspace>;
   };
+  comments: {
+    /**
+     * List comment threads
+     *
+     * Lists the comment threads of an entry with their comments, oldest first. Use pagination.nextCursor to continue with the same filters.
+     *
+     * Required API key permissions: read:entries. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.comments.list({
+     *   "entryID": "ent_example"
+     * });
+     */
+    list: Operation<"comments.list", Workspace>;
+    /**
+     * Create a comment thread
+     *
+     * Starts a comment thread on an entry, a block (blockID) or a text range (quote). A quote is plain text as readers see it, with blocks and hard breaks as line breaks (\n). It must occur once in the entry, or in the block when blockID is set, unless offset gives its position. A suggestion needs a quote within one paragraph, without line breaks.
+     *
+     * Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.comments.createThread({
+     *   "entryID": "ent_example",
+     *   "quote": "teh",
+     *   "content": "Typo",
+     *   "suggestion": "the"
+     * });
+     */
+    createThread: Operation<"comments.createThread", Workspace>;
+    /**
+     * Reply to a comment thread
+     *
+     * Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.comments.reply({
+     *   "threadID": "cth_example",
+     *   "content": "Done."
+     * });
+     */
+    reply: Operation<"comments.reply", Workspace>;
+    /**
+     * Update a comment
+     *
+     * Changes your own comment. Omitted mentions and suggestion stay unchanged. An applied suggestion cannot change.
+     *
+     * Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.comments.update({
+     *   "id": "cmt_example",
+     *   "content": "Please check this again."
+     * });
+     */
+    update: Operation<"comments.update", Workspace>;
+    /**
+     * Delete a comment
+     *
+     * Deletes your own comment, or any comment with permission to resolve. Deleting the first comment deletes the thread.
+     *
+     * Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.comments.delete({
+     *   "id": "cmt_example"
+     * });
+     */
+    delete: Operation<"comments.delete", Workspace>;
+    /**
+     * Resolve or reopen a comment thread
+     *
+     * Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.comments.resolve({
+     *   "id": "cth_example",
+     *   "resolved": true
+     * });
+     */
+    resolve: Operation<"comments.resolve", Workspace>;
+    /**
+     * Apply a suggestion
+     *
+     * Replaces the quoted text with the suggestion and resolves the thread. Fails when the quoted text changed.
+     *
+     * Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.comments.apply({
+     *   "id": "cmt_example"
+     * });
+     */
+    apply: Operation<"comments.apply", Workspace>;
+  };
   content: {
     /**
      * List published collections
@@ -1808,6 +1903,78 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       path: "/collections/list",
       pathParams: [],
       queryParams: ["collectionID", "collectionPath", "collectionSlugPath", "cursor", "limit"],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    })
+  },
+  comments: {
+    list: operation<"comments.list", Workspace>(request, {
+      method: "get",
+      path: "/entries/{entryID}/comment-threads",
+      pathParams: ["entryID"],
+      queryParams: ["cursor", "limit", "resolved"],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    createThread: operation<"comments.createThread", Workspace>(request, {
+      method: "post",
+      path: "/entries/{entryID}/comment-threads",
+      pathParams: ["entryID"],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    reply: operation<"comments.reply", Workspace>(request, {
+      method: "post",
+      path: "/comment-threads/{threadID}/comments",
+      pathParams: ["threadID"],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    update: operation<"comments.update", Workspace>(request, {
+      method: "patch",
+      path: "/comments/{id}",
+      pathParams: ["id"],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    delete: operation<"comments.delete", Workspace>(request, {
+      method: "delete",
+      path: "/comments/{id}",
+      pathParams: ["id"],
+      queryParams: [],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    resolve: operation<"comments.resolve", Workspace>(request, {
+      method: "post",
+      path: "/comment-threads/{id}/resolve",
+      pathParams: ["id"],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    apply: operation<"comments.apply", Workspace>(request, {
+      method: "post",
+      path: "/comments/{id}/apply",
+      pathParams: ["id"],
+      queryParams: [],
       body: false,
       multipart: false,
       binary: false,

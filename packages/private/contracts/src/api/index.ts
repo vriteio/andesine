@@ -4,6 +4,7 @@ import { createAssetsContract } from "./assets";
 import { authContract } from "./auth";
 import { billingContract } from "./billing";
 import { collectionsContract } from "./collections";
+import { commentsContract } from "./comments";
 import { contentContract } from "./content";
 import { entriesContract } from "./entries";
 import { extensionsContract } from "./extensions";
@@ -34,6 +35,7 @@ const createAPIContract = (options: APIContractOptions = {}) => ({
   extensions: extensionsContract,
   groups: groupsContract,
   collections: collectionsContract,
+  comments: commentsContract,
   content: contentContract,
   billing: billingContract,
   keys: keysContract,

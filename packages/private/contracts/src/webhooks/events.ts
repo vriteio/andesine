@@ -75,6 +75,15 @@ const moveDataType = z.discriminatedUnion("scopeTransition", [
 ]);
 const entryDataType = z.strictObject({ name: nameType, collectionID: parentType });
 const collectionDataType = z.strictObject({ name: nameType, parentID: parentType });
+const commentDataType = z.strictObject({
+  collectionID: parentType,
+  threadID: publicID("cth"),
+  commentID: publicID("cmt")
+});
+const commentThreadDataType = z.strictObject({
+  collectionID: parentType,
+  threadID: publicID("cth")
+});
 const entryEventType = envelopeType.extend({ subject: entrySubjectType });
 const collectionEventType = envelopeType.extend({ subject: collectionSubjectType });
 const channelEventType = envelopeType.extend({ subject: channelSubjectType });
@@ -106,6 +115,26 @@ const webhookEventSchemas = {
   "entry.restored": entryEventType.extend({
     type: z.literal("entry.restored"),
     data: entryDataType
+  }),
+  "comment.created": entryEventType.extend({
+    type: z.literal("comment.created"),
+    data: commentDataType.extend({ reply: z.boolean() })
+  }),
+  "comment.updated": entryEventType.extend({
+    type: z.literal("comment.updated"),
+    data: commentDataType
+  }),
+  "comment.deleted": entryEventType.extend({
+    type: z.literal("comment.deleted"),
+    data: commentDataType.extend({ threadDeleted: z.boolean() })
+  }),
+  "comment.thread_resolved": entryEventType.extend({
+    type: z.literal("comment.thread_resolved"),
+    data: commentThreadDataType.extend({ reason: z.enum(["resolved", "suggestion_applied"]) })
+  }),
+  "comment.thread_reopened": entryEventType.extend({
+    type: z.literal("comment.thread_reopened"),
+    data: commentThreadDataType
   }),
   "collection.created": collectionEventType.extend({
     type: z.literal("collection.created"),
@@ -164,6 +193,11 @@ const webhookEventType = z.discriminatedUnion("type", [
   webhookEventSchemas["entry.moved"],
   webhookEventSchemas["entry.deleted"],
   webhookEventSchemas["entry.restored"],
+  webhookEventSchemas["comment.created"],
+  webhookEventSchemas["comment.updated"],
+  webhookEventSchemas["comment.deleted"],
+  webhookEventSchemas["comment.thread_resolved"],
+  webhookEventSchemas["comment.thread_reopened"],
   webhookEventSchemas["collection.created"],
   webhookEventSchemas["collection.updated"],
   webhookEventSchemas["collection.moved"],

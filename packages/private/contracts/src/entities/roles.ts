@@ -3,6 +3,7 @@ import * as z from "zod";
 
 const permissionType = z.enum([
   "content",
+  "comments",
   "publishing",
   "api_keys",
   "read:api_keys",

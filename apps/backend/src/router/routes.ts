@@ -18,6 +18,7 @@ import { schemasRouter } from "./schemas";
 import { searchRouter } from "./search";
 import { syncRouter } from "./sync";
 import { versionsRouter } from "./versions";
+import { commentsRouter } from "./comments";
 import { typeMetadataRouter } from "./type-metadata";
 import { workspacesRouter } from "./workspaces";
 import { webhooksRouter } from "./webhooks";
@@ -43,6 +44,7 @@ const router = api.router({
   publishing: publishingRouter,
   workspaces: workspacesRouter,
   versions: versionsRouter,
+  comments: commentsRouter,
   typeMetadata: typeMetadataRouter,
   sync: syncRouter
 });

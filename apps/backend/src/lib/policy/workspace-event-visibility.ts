@@ -11,6 +11,10 @@ const isWorkspaceEventVisible = (
     return hasAuthorizationRequirements(auth, { session: true, key: ["read:entries"] });
   }
 
+  if (event.action.startsWith("comment-thread:")) {
+    return hasAuthorizationRequirements(auth, { session: true, key: ["read:entries"] });
+  }
+
   if (event.action.startsWith("collection:")) {
     return hasAuthorizationRequirements(auth, { session: true, key: ["read:collections"] });
   }
