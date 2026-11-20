@@ -1026,12 +1026,12 @@ const commands: APICommand[] = [
     group: "comments",
     command: "apply",
     method: "post",
-    path: "/comments/{id}/apply",
+    path: "/comment-threads/{id}/apply",
     summary: "Apply a suggestion",
     description:
-      "Replaces the quoted text with the suggestion and resolves the thread. Fails when the quoted text changed.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+      "Replaces the blocks with the suggested ones and resolves the thread. Fails when the blocks changed since the suggestion was saved.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
     example: {
-      id: "cmt_example"
+      id: "cth_example"
     },
     security: [
       {
@@ -1048,7 +1048,7 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          description: "ID of the comment with the suggestion"
+          description: "ID of the comment thread with the suggestion"
         },
         flag: "id",
         kind: "string",
@@ -1079,7 +1079,7 @@ const commands: APICommand[] = [
     path: "/entries/{entryID}/comment-threads",
     summary: "Create a comment thread",
     description:
-      "Starts a comment thread on an entry, a block (blockID) or a text range (quote). A quote is plain text as readers see it, with blocks and hard breaks as line breaks (\\n). It must occur once in the entry, or in the block when blockID is set, unless offset gives its position. A suggestion needs a quote within one paragraph, without line breaks.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+      "Starts a comment thread on an entry, a block (blockID) or a text range (quote). A quote is plain text as readers see it, with blocks and hard breaks as line breaks (\\n). It must occur once in the entry, or in the block when blockID is set, unless offset gives its position. A suggestion replaces a quote within one paragraph, without line breaks; suggest changes whole blocks.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
     example: {
       entryID: "ent_example",
       quote: "teh",
@@ -1150,25 +1150,6 @@ const commands: APICommand[] = [
         nullable: false
       },
       {
-        name: "suggestion",
-        location: "body",
-        required: false,
-        schema: {
-          anyOf: [
-            {
-              type: "string"
-            },
-            {
-              type: "null"
-            }
-          ],
-          description: "Suggested replacement for the quoted text of the thread"
-        },
-        flag: "suggestion",
-        kind: "string",
-        nullable: true
-      },
-      {
         name: "blockID",
         location: "body",
         required: false,
@@ -1189,6 +1170,18 @@ const commands: APICommand[] = [
           description: "Commented text"
         },
         flag: "quote",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "suggestion",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Replacement for the quote"
+        },
+        flag: "suggestion",
         kind: "string",
         nullable: false
       },
@@ -1420,25 +1413,6 @@ const commands: APICommand[] = [
         flag: "mention-ids",
         kind: "json",
         nullable: false
-      },
-      {
-        name: "suggestion",
-        location: "body",
-        required: false,
-        schema: {
-          anyOf: [
-            {
-              type: "string"
-            },
-            {
-              type: "null"
-            }
-          ],
-          description: "Suggested replacement for the quoted text of the thread"
-        },
-        flag: "suggestion",
-        kind: "string",
-        nullable: true
       }
     ],
     conditional: false,
@@ -1508,6 +1482,149 @@ const commands: APICommand[] = [
     response: "json"
   },
   {
+    id: "comments.suggest",
+    group: "comments",
+    command: "suggest",
+    method: "post",
+    path: "/entries/{entryID}/suggestions",
+    summary: "Suggest a change",
+    description:
+      "Starts a comment thread that suggests replacing consecutive blocks (blockIDs) with other blocks, or inserting blocks (after). Block IDs come from entries.get with contentFormat blocks. People with permission to update the entry can apply it.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+    example: {
+      entryID: "ent_example",
+      blockIDs: ["blk_example"],
+      mdx: "New paragraph text."
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "entryID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the entry"
+        },
+        flag: "entry-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "blockIDs",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          items: {
+            type: "string"
+          },
+          description: "Consecutive blocks to replace; empty to insert blocks"
+        },
+        flag: "block-ids",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "after",
+        location: "body",
+        required: false,
+        schema: {
+          anyOf: [
+            {
+              type: "string"
+            },
+            {
+              type: "null"
+            }
+          ],
+          default: null,
+          description: "For an insertion: block after which the blocks go, or null for the start"
+        },
+        flag: "after",
+        kind: "string",
+        nullable: true
+      },
+      {
+        name: "blocks",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/ContentNodeInput"
+          },
+          description: "Suggested blocks"
+        },
+        flag: "blocks",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "mdx",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Suggested blocks in MDX, instead of blocks"
+        },
+        flag: "mdx",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "content",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          default: "",
+          description: "Text of the comment"
+        },
+        flag: "content",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "mentionIDs",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            type: "string"
+          },
+          default: [],
+          description: "Memberships to mention"
+        },
+        flag: "mention-ids",
+        kind: "json",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
     id: "comments.update",
     group: "comments",
     command: "update",
@@ -1515,7 +1632,7 @@ const commands: APICommand[] = [
     path: "/comments/{id}",
     summary: "Update a comment",
     description:
-      "Changes your own comment. Omitted mentions and suggestion stay unchanged. An applied suggestion cannot change.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+      "Changes your own comment. Omitted mentions stay unchanged.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
     example: {
       id: "cmt_example",
       content: "Please check this again."
@@ -1581,9 +1698,76 @@ const commands: APICommand[] = [
         flag: "mention-ids",
         kind: "json",
         nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "comments.updateSuggestion",
+    group: "comments",
+    command: "update-suggestion",
+    method: "put",
+    path: "/comment-threads/{id}/suggestion",
+    summary: "Update a suggestion",
+    description:
+      "Replaces the change of your own open suggestion, against the current content.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "cth_example",
+      blockIDs: ["blk_example"],
+      mdx: "Other text."
+    },
+    security: [
+      {
+        apiKey: []
       },
       {
-        name: "suggestion",
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the comment thread"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "blockIDs",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          items: {
+            type: "string"
+          },
+          description: "Consecutive blocks to replace; empty to insert blocks"
+        },
+        flag: "block-ids",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "after",
         location: "body",
         required: false,
         schema: {
@@ -1595,11 +1779,39 @@ const commands: APICommand[] = [
               type: "null"
             }
           ],
-          description: "Suggested replacement for the quoted text of the thread"
+          default: null,
+          description: "For an insertion: block after which the blocks go, or null for the start"
         },
-        flag: "suggestion",
+        flag: "after",
         kind: "string",
         nullable: true
+      },
+      {
+        name: "blocks",
+        location: "body",
+        required: false,
+        schema: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/ContentNodeInput"
+          },
+          description: "Suggested blocks"
+        },
+        flag: "blocks",
+        kind: "json",
+        nullable: false
+      },
+      {
+        name: "mdx",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Suggested blocks in MDX, instead of blocks"
+        },
+        flag: "mdx",
+        kind: "string",
+        nullable: false
       }
     ],
     conditional: false,

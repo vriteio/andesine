@@ -16,7 +16,6 @@ interface UpdateCommentInput {
   id: string;
   content: string;
   mentionIDs?: string[];
-  suggestion?: string | null;
 }
 
 const updateComment = withAuthorization<UpdateCommentInput, CommentTarget, CommentThread>(
@@ -34,14 +33,6 @@ const updateComment = withAuthorization<UpdateCommentInput, CommentTarget, Comme
 
     if (!isAuthor) throw new ORPCError("FORBIDDEN", { message: "Only the author can edit" });
 
-    if (resolved.appliedAt) {
-      throw new ORPCError("BAD_REQUEST", { message: "An applied suggestion cannot change" });
-    }
-
-    if (input.suggestion != null && !resolved.anchor) {
-      throw new ORPCError("BAD_REQUEST", { message: "A suggestion needs a text range" });
-    }
-
     const mentionIDs =
       input.mentionIDs && (await filterWorkspaceMembershipIDs(workspaceID, input.mentionIDs));
 
@@ -52,7 +43,6 @@ const updateComment = withAuthorization<UpdateCommentInput, CommentTarget, Comme
           content: input.content,
           // Drizzle skips undefined fields, so omitted ones stay unchanged.
           mentionIDs,
-          suggestion: input.suggestion,
           updatedAt: new Date()
         })
         .where(eq(comments.id, resolved.commentID));

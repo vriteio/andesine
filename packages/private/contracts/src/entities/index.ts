@@ -32,4 +32,10 @@ export {
   commentThreadType,
   commentType
 } from "./comments";
-export type { Comment, CommentAnchor, CommentAnchorStatus, CommentThread } from "./comments";
+export type {
+  Comment,
+  CommentAnchor,
+  CommentAnchorStatus,
+  CommentSuggestion,
+  CommentThread
+} from "./comments";

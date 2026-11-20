@@ -15,8 +15,8 @@ const emitThreadUpdate = (auth: SessionData, thread: CommentThread): CommentThre
 
   return thread;
 };
-const trackComment = (auth: SessionData, input: { suggestion?: string | null }, reply: boolean) => {
-  trackEvent("comment_created", auth, { reply, suggestion: input.suggestion != null });
+const trackComment = (auth: SessionData, reply: boolean, suggestion: boolean) => {
+  trackEvent("comment_created", auth, { reply, suggestion });
 };
 const handlers = api.comments;
 const authorizedHandlers = handlers.use(authorized);
@@ -27,14 +27,26 @@ const commentsRouter = handlers.router({
   createThread: authorizedHandlers.createThread.handler(async ({ context, input }) => {
     const thread = await Comments.createThread({ ...input, auth: context.auth });
 
-    trackComment(context.auth, input, false);
+    trackComment(context.auth, false, input.suggestion !== undefined);
 
     return emitThreadUpdate(context.auth, thread);
   }),
   reply: authorizedHandlers.reply.handler(async ({ context, input }) => {
     const thread = await Comments.reply({ ...input, auth: context.auth });
 
-    trackComment(context.auth, input, true);
+    trackComment(context.auth, true, false);
+
+    return emitThreadUpdate(context.auth, thread);
+  }),
+  suggest: authorizedHandlers.suggest.handler(async ({ context, input }) => {
+    const thread = await Comments.suggest({ ...input, auth: context.auth });
+
+    trackComment(context.auth, false, true);
+
+    return emitThreadUpdate(context.auth, thread);
+  }),
+  updateSuggestion: authorizedHandlers.updateSuggestion.handler(async ({ context, input }) => {
+    const thread = await Comments.updateSuggestion({ ...input, auth: context.auth });
 
     return emitThreadUpdate(context.auth, thread);
   }),

@@ -1,7 +1,24 @@
-import { foreignKey, index, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import type { ContentNode } from "@andesine/document";
+import {
+  foreignKey,
+  index,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  unique,
+  uuid
+} from "drizzle-orm/pg-core";
 import { entries } from "./entries";
 import { memberships } from "./memberships";
 import { timestamps } from "./shared";
+
+interface CommentSuggestionData {
+  blockIDs: string[];
+  after: string | null;
+  base: ContentNode[];
+  blocks: ContentNode[];
+}
 
 const commentThreads = pgTable(
   "comment_threads",
@@ -13,6 +30,8 @@ const commentThreads = pgTable(
     anchorStart: text("anchor_start"),
     anchorEnd: text("anchor_end"),
     quote: text("quote"),
+    suggestion: jsonb("suggestion").$type<CommentSuggestionData>(),
+    appliedAt: timestamp("applied_at", { withTimezone: true }),
     authorID: uuid("author_id"),
     resolvedAt: timestamp("resolved_at", { withTimezone: true }),
     resolvedByID: uuid("resolved_by_id"),
@@ -47,8 +66,6 @@ const comments = pgTable(
     authorID: uuid("author_id"),
     content: text("content").notNull(),
     mentionIDs: uuid("mention_ids").array().notNull().default([]),
-    suggestion: text("suggestion"),
-    appliedAt: timestamp("applied_at", { withTimezone: true }),
     ...timestamps
   },
   (table) => [
@@ -67,3 +84,4 @@ const comments = pgTable(
 );
 
 export { comments, commentThreads };
+export type { CommentSuggestionData };

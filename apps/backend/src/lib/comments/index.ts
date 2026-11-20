@@ -3,6 +3,7 @@ import {
   commentThreads,
   contents,
   entries,
+  type CommentSuggestionData,
   type DatabaseClient
 } from "@andesine/server/database";
 import { type Comment, type CommentAnchor, type CommentThread } from "@andesine/contracts/entities";
@@ -16,8 +17,13 @@ import {
 import { ORPCError } from "@orpc/server";
 import { and, asc, eq, inArray, isNotNull, isNull, sql, type SQL } from "drizzle-orm";
 import { applyUpdate, Doc } from "yjs";
-import { openDocumentContentConnection, readOpenDocument } from "#backend/collaboration";
+import {
+  getContentSnapshot,
+  openDocumentContentConnection,
+  readOpenDocument
+} from "#backend/collaboration";
 import { type AnchorState, getAnchorStates } from "./anchors";
+import { getSuggestionStatus } from "./suggestions";
 
 interface CommentThreadFilter {
   entryID?: string;
@@ -28,19 +34,23 @@ interface CommentThreadFilter {
   /** Returns up to one more thread, to tell whether more follow. */
   limit?: number;
 }
-interface CommentThreadTarget {
+interface CommentEntryTarget {
+  collectionID: string | null;
+  schemaRevisionID: string | null;
+}
+interface CommentThreadTarget extends CommentEntryTarget {
   threadID: string;
   entryID: string;
-  collectionID: string | null;
+  threadAuthorID: string | null;
   resolved: boolean;
   anchor: CommentAnchor | null;
   quote: string | null;
+  suggestion: CommentSuggestionData | null;
+  appliedAt: Date | null;
 }
 interface CommentTarget extends CommentThreadTarget {
   commentID: string;
   authorID: string | null;
-  suggestion: string | null;
-  appliedAt: Date | null;
 }
 
 type CommentRow = typeof comments.$inferSelect;
@@ -56,8 +66,6 @@ const mapComment = (row: CommentRow): Comment => ({
   authorID: toOptionalMembershipID(row.authorID),
   content: row.content,
   mentionIDs: row.mentionIDs.map(toMembershipID),
-  suggestion: row.suggestion,
-  appliedAt: row.appliedAt?.toISOString() ?? null,
   createdAt: row.createdAt.toISOString(),
   updatedAt: row.updatedAt.toISOString()
 });
@@ -73,6 +81,8 @@ const mapCommentThread = (
   quote: row.quote,
   status: state.status,
   text: state.text,
+  suggestion: row.suggestion,
+  appliedAt: row.appliedAt?.toISOString() ?? null,
   authorID: toOptionalMembershipID(row.authorID),
   resolvedAt: row.resolvedAt?.toISOString() ?? null,
   resolvedByID: toOptionalMembershipID(row.resolvedByID),
@@ -186,10 +196,21 @@ const fetchCommentThreads = async (
     workspaceID,
     toEntryID(threadRows[0].entryID),
     (document) => {
-      return getAnchorStates(
+      const states = getAnchorStates(
         document,
         threadRows.map((row) => ({ ...row, anchor: toAnchor(row) }))
       );
+      const content = threadRows.some(({ suggestion, appliedAt }) => suggestion && !appliedAt)
+        ? getContentSnapshot(document).document
+        : null;
+
+      return states.map((state, index) => {
+        const { suggestion, appliedAt } = threadRows[index];
+
+        if (!content || !suggestion || appliedAt) return state;
+
+        return { ...state, status: getSuggestionStatus(content, suggestion) };
+      });
     }
   );
 
@@ -222,10 +243,11 @@ const resolveCommentEntry = async (
   database: DatabaseClient,
   workspaceID: string,
   entryID: string
-): Promise<{ collectionID: string | null }> => {
+): Promise<CommentEntryTarget> => {
   const [entry] = await database
-    .select({ collectionID: entries.collectionID })
+    .select({ collectionID: entries.collectionID, schemaRevisionID: contents.schemaRevisionID })
     .from(entries)
+    .innerJoin(contents, eq(contents.entryID, entries.id))
     .where(
       and(
         eq(entries.id, toUUID(entryID)),
@@ -242,10 +264,14 @@ const threadTargetColumns = {
   threadID: commentThreads.id,
   entryID: commentThreads.entryID,
   collectionID: entries.collectionID,
+  schemaRevisionID: contents.schemaRevisionID,
+  threadAuthorID: commentThreads.authorID,
   resolvedAt: commentThreads.resolvedAt,
   anchorStart: commentThreads.anchorStart,
   anchorEnd: commentThreads.anchorEnd,
-  quote: commentThreads.quote
+  quote: commentThreads.quote,
+  suggestion: commentThreads.suggestion,
+  appliedAt: commentThreads.appliedAt
 };
 const resolveCommentThreadTarget = async (
   database: DatabaseClient,
@@ -256,6 +282,7 @@ const resolveCommentThreadTarget = async (
     .select(threadTargetColumns)
     .from(commentThreads)
     .innerJoin(entries, eq(entries.id, commentThreads.entryID))
+    .innerJoin(contents, eq(contents.entryID, entries.id))
     .where(
       and(
         eq(commentThreads.id, toUUID(threadID)),
@@ -279,13 +306,12 @@ const resolveCommentTarget = async (
     .select({
       ...threadTargetColumns,
       commentID: comments.id,
-      authorID: comments.authorID,
-      suggestion: comments.suggestion,
-      appliedAt: comments.appliedAt
+      authorID: comments.authorID
     })
     .from(comments)
     .innerJoin(commentThreads, eq(commentThreads.id, comments.threadID))
     .innerJoin(entries, eq(entries.id, commentThreads.entryID))
+    .innerJoin(contents, eq(contents.entryID, entries.id))
     .where(
       and(
         eq(comments.id, toUUID(commentID)),
@@ -311,9 +337,12 @@ export {
   resolveCommentEntry,
   resolveCommentTarget,
   readEntryDocument,
-  resolveCommentThreadTarget
+  resolveCommentThreadTarget,
+  withEntryDocument
 };
 export { filterWorkspaceMembershipIDs } from "./mentions";
-export { createAnchor, replaceAnchoredText } from "./anchors";
+export { createAnchor } from "./anchors";
+export { createTextSuggestion, getSuggestionStatus, prepareSuggestion } from "./suggestions";
 export { writeCommentChange } from "./webhooks";
-export type { CommentTarget, CommentThreadTarget };
+export type { SuggestionPatch } from "./suggestions";
+export type { CommentEntryTarget, CommentTarget, CommentThreadTarget };

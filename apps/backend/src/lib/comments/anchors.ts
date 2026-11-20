@@ -212,13 +212,13 @@ const anchorConflict = (message: string) => {
     data: { hints: ["Read the entry again, and edit it directly or create a new suggestion"] }
   });
 };
-/** Replaces the anchored text, keeping its formatting; returns the new text's anchor, if any. */
+/** Replaces the anchored text, keeping its formatting. */
 const replaceAnchoredText = (
   document: Doc,
   anchor: CommentAnchor,
   quote: string,
   replacement: string
-): CommentAnchor | null => {
+): void => {
   const resolved = resolveAnchor(document, getLinearText(document), anchor);
 
   if (resolved?.text !== quote) throw anchorConflict("The quoted text changed");
@@ -241,13 +241,6 @@ const replaceAnchoredText = (
 
   text.delete(start.index, end.index - start.index);
   text.insert(start.index, replacement, attributes ?? {});
-
-  if (!replacement) return null;
-
-  return encodeAnchor({
-    start: { segment: start.segment, index: start.index },
-    end: { segment: start.segment, index: start.index + replacement.length }
-  });
 };
 
 export { createAnchor, getAnchorStates, replaceAnchoredText };

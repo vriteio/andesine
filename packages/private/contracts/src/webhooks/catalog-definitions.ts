@@ -97,7 +97,7 @@ const webhookEventDefinitions = {
   },
   "comment.updated": {
     label: "Comment updated",
-    description: "A comment's text, mentions, or suggestion changed.",
+    description: "A comment's text or mentions changed, or the suggested change of its thread.",
     category: "comments",
     requiredPermissions: ["read:entries"],
     filters: ["collections"]
@@ -112,7 +112,7 @@ const webhookEventDefinitions = {
   "comment.thread_resolved": {
     label: "Comment thread resolved",
     description:
-      "A comment thread was resolved, directly or by applying a suggestion. Applied text also saves the entry content.",
+      "A comment thread was resolved, directly or by applying a suggestion. Applying a suggestion also saves the entry content.",
     category: "comments",
     requiredPermissions: ["read:entries"],
     filters: ["collections"]

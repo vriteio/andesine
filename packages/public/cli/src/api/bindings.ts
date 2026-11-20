@@ -59,8 +59,12 @@ const bindings: Record<
     client.comments.reply(input as OperationInput<"comments.reply">, options),
   "comments.resolve": (client, input, options) =>
     client.comments.resolve(input as OperationInput<"comments.resolve">, options),
+  "comments.suggest": (client, input, options) =>
+    client.comments.suggest(input as OperationInput<"comments.suggest">, options),
   "comments.update": (client, input, options) =>
     client.comments.update(input as OperationInput<"comments.update">, options),
+  "comments.updateSuggestion": (client, input, options) =>
+    client.comments.updateSuggestion(input as OperationInput<"comments.updateSuggestion">, options),
   "content.get": (client, input, options) =>
     client.content.get(input as OperationInput<"content.get">, options),
   "content.getAsset": (client, input, options) =>

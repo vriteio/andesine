@@ -4,6 +4,7 @@ import { type CommentThread } from "@andesine/contracts/entities";
 import { toCommentID, toCommentThreadID, toEntryID, toUUID } from "@andesine/contracts/primitives";
 import {
   createAnchor,
+  createTextSuggestion,
   fetchCommentThread,
   filterWorkspaceMembershipIDs,
   readEntryDocument,
@@ -19,7 +20,7 @@ interface CreateCommentThreadInput {
   offset?: number;
   content: string;
   mentionIDs: string[];
-  suggestion?: string | null;
+  suggestion?: string;
 }
 
 const createCommentThread = withAuthorization<
@@ -41,18 +42,25 @@ const createCommentThread = withAuthorization<
     const mentionIDs = await filterWorkspaceMembershipIDs(workspaceID, input.mentionIDs);
     const entryID = toUUID(input.entryID);
     const threadID = generateUUID();
-    const { anchor, blockID } = await readEntryDocument(
+    const { anchor, blockID, suggestion } = await readEntryDocument(
       database,
       workspaceID,
       // The document name must be the canonical entry ID, whatever form the input has.
       toEntryID(entryID),
       (document) => {
-        return createAnchor(document, {
+        const created = createAnchor(document, {
           blockID: input.blockID ?? null,
           quote: input.quote,
           offset: input.offset,
-          singleText: input.suggestion != null
+          singleText: input.suggestion !== undefined
         });
+        const { anchor } = created;
+        const suggestion =
+          anchor && input.quote !== undefined && input.suggestion !== undefined
+            ? createTextSuggestion(document, anchor, input.quote, input.suggestion)
+            : null;
+
+        return { ...created, suggestion };
       }
     );
 
@@ -69,6 +77,7 @@ const createCommentThread = withAuthorization<
           anchorStart: anchor?.start ?? null,
           anchorEnd: anchor?.end ?? null,
           quote: input.quote ?? null,
+          suggestion,
           authorID
         });
 
@@ -79,8 +88,7 @@ const createCommentThread = withAuthorization<
             threadID,
             authorID,
             content: input.content,
-            mentionIDs,
-            suggestion: input.suggestion ?? null
+            mentionIDs
           })
           .returning({ id: comments.id });
 

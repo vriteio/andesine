@@ -37,6 +37,13 @@ interface SetFieldOperation {
   key: string;
   value: unknown;
 }
+/** Internal only: not part of the API contract. */
+interface ReplaceBlocksOperation {
+  type: "replaceBlocks";
+  blockIDs: string[];
+  after: string | null;
+  blocks: ContentNode[];
+}
 interface ContentBlock {
   container: ContentNode[];
   node: ContentNode;
@@ -48,13 +55,20 @@ interface ContentBlockDetails {
   fragment?: string;
   mdx: string;
 }
+interface BlockRange {
+  container: ContentNode[];
+  start: number;
+  count: number;
+}
 
 type ContentOperation =
   | ReplaceTextOperation
   | ReplaceBlockOperation
   | InsertBlocksOperation
   | DeleteBlocksOperation
-  | SetFieldOperation;
+  | SetFieldOperation
+  | ReplaceBlocksOperation;
+type BlockRangeTarget = Pick<ReplaceBlocksOperation, "blockIDs" | "after">;
 
 const operationError = (
   index: number,
@@ -112,6 +126,29 @@ const findBlock = (document: ContentNode, id: string, index: number): ContentBlo
   if (!block) throw contentOperationError(index, "not_found", `Block ${id} not found`);
 
   return block;
+};
+/** Consecutive blocks, or the insertion point after `after` or the title. */
+const findBlockRange = (
+  document: ContentNode,
+  { blockIDs, after }: BlockRangeTarget
+): BlockRange | null => {
+  const firstID = blockIDs[0] ?? after;
+
+  if (!firstID) {
+    const container = (document.content ??= []);
+
+    return { container, start: container[0]?.type === "title" ? 1 : 0, count: 0 };
+  }
+
+  const block = listBlocks(document).find(({ node }) => node.attrs?.id === firstID);
+
+  if (!block) return null;
+
+  const { container } = block;
+  const start = container.indexOf(block.node) + (blockIDs.length ? 0 : 1);
+  const consecutive = blockIDs.every((id, index) => container[start + index]?.attrs?.id === id);
+
+  return consecutive ? { container, start, count: blockIDs.length } : null;
 };
 /** Finds a field by its key, and adds it if it's an absent optional field of the schema. */
 const findField = (
@@ -249,6 +286,12 @@ const applyContentOperations = async (
         1,
         ...(await decodeBlocksMDX(operation.mdx, [node], imageAssetIDs))
       );
+    } else if (operation.type === "replaceBlocks") {
+      const range = findBlockRange(result, operation);
+
+      if (!range) throw contentOperationError(index, "not_found", "Blocks not found");
+
+      range.container.splice(range.start, range.count, ...structuredClone(operation.blocks));
     } else if (operation.type === "insertBlocks") {
       await insertBlocks(result, operation, index, imageAssetIDs, schema);
     } else if (operation.type === "deleteBlocks") {
@@ -285,5 +328,11 @@ const getContentBlockDetails = (document: ContentNode): Promise<ContentBlockDeta
   );
 };
 
-export { applyContentOperations, getContentBlockDetails, getOperationSources };
-export type { ContentBlockDetails, ContentOperation };
+export {
+  applyContentOperations,
+  findBlockRange,
+  getContentBlockDetails,
+  getOperationSources,
+  listBlocks
+};
+export type { BlockRangeTarget, ContentBlockDetails, ContentOperation };

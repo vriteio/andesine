@@ -1,3 +1,4 @@
+import { contentNodeType } from "@andesine/document";
 import { id } from "../primitives/id";
 import * as z from "zod";
 
@@ -8,21 +9,26 @@ const commentAnchorType = z.object({
 const commentAnchorStatusType = z
   .enum(["active", "outdated", "orphaned"])
   .describe(
-    "active: the anchor matches; outdated: the anchored text changed; orphaned: the text or block is gone"
+    "active: the anchor and suggested blocks match; outdated: the anchored text or suggested blocks changed; orphaned: the text or blocks are gone"
   );
 const commentContentType = z.string().trim().min(1).max(10000);
-const commentSuggestionType = z.string().max(10000);
+const commentSuggestionType = z.object({
+  blockIDs: z
+    .array(z.string())
+    .describe("Consecutive blocks that the suggestion replaces; empty for an insertion"),
+  after: z
+    .string()
+    .nullable()
+    .describe("Block after which an insertion goes, or null for the start of the entry"),
+  base: z.array(contentNodeType).describe("The replaced blocks when the suggestion was saved"),
+  blocks: z.array(contentNodeType).describe("Suggested blocks, empty for a deletion")
+});
 const commentType = z.object({
   id: id().describe("ID of the comment"),
   threadID: id().describe("ID of the comment thread"),
   authorID: id().nullable().describe("Membership that wrote the comment, or null when removed"),
   content: z.string().describe("Text of the comment"),
   mentionIDs: z.array(id()).describe("Memberships mentioned in the comment"),
-  suggestion: z
-    .string()
-    .nullable()
-    .describe("Suggested replacement for the quoted text, or null for none"),
-  appliedAt: z.iso.datetime().nullable().describe("Time when the suggestion was applied"),
   createdAt: z.iso.datetime().describe("Time when the comment was created"),
   updatedAt: z.iso.datetime().describe("Time when the comment was last updated")
 });
@@ -34,6 +40,8 @@ const commentThreadType = z.object({
   quote: z.string().nullable().describe("Commented text when the thread was created"),
   status: commentAnchorStatusType,
   text: z.string().nullable().describe("Current text of the range, or null for none"),
+  suggestion: commentSuggestionType.nullable().describe("Suggested change, or null for none"),
+  appliedAt: z.iso.datetime().nullable().describe("Time when the suggestion was applied"),
   authorID: id().nullable().describe("Membership that created the thread, or null when removed"),
   resolvedAt: z.iso.datetime().nullable().describe("Time when the thread was resolved"),
   resolvedByID: id().nullable().describe("Membership that resolved the thread"),
@@ -43,6 +51,7 @@ const commentThreadType = z.object({
 type CommentAnchor = z.infer<typeof commentAnchorType>;
 type CommentAnchorStatus = z.infer<typeof commentAnchorStatusType>;
 type Comment = z.infer<typeof commentType>;
+type CommentSuggestion = z.infer<typeof commentSuggestionType>;
 type CommentThread = z.infer<typeof commentThreadType>;
 export {
   commentAnchorStatusType,
@@ -52,4 +61,4 @@ export {
   commentThreadType,
   commentType
 };
-export type { Comment, CommentAnchor, CommentAnchorStatus, CommentThread };
+export type { Comment, CommentAnchor, CommentAnchorStatus, CommentSuggestion, CommentThread };

@@ -20,13 +20,13 @@ const mapThread = (thread: CommentThread) => ({
   blockID: thread.blockID ?? undefined,
   quote: thread.quote ?? undefined,
   currentText: thread.text !== thread.quote ? (thread.text ?? undefined) : undefined,
+  suggestion: thread.suggestion ?? undefined,
+  applied: thread.appliedAt !== null || undefined,
   comments: thread.comments.map((comment) => ({
     id: comment.id,
     authorID: comment.authorID,
     content: comment.content,
-    mentions: comment.mentionIDs.length ? comment.mentionIDs : undefined,
-    suggestion: comment.suggestion ?? undefined,
-    applied: comment.appliedAt !== null || undefined
+    mentions: comment.mentionIDs.length ? comment.mentionIDs : undefined
   }))
 });
 /** Pages through the members until each email is found; fails on unknown emails. */
@@ -59,7 +59,7 @@ const registerListComments = (server: McpServer, context: ToolContext) => {
     {
       title: "List comments",
       description:
-        "Lists the comment threads of an entry; list_members has the names of authors and mentions. status: active (the quote matches), outdated (the quoted text changed; currentText has it), or orphaned (the text or block is gone).",
+        "Lists the comment threads of an entry; list_members has the names of authors and mentions. status: active (the quote and suggested blocks match), outdated (the quoted text or suggested blocks changed; currentText has the text), or orphaned (the text or blocks are gone). suggestion has the blocks it replaces (base) and the suggested blocks, as ProseMirror JSON.",
       inputSchema: {
         entry: entrySchema,
         resolved: z
@@ -93,7 +93,7 @@ const registerAddComment = (server: McpServer, context: ToolContext) => {
     {
       title: "Add a comment",
       description:
-        "Starts a comment thread, or replies to one with thread. quote comments on text: plain text as readers see it (no MDX markup; \\n between blocks) that occurs once in the entry; add blockID (from fetch with format blocks) when it occurs more than once. blockID alone comments on a block, and neither comments on the entry. suggestion proposes a replacement for a quote within one paragraph that people can apply; use it instead of edit_entry to propose changes for review. mentions records which members the comment is for.",
+        "Starts a comment thread, or replies to one with thread. quote comments on text: plain text as readers see it (no MDX markup; \\n between blocks) that occurs once in the entry; add blockID (from fetch with format blocks) when it occurs more than once. blockID alone comments on a block, and neither comments on the entry. suggestion proposes a replacement for a quote within one paragraph that people can apply; for other changes, use suggest_edit. mentions records which members the comment is for.",
       inputSchema: {
         entry: entrySchema.optional().describe("Entry for a new thread"),
         thread: z.string().optional().describe("Thread ID (cth_...) to reply to"),
@@ -105,18 +105,21 @@ const registerAddComment = (server: McpServer, context: ToolContext) => {
           ),
         quote: z.string().min(1).optional().describe("Text to comment on, for a new thread"),
         blockID: z.string().optional().describe("Block to comment on, for a new thread"),
-        suggestion: z.string().optional().describe("Replacement for the quoted text"),
+        suggestion: z
+          .string()
+          .optional()
+          .describe("Replacement for the quoted text, for a new thread"),
         mentions: z.array(z.email()).max(50).optional().describe("Emails of members to mention")
       },
       annotations: { ...writeAnnotations, title: "Add a comment" }
     },
     runTool(async ({ entry, thread, content, quote, blockID, suggestion, mentions }) => {
       const mentionIDs = mentions?.length ? await resolveMemberIDs(context, mentions) : undefined;
-      const body = { content, suggestion, mentionIDs };
+      const body = { content, mentionIDs };
 
       if (thread) {
-        if (entry || quote || blockID) {
-          throw new Error("A reply takes thread, without entry, quote or blockID");
+        if (entry || quote || blockID || suggestion !== undefined) {
+          throw new Error("A reply takes thread, without entry, quote, blockID or suggestion");
         }
 
         return mapThread(await context.client.comments.reply({ ...body, threadID: thread }));
@@ -127,7 +130,44 @@ const registerAddComment = (server: McpServer, context: ToolContext) => {
       const entryID = await resolveEntryID(context, entry);
 
       return mapThread(
-        await context.client.comments.createThread({ ...body, entryID, quote, blockID })
+        await context.client.comments.createThread({ ...body, entryID, quote, blockID, suggestion })
+      );
+    })
+  );
+};
+const registerSuggestEdit = (server: McpServer, context: ToolContext) => {
+  server.registerTool(
+    "suggest_edit",
+    {
+      title: "Suggest an edit",
+      description:
+        "Suggests replacing consecutive blocks (blockIDs from fetch with format blocks) with MDX, or inserting MDX after a block, for people to review and apply. Empty mdx suggests deleting the blocks. Use it instead of edit_entry to propose changes for review.",
+      inputSchema: {
+        entry: entrySchema,
+        blockIDs: z.array(z.string()).describe("Consecutive blocks to replace; empty to insert"),
+        after: z
+          .string()
+          .optional()
+          .describe("For an insertion: block after which the MDX goes (default: the start)"),
+        mdx: z.string().describe("Suggested blocks in MDX"),
+        content: z.string().optional().describe("Comment explaining the suggestion, in Markdown"),
+        mentions: z.array(z.email()).max(50).optional().describe("Emails of members to mention")
+      },
+      annotations: { ...writeAnnotations, title: "Suggest an edit" }
+    },
+    runTool(async ({ entry, blockIDs, after, mdx, content, mentions }) => {
+      const mentionIDs = mentions?.length ? await resolveMemberIDs(context, mentions) : undefined;
+      const entryID = await resolveEntryID(context, entry);
+
+      return mapThread(
+        await context.client.comments.suggest({
+          entryID,
+          blockIDs,
+          after: after ?? null,
+          mdx,
+          content,
+          mentionIDs
+        })
       );
     })
   );
@@ -155,12 +195,12 @@ const registerApplySuggestion = (server: McpServer, context: ToolContext) => {
     {
       title: "Apply a suggestion",
       description:
-        "Replaces the quoted text with a comment's suggestion and resolves the thread. Fails when the quoted text changed.",
-      inputSchema: { comment: z.string().describe("Comment ID (cmt_...) with the suggestion") },
+        "Writes a thread's suggestion into the entry and resolves the thread. Fails when the suggested blocks changed.",
+      inputSchema: { thread: z.string().describe("Thread ID (cth_...) with the suggestion") },
       annotations: { ...writeAnnotations, title: "Apply a suggestion" }
     },
-    runTool(async ({ comment }) => {
-      return mapThread(await context.client.comments.apply({ id: comment }));
+    runTool(async ({ thread }) => {
+      return mapThread(await context.client.comments.apply({ id: thread }));
     })
   );
 };
@@ -197,6 +237,7 @@ const registerListMembers = (server: McpServer, context: ToolContext) => {
 const commentReadTools = { list_comments: registerListComments, list_members: registerListMembers };
 const commentWriteTools = {
   add_comment: registerAddComment,
+  suggest_edit: registerSuggestEdit,
   resolve_comment: registerResolveComment,
   apply_suggestion: registerApplySuggestion
 };

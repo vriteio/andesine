@@ -704,7 +704,7 @@ export interface paths {
     put?: never;
     /**
      * Create a comment thread
-     * @description Starts a comment thread on an entry, a block (blockID) or a text range (quote). A quote is plain text as readers see it, with blocks and hard breaks as line breaks (\n). It must occur once in the entry, or in the block when blockID is set, unless offset gives its position. A suggestion needs a quote within one paragraph, without line breaks.
+     * @description Starts a comment thread on an entry, a block (blockID) or a text range (quote). A quote is plain text as readers see it, with blocks and hard breaks as line breaks (\n). It must occur once in the entry, or in the block when blockID is set, unless offset gives its position. A suggestion replaces a quote within one paragraph, without line breaks; suggest changes whole blocks.
      *
      *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
      */
@@ -756,7 +756,7 @@ export interface paths {
     head?: never;
     /**
      * Update a comment
-     * @description Changes your own comment. Omitted mentions and suggestion stay unchanged. An applied suggestion cannot change.
+     * @description Changes your own comment. Omitted mentions stay unchanged.
      *
      *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
      */
@@ -783,7 +783,51 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/comments/{id}/apply": {
+  "/entries/{entryID}/suggestions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Suggest a change
+     * @description Starts a comment thread that suggests replacing consecutive blocks (blockIDs) with other blocks, or inserting blocks (after). Block IDs come from entries.get with contentFormat blocks. People with permission to update the entry can apply it.
+     *
+     *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     */
+    post: operations["comments.suggest"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/comment-threads/{id}/suggestion": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Update a suggestion
+     * @description Replaces the change of your own open suggestion, against the current content.
+     *
+     *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     */
+    put: operations["comments.updateSuggestion"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/comment-threads/{id}/apply": {
     parameters: {
       query?: never;
       header?: never;
@@ -794,7 +838,7 @@ export interface paths {
     put?: never;
     /**
      * Apply a suggestion
-     * @description Replaces the quoted text with the suggestion and resolves the thread. Fails when the quoted text changed.
+     * @description Replaces the blocks with the suggested ones and resolves the thread. Fails when the blocks changed since the suggestion was saved.
      *
      *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
      */
@@ -4045,12 +4089,25 @@ export interface components {
       /** @description Commented text when the thread was created */
       quote: string | null;
       /**
-       * @description active: the anchor matches; outdated: the anchored text changed; orphaned: the text or block is gone
+       * @description active: the anchor and suggested blocks match; outdated: the anchored text or suggested blocks changed; orphaned: the text or blocks are gone
        * @enum {string}
        */
       status: "active" | "outdated" | "orphaned";
       /** @description Current text of the range, or null for none */
       text: string | null;
+      /** @description Suggested change, or null for none */
+      suggestion: {
+        /** @description Consecutive blocks that the suggestion replaces; empty for an insertion */
+        blockIDs: string[];
+        /** @description Block after which an insertion goes, or null for the start of the entry */
+        after: string | null;
+        /** @description The replaced blocks when the suggestion was saved */
+        base: components["schemas"]["ContentNode"][];
+        /** @description Suggested blocks, empty for a deletion */
+        blocks: components["schemas"]["ContentNode"][];
+      } | null;
+      /** @description Time when the suggestion was applied */
+      appliedAt: string | null;
       /** @description Membership that created the thread, or null when removed */
       authorID: string | null;
       /** @description Time when the thread was resolved */
@@ -4073,10 +4130,6 @@ export interface components {
       content: string;
       /** @description Memberships mentioned in the comment */
       mentionIDs: string[];
-      /** @description Suggested replacement for the quoted text, or null for none */
-      suggestion: string | null;
-      /** @description Time when the suggestion was applied */
-      appliedAt: string | null;
       /** @description Time when the comment was created */
       createdAt: string;
       /** @description Time when the comment was last updated */
@@ -17650,12 +17703,12 @@ export interface operations {
            * @default []
            */
           mentionIDs?: string[];
-          /** @description Suggested replacement for the quoted text of the thread */
-          suggestion?: string | null;
           /** @description ID of the block */
           blockID?: string;
           /** @description Commented text */
           quote?: string;
+          /** @description Replacement for the quote */
+          suggestion?: string;
           /** @description Position of the quote in the plain text of the block, or of the entry */
           offset?: number;
         };
@@ -17925,8 +17978,6 @@ export interface operations {
            * @default []
            */
           mentionIDs?: string[];
-          /** @description Suggested replacement for the quoted text of the thread */
-          suggestion?: string | null;
         };
       };
     };
@@ -18441,8 +18492,6 @@ export interface operations {
           content: string;
           /** @description Memberships to mention; unchanged when omitted */
           mentionIDs?: string[];
-          /** @description Suggested replacement for the quoted text of the thread */
-          suggestion?: string | null;
         };
       };
     };
@@ -18944,6 +18993,564 @@ export interface operations {
       };
     };
   };
+  "comments.suggest": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path: {
+        /** @example ent_example */
+        entryID: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        /**
+         * @example {
+         *       "blockIDs": [
+         *         "blk_example"
+         *       ],
+         *       "mdx": "New paragraph text."
+         *     }
+         */
+        "application/json": {
+          /** @description Consecutive blocks to replace; empty to insert blocks */
+          blockIDs: string[];
+          /**
+           * @description For an insertion: block after which the blocks go, or null for the start
+           * @default null
+           */
+          after?: string | null;
+          /** @description Suggested blocks */
+          blocks?: components["schemas"]["ContentNodeInput"][];
+          /** @description Suggested blocks in MDX, instead of blocks */
+          mdx?: string;
+          /**
+           * @description Text of the comment
+           * @default
+           */
+          content?: string;
+          /**
+           * @description Memberships to mention
+           * @default []
+           */
+          mentionIDs?: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CommentThread"];
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "comments.updateSuggestion": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path: {
+        /** @example cth_example */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        /**
+         * @example {
+         *       "blockIDs": [
+         *         "blk_example"
+         *       ],
+         *       "mdx": "Other text."
+         *     }
+         */
+        "application/json": {
+          /** @description Consecutive blocks to replace; empty to insert blocks */
+          blockIDs: string[];
+          /**
+           * @description For an insertion: block after which the blocks go, or null for the start
+           * @default null
+           */
+          after?: string | null;
+          /** @description Suggested blocks */
+          blocks?: components["schemas"]["ContentNodeInput"][];
+          /** @description Suggested blocks in MDX, instead of blocks */
+          mdx?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CommentThread"];
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
   "comments.apply": {
     parameters: {
       query?: never;
@@ -18952,7 +19559,7 @@ export interface operations {
         "x-workspace-id"?: string;
       };
       path: {
-        /** @example cmt_example */
+        /** @example cth_example */
         id: string;
       };
       cookie?: never;

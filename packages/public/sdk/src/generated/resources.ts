@@ -443,7 +443,7 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
     /**
      * Create a comment thread
      *
-     * Starts a comment thread on an entry, a block (blockID) or a text range (quote). A quote is plain text as readers see it, with blocks and hard breaks as line breaks (\n). It must occur once in the entry, or in the block when blockID is set, unless offset gives its position. A suggestion needs a quote within one paragraph, without line breaks.
+     * Starts a comment thread on an entry, a block (blockID) or a text range (quote). A quote is plain text as readers see it, with blocks and hard breaks as line breaks (\n). It must occur once in the entry, or in the block when blockID is set, unless offset gives its position. A suggestion replaces a quote within one paragraph, without line breaks; suggest changes whole blocks.
      *
      * Required API key permissions: entries. Write permissions also grant read access for the same resource.
      *
@@ -471,7 +471,7 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
     /**
      * Update a comment
      *
-     * Changes your own comment. Omitted mentions and suggestion stay unchanged. An applied suggestion cannot change.
+     * Changes your own comment. Omitted mentions stay unchanged.
      *
      * Required API key permissions: entries. Write permissions also grant read access for the same resource.
      *
@@ -508,15 +508,49 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
      */
     resolve: Operation<"comments.resolve", Workspace>;
     /**
+     * Suggest a change
+     *
+     * Starts a comment thread that suggests replacing consecutive blocks (blockIDs) with other blocks, or inserting blocks (after). Block IDs come from entries.get with contentFormat blocks. People with permission to update the entry can apply it.
+     *
+     * Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.comments.suggest({
+     *   "entryID": "ent_example",
+     *   "blockIDs": [
+     *     "blk_example"
+     *   ],
+     *   "mdx": "New paragraph text."
+     * });
+     */
+    suggest: Operation<"comments.suggest", Workspace>;
+    /**
+     * Update a suggestion
+     *
+     * Replaces the change of your own open suggestion, against the current content.
+     *
+     * Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.comments.updateSuggestion({
+     *   "id": "cth_example",
+     *   "blockIDs": [
+     *     "blk_example"
+     *   ],
+     *   "mdx": "Other text."
+     * });
+     */
+    updateSuggestion: Operation<"comments.updateSuggestion", Workspace>;
+    /**
      * Apply a suggestion
      *
-     * Replaces the quoted text with the suggestion and resolves the thread. Fails when the quoted text changed.
+     * Replaces the blocks with the suggested ones and resolves the thread. Fails when the blocks changed since the suggestion was saved.
      *
      * Required API key permissions: entries. Write permissions also grant read access for the same resource.
      *
      * @example
      * await client.comments.apply({
-     *   "id": "cmt_example"
+     *   "id": "cth_example"
      * });
      */
     apply: Operation<"comments.apply", Workspace>;
@@ -1970,9 +2004,29 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       binary: false,
       anonymous: false
     }),
+    suggest: operation<"comments.suggest", Workspace>(request, {
+      method: "post",
+      path: "/entries/{entryID}/suggestions",
+      pathParams: ["entryID"],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    updateSuggestion: operation<"comments.updateSuggestion", Workspace>(request, {
+      method: "put",
+      path: "/comment-threads/{id}/suggestion",
+      pathParams: ["id"],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
     apply: operation<"comments.apply", Workspace>(request, {
       method: "post",
-      path: "/comments/{id}/apply",
+      path: "/comment-threads/{id}/apply",
       pathParams: ["id"],
       queryParams: [],
       body: false,

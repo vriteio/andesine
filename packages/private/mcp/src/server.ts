@@ -61,6 +61,7 @@ const TOOL_PERMISSIONS: Record<ToolName, string[]> = {
   list_comments: ["read:entries"],
   list_members: ["read:memberships"],
   add_comment: ["entries"],
+  suggest_edit: ["entries"],
   resolve_comment: ["entries"],
   apply_suggestion: ["entries"],
   upload_image: ["entries"]
@@ -86,7 +87,7 @@ const INSTRUCTIONS = `Andesine is a knowledge base, CMS, and docs platform. A wo
 
 Content is MDX: the title is the H1; properties are <Property name="..." value={...} /> elements; fragments are <Fragment name="...">...</Fragment>; images are ![alt](asset:ast_...); links to entries are [text](entry:/collection/entry). In text, escape < and { with a backslash; MDX comments aren't supported.
 
-Address entries by ID (ent_...) or path (/Collection/Entry). Find content with search or get_tree, and read it with fetch; for a long entry, read its outline, then one section. Change existing content with edit_entry operations (block IDs from fetch with format blocks); use write_entry only for full rewrites. To review content or propose changes for people to approve, use add_comment with a quote and an optional suggestion; list_comments shows the existing threads, and mentions take member emails (list_members lists them). Images by URL in edit_entry and write_entry are imported. When a call fails, read the error and its hints, read the entry again, and retry. The andesine://guide/mdx resource has the full MDX syntax.`;
+Address entries by ID (ent_...) or path (/Collection/Entry). Find content with search or get_tree, and read it with fetch; for a long entry, read its outline, then one section. Change existing content with edit_entry operations (block IDs from fetch with format blocks); use write_entry only for full rewrites. To review content, use add_comment; to propose changes for people to approve, use suggest_edit, or add_comment with a quote and a suggestion; list_comments shows the existing threads, and mentions take member emails (list_members lists them). Images by URL in edit_entry and write_entry are imported. When a call fails, read the error and its hints, read the entry again, and retry. The andesine://guide/mdx resource has the full MDX syntax.`;
 
 const TOOL_GROUPS = [
   { tools: readTools, writes: false },

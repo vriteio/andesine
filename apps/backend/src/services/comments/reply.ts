@@ -1,7 +1,6 @@
 import { comments, commentThreads } from "@andesine/server/database";
 import { type CommentThread } from "@andesine/contracts/entities";
 import { toCommentID, toCommentThreadID, toUUID } from "@andesine/contracts/primitives";
-import { ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";
 import {
   type CommentThreadTarget,
@@ -16,7 +15,6 @@ interface ReplyToCommentThreadInput {
   threadID: string;
   content: string;
   mentionIDs: string[];
-  suggestion?: string | null;
 }
 
 const replyToCommentThread = withAuthorization<
@@ -37,10 +35,6 @@ const replyToCommentThread = withAuthorization<
     const authorID = memberID ? toUUID(memberID) : null;
     const mentionIDs = await filterWorkspaceMembershipIDs(workspaceID, input.mentionIDs);
 
-    if (input.suggestion != null && !resolved.anchor) {
-      throw new ORPCError("BAD_REQUEST", { message: "A suggestion needs a text range" });
-    }
-
     await writeCommentChange(database, workspaceID, resolved, async (transaction) => {
       const [comment] = await transaction
         .insert(comments)
@@ -49,8 +43,7 @@ const replyToCommentThread = withAuthorization<
           threadID: resolved.threadID,
           authorID,
           content: input.content,
-          mentionIDs,
-          suggestion: input.suggestion ?? null
+          mentionIDs
         })
         .returning({ id: comments.id });
 
