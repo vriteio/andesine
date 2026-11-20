@@ -76,6 +76,8 @@ const prose = {
     "border-radius": "0.5rem"
   },
   "th,td": { "padding": "0.5rem", "vertical-align": "top", "text-align": "left" },
+  "th>p:first-child,td>p:first-child": { "margin-top": "0" },
+  "th>p:last-child,td>p:last-child": { "margin-bottom": "0" },
   "th": { "background-color": `${gray[100]}cc`, "font-weight": "600", "color": gray[700] },
   "tr+tr>td,tbody tr:first-child>td": { "border-top": `1px solid ${gray[300]}` },
   "td+td,th+th": { "border-left": `1px solid ${gray[300]}` },

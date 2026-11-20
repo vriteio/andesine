@@ -43,8 +43,16 @@ const createTabIndicator = (options: TabIndicatorOptions): TabIndicator => {
       frame ||= requestAnimationFrame(measure);
     };
     const observer = new ResizeObserver(schedule);
+    const tab = tabs.get(options.current());
 
-    tabs.get(options.current())?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    // Not `scrollIntoView`: it also scrolls the page, which cancels the scroll to a URL hash.
+    if (scroll && tab) {
+      const bounds = scroll.getBoundingClientRect();
+      const target = tab.getBoundingClientRect();
+
+      if (target.left < bounds.left) scroll.scrollLeft += target.left - bounds.left;
+      if (target.right > bounds.right) scroll.scrollLeft += target.right - bounds.right;
+    }
 
     if (root) observer.observe(root);
 

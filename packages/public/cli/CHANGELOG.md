@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.13.0
+
+- New Pages projects use `@andesine/ui` 0.12.0: a URL hash scrolls to its section on page load.
+- In the Pages template, paragraphs at the start and end of table cells have no outer margin.
+
 ## 0.12.0
 
 - New Pages projects use `@andesine/pages` 0.12.0, with WebMCP tools for browser agents.

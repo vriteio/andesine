@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.12.0
+
+- `createTabIndicator` scrolls only the tab row to the current tab, not the page, so a URL hash
+  scroll on page load is no longer cancelled.
+
 ## 0.11.0
 
 - No changes; versioned with the other public Andesine packages.
