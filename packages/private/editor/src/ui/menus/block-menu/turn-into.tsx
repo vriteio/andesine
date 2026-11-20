@@ -247,4 +247,4 @@ const createTurnIntoMenuItem = (editor: Editor): NonNullable<MenuItem["items"]> 
     : [];
 };
 
-export { createTurnIntoMenuItem };
+export { createTurnIntoMenuItem, listOptions, textOptions };

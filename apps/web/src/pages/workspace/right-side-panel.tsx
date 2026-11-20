@@ -10,6 +10,9 @@ import { SchemaVersionHistoryPanel } from "./schema/version-history-panel";
 import { PublishingPanel, PublishingPanelFallback } from "./publishing";
 import { usePublishing } from "#web/context/publishing";
 import { RIGHT_SIDE_PANEL_PARAM } from "./panel-navigation";
+import { COMMENTS_PANEL_ID } from "./comments/context";
+import { CommentsPanel } from "./comments/panel";
+import { CommentsPanelFallback } from "./comments/skeleton";
 import { usePanelContext, usePublishingResolved } from "./use-panel-context";
 import { ExtensionIconScope, ExtensionPanelView } from "#web/components/extensions/panel-view";
 import {
@@ -185,6 +188,21 @@ const useRightSidePanelOptions = () => {
           currentWorkspace() &&
           content.canCollection(currentSchema.collectionID, "collection:read")
         );
+      }
+    },
+    {
+      id: COMMENTS_PANEL_ID,
+      label: "Comments",
+      icon: "i-tabler:message",
+      component: CommentsPanel,
+      fallback: CommentsPanelFallback,
+      // Previews show other content than the comments are on.
+      available: () => {
+        const isPreview = Boolean(
+          searchParams.version || searchParams.compare || searchParams.snapshotID
+        );
+
+        return Boolean(entry() && currentWorkspace() && !isPreview);
       }
     },
     {

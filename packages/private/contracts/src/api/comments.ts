@@ -5,7 +5,9 @@ import { authenticatedContract, baseContract } from "./base";
 import { pageInputType, paginationType } from "./schemas/pagination";
 
 const commentBodyType = z.object({
-  content: commentContentType.describe("Text of the comment"),
+  content: commentContentType.describe(
+    "Text of the comment, in Markdown: **bold**, _italic_, ~~strikethrough~~, `code`, [links](url)"
+  ),
   mentionIDs: z.array(id()).max(50).default([]).describe("Memberships to mention"),
   suggestion: commentSuggestionType
     .nullable()

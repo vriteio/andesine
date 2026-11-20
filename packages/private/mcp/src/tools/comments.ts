@@ -97,7 +97,12 @@ const registerAddComment = (server: McpServer, context: ToolContext) => {
       inputSchema: {
         entry: entrySchema.optional().describe("Entry for a new thread"),
         thread: z.string().optional().describe("Thread ID (cth_...) to reply to"),
-        content: z.string().min(1).describe("Text of the comment"),
+        content: z
+          .string()
+          .min(1)
+          .describe(
+            "Text of the comment, in Markdown: **bold**, _italic_, ~~strike~~, `code`, [links](url)"
+          ),
         quote: z.string().min(1).optional().describe("Text to comment on, for a new thread"),
         blockID: z.string().optional().describe("Block to comment on, for a new thread"),
         suggestion: z.string().optional().describe("Replacement for the quoted text"),

@@ -17643,7 +17643,7 @@ export interface operations {
          *     }
          */
         "application/json": {
-          /** @description Text of the comment */
+          /** @description Text of the comment, in Markdown: **bold**, _italic_, ~~strikethrough~~, `code`, [links](url) */
           content: string;
           /**
            * @description Memberships to mention
@@ -17918,7 +17918,7 @@ export interface operations {
          *     }
          */
         "application/json": {
-          /** @description Text of the comment */
+          /** @description Text of the comment, in Markdown: **bold**, _italic_, ~~strikethrough~~, `code`, [links](url) */
           content: string;
           /**
            * @description Memberships to mention
@@ -18437,7 +18437,7 @@ export interface operations {
          *     }
          */
         "application/json": {
-          /** @description Text of the comment */
+          /** @description Text of the comment, in Markdown: **bold**, _italic_, ~~strikethrough~~, `code`, [links](url) */
           content: string;
           /** @description Memberships to mention; unchanged when omitted */
           mentionIDs?: string[];

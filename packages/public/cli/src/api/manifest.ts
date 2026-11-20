@@ -1126,7 +1126,8 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          description: "Text of the comment"
+          description:
+            "Text of the comment, in Markdown: **bold**, _italic_, ~~strikethrough~~, `code`, [links](url)"
         },
         flag: "content",
         kind: "string",
@@ -1397,7 +1398,8 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          description: "Text of the comment"
+          description:
+            "Text of the comment, in Markdown: **bold**, _italic_, ~~strikethrough~~, `code`, [links](url)"
         },
         flag: "content",
         kind: "string",
@@ -1558,7 +1560,8 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "string",
-          description: "Text of the comment"
+          description:
+            "Text of the comment, in Markdown: **bold**, _italic_, ~~strikethrough~~, `code`, [links](url)"
         },
         flag: "content",
         kind: "string",

@@ -21875,7 +21875,10 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "content": { "type": "string", "description": "Text of the comment" },
+                  "content": {
+                    "type": "string",
+                    "description": "Text of the comment, in Markdown: **bold**, _italic_, ~~strikethrough~~, `code`, [links](url)"
+                  },
                   "mentionIDs": {
                     "type": "array",
                     "items": { "type": "string" },
@@ -22215,7 +22218,10 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "content": { "type": "string", "description": "Text of the comment" },
+                  "content": {
+                    "type": "string",
+                    "description": "Text of the comment, in Markdown: **bold**, _italic_, ~~strikethrough~~, `code`, [links](url)"
+                  },
                   "mentionIDs": {
                     "type": "array",
                     "items": { "type": "string" },
@@ -22544,7 +22550,10 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "content": { "type": "string", "description": "Text of the comment" },
+                  "content": {
+                    "type": "string",
+                    "description": "Text of the comment, in Markdown: **bold**, _italic_, ~~strikethrough~~, `code`, [links](url)"
+                  },
                   "mentionIDs": {
                     "type": "array",
                     "items": { "type": "string" },

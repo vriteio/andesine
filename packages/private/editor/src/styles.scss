@@ -101,6 +101,56 @@ header[data-type="title"] {
   @apply bg-gradient-to-r from-secondary via-primary to-transparent;
 }
 
+// Comments
+// Blocks get an overlay, as version diffs do; tables in their scroll container (see the table view).
+.comment-highlight {
+  @apply rounded-t-sm border-b-2 border-solid border-tertiary bg-gradient-to-tr from-primary/8 to-secondary/8;
+
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+
+  &.comment-draft,
+  &.comment-active {
+    @apply from-primary/15 to-secondary/15;
+  }
+}
+
+.comment-block-highlight {
+  @apply relative z-0;
+
+  // Only for open or new threads, as a resting tint on blocks distracts.
+  &::after {
+    @apply pointer-events-none absolute inset-y-0 -inset-x-2 -z-1 rounded-lg bg-gradient-to-tr from-primary/10 to-secondary/10 opacity-0 transition-opacity;
+    content: "";
+  }
+
+  &.comment-draft::after,
+  &.comment-active::after {
+    @apply opacity-100;
+  }
+}
+
+// Over blocks with their own background, e.g. cards and images.
+.prose-editor :is(.element-node, [data-image-node-view]).comment-block-highlight::after {
+  @apply z-1;
+}
+
+.prose-editor .code-block-node.comment-block-highlight::after {
+  @apply z-1;
+  left: var(--code-visible-left, 0px);
+  width: var(--code-visible-width, 100%);
+  right: auto;
+}
+
+.comment-table-shade {
+  @apply pointer-events-none absolute z-1 rounded-lg bg-gradient-to-tr from-primary/10 to-secondary/10 opacity-0 transition-opacity;
+
+  &.comment-draft,
+  &.comment-active {
+    @apply opacity-100;
+  }
+}
+
 // Tables
 [data-table-node-view] {
   @apply relative w-full min-w-0 my-0!;

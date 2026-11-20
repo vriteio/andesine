@@ -39,6 +39,12 @@ const Editor: Component<EditorProps> = (props) => {
 
 export { Editor };
 export type {
+  EditorCommentInput,
+  EditorCommentDraft,
+  EditorCommentPlace,
+  EditorComments,
+  EditorCommentsPanel,
+  EditorCommentThread,
   EditorImages,
   EditorLinks,
   EditorImageAsset,

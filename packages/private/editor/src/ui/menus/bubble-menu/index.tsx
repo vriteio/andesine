@@ -15,15 +15,18 @@ import {
 import { type Editor, isTextSelection } from "@tiptap/core";
 import { BubbleMenuPlugin } from "@tiptap/extension-bubble-menu";
 import { Portal } from "solid-js/web";
-import { isBlockSelection } from "#editor/extensions";
+import { getTextCommentTarget, isBlockSelection, updateComments } from "#editor/extensions";
 import { EDITOR_MENU_Z_INDEX } from "#editor/ui/constants";
 import { useBlockMenuContext } from "#editor/ui/menus/block-menu";
 import { rangeContainsCode, rangeContainsInheritedField } from "#editor/ui/block-utils";
-import type { EditorLinks } from "#editor/client-types";
+import type { EditorComments, EditorLinks } from "#editor/client-types";
 
 interface BubbleMenuProps {
   editor: Editor;
   links?: EditorLinks;
+  comments?: EditorComments;
+  /** Only the comment action. */
+  readOnly?: boolean;
   menuContainerRef: Accessor<HTMLElement | null>;
 }
 
@@ -46,6 +49,14 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
   const handleHide = () => {
     setOpened(false);
     setTextMenuSelectionRange(null);
+  };
+  const startComment = () => {
+    const draft = getTextCommentTarget(props.editor);
+
+    if (!draft) return;
+
+    updateComments(props.editor, { draft });
+    props.editor.view.dispatch(props.editor.state.tr.setMeta("bubbleMenu", "hide"));
   };
 
   createEffect(
@@ -114,7 +125,13 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
             />
           </Match>
           <Match when={mode() === "format"}>
-            <FormatMenu editor={props.editor} opened={opened()} setMode={setMode} />
+            <FormatMenu
+              editor={props.editor}
+              opened={opened()}
+              readOnly={props.readOnly}
+              onComment={props.comments?.canComment ? startComment : undefined}
+              setMode={setMode}
+            />
           </Match>
         </Switch>
       </Portal>

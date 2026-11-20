@@ -915,6 +915,9 @@ importers:
       url-slug:
         specifier: ^5.0.1
         version: 5.0.1
+      yjs:
+        specifier: 'catalog:'
+        version: 13.6.32
       zod:
         specifier: 'catalog:'
         version: 4.6.7

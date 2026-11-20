@@ -73,7 +73,9 @@ import {
   Gapcursor,
   Dropcursor,
   NodeCharacterLimit,
-  VersionDiff
+  VersionDiff,
+  Comments,
+  updateComments
 } from "./extensions";
 import { DragHandleMenu } from "./ui/drag-handle";
 import type { EditorProps } from "./client-types";
@@ -86,7 +88,8 @@ import {
   createPropertyViewRenderer,
   createTableViewRenderer
 } from "./ui/views";
-import { getOwner } from "solid-js/web";
+import { getOwner, Portal } from "solid-js/web";
+import { CommentCards } from "./ui/comments";
 
 const ClientEditor: Component<EditorProps> = (props) => {
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
@@ -260,6 +263,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
       FieldKeyboard,
       Dropcursor,
       BlockSelection,
+      Comments,
       ...diffExtensions,
       ...collaborationExtensions,
       TrailingNode.configure({ mode: editorMode }),
@@ -346,6 +350,13 @@ const ClientEditor: Component<EditorProps> = (props) => {
     currentEditor.view.dispatch(currentEditor.state.tr);
   });
 
+  createEffect(() => {
+    const currentEditor = editor();
+    const threads = props.comments?.threads ?? [];
+
+    if (currentEditor) untrack(() => updateComments(currentEditor, { threads }));
+  });
+
   // Entry links show their entries' current titles, e.g. after a rename.
   createEffect(() => {
     const currentEditor = editor();
@@ -383,6 +394,9 @@ const ClientEditor: Component<EditorProps> = (props) => {
   });
 
   const editableEditor = () => (props.editable === false ? null : editor());
+  // Read-only commenters get comment-only menus.
+  const readOnlyCommenting = () => props.editable === false && Boolean(props.comments?.canComment);
+  const menuEditor = () => (props.editable === false && !readOnlyCommenting() ? null : editor());
 
   onCleanup(() => {
     instances.forEach((instance) => instance.destroy());
@@ -400,7 +414,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
     const onUp = (event: PointerEvent) => {
       if (isInsideBubbleMenu(event)) return;
 
-      const currentEditor = editableEditor();
+      const currentEditor = menuEditor();
 
       if (
         currentEditor &&
@@ -476,8 +490,10 @@ const ClientEditor: Component<EditorProps> = (props) => {
             ref={setMenuContainerRef}
           />
           <BlockMenuArea
-            editor={editableEditor()}
+            editor={menuEditor()}
+            readOnly={props.editable === false}
             blockActions={props.blockActions}
+            comments={props.comments}
             elementViews={props.elementViews}
             links={props.links}
             icons={props.icons}
@@ -500,6 +516,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
                   <BubbleMenu
                     editor={editor()!}
                     links={props.links}
+                    comments={props.comments}
                     menuContainerRef={menuContainerRef}
                   />
                   <LinkBubbleMenu
@@ -508,6 +525,27 @@ const ClientEditor: Component<EditorProps> = (props) => {
                     menuContainerRef={menuContainerRef}
                   />
                   <DragHandleMenu editor={editor()!} menuContainerRef={menuContainerRef} />
+                </Show>
+                <Show when={props.comments && menuContainerRef() ? editor() : null} keyed>
+                  {(currentEditor) => (
+                    <Portal mount={menuContainerRef()!}>
+                      <CommentCards
+                        editor={currentEditor}
+                        comments={props.comments!}
+                        elementViews={props.elementViews}
+                      />
+                    </Portal>
+                  )}
+                </Show>
+                <Show when={readOnlyCommenting() && editor()} keyed>
+                  {(currentEditor) => (
+                    <BubbleMenu
+                      editor={currentEditor}
+                      comments={props.comments}
+                      readOnly
+                      menuContainerRef={menuContainerRef}
+                    />
+                  )}
                 </Show>
                 <Show when={props.staticTitle} keyed>
                   {(title) => (

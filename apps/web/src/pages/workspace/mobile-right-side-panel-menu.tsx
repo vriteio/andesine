@@ -1,11 +1,14 @@
 import { Dropdown, IconButton } from "@andesine/components";
-import { type Component, createSignal, For, Show, Suspense } from "solid-js";
+import { type Component, createEffect, createSignal, For, on, Show, Suspense } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import { usePublishing } from "#web/context/publishing";
 import { MenuSection } from "#web/components/menu-section";
 import { useWorkspace } from "#web/context/workspace";
 import { PublishingMenu } from "./publishing-menu";
 import { RightSidePanelIcon, useRightSidePanelOptions } from "./right-side-panel";
+import { COMMENTS_PANEL_ID, useComments } from "./comments/context";
+import { CommentsPanel } from "./comments/panel";
+import { CommentsPanelFallback } from "./comments/skeleton";
 
 interface MobileRightSidePanelMenuProps {
   entryID?: string;
@@ -16,6 +19,7 @@ const MobileRightSidePanelMenu: Component<MobileRightSidePanelMenuProps> = (prop
   const { content } = useWorkspace();
   const publishing = usePublishing();
   const options = useRightSidePanelOptions();
+  const { sheetOpened, setSheetOpened } = useComments();
   const [opened, setOpened] = createSignal(false);
   const publishingAvailable = () => {
     const entryID = props.entryID;
@@ -32,8 +36,27 @@ const MobileRightSidePanelMenu: Component<MobileRightSidePanelMenuProps> = (prop
   const available = () => publishingAvailable() || options().length > 0;
   const title = () => props.entryTitle || "Current entry";
 
+  // The menu's comments sheet closes with it.
+  createEffect(on(opened, (current) => !current && setSheetOpened(false), { defer: true }));
+
   return (
     <Show when={available()}>
+      {/* Opened from the editor, without the menu. */}
+      <Dropdown
+        title="Comments"
+        opened={!opened() && sheetOpened()}
+        setOpened={(current) => !opened() && setSheetOpened(current)}
+        mobileSheetDragFromContent={false}
+        class="md:hidden"
+      >
+        <Show when={!opened() && sheetOpened()}>
+          <div class="flex min-h-[50dvh] w-full min-w-0 flex-1 flex-col overflow-hidden px-1">
+            <Suspense fallback={<CommentsPanelFallback />}>
+              <CommentsPanel />
+            </Suspense>
+          </div>
+        </Show>
+      </Dropdown>
       <Dropdown
         title={title()}
         opened={opened()}
@@ -63,7 +86,11 @@ const MobileRightSidePanelMenu: Component<MobileRightSidePanelMenuProps> = (prop
                 <MenuSection label="Activity">
                   <For each={options()}>
                     {(option) => {
-                      const [panelOpened, setPanelOpened] = createSignal(false);
+                      // Shared, so the editor knows when it shows.
+                      const [panelOpened, setPanelOpened] =
+                        option.id === COMMENTS_PANEL_ID
+                          ? [sheetOpened, setSheetOpened]
+                          : createSignal(false);
 
                       return (
                         <Dropdown

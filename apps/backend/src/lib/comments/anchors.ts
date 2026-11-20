@@ -5,31 +5,19 @@ import {
   createRelativePositionFromTypeIndex,
   decodeRelativePosition,
   type Doc,
-  encodeRelativePosition,
-  type XmlFragment,
-  XmlElement,
-  XmlText
+  encodeRelativePosition
 } from "yjs";
+import {
+  findEndPosition,
+  findStartPosition,
+  getLinearText as getFragmentText,
+  type LinearText,
+  type TextPosition
+} from "@andesine/document/comments";
 
-interface TextSegment {
-  text: XmlText;
-  start: number;
-  length: number;
-  blockID: string | null;
-}
-interface TextPosition {
-  segment: TextSegment;
-  index: number;
-}
 interface QuotePositions {
   start: TextPosition;
   end: TextPosition;
-}
-/** Plain text of a document as readers see it: blocks and hard breaks become line breaks. */
-interface LinearText {
-  source: string;
-  segments: TextSegment[];
-  blocks: Map<string, { start: number; end: number }>;
 }
 interface AnchorState {
   status: CommentAnchorStatus;
@@ -54,71 +42,8 @@ interface ThreadAnchorInput {
   quote: string | null;
 }
 
-// Embeds keep their index width, so string offsets match Y.js indexes.
-const getPlainText = (text: XmlText): string => {
-  return text
-    .toDelta()
-    .map(({ insert }: { insert: unknown }) => (typeof insert === "string" ? insert : "￼"))
-    .join("");
-};
-const appendLinearText = (
-  linear: LinearText,
-  parent: XmlElement | XmlFragment,
-  blockID: string | null
-): void => {
-  for (const node of parent.toArray()) {
-    if (node instanceof XmlText) {
-      const plain = getPlainText(node);
-
-      linear.segments.push({
-        text: node,
-        start: linear.source.length,
-        length: plain.length,
-        blockID
-      });
-      linear.source += plain;
-      continue;
-    }
-
-    if (!(node instanceof XmlElement)) continue;
-
-    if (node.nodeName === "hardBreak") {
-      linear.source += "\n";
-      continue;
-    }
-
-    const ownID = node.getAttribute("id") as string | undefined;
-
-    if (linear.source && !linear.source.endsWith("\n")) linear.source += "\n";
-
-    const start = linear.source.length;
-
-    appendLinearText(linear, node, ownID ?? blockID);
-
-    if (ownID) linear.blocks.set(ownID, { start, end: linear.source.length });
-  }
-};
-// Deleted types are skipped by toArray(), so their positions don't resolve.
 const getLinearText = (document: Doc): LinearText => {
-  const linear: LinearText = { source: "", segments: [], blocks: new Map() };
-
-  appendLinearText(linear, document.getXmlFragment("default"), null);
-
-  return linear;
-};
-/** Position of the character at the offset, or of the next text after a line break. */
-const findStartPosition = (linear: LinearText, offset: number): TextPosition | null => {
-  const segment = linear.segments.find(({ start, length }) => length && offset < start + length);
-
-  return segment ? { segment, index: Math.max(offset - segment.start, 0) } : null;
-};
-/** Position after the character before the offset, or after the text before a line break. */
-const findEndPosition = (linear: LinearText, offset: number): TextPosition | null => {
-  const segment = [...linear.segments]
-    .reverse()
-    .find(({ start, length }) => length && start < offset);
-
-  return segment ? { segment, index: Math.min(offset - segment.start, segment.length) } : null;
+  return getFragmentText(document.getXmlFragment("default"));
 };
 const encodePosition = ({ segment, index }: TextPosition, assoc: number): string => {
   return Buffer.from(

@@ -11,3 +11,4 @@ export * from "./schema-migrations";
 export * from "./versions";
 export * from "./webhooks";
 export * from "./extensions";
+export * from "./comments";

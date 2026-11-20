@@ -268,6 +268,79 @@ interface EditorSchemaFragment {
   initialContent: ContentNode[];
   optional?: boolean;
 }
+interface EditorComment {
+  id: string;
+  authorName: string;
+  authorImage?: string;
+  content: string;
+  createdAt: string;
+  /** The user's own comment. */
+  editable: boolean;
+  /** Own, or any with the resolve permission. */
+  deletable: boolean;
+}
+interface EditorCommentThread {
+  id: string;
+  /** Encoded Y.js relative positions; null for a block. */
+  anchor: { start: string; end: string } | null;
+  blockID: string | null;
+  resolved: boolean;
+  /** Null for a block. */
+  quote: string | null;
+  /** Outdated once the text changes, orphaned once it's removed. */
+  status: "active" | "outdated" | "orphaned";
+  /** Oldest first. */
+  comments: EditorComment[];
+}
+interface EditorCommentPlace {
+  threadID: string;
+  /** None for text. */
+  block?: { label: string; icon: string | (() => JSX.Element) };
+}
+interface EditorCommentDraft {
+  threadID: string;
+  /** Null for a block. */
+  quote: string | null;
+  create(content: string): Promise<void>;
+  cancel(): void;
+}
+/** A side panel that replaces the cards. */
+interface EditorCommentsPanel {
+  active: string | null;
+  /** Called on a highlight click. */
+  activate(threadID: string): void;
+  /** In document order, the draft included. */
+  setOrder(places: EditorCommentPlace[]): void;
+  /** Null once the draft is created or dropped. */
+  setDraft(draft: EditorCommentDraft | null): void;
+}
+interface EditorCommentTarget {
+  blockID?: string;
+  quote?: string;
+  offset?: number;
+}
+interface EditorCommentInput extends EditorCommentTarget {
+  content: string;
+}
+interface EditorComments {
+  threads: EditorCommentThread[];
+  /** Also in read-only editors. */
+  canComment: boolean;
+  canResolve: boolean;
+  authorName: string;
+  authorImage?: string;
+  /** A rejection keeps the field open. */
+  create(input: EditorCommentInput): Promise<void>;
+  reply(threadID: string, content: string): Promise<void>;
+  update(commentID: string, content: string): Promise<void>;
+  /** Deleting the first comment deletes the thread. */
+  remove(commentID: string): Promise<void>;
+  resolve(threadID: string): Promise<void>;
+  reopen(threadID: string): Promise<void>;
+  /** While set, the editor shows no cards. */
+  panel?: EditorCommentsPanel;
+  formatTime(date: string): string;
+}
 interface EditorProps {
   images?: EditorImages;
   links?: EditorLinks;
@@ -282,6 +355,7 @@ interface EditorProps {
   schemaFields?: EditorSchemaField[];
   elementViews?: ElementViews;
   blockActions?: BlockActions;
+  comments?: EditorComments;
   staticTitle?: string;
   diff?: EditorDiff;
   providerAttempt?: number;
@@ -312,6 +386,14 @@ type EditorProviderSetup = (
 ) => EditorProviderSetupResult | Promise<EditorProviderSetupResult>;
 
 export type {
+  EditorComment,
+  EditorCommentInput,
+  EditorCommentDraft,
+  EditorCommentPlace,
+  EditorComments,
+  EditorCommentsPanel,
+  EditorCommentTarget,
+  EditorCommentThread,
   EditorIcons,
   EditorImageDuplicate,
   EditorImageDuplicateHandler,

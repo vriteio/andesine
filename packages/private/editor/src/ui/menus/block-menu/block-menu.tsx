@@ -1,9 +1,16 @@
 import { createCodeBlockMenuItems } from "./code-block";
 import { createElementMenuItems } from "./element";
 import { createExtensionActionMenuItems } from "./extension-actions";
-import type { BlockActions, EditorIcons, EditorLinks, ElementViews } from "#editor/client-types";
+import type {
+  BlockActions,
+  EditorComments,
+  EditorIcons,
+  EditorLinks,
+  ElementViews
+} from "#editor/client-types";
 import { createImageMenuItems } from "./image";
 import { isBlockSelection } from "#editor/extensions/block-selection";
+import { getBlockCommentTarget, updateComments } from "#editor/extensions/comments";
 import { DropdownMenu, IconButton, type MenuItem } from "@andesine/components";
 import { debounce } from "@solid-primitives/scheduled";
 import { type Editor, type EditorEvents } from "@tiptap/core";
@@ -48,7 +55,10 @@ interface BlockMenuProps {
   menuID: string;
   notify(type: "success" | "error", text: string): void;
   editor: Editor | null;
+  /** Only copying and commenting. */
+  readOnly?: boolean;
   blockActions?: BlockActions;
+  comments?: EditorComments;
   elementViews?: ElementViews;
   links?: EditorLinks;
   icons?: EditorIcons;
@@ -75,6 +85,8 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
   const [currentNodePos, setCurrentNodePos] = createSignal(-1);
   const [coords, setCoords] = createSignal({ top: -10000, left: -10000 });
   const [hoverAreaHeight, setHoverAreaHeight] = createSignal(0);
+  // Moves the trigger below a comment button on its line.
+  const [commentOffset, setCommentOffset] = createSignal(0);
   const [triggerAvailable, setTriggerAvailable] = createSignal(false);
   const [contextMenuMode, setContextMenuMode] = createSignal(false);
   // Menus of block actions, which open in the menu's place, keep the trigger like the open menu.
@@ -96,10 +108,12 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
     // Required entry fields can't be removed, and a property's copy is of no use.
     const copyable = !requiredFields().some(({ type }) => type.name === "property");
     const deletable = !requiredFields().length;
+    const copyItems: MenuItem[] = copyable
+      ? [{ label: "Copy", icon: "i-lucide:copy", onClick: handleCopy, shortcut: "$mod+c" }]
+      : [];
+    const commentItems = createCommentItems();
     const items: MenuItem[] = [
-      ...(copyable
-        ? [{ label: "Copy", icon: "i-lucide:copy", onClick: handleCopy, shortcut: "$mod+c" }]
-        : []),
+      ...copyItems,
       ...(deletable
         ? [
             {
@@ -113,12 +127,24 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
         : [])
     ];
 
+    if (props.readOnly) return [copyItems, commentItems].filter((group) => group.length);
+
     if (tableActions.length > 0) {
-      return [...getMenuGroups(tableActions), ...getMenuGroups(elementItems()), items];
+      return [
+        ...getMenuGroups(tableActions),
+        ...getMenuGroups(elementItems()),
+        commentItems,
+        items
+      ].filter((group) => group.length);
     }
 
     if (imageItems().length) {
-      return [...getMenuGroups(imageItems()), ...getMenuGroups(elementItems()), items];
+      return [
+        ...getMenuGroups(imageItems()),
+        ...getMenuGroups(elementItems()),
+        commentItems,
+        items
+      ].filter((group) => group.length);
     }
 
     return [
@@ -126,7 +152,22 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
       ...getMenuGroups(turnIntoItems()),
       ...getMenuGroups(elementItems()),
       ...getMenuGroups(extensionItems()),
+      commentItems,
       ...getMenuGroups(items)
+    ].filter((group) => group.length);
+  };
+  const createCommentItems = (): MenuItem[] => {
+    const editor = props.editor;
+    const draft = editor && props.comments?.canComment ? getBlockCommentTarget(editor) : null;
+
+    if (!editor || !draft) return [];
+
+    return [
+      {
+        label: "Comment",
+        icon: "i-tabler:message-plus",
+        onClick: () => updateComments(editor, { draft })
+      }
     ];
   };
   const hasElementForm = () => elementItems().some((item) => Array.isArray(item));
@@ -337,15 +378,19 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
       const referenceRect = getBlockControlAnchorRect(editor, target);
       const scrollContainerRect = getCachedElementRect(editor, scrollContainer);
       const menuLeft = referenceRect.right + 8;
+      const toY = (y: number) => y - scrollContainerRect.top + scrollContainer.scrollTop;
+      const top = toY(referenceRect.top) + (referenceRect.height - BLOCK_CONTROL_SIZE) / 2;
+      const commentButton = [...scrollContainer.querySelectorAll("[data-comment-button]")]
+        .map((button) => button.getBoundingClientRect())
+        .find((rect) => Math.abs(toY(rect.top) - top) < BLOCK_CONTROL_SIZE);
+
+      const triggerTop = commentButton ? toY(commentButton.bottom) + 4 : top;
 
       currentTarget = target;
       setCurrentNodePos(target.pos);
+      setCommentOffset(triggerTop - top);
       setCoords({
-        top:
-          referenceRect.top -
-          scrollContainerRect.top +
-          scrollContainer.scrollTop +
-          (referenceRect.height - BLOCK_CONTROL_SIZE) / 2,
+        top: triggerTop,
         left: menuLeft - scrollContainerRect.left + scrollContainer.scrollLeft
       });
       setHoverAreaHeight(blockRect.height);
@@ -364,6 +409,29 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
       previousX = event.clientX;
 
       if (triggerPinned() && !contextMenuMode()) return;
+
+      // Also over the safe area from a comment button.
+      const isOverTrigger =
+        triggerAvailable() &&
+        event.target instanceof Element &&
+        event.target.closest("[data-block-menu-trigger]");
+
+      if (isOverTrigger) {
+        hideTrigger.clear();
+        moveTrigger.clear();
+        return;
+      }
+
+      // Threads beside a line take the trigger's place.
+      const isOverComments =
+        event.target instanceof Element &&
+        event.target.closest("[data-comment-thread-card], [data-comment-popover]");
+
+      if (isOverComments) {
+        moveTrigger.clear();
+        hideTrigger();
+        return;
+      }
 
       // The current view child keeps the trigger while the pointer goes out to it.
       if (triggerAvailable() && keepsViewChildTarget(editor, currentTarget, pointer, "right")) {
@@ -465,6 +533,16 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
             visibility: triggerVisible() ? "visible" : "hidden"
           }}
         >
+          {/* A safe area from the comment button above. */}
+          <Show when={commentOffset() > 0}>
+            <div
+              class="absolute -inset-x-2 pointer-events-auto"
+              style={{
+                top: `${-commentOffset() - 8}px`,
+                height: `${commentOffset() + BLOCK_CONTROL_SIZE + 16}px`
+              }}
+            />
+          </Show>
           {/* Over these blocks, it would take the hover from their scrollbars and handles. */}
           <Show when={!hoverAreaInert()}>
             <div
@@ -520,7 +598,8 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
       )}
       class="absolute inset-0 pointer-events-none"
       style={{
-        "z-index": String(EDITOR_MENU_Z_INDEX.blockMenu)
+        // Over the comment buttons while open.
+        "z-index": String(EDITOR_MENU_Z_INDEX.blockMenu + (props.menuOpened ? 2 : 0))
       }}
       opened={props.menuOpened}
       setOpened={handleOpenedChange}
