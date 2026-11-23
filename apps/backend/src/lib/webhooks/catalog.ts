@@ -29,6 +29,11 @@ const sampleMove = {
   from: { visibility: "visible", parentID: "coll_before" },
   to: { visibility: "visible", parentID: "coll_after" }
 } as const;
+const sampleComment = {
+  collectionID: "coll_example",
+  threadID: "cth_example",
+  commentID: "cmt_example"
+} as const;
 const webhookCatalog = {
   "entry.created": {
     ...webhookEventDefinitions["entry.created"],
@@ -85,6 +90,51 @@ const webhookCatalog = {
       type: "entry.restored",
       subject: entrySubject,
       data: { name: "Getting started", collectionID: "coll_example" }
+    }
+  },
+  "comment.created": {
+    ...webhookEventDefinitions["comment.created"],
+    sample: {
+      ...sampleEnvelope,
+      type: "comment.created",
+      subject: entrySubject,
+      data: { ...sampleComment, reply: false }
+    }
+  },
+  "comment.updated": {
+    ...webhookEventDefinitions["comment.updated"],
+    sample: {
+      ...sampleEnvelope,
+      type: "comment.updated",
+      subject: entrySubject,
+      data: sampleComment
+    }
+  },
+  "comment.deleted": {
+    ...webhookEventDefinitions["comment.deleted"],
+    sample: {
+      ...sampleEnvelope,
+      type: "comment.deleted",
+      subject: entrySubject,
+      data: { ...sampleComment, threadDeleted: false }
+    }
+  },
+  "comment.thread_resolved": {
+    ...webhookEventDefinitions["comment.thread_resolved"],
+    sample: {
+      ...sampleEnvelope,
+      type: "comment.thread_resolved",
+      subject: entrySubject,
+      data: { collectionID: "coll_example", threadID: "cth_example", reason: "resolved" }
+    }
+  },
+  "comment.thread_reopened": {
+    ...webhookEventDefinitions["comment.thread_reopened"],
+    sample: {
+      ...sampleEnvelope,
+      type: "comment.thread_reopened",
+      subject: entrySubject,
+      data: { collectionID: "coll_example", threadID: "cth_example" }
     }
   },
   "collection.created": {

@@ -3,6 +3,7 @@ import { type Component, createMemo, For, Show, Suspense } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
 import { useRouteData } from "#web/lib/navigation";
 import { Button, IconButton, Skeleton, Tooltip } from "@andesine/components";
+import { isOpenSuggestion } from "@andesine/editor";
 import { MobileRightSidePanelMenu } from "./mobile-right-side-panel-menu";
 import { RightSidePanelToggle, useRightSidePanelOptions } from "./right-side-panel";
 import {
@@ -14,12 +15,14 @@ import { PublishingMenu } from "./publishing-menu";
 import { SchemaApplication } from "./schema-application";
 import clsx from "clsx";
 import { usePublishing } from "#web/context/publishing";
+import { useComments } from "./comments/context";
 
 const EditorToolbar: Component = () => {
   const params = useParams<{ slug?: string; workspaceID?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { content, currentWorkspace } = useWorkspace();
   const publishing = usePublishing();
+  const comments = useComments();
   const routeData = useRouteData();
   const versionID = () => (typeof searchParams.version === "string" ? searchParams.version : "");
   const snapshotID = () => {
@@ -52,6 +55,20 @@ const EditorToolbar: Component = () => {
 
     return content.entriesCollection().findOne({ id: params.slug });
   });
+  // Hidden while suggesting, which always shows the suggestions.
+  const hasSuggestions = () => {
+    return !comments.suggesting() && (comments.comments()?.threads ?? []).some(isOpenSuggestion);
+  };
+  // Commenters always suggest, so they have no switch.
+  const canSuggest = () => {
+    const collectionID = entry()?.collectionID ?? null;
+
+    return (
+      Boolean(entry()) &&
+      content.canEntry(collectionID, "entry:update") &&
+      content.canEntry(collectionID, "comment:create")
+    );
+  };
   const deletedEntry = createMemo(() => {
     if (!params.slug?.startsWith("ent_") || routeData()) return null;
 
@@ -263,6 +280,37 @@ const EditorToolbar: Component = () => {
               variant="ghost"
               onClick={returnToCurrent}
               aria-label="Return to current"
+            />
+          </Tooltip>
+        </Show>
+        <Show when={!versionID() && hasSuggestions()}>
+          <Tooltip
+            content={comments.suggestionsShown() ? "Hide suggestions" : "Show suggestions"}
+            placement="bottom"
+            fixed
+          >
+            <IconButton
+              icon={comments.suggestionsShown() ? "i-lucide:eye" : "i-lucide:eye-off"}
+              variant="ghost"
+              onClick={() => comments.setSuggestionsShown((shown) => !shown)}
+              aria-label="Show suggestions"
+              aria-pressed={comments.suggestionsShown()}
+            />
+          </Tooltip>
+        </Show>
+        <Show when={!versionID() && canSuggest()}>
+          <Tooltip
+            content={comments.suggesting() ? "Stop suggesting" : "Suggest changes"}
+            placement="bottom"
+            fixed
+          >
+            <IconButton
+              icon="i-lucide:file-pen-line"
+              variant={comments.suggesting() ? "secondary" : "ghost"}
+              label={comments.suggesting() ? "Suggesting" : undefined}
+              onClick={() => comments.setSuggesting((suggesting) => !suggesting)}
+              aria-label="Suggest changes"
+              aria-pressed={comments.suggesting()}
             />
           </Tooltip>
         </Show>

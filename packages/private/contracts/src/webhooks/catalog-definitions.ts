@@ -20,6 +20,11 @@ const webhookEventNames = [
   "entry.moved",
   "entry.deleted",
   "entry.restored",
+  "comment.created",
+  "comment.updated",
+  "comment.deleted",
+  "comment.thread_resolved",
+  "comment.thread_reopened",
   "collection.created",
   "collection.updated",
   "collection.moved",
@@ -32,6 +37,7 @@ const webhookEventNames = [
 const webhookReadPermissions = ["read:entries", "read:collections", "read:publishing"] as const;
 const webhookEventCategories = [
   { id: "entries", label: "Entries" },
+  { id: "comments", label: "Comments" },
   { id: "collections", label: "Collections" },
   { id: "publishing", label: "Publishing" }
 ] as const;
@@ -78,6 +84,44 @@ const webhookEventDefinitions = {
     label: "Entry restored",
     description: "A deleted entry was restored. Matches its restored collection.",
     category: "entries",
+    requiredPermissions: ["read:entries"],
+    filters: ["collections"]
+  },
+  "comment.created": {
+    label: "Comment created",
+    description:
+      "A comment thread was started, or a reply was added. Matches the entry's collection.",
+    category: "comments",
+    requiredPermissions: ["read:entries"],
+    filters: ["collections"]
+  },
+  "comment.updated": {
+    label: "Comment updated",
+    description: "A comment's text or mentions changed, or the suggested change of its thread.",
+    category: "comments",
+    requiredPermissions: ["read:entries"],
+    filters: ["collections"]
+  },
+  "comment.deleted": {
+    label: "Comment deleted",
+    description: "A comment was deleted. Deleting the first comment deletes the whole thread.",
+    category: "comments",
+    requiredPermissions: ["read:entries"],
+    filters: ["collections"]
+  },
+  "comment.thread_resolved": {
+    label: "Comment thread resolved",
+    description:
+      "A comment thread was resolved, directly, by applying a suggestion, or as its suggestion no longer applies (reason suggestion_outdated). Applying a suggestion also saves the entry content.",
+    category: "comments",
+    requiredPermissions: ["read:entries"],
+    filters: ["collections"]
+  },
+  "comment.thread_reopened": {
+    label: "Comment thread reopened",
+    description:
+      "A resolved comment thread was reopened, directly, by undoing an applied suggestion, by updating an outdated suggestion, or as it applies again.",
+    category: "comments",
     requiredPermissions: ["read:entries"],
     filters: ["collections"]
   },

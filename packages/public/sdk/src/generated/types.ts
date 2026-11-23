@@ -27,6 +27,8 @@ export type {
   ChannelContentStatus,
   Collection,
   CollectionSchema,
+  Comment,
+  CommentThread,
   ComparisonOperator,
   ContentMark,
   ContentMarkInput,
@@ -167,6 +169,36 @@ export type CollectionsMoveOutput = OperationOutput<"collections.move">;
 export type CollectionsUpdateError = OperationError<"collections.update">;
 export type CollectionsUpdateInput = OperationInput<"collections.update">;
 export type CollectionsUpdateOutput = OperationOutput<"collections.update">;
+export type CommentsApplyError = OperationError<"comments.apply">;
+export type CommentsApplyInput = OperationInput<"comments.apply">;
+export type CommentsApplyOutput = OperationOutput<"comments.apply">;
+export type CommentsCreateThreadError = OperationError<"comments.createThread">;
+export type CommentsCreateThreadInput = OperationInput<"comments.createThread">;
+export type CommentsCreateThreadOutput = OperationOutput<"comments.createThread">;
+export type CommentsDeleteError = OperationError<"comments.delete">;
+export type CommentsDeleteInput = OperationInput<"comments.delete">;
+export type CommentsDeleteOutput = OperationOutput<"comments.delete">;
+export type CommentsListError = OperationError<"comments.list">;
+export type CommentsListInput = OperationInput<"comments.list">;
+export type CommentsListOutput = OperationOutput<"comments.list">;
+export type CommentsReplyError = OperationError<"comments.reply">;
+export type CommentsReplyInput = OperationInput<"comments.reply">;
+export type CommentsReplyOutput = OperationOutput<"comments.reply">;
+export type CommentsResolveError = OperationError<"comments.resolve">;
+export type CommentsResolveInput = OperationInput<"comments.resolve">;
+export type CommentsResolveOutput = OperationOutput<"comments.resolve">;
+export type CommentsSetAppliedError = OperationError<"comments.setApplied">;
+export type CommentsSetAppliedInput = OperationInput<"comments.setApplied">;
+export type CommentsSetAppliedOutput = OperationOutput<"comments.setApplied">;
+export type CommentsSuggestError = OperationError<"comments.suggest">;
+export type CommentsSuggestInput = OperationInput<"comments.suggest">;
+export type CommentsSuggestOutput = OperationOutput<"comments.suggest">;
+export type CommentsUpdateError = OperationError<"comments.update">;
+export type CommentsUpdateInput = OperationInput<"comments.update">;
+export type CommentsUpdateOutput = OperationOutput<"comments.update">;
+export type CommentsUpdateSuggestionError = OperationError<"comments.updateSuggestion">;
+export type CommentsUpdateSuggestionInput = OperationInput<"comments.updateSuggestion">;
+export type CommentsUpdateSuggestionOutput = OperationOutput<"comments.updateSuggestion">;
 export type ContentGetAssetError = OperationError<"content.getAsset">;
 export type ContentGetAssetInput = OperationInput<"content.getAsset">;
 export type ContentGetAssetOutput = OperationOutput<"content.getAsset">;

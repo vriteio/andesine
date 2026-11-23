@@ -21,6 +21,7 @@ export { subscribeToWorkspaceEvents };
 export * from "./entries";
 export * from "./groups";
 export * from "./collections";
+export * from "./comments";
 export * from "./memberships";
 export * from "./roles";
 export * from "./keys";

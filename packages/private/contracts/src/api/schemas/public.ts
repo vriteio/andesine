@@ -61,6 +61,7 @@ import { roleType, permissionType, baseRoleType } from "../../entities/roles";
 import { inviteStatusType } from "../../entities/invitations";
 import { userProfileType } from "../../entities/users";
 import { versionDetailsType, versionSummaryType, versionReasonType } from "../../versions/index";
+import { commentThreadType, commentType } from "../../entities/comments";
 import {
   collectionSchemaDetailsType,
   localCollectionSchemaType,
@@ -198,6 +199,8 @@ const publicSchemas = {
   ContentMarkInput: { schema: contentMarkType, strategy: "input" },
   EntryVersion: { schema: versionDetailsType, strategy: "output" },
   EntryVersionSummary: { schema: versionSummaryType, strategy: "output" },
+  CommentThread: { schema: commentThreadType, strategy: "output" },
+  Comment: { schema: commentType, strategy: "output" },
   VersionReason: { schema: versionReasonType, strategy: "output" },
   CollectionSchema: { schema: collectionSchemaDetailsType, strategy: "output" },
   LocalCollectionSchema: { schema: localCollectionSchemaType, strategy: "output" },

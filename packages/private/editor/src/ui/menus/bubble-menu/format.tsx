@@ -1,23 +1,28 @@
 import clsx from "clsx";
-import { type Component, For, createSignal, onCleanup } from "solid-js";
+import { type Component, For, Show, createSignal, onCleanup } from "solid-js";
 import { type Editor } from "@tiptap/core";
 import { Card, IconButton, Shortcut, Tooltip } from "@andesine/components";
 import { useBlockMenuContext } from "#editor/ui/menus/block-menu";
-
-type BubbleMenuMode = "format" | "link";
 
 interface FormatMenuItemGroup {
   left: number;
   width: number;
   items: number;
 }
-
-const FormatMenu: Component<{
+interface FormatMenuProps {
   editor: Editor;
   class?: string;
   opened?: boolean;
+  /** Only the comment action. */
+  readOnly?: boolean;
+  /** Shows the comment action. */
+  onComment?(): void;
   setMode(mode: BubbleMenuMode): void;
-}> = (props) => {
+}
+
+type BubbleMenuMode = "format" | "link";
+
+const FormatMenu: Component<FormatMenuProps> = (props) => {
   const { openMenu } = useBlockMenuContext();
   const [activeMarks, setActiveMarks] = createSignal<string[]>([]);
   const menuItems: Array<{
@@ -109,7 +114,7 @@ const FormatMenu: Component<{
       )}
       shade
     >
-      <For each={activeGroups()}>
+      <For each={props.readOnly ? [] : activeGroups()}>
         {(group) => (
           <div
             class="absolute top-1 bottom-1 -z-1 rounded-lg bg-gradient-to-tr opacity-10 pointer-events-none"
@@ -117,7 +122,7 @@ const FormatMenu: Component<{
           />
         )}
       </For>
-      <For each={menuItems}>
+      <For each={props.readOnly ? [] : menuItems}>
         {(menu) => {
           const active = (): boolean => {
             return Boolean(menu.mark && activeMarks().includes(menu.mark));
@@ -171,69 +176,98 @@ const FormatMenu: Component<{
           );
         }}
       </For>
-      <Tooltip
-        content={
-          <div class="flex flex-col items-center justify-center gap-0.5">
-            <span>Close keyboard</span>
-          </div>
-        }
-        placement="bottom"
-        wrapperClass="snap-start shrink-0 md:hidden"
-        enabled={props.opened}
-      >
-        <IconButton
-          variant="ghost"
-          text="base"
-          size="xs"
-          icon="i-lucide:keyboard-off"
-          aria-label="Close keyboard"
-          onClick={(event) => {
-            props.editor.chain().blur().setMeta("bubbleMenu", "hide").run();
-            event.preventDefault();
-            event.stopPropagation();
-          }}
-        />
-      </Tooltip>
-      <div class="w-px h-6 shrink-0 rounded-full bg-gray-200" />
-      <Tooltip
-        content={
-          <div class="flex flex-col items-center justify-center gap-0.5">
-            <span>More</span>
-          </div>
-        }
-        placement="bottom"
-        enabled={props.opened}
-        wrapperClass="snap-start shrink-0"
-      >
-        <IconButton
-          variant="ghost"
-          text="base"
-          size="xs"
-          icon="i-lucide:ellipsis"
-          onClick={(event) => {
-            const reference = event.currentTarget;
-            const { selection, doc } = props.editor.state;
-            let from = 0;
-            let to = 0;
+      <Show when={!props.readOnly}>
+        <Tooltip
+          content={
+            <div class="flex flex-col items-center justify-center gap-0.5">
+              <span>Close keyboard</span>
+            </div>
+          }
+          placement="bottom"
+          wrapperClass="snap-start shrink-0 md:hidden"
+          enabled={props.opened}
+        >
+          <IconButton
+            variant="ghost"
+            text="base"
+            size="xs"
+            icon="i-lucide:keyboard-off"
+            aria-label="Close keyboard"
+            onClick={(event) => {
+              props.editor.chain().blur().setMeta("bubbleMenu", "hide").run();
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+          />
+        </Tooltip>
+        <div class="w-px h-6 shrink-0 rounded-full bg-gray-200" />
+      </Show>
+      <Show when={props.onComment}>
+        <Tooltip
+          content={
+            <div class="flex flex-col items-center justify-center gap-0.5">
+              <span>Comment</span>
+            </div>
+          }
+          placement="bottom"
+          enabled={props.opened}
+          wrapperClass="snap-start shrink-0"
+        >
+          <IconButton
+            variant="ghost"
+            text="base"
+            size="xs"
+            icon="i-tabler:message-plus"
+            aria-label="Comment"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              props.onComment?.();
+            }}
+          />
+        </Tooltip>
+      </Show>
+      <Show when={!props.readOnly}>
+        <Tooltip
+          content={
+            <div class="flex flex-col items-center justify-center gap-0.5">
+              <span>More</span>
+            </div>
+          }
+          placement="bottom"
+          enabled={props.opened}
+          wrapperClass="snap-start shrink-0"
+        >
+          <IconButton
+            variant="ghost"
+            text="base"
+            size="xs"
+            icon="i-lucide:ellipsis"
+            onClick={(event) => {
+              const reference = event.currentTarget;
+              const { selection, doc } = props.editor.state;
+              let from = 0;
+              let to = 0;
 
-            event.preventDefault();
-            event.stopPropagation();
-            doc.nodesBetween(selection.from, selection.to, (node, pos) => {
-              from = from || pos;
-              to = pos + node.nodeSize;
+              event.preventDefault();
+              event.stopPropagation();
+              doc.nodesBetween(selection.from, selection.to, (node, pos) => {
+                from = from || pos;
+                to = pos + node.nodeSize;
 
-              return false;
-            });
-            openMenu(reference);
-            props.editor
-              .chain()
-              .setMeta("bubbleMenu", "hide")
-              .setBlockSelection({ from, to })
-              .focus()
-              .run();
-          }}
-        />
-      </Tooltip>
+                return false;
+              });
+              openMenu(reference);
+              props.editor
+                .chain()
+                .setMeta("bubbleMenu", "hide")
+                .setBlockSelection({ from, to })
+                .focus()
+                .run();
+            }}
+          />
+        </Tooltip>
+      </Show>
     </Card>
   );
 };

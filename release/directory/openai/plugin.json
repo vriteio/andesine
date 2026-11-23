@@ -2,7 +2,7 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "andesine",
   "version": "0.1.0",
-  "description": "Search, read, write, and publish the content of an Andesine workspace: a knowledge base, headless CMS, and docs platform.",
+  "description": "Search, read, write, comment on, and publish the content of an Andesine workspace: a knowledge base, headless CMS, and docs platform.",
   "author": { "name": "Andesine", "url": "https://andesine.app" },
   "homepage": "https://andesine.app",
   "repository": "https://github.com/vriteio/andesine",
@@ -13,7 +13,7 @@
       "interface": {
         "displayName": "Andesine",
         "shortDescription": "Your docs and knowledge base",
-        "longDescription": "Andesine is a knowledge base, headless CMS, and docs platform. Connect a workspace to search and read your entries, draft new ones that follow your collection schemas, edit existing content as MDX, save and restore versions, and publish to your sites.\n\nWhen you connect, you pick the workspace and whether the app can only read or can also make changes. Every request uses your own Andesine permissions. Edits appear live for people working on the same entries, and a version is saved before the first edit of an entry, so changes can be undone.",
+        "longDescription": "Andesine is a knowledge base, headless CMS, and docs platform. Connect a workspace to search and read your entries, draft new ones that follow your collection schemas, edit existing content as MDX, comment and suggest changes for review, save and restore versions, and publish to your sites.\n\nWhen you connect, you pick the workspace and whether the app can only read or can also make changes. Every request uses your own Andesine permissions. Edits appear live for people working on the same entries, and a version is saved before the first edit of an entry, so changes can be undone.",
         "developerName": "Andesine",
         "category": "Productivity",
         "capabilities": [
@@ -22,6 +22,7 @@
           "Create draft entries that follow collection schemas",
           "Edit parts of entries or rewrite them",
           "Move, rename, and delete entries and collections",
+          "Comment on entries and suggest changes for review",
           "Save versions and restore earlier ones",
           "Publish and unpublish content on channels"
         ],
@@ -63,6 +64,12 @@
               "expected_behavior": "Reads the entry, adds a Troubleshooting section at the end without changing the rest, and replies with a link to the entry."
             },
             {
+              "description": "Review an entry with comments",
+              "prompt": "Review /Guides/Getting started and suggest fixes for any typos as comments.",
+              "tools_triggered": "fetch, add_comment",
+              "expected_behavior": "Reads the entry, adds a comment with a suggested replacement for each typo, and doesn't change the content."
+            },
+            {
               "description": "Create a draft entry that follows the schema",
               "prompt": "Create a draft FAQ entry in /Guides with three common questions about billing.",
               "tools_triggered": "get_schema, create_entry",
@@ -92,7 +99,7 @@
         }
       },
       "publication": {
-        "release_notes": "First release: search, read, create, edit, version, and publish Andesine workspace content."
+        "release_notes": "First release: search, read, create, edit, comment on, version, and publish Andesine workspace content."
       }
     }
   }

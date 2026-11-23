@@ -351,6 +351,27 @@
       "when": 1793924394812,
       "tag": "0049_add-billing-periods",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1795109053293,
+      "tag": "0050_add-comment-threads",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1795188687380,
+      "tag": "0051_move-suggestions-to-comment-threads",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1795451544504,
+      "tag": "0052_add-auto-resolved-comment-threads",
+      "breakpoints": true
     }
   ]
 }

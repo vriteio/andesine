@@ -10,6 +10,7 @@ export default defineConfig({
     "../../packages/private/server/src/database/outbound-events.ts",
     "../../packages/private/server/src/database/outbound-deliveries.ts",
     "../../packages/private/server/src/database/collections.ts",
+    "../../packages/private/server/src/database/comments.ts",
     "../../packages/private/server/src/database/content-schemas.ts",
     "../../packages/private/server/src/database/contents.ts",
     "../../packages/private/server/src/database/stripe-webhook-events.ts",

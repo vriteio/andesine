@@ -3,6 +3,7 @@ import { groupEventType } from "./groups";
 import { keyEventType } from "./keys";
 import { membershipEventType } from "./memberships";
 import { collectionEventType } from "./collections";
+import { commentThreadEventType } from "./comments";
 import { roleEventType } from "./roles";
 import { schemaVersionEventType } from "./schema-versions";
 import { schemaMigrationEventType } from "./schema-migrations";
@@ -17,6 +18,7 @@ import * as z from "zod";
 const workspaceEventType = z.union([
   entryEventType,
   collectionEventType,
+  commentThreadEventType,
   groupEventType,
   membershipEventType,
   roleEventType,

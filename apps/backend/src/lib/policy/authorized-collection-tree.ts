@@ -57,6 +57,8 @@ const ENTRY_CONTENT_ACTIONS: EntryAction[] = [
   "entry:update",
   "entry:move",
   "entry:delete",
+  "comment:create",
+  "comment:resolve",
   "version:read",
   "version:create",
   "version:update",
@@ -123,6 +125,10 @@ const getUserActions = (auth: SessionData, permissions: Permission[]): Collectio
     entryActions.push(...ENTRY_CONTENT_ACTIONS);
   }
 
+  if (!canManageContent && hasGrantedPermission(permissions, "comments")) {
+    entryActions.push("comment:create");
+  }
+
   if (canManagePublishing) {
     collectionActions.push("collection:set-publishing");
   }
@@ -156,7 +162,14 @@ const getKeyActions = (auth: SessionData): CollectionAccess => {
   }
 
   if (hasGrantedPermission(permissions, "entries")) {
-    entryActions.push("entry:create", "entry:update", "entry:move", "entry:delete");
+    entryActions.push(
+      "entry:create",
+      "entry:update",
+      "entry:move",
+      "entry:delete",
+      "comment:create",
+      "comment:resolve"
+    );
   }
 
   if (hasGrantedPermission(permissions, "read:versions")) {

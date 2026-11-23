@@ -10,6 +10,10 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
+    "./comments": {
+      "types": "./src/ui/comments/thread-card.tsx",
+      "default": "./src/ui/comments/thread-card.tsx"
+    },
     "./highlight-code": {
       "types": "./src/lib/highlight-code.ts",
       "default": "./src/lib/highlight-code.ts"

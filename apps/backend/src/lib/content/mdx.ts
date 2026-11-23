@@ -7,6 +7,7 @@ import {
   getContentFieldKey,
   PROPERTY_ELEMENT_NAME
 } from "@andesine/document";
+import { DOCUMENT_ID_NODE_TYPES } from "@andesine/document/tiptap";
 import { ORPCError } from "@orpc/server";
 
 interface EncodeEntryMDXOptions {
@@ -21,6 +22,7 @@ interface MDXParseError {
 type ImageAssetIDs = Map<string, string>;
 
 const ASSET_URL_PREFIX = "asset:";
+const ID_NODE_TYPES = new Set<string>(DOCUMENT_ID_NODE_TYPES);
 const IMAGE_LAYOUT_ATTRIBUTES = ["aspectRatio", "size"];
 const mdxOptions: MDXOptions = {
   properties: { as: "element", name: PROPERTY_ELEMENT_NAME },
@@ -86,8 +88,10 @@ const restoreChangedBlock = async (node: ContentNode, base: ContentNode): Promis
     ? Object.fromEntries(IMAGE_LAYOUT_ATTRIBUTES.map((name) => [name, base.attrs?.[name]]))
     : {};
   const attrs = sameFragment ? base.attrs : { ...node.attrs, ...layout, id: base.attrs?.id };
+  // Nested blocks keep their IDs too, e.g. list items and table cells, so changes stay small.
+  const hasBlocks = Boolean(node.content?.every(({ type }) => ID_NODE_TYPES.has(type)));
   const content =
-    node.type === "fragment"
+    node.type === "fragment" || hasBlocks
       ? await restoreBlocks(node.content || [], base.content || [])
       : node.content;
 

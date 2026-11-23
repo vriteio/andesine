@@ -11,6 +11,7 @@ import { db } from "#backend/lib/adapters";
 import { toUUID } from "@andesine/contracts/primitives";
 import { type SchemaDefinition } from "@andesine/contracts/schema";
 import { ORPCError } from "@orpc/server";
+import { type Doc } from "yjs";
 import { and, eq, isNull } from "drizzle-orm";
 import {
   createContentState,
@@ -125,43 +126,50 @@ const readDocumentContent = async (connection: ContentConnection): Promise<Conte
 
   return snapshot;
 };
-/** The content of a document that is open in this instance, without loading it. */
-const getLoadedDocumentContent = (documentName: string): ContentSnapshot | null => {
-  const document = collab.documents.get(documentName);
+/**
+ * Reads a document open on any instance with its unsaved edits, or returns null if it's closed.
+ * The read must not change the document.
+ */
+const readOpenDocument = async <T>(
+  documentName: string,
+  workspaceID: string,
+  read: (document: Doc) => T
+): Promise<{ value: T } | null> => {
+  const loaded = collab.documents.get(documentName);
+  let connection: ContentConnection;
 
-  return document ? getContentSnapshot(document) : null;
+  if (loaded) return { value: read(loaded) };
+
+  if (!(await collaborationRedis.isDocumentOpen(documentName))) return null;
+
+  try {
+    connection = await openDocumentContentConnection(documentName, workspaceID);
+  } catch (error) {
+    // Callers fall back to the stored content, as when the document is closed.
+    console.error("Failed to read a document open on another instance", { error });
+    return null;
+  }
+
+  const document = connection.document!;
+
+  try {
+    return { value: read(document) };
+  } finally {
+    // A read changes nothing, so skip the disconnect's save, which could replace a pending
+    // one, and don't wait for the Redis extension's unload delay.
+    document.removeDirectConnection();
+    connection.document = null;
+    collab.unloadDocument(document).catch((error: unknown) => {
+      console.error("Failed to unload a collaboration document after a read", { error });
+    });
+  }
 };
 /** The content of a document open on any instance with its unsaved edits, or null if it's closed. */
 const getOpenDocumentContent = async (
   documentName: string,
   workspaceID: string
 ): Promise<ContentSnapshot | null> => {
-  const loaded = getLoadedDocumentContent(documentName);
-
-  if (loaded) return loaded;
-
-  if (!(await collaborationRedis.isDocumentOpen(documentName))) return null;
-
-  try {
-    const connection = await openDocumentContentConnection(documentName, workspaceID);
-    const document = connection.document!;
-
-    try {
-      return await readDocumentContent(connection);
-    } finally {
-      // A read changes nothing, so skip the disconnect's save, which could replace a pending
-      // one, and don't wait for the Redis extension's unload delay.
-      document.removeDirectConnection();
-      connection.document = null;
-      collab.unloadDocument(document).catch((error: unknown) => {
-        console.error("Failed to unload a collaboration document after a read", { error });
-      });
-    }
-  } catch (error) {
-    // Callers fall back to the stored content, as when the document is closed.
-    console.error("Failed to read a document open on another instance", { error });
-    return null;
-  }
+  return (await readOpenDocument(documentName, workspaceID, getContentSnapshot))?.value ?? null;
 };
 const getCurrentDocumentContent = async (
   documentName: string,
@@ -301,6 +309,7 @@ export {
   openDocumentContentConnection,
   prepareSchemaMigrationConnections,
   readDocumentContent,
+  readOpenDocument,
   setPersistedDocumentSchemaRevision,
   updateDocumentContent,
   updateDocumentTitle,

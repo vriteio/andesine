@@ -26,7 +26,9 @@ type PublicIDPrefix =
   | "whdel"
   | "whrun"
   | "whatt"
-  | "ext";
+  | "ext"
+  | "cth"
+  | "cmt";
 const id = (options?: Exclude<Parameters<typeof z.regex>[1], string>) => {
   return z.string().regex(ID_REGEX, { error: "invalid id", ...options });
 };
@@ -86,12 +88,16 @@ const toWebhookDeliveryID = (value: string) => fromUUID(value, "whdel");
 const toWebhookRunID = (value: string) => fromUUID(value, "whrun");
 const toWebhookAttemptID = (value: string) => fromUUID(value, "whatt");
 const toExtensionID = (value: string) => fromUUID(value, "ext");
+const toCommentThreadID = (value: string) => fromUUID(value, "cth");
+const toCommentID = (value: string) => fromUUID(value, "cmt");
 export {
   fromUUID,
   id,
   publicID,
   toAssetID,
   toCollectionID,
+  toCommentID,
+  toCommentThreadID,
   toEntryID,
   toExtensionID,
   toGroupID,

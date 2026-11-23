@@ -24,6 +24,14 @@ const fetchWithConnectivity: typeof fetch = async (input, init) => {
   return response;
 };
 
+// Page-close requests use keepalive, so they finish after the page closes.
+let isPageClosing = false;
+
+if (typeof window !== "undefined") {
+  window.addEventListener("pagehide", () => (isPageClosing = true));
+  window.addEventListener("pageshow", () => (isPageClosing = false));
+}
+
 const getRouteWorkspaceID = () => {
   if (typeof window !== "undefined") {
     const routeSegment = window.location.pathname.split("/").filter(Boolean)[0] || "";
@@ -75,10 +83,17 @@ const link = new RPCLink({
       Object.assign(headers, options.context.headers);
     }
 
-    return fetchWithConnectivity(request, {
-      ...init,
-      credentials: "include",
-      headers
+    const send = (input: Request, keepalive: boolean) => {
+      return fetchWithConnectivity(input, { ...init, credentials: "include", headers, keepalive });
+    };
+    // A copy, as the first try reads the body.
+    const retry = isPageClosing ? request.clone() : null;
+
+    // Keep-alive bodies over 64 KB fail at once; resend them without keep-alive.
+    return send(request, isPageClosing).catch((error: unknown) => {
+      if (!retry || !(error instanceof TypeError)) throw error;
+
+      return send(retry, false);
     });
   }
 });

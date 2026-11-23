@@ -6,6 +6,8 @@ import { getWorkspaceDatabaseName } from "#web/context/workspace/indexeddb";
 import { IconButton } from "@andesine/components";
 import {
   Editor,
+  type EditorComments,
+  type EditorSuggesting,
   type EditorInstance,
   type EditorMode,
   type EditorSchemaField
@@ -40,6 +42,8 @@ interface CollaborativeEditorPaneProps {
   availableDocumentID?: string | null;
   documentID?: string;
   editable: boolean;
+  comments?: EditorComments;
+  suggesting?: EditorSuggesting;
   emptyTitle: string;
   emptyDescription: string;
   loading: boolean;
@@ -268,6 +272,8 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
                   schemaFields={schemaFields()}
                   elementViews={elementViews}
                   blockActions={extensionActions?.blockActions}
+                  comments={props.comments}
+                  suggesting={props.suggesting}
                   staticTitle={props.staticTitle}
                   notify={(type, text) => notify({ type, text })}
                   collaborationUser={collaborationUser()}

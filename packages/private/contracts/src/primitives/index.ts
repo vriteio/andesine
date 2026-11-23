@@ -6,6 +6,8 @@ export {
   publicID,
   toAssetID,
   toCollectionID,
+  toCommentID,
+  toCommentThreadID,
   toEntryID,
   toGroupID,
   toInviteID,

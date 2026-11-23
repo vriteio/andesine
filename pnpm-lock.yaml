@@ -152,6 +152,7 @@ overrides:
   prosemirror-model: 1.25.12
 
 patchedDependencies:
+  '@tiptap/extension-unique-id@3.30.6': 36fe3f99805459204c49e88e07e4204b3a6fc5bb123e91402eb1d6ca3b22c49f
   '@tiptap/y-tiptap@3.0.9': ce04abd308554eeea32759417390a5f2ce596a6c37fd69426f2baaa5e6612f30
 
 importers:
@@ -915,6 +916,9 @@ importers:
       url-slug:
         specifier: ^5.0.1
         version: 5.0.1
+      yjs:
+        specifier: 'catalog:'
+        version: 13.6.32
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -993,7 +997,7 @@ importers:
         version: 3.30.6(@tiptap/core@3.30.6(@tiptap/pm@3.30.6))(@tiptap/pm@3.30.6)
       '@tiptap/extension-unique-id':
         specifier: 'catalog:'
-        version: 3.30.6(@tiptap/core@3.30.6(@tiptap/pm@3.30.6))(@tiptap/pm@3.30.6)
+        version: 3.30.6(patch_hash=36fe3f99805459204c49e88e07e4204b3a6fc5bb123e91402eb1d6ca3b22c49f)(@tiptap/core@3.30.6(@tiptap/pm@3.30.6))(@tiptap/pm@3.30.6)
       '@tiptap/pm':
         specifier: 'catalog:'
         version: 3.30.6
@@ -14433,7 +14437,7 @@ snapshots:
     dependencies:
       '@tiptap/core': 3.30.6(@tiptap/pm@3.30.6)
 
-  '@tiptap/extension-unique-id@3.30.6(@tiptap/core@3.30.6(@tiptap/pm@3.30.6))(@tiptap/pm@3.30.6)':
+  '@tiptap/extension-unique-id@3.30.6(patch_hash=36fe3f99805459204c49e88e07e4204b3a6fc5bb123e91402eb1d6ca3b22c49f)(@tiptap/core@3.30.6(@tiptap/pm@3.30.6))(@tiptap/pm@3.30.6)':
     dependencies:
       '@tiptap/core': 3.30.6(@tiptap/pm@3.30.6)
       '@tiptap/pm': 3.30.6

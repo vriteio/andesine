@@ -62,6 +62,7 @@ minimumReleaseAgeExclude:
   - "@andesine/sdk@0.1.0"
   - "@andesine/converters@0.1.0"
 patchedDependencies:
+  '@tiptap/extension-unique-id@3.30.6': patches/@tiptap__extension-unique-id@3.30.6.patch
   '@tiptap/y-tiptap@3.0.9': patches/@tiptap__y-tiptap@3.0.9.patch
 overrides:
   prosemirror-model: 1.25.12

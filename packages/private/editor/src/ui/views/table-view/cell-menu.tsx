@@ -317,6 +317,9 @@ const TableCellMenu = (props: TableCellMenuProps) => {
       if (!current) props.setAnchor(null);
     };
 
+    // `editor.view` is gone once the editor is destroyed.
+    const editorDOM = props.editor.view.dom;
+
     props.editor.on("transaction", update);
     window.addEventListener("pointerdown", capturePointerDown, true);
     props.view.table.addEventListener("pointerdown", handlePointerDown, true);
@@ -330,7 +333,7 @@ const TableCellMenu = (props: TableCellMenuProps) => {
     });
     window.addEventListener("touchcancel", cancelLongPress, true);
     props.view.table.addEventListener("contextmenu", handleContextMenu, true);
-    props.editor.view.dom.addEventListener("focus", handleEditorFocus);
+    editorDOM.addEventListener("focus", handleEditorFocus);
     onCleanup(() => {
       if (menuFrame !== null) cancelAnimationFrame(menuFrame);
 
@@ -344,7 +347,7 @@ const TableCellMenu = (props: TableCellMenuProps) => {
       window.removeEventListener("touchend", handleTouchEnd, true);
       window.removeEventListener("touchcancel", cancelLongPress, true);
       props.view.table.removeEventListener("contextmenu", handleContextMenu, true);
-      props.editor.view.dom.removeEventListener("focus", handleEditorFocus);
+      editorDOM.removeEventListener("focus", handleEditorFocus);
     });
   });
 

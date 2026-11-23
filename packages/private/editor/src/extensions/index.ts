@@ -13,3 +13,7 @@ export * from "./version-diff";
 export * from "./collaboration";
 export { NodeRange } from "@tiptap/extension-node-range";
 export * from "./gap-cursor";
+export * from "./comments";
+export * from "./suggesting";
+export * from "./suggestion-apply";
+export * from "./suggestion-preview";

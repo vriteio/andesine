@@ -7,6 +7,7 @@ import { render } from "solid-js/web";
 import { TableControls } from "./controls";
 import { createTableViewport } from "./viewport";
 import { createTableDiffView } from "#editor/extensions/version-diff/table";
+import { createTableCommentShade } from "./comment-shade";
 
 const createTableViewRenderer = (owner: unknown, editable: Accessor<boolean>) => {
   return (props: NodeViewRendererProps): NodeView => {
@@ -15,8 +16,10 @@ const createTableViewRenderer = (owner: unknown, editable: Accessor<boolean>) =>
     const viewport = createTableViewport(props.editor, view, () => {
       shadowController.processScrollState();
       diff.refresh();
+      comments.refresh();
     });
     const diff = createTableDiffView(props.editor, viewport.dom, viewport.scrollContainer, owner);
+    const comments = createTableCommentShade(props.editor, viewport.dom, viewport.scrollContainer);
     const controls = document.createElement("div");
     const [node, setNode] = createSignal(props.node);
 
@@ -25,6 +28,7 @@ const createTableViewRenderer = (owner: unknown, editable: Accessor<boolean>) =>
     controls.className = "absolute inset-0 pointer-events-none z-10 not-prose";
     view.dom.appendChild(controls);
     diff.update(props.decorations);
+    comments.update(props.decorations);
 
     const unmount = render(
       () => <TableControls {...props} node={node} editable={editable} view={view} />,
@@ -63,11 +67,13 @@ const createTableViewRenderer = (owner: unknown, editable: Accessor<boolean>) =>
 
         setNode(updatedNode);
         diff.update(decorations);
+        comments.update(decorations);
         return true;
       },
       destroy() {
         viewport.destroy();
         diff.destroy();
+        comments.destroy();
         unmount();
         unmountShadows();
       }

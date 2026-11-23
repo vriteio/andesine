@@ -1,0 +1,1 @@
+ALTER TABLE "comment_threads" ADD COLUMN "auto_resolved" boolean DEFAULT false NOT NULL;

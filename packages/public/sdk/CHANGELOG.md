@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.12.0
+
+- `comments` methods for comment threads on entries: `list` (paginated), `createThread`, `reply`,
+  `update`, `delete`, `resolve`, `suggest`, `updateSuggestion`, `apply`, and `setApplied`. A
+  thread covers an entry, a block, or text found by its `quote` (with an optional `blockID` or
+  `offset`). Threads report their `status` (`active`, `outdated`, or `orphaned`) and the current
+  `text`. A list page can have fewer threads than `limit`; follow `nextCursor`.
+- A suggestion replaces or inserts blocks, or sets a new entry title. `apply` writes it into the
+  entry and keeps edits made since; it fails only when both change the same words, attributes
+  or blocks. `setApplied` marks a suggestion that an editor applied itself, or reopens it.
+- `suggest` adds to your own open suggestion on the same blocks while it has no note or replies,
+  and returns that thread.
+- Suggestions that no longer apply are resolved (`autoResolved`) and reopen once they apply
+  again. `updateSuggestion` reopens them too; `resolve` can't.
+- Webhook events for comments: `comment.created`, `comment.updated`, `comment.deleted`,
+  `comment.thread_resolved` (with a `reason`: `resolved`, `suggestion_applied`, or
+  `suggestion_outdated`), and `comment.thread_reopened`.
+- Roles can have the `comments` permission, to comment without editing content.
+
 ## 0.11.0
 
 - The Ask AI methods state the current cost: 10 AI credits per answer.

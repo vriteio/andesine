@@ -20,6 +20,8 @@ export type { ElementData, ElementValue, ElementToken, ElementContent } from "./
 export { normalizeResourceName } from "./normalize-resource-name";
 export { normalizeSourceName } from "./normalize-source-name";
 export { normalizeContentElements } from "./elements";
+export { rebaseBlocks, rebaseText } from "./rebase";
+export type { RebaseOptions } from "./rebase";
 export { contentMarkType, contentNodeType } from "./validation";
 export {
   getContentBlocks,

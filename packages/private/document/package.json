@@ -11,6 +11,10 @@
     "./tiptap": {
       "types": "./src/tiptap/index.ts",
       "default": "./src/tiptap/index.ts"
+    },
+    "./comments": {
+      "types": "./src/comments.ts",
+      "default": "./src/comments.ts"
     }
   },
   "scripts": {
@@ -41,6 +45,7 @@
     "@tiptap/extension-text": "catalog:",
     "@tiptap/pm": "catalog:",
     "url-slug": "^5.0.1",
+    "yjs": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

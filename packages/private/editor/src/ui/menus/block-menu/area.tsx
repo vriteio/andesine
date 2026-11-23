@@ -1,5 +1,11 @@
 import { isBlockSelection, setBlockSelectionAtCoords } from "#editor/extensions";
-import type { BlockActions, EditorIcons, EditorLinks, ElementViews } from "#editor/client-types";
+import type {
+  BlockActions,
+  EditorComments,
+  EditorIcons,
+  EditorLinks,
+  ElementViews
+} from "#editor/client-types";
 import { DropdownArea, useShortcuts } from "@andesine/components";
 import { type Editor, type EditorEvents, isTextSelection } from "@tiptap/core";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
@@ -23,7 +29,10 @@ import { isShown } from "#editor/ui/keyboard-stops";
 
 interface BlockMenuAreaProps {
   editor: Editor | null;
+  /** Only copying and commenting. */
+  readOnly?: boolean;
   blockActions?: BlockActions;
+  comments?: EditorComments;
   elementViews?: ElementViews;
   links?: EditorLinks;
   icons?: EditorIcons;
@@ -70,7 +79,7 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
   const handleDelete = () => {
     const editor = props.editor;
 
-    if (!editor || editor.isDestroyed) return false;
+    if (!editor || editor.isDestroyed || props.readOnly) return false;
 
     const { from, to } = editor.state.selection;
 
@@ -275,7 +284,9 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
                 anchorPoint={menuAnchorPoint()}
                 contextMenuPoint={contextMenuPoint()}
                 editor={props.editor}
+                readOnly={props.readOnly}
                 blockActions={props.blockActions}
+                comments={props.comments}
                 elementViews={props.elementViews}
                 links={props.links}
                 icons={props.icons}
