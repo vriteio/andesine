@@ -1,9 +1,11 @@
 import {
   assetUploads,
   assets,
+  commentThreads,
   entryAssets,
   entryVersionAssets,
-  type DatabaseTransaction as Database
+  type DatabaseTransaction as Database,
+  isThreadOpen
 } from "@andesine/server/database";
 import type { ContentNode } from "@andesine/document";
 import { ORPCError } from "@orpc/server";
@@ -18,7 +20,12 @@ interface RetainVersionAssetsInput {
   sourceVersionID?: string;
   document: ContentNode;
 }
-
+interface RetainSuggestionAssetsInput {
+  database: Database;
+  workspaceID: string;
+  entryID: string;
+  blocks: ContentNode[];
+}
 interface SyncEntryAssetsInput {
   database: Database;
   workspaceID: string;
@@ -50,20 +57,15 @@ const getContentAssetIDs = (document: ContentNode): string[] => {
   visit(document);
   return [...ids];
 };
-// The caller must hold the workspace lock. A snapshot cannot grant access to an image.
-const retainVersionAssets = async ({
-  database,
-  workspaceID,
-  entryID,
-  versionID,
-  sourceVersionID,
-  document
-}: RetainVersionAssetsInput): Promise<void> => {
-  const requestedIDs = getContentAssetIDs(document);
-
-  if (!requestedIDs.length) return;
-
-  const available = await database
+/** Ready workspace assets that the entry may use: referenced, uploaded to it, or in versions. */
+const selectGrantedAssets = (
+  database: Database,
+  workspaceID: string,
+  entryID: string,
+  requestedIDs: string[],
+  versionIDs: string[] = []
+) => {
+  return database
     .select({ id: assets.id })
     .from(assets)
     .where(
@@ -104,10 +106,7 @@ const retainVersionAssets = async ({
                 and(
                   eq(entryVersionAssets.assetID, assets.id),
                   eq(entryVersionAssets.entryID, entryID),
-                  inArray(
-                    entryVersionAssets.versionID,
-                    sourceVersionID ? [versionID, sourceVersionID] : [versionID]
-                  )
+                  inArray(entryVersionAssets.versionID, versionIDs)
                 )
               )
           )
@@ -115,6 +114,24 @@ const retainVersionAssets = async ({
       )
     )
     .for("key share");
+};
+// The caller must hold the workspace lock. A snapshot cannot grant access to an image.
+const retainVersionAssets = async ({
+  database,
+  workspaceID,
+  entryID,
+  versionID,
+  sourceVersionID,
+  document
+}: RetainVersionAssetsInput): Promise<void> => {
+  const requestedIDs = getContentAssetIDs(document);
+
+  if (!requestedIDs.length) return;
+
+  const available = await selectGrantedAssets(database, workspaceID, entryID, requestedIDs, [
+    versionID,
+    ...(sourceVersionID ? [sourceVersionID] : [])
+  ]);
 
   if (available.length !== requestedIDs.length) {
     throw new ORPCError("CONFLICT", {
@@ -143,6 +160,39 @@ const retainVersionAssets = async ({
     )
     .onConflictDoNothing();
 };
+// The caller must hold the workspace lock.
+const retainSuggestionAssets = async ({
+  database,
+  workspaceID,
+  entryID,
+  blocks
+}: RetainSuggestionAssetsInput): Promise<void> => {
+  const requestedIDs = getContentAssetIDs({ type: "doc", content: blocks });
+
+  if (!requestedIDs.length) return;
+
+  const available = await selectGrantedAssets(database, workspaceID, entryID, requestedIDs);
+
+  if (available.length !== requestedIDs.length) {
+    throw new ORPCError("CONFLICT", {
+      message: "Suggestion contains an unavailable or unauthorized image",
+      data: { hints: ["Upload or attach the images to the entry, and check that they're ready."] }
+    });
+  }
+
+  await database
+    .update(assets)
+    .set({ unreferencedAt: null })
+    .where(and(inArray(assets.id, requestedIDs), isNotNull(assets.unreferencedAt)));
+  await database
+    .insert(entryAssets)
+    .values(requestedIDs.map((assetID) => ({ workspaceID, entryID, assetID })))
+    .onConflictDoUpdate({
+      target: [entryAssets.entryID, entryAssets.assetID],
+      set: { pendingUntil: null },
+      setWhere: isNotNull(entryAssets.pendingUntil)
+    });
+};
 // Call in the content transaction, with the workspace and entry locked. Never infer a
 // grant from a client-supplied asset ID or from the last contributor to a shared document.
 const syncEntryAssets = async ({
@@ -170,6 +220,24 @@ const syncEntryAssets = async ({
           )
         )
     : [];
+  // Open suggestions keep their images.
+  const suggestions = await database
+    .select({ suggestion: commentThreads.suggestion })
+    .from(commentThreads)
+    .where(
+      and(
+        eq(commentThreads.workspaceID, workspaceID),
+        eq(commentThreads.entryID, entryID),
+        isNotNull(commentThreads.suggestion),
+        isThreadOpen,
+        isNull(commentThreads.appliedAt)
+      )
+    );
+  const retainedIDs = new Set(
+    suggestions.flatMap(({ suggestion }) => {
+      return getContentAssetIDs({ type: "doc", content: suggestion?.blocks ?? [] });
+    })
+  );
   const activeReferences = current.filter(
     ({ pendingUntil }) => !pendingUntil || pendingUntil > now
   );
@@ -206,12 +274,16 @@ const syncEntryAssets = async ({
   const removedIDs = current
     .filter(
       ({ assetID, pendingUntil }) =>
-        !allowedIDs.has(assetID) && (pendingUntil ? pendingUntil <= now : !restoreUntil)
+        !allowedIDs.has(assetID) &&
+        !retainedIDs.has(assetID) &&
+        (pendingUntil ? pendingUntil <= now : !restoreUntil)
     )
     .map(({ assetID }) => assetID);
   const restorableIDs = restoreUntil
     ? current
-        .filter(({ assetID, pendingUntil }) => !pendingUntil && !allowedIDs.has(assetID))
+        .filter(({ assetID, pendingUntil }) => {
+          return !pendingUntil && !allowedIDs.has(assetID) && !retainedIDs.has(assetID);
+        })
         .map(({ assetID }) => assetID)
     : [];
 
@@ -243,4 +315,4 @@ const syncEntryAssets = async ({
   return { document: normalizedDocument, changed };
 };
 
-export { getContentAssetIDs, retainVersionAssets, syncEntryAssets };
+export { getContentAssetIDs, retainSuggestionAssets, retainVersionAssets, syncEntryAssets };

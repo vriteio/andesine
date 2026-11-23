@@ -33,6 +33,10 @@ interface CommentsContextValue {
   setDraft: Setter<EditorCommentDraft | null>;
   loading: Accessor<boolean>;
   setLoading: Setter<boolean>;
+  suggesting: Accessor<boolean>;
+  setSuggesting: Setter<boolean>;
+  suggestionsShown: Accessor<boolean>;
+  setSuggestionsShown: Setter<boolean>;
 }
 
 const COMMENTS_PANEL_ID = "comments";
@@ -49,6 +53,8 @@ const CommentsProvider: ParentComponent = (props) => {
   const [loading, setLoading] = createSignal(true);
   const [draft, setDraft] = createSignal<EditorCommentDraft | null>(null);
   const [sheetOpened, setSheetOpened] = createSignal(false);
+  const [suggesting, setSuggesting] = createSignal(false);
+  const [suggestionsShown, setSuggestionsShown] = createSignal(true);
   const md = createMediaQuery("(min-width: 768px)");
   const mobile = () => !md();
   const panelOpened = () => {
@@ -94,7 +100,11 @@ const CommentsProvider: ParentComponent = (props) => {
         loading,
         setLoading,
         draft,
-        setDraft
+        setDraft,
+        suggesting,
+        setSuggesting,
+        suggestionsShown,
+        setSuggestionsShown
       }}
     >
       {props.children}

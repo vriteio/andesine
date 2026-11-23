@@ -22,7 +22,9 @@ const handlers = api.comments;
 const authorizedHandlers = handlers.use(authorized);
 const commentsRouter = handlers.router({
   list: authorizedHandlers.list.handler(({ context, input }) => {
-    return Comments.list({ ...input, auth: context.auth });
+    const onChange = (thread: CommentThread) => emitThreadUpdate(context.auth, thread);
+
+    return Comments.list({ ...input, auth: context.auth, onChange });
   }),
   createThread: authorizedHandlers.createThread.handler(async ({ context, input }) => {
     const thread = await Comments.createThread({ ...input, auth: context.auth });
@@ -79,6 +81,15 @@ const commentsRouter = handlers.router({
     const thread = await Comments.apply({ id: input.id, auth: context.auth });
 
     trackEvent("comment_thread_resolved", context.auth, { reason: "suggestion_applied" });
+
+    return emitThreadUpdate(context.auth, thread);
+  }),
+  setApplied: authorizedHandlers.setApplied.handler(async ({ context, input }) => {
+    const thread = await Comments.setApplied({ ...input, auth: context.auth });
+
+    if (input.applied) {
+      trackEvent("comment_thread_resolved", context.auth, { reason: "suggestion_applied" });
+    }
 
     return emitThreadUpdate(context.auth, thread);
   })

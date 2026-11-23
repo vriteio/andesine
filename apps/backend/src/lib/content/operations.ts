@@ -127,7 +127,20 @@ const findBlock = (document: ContentNode, id: string, index: number): ContentBlo
 
   return block;
 };
-/** Consecutive blocks, or the insertion point after `after` or the title. */
+const findNestedBlock = (node: ContentNode, id: string): ContentBlock | null => {
+  const content = node.content ?? [];
+
+  for (const child of content) {
+    if (child.attrs?.id === id) return { container: content, node: child };
+
+    const nested = findNestedBlock(child, id);
+
+    if (nested) return nested;
+  }
+
+  return null;
+};
+/** Consecutive blocks of one container at any depth, or an insertion point. */
 const findBlockRange = (
   document: ContentNode,
   { blockIDs, after }: BlockRangeTarget
@@ -140,7 +153,7 @@ const findBlockRange = (
     return { container, start: container[0]?.type === "title" ? 1 : 0, count: 0 };
   }
 
-  const block = listBlocks(document).find(({ node }) => node.attrs?.id === firstID);
+  const block = findNestedBlock(document, firstID);
 
   if (!block) return null;
 
@@ -331,6 +344,7 @@ const getContentBlockDetails = (document: ContentNode): Promise<ContentBlockDeta
 export {
   applyContentOperations,
   findBlockRange,
+  findNestedBlock,
   getContentBlockDetails,
   getOperationSources,
   listBlocks

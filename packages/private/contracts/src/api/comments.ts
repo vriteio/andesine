@@ -1,4 +1,5 @@
 import { contentNodeType } from "@andesine/document";
+import { entryName } from "../content/name";
 import { commentContentType, commentThreadType } from "../entities/comments";
 import { id } from "../primitives/id";
 import * as z from "zod";
@@ -23,12 +24,17 @@ const suggestionPatchType = z.object({
     .default(null)
     .describe("For an insertion: block after which the blocks go, or null for the start"),
   blocks: z.array(contentNodeType).max(500).optional().describe("Suggested blocks"),
-  mdx: z.string().max(100000).optional().describe("Suggested blocks in MDX, instead of blocks")
+  mdx: z.string().max(100000).optional().describe("Suggested blocks in MDX, instead of blocks"),
+  title: entryName()
+    .optional()
+    .describe("Suggested entry title, instead of blocks; leave blockIDs empty")
 });
-const hasOnePatchSource = (input: { blocks?: unknown; mdx?: string }) => {
-  return (input.blocks === undefined) !== (input.mdx === undefined);
+const hasOnePatchSource = (input: { blocks?: unknown; mdx?: string; title?: string }) => {
+  return (
+    [input.blocks, input.mdx, input.title].filter((source) => source !== undefined).length === 1
+  );
 };
-const patchSourceError = { message: "Set blocks or mdx", path: ["blocks"] };
+const patchSourceError = { message: "Set blocks, mdx or title", path: ["blocks"] };
 const commentsContract = baseContract.router({
   list: authenticatedContract
     .route({
@@ -131,6 +137,8 @@ const commentsContract = baseContract.router({
   resolve: authenticatedContract
     .route({
       summary: "Resolve or reopen a comment thread",
+      description:
+        "Resolves a thread, or reopens it with resolved false. A suggestion that no longer applies to the current content can't be reopened; update it instead, which reopens it.",
       tags: ["comments"],
       method: "POST",
       path: "/comment-threads/{id}/resolve"
@@ -148,7 +156,7 @@ const commentsContract = baseContract.router({
     .route({
       summary: "Suggest a change",
       description:
-        "Starts a comment thread that suggests replacing consecutive blocks (blockIDs) with other blocks, or inserting blocks (after). Block IDs come from entries.get with contentFormat blocks. People with permission to update the entry can apply it.",
+        "Starts a comment thread that suggests replacing consecutive blocks (blockIDs) with other blocks, inserting blocks (after), or a new entry title (title). Block IDs come from entries.get with contentFormat blocks. People with permission to update the entry can apply it. When your own open suggestion without replies or a note overlaps it, that thread gets the new change, which wins where both change the same words, and returns.",
       tags: ["comments"],
       method: "POST",
       path: "/entries/{entryID}/suggestions"
@@ -170,7 +178,8 @@ const commentsContract = baseContract.router({
   updateSuggestion: authenticatedContract
     .route({
       summary: "Update a suggestion",
-      description: "Replaces the change of your own open suggestion, against the current content.",
+      description:
+        "Replaces the change of your own suggestion, against the current content. A suggestion resolved because it no longer applied reopens.",
       tags: ["comments"],
       method: "PUT",
       path: "/comment-threads/{id}/suggestion"
@@ -187,7 +196,7 @@ const commentsContract = baseContract.router({
     .route({
       summary: "Apply a suggestion",
       description:
-        "Replaces the blocks with the suggested ones and resolves the thread. Fails when the blocks changed since the suggestion was saved.",
+        "Replaces the blocks or the title with the suggested ones and resolves the thread. Edits made since the suggestion was saved are kept; fails when they change the same words, attributes or blocks.",
       tags: ["comments"],
       method: "POST",
       path: "/comment-threads/{id}/apply"
@@ -195,6 +204,24 @@ const commentsContract = baseContract.router({
     .meta({ example: { id: "cth_example" } })
     .meta({ required: { session: true, key: ["entries"] } })
     .input(z.object({ id: id().describe("ID of the comment thread with the suggestion") }))
+    .output(commentThreadType),
+  setApplied: authenticatedContract
+    .route({
+      summary: "Mark a suggestion applied",
+      description:
+        "For editors that change the content themselves: marks an open suggestion applied and resolves it, or reopens an applied one, e.g. on undo. The content isn't changed.",
+      tags: ["comments"],
+      method: "PUT",
+      path: "/comment-threads/{id}/applied"
+    })
+    .meta({ example: { id: "cth_example", applied: true } })
+    .meta({ required: { session: true, key: ["entries"] } })
+    .input(
+      z.object({
+        id: id().describe("ID of the comment thread with the suggestion"),
+        applied: z.boolean().describe("True to mark it applied, false to reopen it")
+      })
+    )
     .output(commentThreadType)
 });
 

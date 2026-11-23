@@ -1029,7 +1029,7 @@ const commands: APICommand[] = [
     path: "/comment-threads/{id}/apply",
     summary: "Apply a suggestion",
     description:
-      "Replaces the blocks with the suggested ones and resolves the thread. Fails when the blocks changed since the suggestion was saved.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+      "Replaces the blocks or the title with the suggested ones and resolves the thread. Edits made since the suggestion was saved are kept; fails when they change the same words, attributes or blocks.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
     example: {
       id: "cth_example"
     },
@@ -1426,7 +1426,7 @@ const commands: APICommand[] = [
     path: "/comment-threads/{id}/resolve",
     summary: "Resolve or reopen a comment thread",
     description:
-      "Required API key permissions: entries. Write permissions also grant read access for the same resource.",
+      "Resolves a thread, or reopens it with resolved false. A suggestion that no longer applies to the current content can't be reopened; update it instead, which reopens it.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
     example: {
       id: "cth_example",
       resolved: true
@@ -1482,6 +1482,69 @@ const commands: APICommand[] = [
     response: "json"
   },
   {
+    id: "comments.setApplied",
+    group: "comments",
+    command: "set-applied",
+    method: "put",
+    path: "/comment-threads/{id}/applied",
+    summary: "Mark a suggestion applied",
+    description:
+      "For editors that change the content themselves: marks an open suggestion applied and resolves it, or reopens an applied one, e.g. on undo. The content isn't changed.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "cth_example",
+      applied: true
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the comment thread with the suggestion"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "applied",
+        location: "body",
+        required: true,
+        schema: {
+          type: "boolean",
+          description: "True to mark it applied, false to reopen it"
+        },
+        flag: "applied",
+        kind: "boolean",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
     id: "comments.suggest",
     group: "comments",
     command: "suggest",
@@ -1489,7 +1552,7 @@ const commands: APICommand[] = [
     path: "/entries/{entryID}/suggestions",
     summary: "Suggest a change",
     description:
-      "Starts a comment thread that suggests replacing consecutive blocks (blockIDs) with other blocks, or inserting blocks (after). Block IDs come from entries.get with contentFormat blocks. People with permission to update the entry can apply it.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+      "Starts a comment thread that suggests replacing consecutive blocks (blockIDs) with other blocks, inserting blocks (after), or a new entry title (title). Block IDs come from entries.get with contentFormat blocks. People with permission to update the entry can apply it. When your own open suggestion without replies or a note overlaps it, that thread gets the new change, which wins where both change the same words, and returns.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
     example: {
       entryID: "ent_example",
       blockIDs: ["blk_example"],
@@ -1588,6 +1651,18 @@ const commands: APICommand[] = [
           description: "Suggested blocks in MDX, instead of blocks"
         },
         flag: "mdx",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "title",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Suggested entry title, instead of blocks; leave blockIDs empty"
+        },
+        flag: "title",
         kind: "string",
         nullable: false
       },
@@ -1711,7 +1786,7 @@ const commands: APICommand[] = [
     path: "/comment-threads/{id}/suggestion",
     summary: "Update a suggestion",
     description:
-      "Replaces the change of your own open suggestion, against the current content.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+      "Replaces the change of your own suggestion, against the current content. A suggestion resolved because it no longer applied reopens.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
     example: {
       id: "cth_example",
       blockIDs: ["blk_example"],
@@ -1810,6 +1885,18 @@ const commands: APICommand[] = [
           description: "Suggested blocks in MDX, instead of blocks"
         },
         flag: "mdx",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "title",
+        location: "body",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Suggested entry title, instead of blocks; leave blockIDs empty"
+        },
+        flag: "title",
         kind: "string",
         nullable: false
       }

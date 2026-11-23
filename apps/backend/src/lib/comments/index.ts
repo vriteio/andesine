@@ -4,7 +4,10 @@ import {
   contents,
   entries,
   type CommentSuggestionData,
-  type DatabaseClient
+  type DatabaseClient,
+  type DatabaseTransaction,
+  isThreadOpen,
+  isThreadUpdatedAt
 } from "@andesine/server/database";
 import { type Comment, type CommentAnchor, type CommentThread } from "@andesine/contracts/entities";
 import {
@@ -15,7 +18,7 @@ import {
   toUUID
 } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
-import { and, asc, eq, inArray, isNotNull, isNull, sql, type SQL } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, isNull, or, sql, type SQL } from "drizzle-orm";
 import { applyUpdate, Doc } from "yjs";
 import {
   getContentSnapshot,
@@ -23,7 +26,8 @@ import {
   readOpenDocument
 } from "#backend/collaboration";
 import { type AnchorState, getAnchorStates } from "./anchors";
-import { getSuggestionStatus } from "./suggestions";
+import { getStaleStatus, rebaseSuggestion } from "./suggestions";
+import { type CommentChange, writeCommentChange } from "./webhooks";
 
 interface CommentThreadFilter {
   entryID?: string;
@@ -33,6 +37,7 @@ interface CommentThreadFilter {
   cursor?: string;
   /** Returns up to one more thread, to tell whether more follow. */
   limit?: number;
+  onChange?(thread: CommentThread): void;
 }
 interface CommentEntryTarget {
   collectionID: string | null;
@@ -43,10 +48,15 @@ interface CommentThreadTarget extends CommentEntryTarget {
   entryID: string;
   threadAuthorID: string | null;
   resolved: boolean;
+  autoResolved: boolean;
   anchor: CommentAnchor | null;
   quote: string | null;
   suggestion: CommentSuggestionData | null;
   appliedAt: Date | null;
+}
+interface ThreadState extends AnchorState {
+  /** Rebased onto the current content. */
+  suggestion?: CommentSuggestionData;
 }
 interface CommentTarget extends CommentThreadTarget {
   commentID: string;
@@ -86,6 +96,7 @@ const mapCommentThread = (
   authorID: toOptionalMembershipID(row.authorID),
   resolvedAt: row.resolvedAt?.toISOString() ?? null,
   resolvedByID: toOptionalMembershipID(row.resolvedByID),
+  autoResolved: row.autoResolved,
   createdAt: row.createdAt.toISOString(),
   comments: threadComments.map(mapComment)
 });
@@ -137,20 +148,89 @@ const readEntryDocument = async <T>(
     document.destroy();
   }
 };
+/** Auto-resolves open suggestions that no longer apply and reopens them once they do. */
+const syncAutoResolved = async (
+  database: DatabaseClient,
+  workspaceID: string,
+  rows: CommentThreadRow[],
+  states: AnchorState[]
+) => {
+  const now = new Date();
+  const changes = new Map<string, Date | null>();
+
+  for (const [index, row] of rows.entries()) {
+    const isOpenSuggestion = row.suggestion && !row.appliedAt;
+    const isActive = states[index].status === "active";
+    const isResolvable = isOpenSuggestion && !row.resolvedAt && !isActive;
+    const isReopenable = isOpenSuggestion && row.autoResolved && row.resolvedAt && isActive;
+
+    if (isResolvable) changes.set(row.id, now);
+    if (isReopenable) changes.set(row.id, null);
+  }
+
+  if (!changes.size) return changes;
+
+  const { entryID } = rows[0];
+  const { collectionID } = await resolveCommentEntry(database, workspaceID, entryID);
+  const update = (transaction: DatabaseTransaction, resolvedAt: Date | null) => {
+    const changed = rows.filter(({ id }) => changes.get(id) === resolvedAt);
+    const isAsRead = changed.map(({ id, updatedAt }) => {
+      return and(eq(commentThreads.id, id), isThreadUpdatedAt(updatedAt));
+    });
+    const isUnchanged = and(
+      isNull(commentThreads.appliedAt),
+      resolvedAt ? isNull(commentThreads.resolvedAt) : eq(commentThreads.autoResolved, true)
+    );
+
+    if (!changed.length) return [];
+
+    return transaction
+      .update(commentThreads)
+      .set({ resolvedAt, resolvedByID: null, autoResolved: Boolean(resolvedAt), updatedAt: now })
+      .where(and(or(...isAsRead), isUnchanged))
+      .returning({ id: commentThreads.id, resolvedAt: commentThreads.resolvedAt });
+  };
+
+  let written = new Map<string, Date | null>();
+
+  // One transaction, as each locks the workspace for its webhooks.
+  await writeCommentChange(
+    database,
+    workspaceID,
+    { entryID, collectionID },
+    async (transaction) => {
+      const updated = [...(await update(transaction, now)), ...(await update(transaction, null))];
+
+      written = new Map(updated.map(({ id, resolvedAt }) => [id, resolvedAt]));
+
+      return updated.map(({ id, resolvedAt }): CommentChange => {
+        const threadID = toCommentThreadID(id);
+
+        return {
+          key: id,
+          event: resolvedAt
+            ? { type: "comment.thread_resolved", data: { threadID, reason: "suggestion_outdated" } }
+            : { type: "comment.thread_reopened", data: { threadID } }
+        };
+      });
+    }
+  );
+
+  return written;
+};
 const fetchCommentThreads = async (
   database: DatabaseClient,
   workspaceID: string,
   filter: CommentThreadFilter
-): Promise<CommentThread[]> => {
+): Promise<{ threads: CommentThread[]; nextCursor: string | null }> => {
   const filters: SQL[] = [eq(commentThreads.workspaceID, workspaceID)];
 
   if (filter.entryID) filters.push(eq(commentThreads.entryID, toUUID(filter.entryID)));
   if (filter.threadID) filters.push(eq(commentThreads.id, toUUID(filter.threadID)));
 
+  // Auto-resolved too, as the read may reopen them.
   if (filter.resolved !== undefined) {
-    filters.push(
-      filter.resolved ? isNotNull(commentThreads.resolvedAt) : isNull(commentThreads.resolvedAt)
-    );
+    filters.push(filter.resolved ? isNotNull(commentThreads.resolvedAt) : isThreadOpen);
   }
 
   if (filter.cursor) {
@@ -165,11 +245,17 @@ const fetchCommentThreads = async (
     .where(and(...filters))
     .orderBy(asc(commentThreads.createdAt), asc(commentThreads.id))
     .$dynamic();
-  const threadRows = await (filter.limit === undefined
+  const rows = await (filter.limit === undefined
     ? threadQuery
     : threadQuery.limit(filter.limit + 1));
+  const threadRows = rows.slice(0, filter.limit);
+  // From unfiltered rows, so pages don't skip threads.
+  const nextCursor =
+    rows.length > threadRows.length
+      ? toCommentThreadID(threadRows[threadRows.length - 1].id)
+      : null;
 
-  if (!threadRows.length) return [];
+  if (!threadRows.length) return { threads: [], nextCursor };
 
   const commentRows = await database
     .select()
@@ -204,12 +290,16 @@ const fetchCommentThreads = async (
         ? getContentSnapshot(document).document
         : null;
 
-      return states.map((state, index) => {
+      return states.map((state, index): ThreadState => {
         const { suggestion, appliedAt } = threadRows[index];
 
         if (!content || !suggestion || appliedAt) return state;
 
-        return { ...state, status: getSuggestionStatus(content, suggestion) };
+        const rebased = rebaseSuggestion(content, suggestion);
+
+        return rebased
+          ? { ...state, status: "active", suggestion: rebased }
+          : { ...state, status: getStaleStatus(content, suggestion) };
       });
     }
   );
@@ -224,16 +314,40 @@ const fetchCommentThreads = async (
       .where(eq(commentThreads.id, threadRows[index].id));
   }
 
-  return threadRows.map((row, index) => {
-    return mapCommentThread(row, commentsByThreadID.get(row.id) || [], states[index]);
+  const changes = await syncAutoResolved(database, workspaceID, threadRows, states);
+  const threads = threadRows.map((row, index) => {
+    const { suggestion = row.suggestion } = states[index];
+    const resolvedAt = changes.get(row.id);
+    const isChanged = resolvedAt !== undefined;
+    const resolution = isChanged
+      ? { resolvedAt, resolvedByID: null, autoResolved: Boolean(resolvedAt) }
+      : {};
+    const thread = mapCommentThread(
+      { ...row, suggestion, ...resolution },
+      commentsByThreadID.get(row.id) || [],
+      states[index]
+    );
+
+    if (isChanged) filter.onChange?.(thread);
+
+    return thread;
   });
+
+  // The read may change the resolution; a page can have fewer threads.
+  const filtered = threads.filter(({ resolvedAt }) => {
+    return filter.resolved === undefined || Boolean(resolvedAt) === filter.resolved;
+  });
+
+  return { threads: filtered, nextCursor };
 };
 const fetchCommentThread = async (
   database: DatabaseClient,
   workspaceID: string,
   threadID: string
 ): Promise<CommentThread> => {
-  const [thread] = await fetchCommentThreads(database, workspaceID, { threadID });
+  const {
+    threads: [thread]
+  } = await fetchCommentThreads(database, workspaceID, { threadID });
 
   if (!thread) throw new ORPCError("NOT_FOUND", { message: "Comment thread not found" });
 
@@ -267,6 +381,7 @@ const threadTargetColumns = {
   schemaRevisionID: contents.schemaRevisionID,
   threadAuthorID: commentThreads.authorID,
   resolvedAt: commentThreads.resolvedAt,
+  autoResolved: commentThreads.autoResolved,
   anchorStart: commentThreads.anchorStart,
   anchorEnd: commentThreads.anchorEnd,
   quote: commentThreads.quote,
@@ -342,7 +457,12 @@ export {
 };
 export { filterWorkspaceMembershipIDs } from "./mentions";
 export { createAnchor } from "./anchors";
-export { createTextSuggestion, getSuggestionStatus, prepareSuggestion } from "./suggestions";
+export {
+  createTextSuggestion,
+  getStaleStatus,
+  prepareSuggestion,
+  rebaseSuggestion
+} from "./suggestions";
 export { writeCommentChange } from "./webhooks";
 export type { SuggestionPatch } from "./suggestions";
 export type { CommentEntryTarget, CommentTarget, CommentThreadTarget };

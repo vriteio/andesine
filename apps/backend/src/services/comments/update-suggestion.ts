@@ -1,4 +1,5 @@
-import { comments, commentThreads } from "@andesine/server/database";
+import { retainSuggestionAssets } from "@andesine/server/assets";
+import { comments, commentThreads, isThreadOpen } from "@andesine/server/database";
 import { type CommentThread } from "@andesine/contracts/entities";
 import { toCommentID, toCommentThreadID, toEntryID, toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
@@ -39,7 +40,9 @@ const updateSuggestion = withAuthorization<
   async ({ auth, authorization, database, input, resolved, workspaceID }) => {
     const memberID = getUserAuthorization(auth)?.memberID;
     const isAuthor = Boolean(memberID) && toUUID(memberID!) === resolved.threadAuthorID;
-    const isOpen = resolved.suggestion && !resolved.resolved && !resolved.appliedAt;
+    // Auto-resolved too; the update reopens it.
+    const isOpen =
+      resolved.suggestion && !resolved.appliedAt && (!resolved.resolved || resolved.autoResolved);
 
     if (!isAuthor) throw new ORPCError("FORBIDDEN", { message: "Only the author can edit" });
 
@@ -60,10 +63,17 @@ const updateSuggestion = withAuthorization<
     });
 
     await writeCommentChange(database, workspaceID, resolved, async (transaction) => {
+      await retainSuggestionAssets({
+        database: transaction,
+        workspaceID,
+        entryID: resolved.entryID,
+        blocks: suggestion.blocks
+      });
+
       const [comment] = await transaction
         .select({ id: comments.id })
         .from(comments)
-        .where(eq(comments.threadID, resolved.threadID))
+        .where(and(eq(comments.workspaceID, workspaceID), eq(comments.threadID, resolved.threadID)))
         .orderBy(asc(comments.createdAt), asc(comments.id))
         .limit(1);
 
@@ -72,28 +82,28 @@ const updateSuggestion = withAuthorization<
         .set({
           blockID: suggestion.blockIDs[0] ?? suggestion.after,
           suggestion,
+          resolvedAt: null,
+          resolvedByID: null,
+          autoResolved: false,
           updatedAt: new Date()
         })
         .where(
           and(
             eq(commentThreads.id, resolved.threadID),
             isNull(commentThreads.appliedAt),
-            isNull(commentThreads.resolvedAt)
+            isThreadOpen
           )
         )
         .returning({ id: commentThreads.id });
+      const threadID = toCommentThreadID(resolved.threadID);
 
       if (!updated) throw noOpenSuggestionError();
 
       return {
         key: comment.id,
-        event: {
-          type: "comment.updated",
-          data: {
-            threadID: toCommentThreadID(resolved.threadID),
-            commentID: toCommentID(comment.id)
-          }
-        }
+        event: resolved.resolved
+          ? { type: "comment.thread_reopened", data: { threadID } }
+          : { type: "comment.updated", data: { threadID, commentID: toCommentID(comment.id) } }
       };
     });
 

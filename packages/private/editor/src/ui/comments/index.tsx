@@ -8,10 +8,12 @@ import {
   For,
   on,
   onCleanup,
+  onMount,
   Show,
   untrack
 } from "solid-js";
 import { Card, IconButton } from "@andesine/components";
+import clsx from "clsx";
 import type { EditorComments, EditorCommentThread, ElementViews } from "#editor/client-types";
 import {
   type CommentTargetDraft,
@@ -32,7 +34,7 @@ import {
   placeThreads,
   refreshReach
 } from "./layout";
-import { syncCommentsPanel } from "./panel";
+import { scrollToThread, syncCommentsPanel } from "./panel";
 import { ThreadNavigation } from "./thread-navigation";
 
 interface CommentCardsProps {
@@ -43,6 +45,23 @@ interface CommentCardsProps {
 
 // The popover's padding (p-1) and border.
 const POPOVER_INSET = 4 + 1;
+
+/** The thread of the chip under the pointer; a ::before, so hit-tested by its box. */
+const getChipThread = (event: PointerEvent) => {
+  const target = event.target instanceof Element ? event.target : null;
+  const block = target?.closest("[data-suggestion-thread]");
+
+  if (!block) return null;
+
+  const chip = getComputedStyle(block, "::before");
+  const rect = block.getBoundingClientRect();
+  const right = rect.right - parseFloat(chip.right);
+  const isInRow = Math.abs(event.clientY - rect.top) <= parseFloat(chip.height) / 2;
+  const isOnChip =
+    isInRow && event.clientX <= right && event.clientX >= right - parseFloat(chip.width);
+
+  return isOnChip ? block.getAttribute("data-suggestion-thread") : null;
+};
 
 const CommentCards: Component<CommentCardsProps> = (props) => {
   const [layout, setLayout] = createSignal<CommentLayout | null>(null);
@@ -62,7 +81,9 @@ const CommentCards: Component<CommentCardsProps> = (props) => {
 
     return current && panel() ? { ...current, anchors: [] } : current;
   });
-  const placement = createMemo(() => placeThreads(shownLayout(), heights(), closedHeights()));
+  const placement = createMemo(() => {
+    return placeThreads(shownLayout(), heights(), closedHeights(), focusedThread());
+  });
   const cardTops = () => placement().tops;
   const groups = () => placement().buttons;
   // Keyed, so a button isn't replaced between a press and its click.
@@ -115,6 +136,7 @@ const CommentCards: Component<CommentCardsProps> = (props) => {
       resolved: false,
       quote: null,
       status: "active",
+      suggestion: null,
       comments: []
     };
 
@@ -177,18 +199,21 @@ const CommentCards: Component<CommentCardsProps> = (props) => {
       if (changesComments(transaction)) update();
     };
 
+    // `editor.view` is gone once the editor is destroyed.
+    const editorDOM = editor.view.dom;
+
     // Measures again when the threads change.
     threads();
     update();
     editor.on("transaction", updateOnChange);
-    editor.view.dom.addEventListener("scroll", refreshOnScroll, true);
-    resizeObserver.observe(editor.view.dom);
+    editorDOM.addEventListener("scroll", refreshOnScroll, true);
+    resizeObserver.observe(editorDOM);
     if (scrollContainer) resizeObserver.observe(scrollContainer);
     onCleanup(() => {
       cancelAnimationFrame(frame);
       cancelAnimationFrame(scrollFrame);
       editor.off("transaction", updateOnChange);
-      editor.view.dom.removeEventListener("scroll", refreshOnScroll, true);
+      editorDOM.removeEventListener("scroll", refreshOnScroll, true);
       resizeObserver.disconnect();
     });
   });
@@ -198,23 +223,68 @@ const CommentCards: Component<CommentCardsProps> = (props) => {
       const card = target?.closest("[data-comment-thread-card]");
       // Text only, as blocks are clicked to edit them.
       const highlight = target?.closest("[data-comment-text][data-comment-thread]");
-      const highlightID = highlight?.getAttribute("data-comment-thread") ?? null;
+      const chipID = getChipThread(event);
+      const highlightID = highlight?.getAttribute("data-comment-thread") ?? chipID;
       const threadID = card?.getAttribute("data-comment-thread-card") ?? highlightID;
 
       // Menus are outside their card.
       if (target?.closest("[data-comment-menu]")) return;
+
+      // Keeps focus out of the chip's block, e.g. a code editor.
+      if (chipID) event.preventDefault();
 
       // Leaving the draft drops it.
       if (threadID !== DRAFT_THREAD_ID) cancelDraft();
 
       if (highlightID) panel()?.activate(highlightID);
 
-      setFocusedFromText(!card && Boolean(highlight));
+      setFocusedFromText(!card && Boolean(highlightID));
       setFocusedThread(threadID);
     };
 
     document.addEventListener("pointerdown", focus);
     onCleanup(() => document.removeEventListener("pointerdown", focus));
+  });
+  onMount(() => {
+    const link = (threadID: string | null, linked: boolean) => {
+      if (!threadID) return;
+
+      const selector = `[data-comment-thread-card="${CSS.escape(threadID)}"]`;
+
+      for (const element of document.querySelectorAll(selector)) {
+        // An attribute, as the card sets its classes again as it moves.
+        element.toggleAttribute("data-comment-linked", linked);
+      }
+    };
+    // Links hovered content and its card, both ways.
+    const hover = (event: PointerEvent) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const range = target?.closest("[data-comment-text][data-comment-thread]");
+      const card = target?.closest("[data-comment-thread-card]");
+      const threadID = range?.getAttribute("data-comment-thread") ?? getChipThread(event);
+      const cardID = card?.getAttribute("data-comment-thread-card") ?? null;
+
+      if (threadID !== hovered) link(hovered, false);
+
+      // On every move, as a redrawn card loses the attribute.
+      link(threadID, true);
+      hovered = threadID;
+
+      if (cardID !== hoveredCard && !props.editor.isDestroyed) {
+        hoveredCard = cardID;
+        updateComments(props.editor, { hovered: cardID });
+      }
+    };
+
+    let hovered: string | null = null;
+    let hoveredCard: string | null = null;
+
+    // Not pointerover, as the chip is part of its block.
+    document.addEventListener("pointermove", hover);
+    onCleanup(() => {
+      document.removeEventListener("pointermove", hover);
+      link(hovered, false);
+    });
   });
   const activeThread = createMemo(() => {
     const opened = openedGroup();
@@ -229,7 +299,12 @@ const CommentCards: Component<CommentCardsProps> = (props) => {
 
   createEffect(
     on(activeThread, (active) => {
-      if (!props.editor.isDestroyed) updateComments(props.editor, { active });
+      if (props.editor.isDestroyed) return;
+
+      updateComments(props.editor, { active });
+
+      // The panel scrolls to its own.
+      if (!panel()) scrollToThread(props.editor, layout(), active);
     })
   );
   syncCommentsPanel({
@@ -388,7 +463,10 @@ const CommentCards: Component<CommentCardsProps> = (props) => {
                   {(thread) => (
                     // Opaque, so text under it doesn't show through.
                     <ThreadCard
-                      class="absolute box-content p-1 overflow-hidden rounded-2xl bg-gray-50 pointer-events-auto"
+                      class={clsx(
+                        "absolute box-content p-1 overflow-hidden rounded-2xl bg-gray-50 pointer-events-auto transition-[top,opacity]",
+                        focusedThread() && focusedThread() !== threadID && "opacity-60"
+                      )}
                       style={{
                         left: `${current().controlsLeft + BLOCK_CONTROL_SIZE + GUTTER_SPACE - INLINE_INSET}px`,
                         top: `${(cardTops()[threadID] ?? 0) - INLINE_INSET}px`

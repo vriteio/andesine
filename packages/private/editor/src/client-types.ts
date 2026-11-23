@@ -279,16 +279,34 @@ interface EditorComment {
   /** Own, or any with the resolve permission. */
   deletable: boolean;
 }
+interface EditorSuggestionPatch {
+  /** The replaced blocks; empty for an insertion. */
+  blockIDs: string[];
+  /** For an insertion: the block it goes after. */
+  after: string | null;
+  blocks: JSONContent[];
+  /** A suggested entry title, instead of blocks. */
+  title?: string;
+}
+interface EditorCommentSuggestion extends Omit<EditorSuggestionPatch, "title"> {
+  base: JSONContent[];
+  /** A suggested entry title; its blocks are empty. */
+  title?: { base: string; suggested: string };
+  applied: boolean;
+}
 interface EditorCommentThread {
   id: string;
   /** Encoded Y.js relative positions; null for a block. */
   anchor: { start: string; end: string } | null;
   blockID: string | null;
   resolved: boolean;
+  /** Resolved as its suggestion can't apply; it reopens once it can. */
+  autoResolved?: boolean;
   /** Null for a block. */
   quote: string | null;
-  /** Outdated once the text changes, orphaned once it's removed. */
+  /** Outdated once the text or blocks change, orphaned once they're removed. */
   status: "active" | "outdated" | "orphaned";
+  suggestion: EditorCommentSuggestion | null;
   /** Oldest first. */
   comments: EditorComment[];
 }
@@ -327,19 +345,42 @@ interface EditorComments {
   /** Also in read-only editors. */
   canComment: boolean;
   canResolve: boolean;
+  canApply: boolean;
+  /** Draws open suggestions in the content. */
+  showSuggestions: boolean;
   authorName: string;
   authorImage?: string;
   /** A rejection keeps the field open. */
-  create(input: EditorCommentInput): Promise<void>;
-  reply(threadID: string, content: string): Promise<void>;
-  update(commentID: string, content: string): Promise<void>;
+  create(input: EditorCommentInput): Promise<unknown>;
+  reply(threadID: string, content: string): Promise<unknown>;
+  update(commentID: string, content: string): Promise<unknown>;
   /** Deleting the first comment deletes the thread. */
-  remove(commentID: string): Promise<void>;
-  resolve(threadID: string): Promise<void>;
-  reopen(threadID: string): Promise<void>;
+  remove(commentID: string): Promise<unknown>;
+  resolve(threadID: string): Promise<unknown>;
+  reopen(threadID: string): Promise<unknown>;
+  apply(threadID: string): Promise<unknown>;
+  /** Marks the thread only; the editor makes the change. */
+  setApplied(threadID: string, applied: boolean): Promise<unknown>;
   /** While set, the editor shows no cards. */
   panel?: EditorCommentsPanel;
   formatTime(date: string): string;
+}
+interface EditorOwnSuggestion extends EditorSuggestionPatch {
+  threadID: string;
+  /** The blocks it was suggested against. */
+  base: JSONContent[];
+  titleBase?: string;
+  status: EditorCommentThread["status"];
+  /** With a note or replies, so it isn't merged into another suggestion. */
+  discussed: boolean;
+}
+/** Edits go to a local fork of the document and are saved as the user's suggestions. */
+interface EditorSuggesting {
+  /** The user's open suggestions, oldest first; active ones are loaded into the fork. */
+  own: EditorOwnSuggestion[];
+  create(patch: EditorSuggestionPatch): Promise<string>;
+  update(threadID: string, patch: EditorSuggestionPatch): Promise<unknown>;
+  remove(threadID: string): Promise<unknown>;
 }
 interface EditorProps {
   images?: EditorImages;
@@ -356,6 +397,7 @@ interface EditorProps {
   elementViews?: ElementViews;
   blockActions?: BlockActions;
   comments?: EditorComments;
+  suggesting?: EditorSuggesting;
   staticTitle?: string;
   diff?: EditorDiff;
   providerAttempt?: number;
@@ -391,7 +433,11 @@ export type {
   EditorCommentDraft,
   EditorCommentPlace,
   EditorComments,
+  EditorCommentSuggestion,
   EditorCommentsPanel,
+  EditorOwnSuggestion,
+  EditorSuggesting,
+  EditorSuggestionPatch,
   EditorCommentTarget,
   EditorCommentThread,
   EditorIcons,

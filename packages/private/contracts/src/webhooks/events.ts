@@ -130,7 +130,9 @@ const webhookEventSchemas = {
   }),
   "comment.thread_resolved": entryEventType.extend({
     type: z.literal("comment.thread_resolved"),
-    data: commentThreadDataType.extend({ reason: z.enum(["resolved", "suggestion_applied"]) })
+    data: commentThreadDataType.extend({
+      reason: z.enum(["resolved", "suggestion_applied", "suggestion_outdated"])
+    })
   }),
   "comment.thread_reopened": entryEventType.extend({
     type: z.literal("comment.thread_reopened"),

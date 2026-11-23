@@ -499,16 +499,19 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
       setTriggerAvailable(false);
     });
 
+    // `editor.view` is gone once the editor is destroyed.
+    const editorDOM = editor.view.dom;
+
     scrollContainer?.addEventListener("pointermove", updatePosition);
     scrollContainer?.addEventListener("pointerleave", handlePointerLeave);
-    editor.view.dom.addEventListener("scroll", updateBlockLayout, true);
+    editorDOM.addEventListener("scroll", updateBlockLayout, true);
     editor.on("transaction", updateDocLayout);
     onCleanup(() => {
       hideTrigger.clear();
       moveTrigger.clear();
       scrollContainer?.removeEventListener("pointermove", updatePosition);
       scrollContainer?.removeEventListener("pointerleave", handlePointerLeave);
-      editor.view.dom.removeEventListener("scroll", updateBlockLayout, true);
+      editorDOM.removeEventListener("scroll", updateBlockLayout, true);
       editor.off("transaction", updateDocLayout);
       unregisterSelectionHandler();
     });

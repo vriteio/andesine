@@ -34,6 +34,7 @@ const CommentsPanel: Component = () => {
         resolved: false,
         quote: current.quote,
         status: "active",
+        suggestion: null,
         comments: []
       }
     );

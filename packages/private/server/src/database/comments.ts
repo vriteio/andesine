@@ -1,5 +1,7 @@
 import type { ContentNode } from "@andesine/document";
+import { eq, isNull, or, sql } from "drizzle-orm";
 import {
+  boolean,
   foreignKey,
   index,
   jsonb,
@@ -18,6 +20,8 @@ interface CommentSuggestionData {
   after: string | null;
   base: ContentNode[];
   blocks: ContentNode[];
+  /** A suggested entry title; its block patch is empty. */
+  title?: { base: string; suggested: string };
 }
 
 const commentThreads = pgTable(
@@ -35,6 +39,8 @@ const commentThreads = pgTable(
     authorID: uuid("author_id"),
     resolvedAt: timestamp("resolved_at", { withTimezone: true }),
     resolvedByID: uuid("resolved_by_id"),
+    /** Resolved as its suggestion couldn't apply; it reopens once it applies again. */
+    autoResolved: boolean("auto_resolved").notNull().default(false),
     ...timestamps
   },
   (table) => [
@@ -83,5 +89,12 @@ const comments = pgTable(
   ]
 );
 
-export { comments, commentThreads };
+/** Open, or auto-resolved, which a read reopens once it applies again. */
+const isThreadOpen = or(isNull(commentThreads.resolvedAt), eq(commentThreads.autoResolved, true))!;
+/** As read; reads drop the column's microseconds. */
+const isThreadUpdatedAt = (updatedAt: Date) => {
+  return sql`date_trunc('milliseconds', ${commentThreads.updatedAt}) = ${updatedAt}`;
+};
+
+export { comments, commentThreads, isThreadOpen, isThreadUpdatedAt };
 export type { CommentSuggestionData };

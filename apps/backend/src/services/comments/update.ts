@@ -1,4 +1,4 @@
-import { comments } from "@andesine/server/database";
+import { comments, commentThreads } from "@andesine/server/database";
 import { type CommentThread } from "@andesine/contracts/entities";
 import { toCommentID, toCommentThreadID, toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
@@ -46,6 +46,11 @@ const updateComment = withAuthorization<UpdateCommentInput, CommentTarget, Comme
           updatedAt: new Date()
         })
         .where(eq(comments.id, resolved.commentID));
+      // Bumps the thread, so a pending join sees the change.
+      await transaction
+        .update(commentThreads)
+        .set({ updatedAt: new Date() })
+        .where(eq(commentThreads.id, resolved.threadID));
 
       return {
         key: resolved.commentID,

@@ -1,5 +1,13 @@
 import clsx from "clsx";
-import { type Component, createEffect, createSignal, For, type JSX, Show } from "solid-js";
+import {
+  children,
+  type Component,
+  createEffect,
+  createSignal,
+  For,
+  type JSX,
+  Show
+} from "solid-js";
 import {
   createRef,
   DropdownArea,
@@ -9,8 +17,10 @@ import {
   ScrollShadow
 } from "@andesine/components";
 import type { EditorComment, EditorComments, EditorCommentThread } from "#editor/client-types";
+import { canToggleResolved } from "#editor/lib/suggestion-status";
 import { CommentEditor } from "./comment-editor";
 import { CommentText } from "./comment-text";
+import { SuggestionChange } from "./suggestion-change";
 
 interface AuthorIconProps {
   image?: string;
@@ -50,6 +60,8 @@ interface CommentCardProps {
   onResolve?(): void;
   floating?: boolean;
   onPanel?: boolean;
+  /** Below the text, e.g. a suggested change. */
+  children?: JSX.Element;
 }
 
 const THREAD_CARD_WIDTH = 288;
@@ -76,6 +88,7 @@ const CommentCard: Component<CommentCardProps> = (props) => {
   const [menuOpened, setMenuOpened] = createSignal(false);
   const [editing, setEditing] = createSignal(false);
   const [deleting, setDeleting] = createSignal(false);
+  const content = children(() => props.children);
   const options = (): MenuItem[][] => {
     const items: MenuItem[] = [];
 
@@ -120,7 +133,7 @@ const CommentCard: Component<CommentCardProps> = (props) => {
     <DropdownArea>
       <div
         class={clsx(
-          "group relative flex flex-col gap-1 py-1 pl-0.5 pr-0.5 rounded-lg",
+          "comment-item group relative flex flex-col gap-1 py-1 pl-0.5 pr-0.5 rounded-lg",
           !editing() &&
             "media-mouse:hover:bg-gradient-to-r media-mouse:hover:from-gray-500/10 media-mouse:hover:to-transparent",
           menuOpened() && "bg-gradient-to-r from-gray-500/10 to-transparent",
@@ -164,7 +177,11 @@ const CommentCard: Component<CommentCardProps> = (props) => {
         </span>
         <Show
           when={editing()}
-          fallback={<CommentText class="pl-7" content={props.comment.content} />}
+          fallback={
+            <Show when={props.comment.content}>
+              <CommentText class="pl-7" content={props.comment.content} />
+            </Show>
+          }
         >
           <div class="pl-7">
             <CommentEditor
@@ -179,6 +196,9 @@ const CommentCard: Component<CommentCardProps> = (props) => {
               }}
             />
           </div>
+        </Show>
+        <Show when={content()}>
+          <div class="pl-7">{content()}</div>
         </Show>
       </div>
     </DropdownArea>
@@ -235,7 +255,7 @@ const ThreadCard: Component<ThreadCardProps> = (props) => {
               </span>
             </Show>
           )}
-          <Show when={props.comments.canResolve && !props.draft}>
+          <Show when={props.comments.canResolve && !props.draft && canToggleResolved(props.thread)}>
             <IconButton
               class="ml-auto flex-row-reverse pr-1"
               icon={props.thread.resolved ? "i-lucide:undo-2" : "i-lucide:check"}
@@ -275,7 +295,19 @@ const ThreadCard: Component<ThreadCardProps> = (props) => {
                   onResolve={props.thread.resolved ? undefined : () => resolve()}
                   continues={index() < shownComments().length - 1 || (props.focused && canReply())}
                   first={index() === 0}
-                />
+                >
+                  <Show when={index() === 0 && props.thread.suggestion}>
+                    {(suggestion) => (
+                      <SuggestionChange
+                        thread={props.thread}
+                        suggestion={suggestion()}
+                        comments={props.comments}
+                        rejecting={resolving()}
+                        onReject={() => resolve()}
+                      />
+                    )}
+                  </Show>
+                </CommentCard>
                 <Show when={index() === 0 && hiddenCount()}>
                   {/* No handler: a press on the thread focuses it. */}
                   <button

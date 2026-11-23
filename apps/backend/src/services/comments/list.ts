@@ -1,5 +1,5 @@
 import { type CommentThread } from "@andesine/contracts/entities";
-import { type Page, toPage } from "#backend/lib/api/pagination";
+import { type Page } from "#backend/lib/api/pagination";
 import { fetchCommentThreads, resolveCommentEntry } from "#backend/lib/comments";
 import { withAuthorization } from "#backend/lib/policy";
 import { DEFAULT_PAGE_SIZE } from "@andesine/contracts/limits";
@@ -9,6 +9,8 @@ interface ListCommentThreadsInput {
   resolved?: boolean;
   cursor?: string;
   limit?: number;
+  /** Called for each thread the read auto-resolves or reopens. */
+  onChange?(thread: CommentThread): void;
 }
 
 const listCommentThreads = withAuthorization<
@@ -26,9 +28,12 @@ const listCommentThreads = withAuthorization<
   },
   async ({ database, input, workspaceID }) => {
     const limit = input.limit ?? DEFAULT_PAGE_SIZE;
-    const threads = await fetchCommentThreads(database, workspaceID, { ...input, limit });
+    const { threads, nextCursor } = await fetchCommentThreads(database, workspaceID, {
+      ...input,
+      limit
+    });
 
-    return toPage(threads, limit);
+    return { data: threads, pagination: { hasMore: nextCursor !== null, nextCursor } };
   }
 );
 

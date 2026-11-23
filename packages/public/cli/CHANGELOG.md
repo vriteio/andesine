@@ -3,9 +3,10 @@
 ## 0.14.0
 
 - `api comments` commands for comment threads: list, create, reply, update, delete, resolve, and
-  suggest, update and apply suggestions.
+  suggest, update, apply and mark applied suggestions.
 - `andesine mcp` has comment tools: `list_comments`, `add_comment` (mentions by member email),
-  `suggest_edit`, `resolve_comment`, `apply_suggestion`, and `list_members`.
+  `suggest_edit`, `resolve_comment`, `apply_suggestion`, and `list_members`. `suggest_edit` adds
+  to your own open suggestion on the same blocks while it has no note or replies.
 - Requires `@andesine/sdk` 0.12.0.
 
 ## 0.13.0

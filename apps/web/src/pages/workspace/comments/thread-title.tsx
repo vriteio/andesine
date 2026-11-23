@@ -1,5 +1,11 @@
 import { IconButton } from "@andesine/components";
-import type { EditorCommentPlace, EditorComments, EditorCommentThread } from "@andesine/editor";
+import {
+  canToggleResolved,
+  type EditorCommentPlace,
+  type EditorComments,
+  type EditorCommentSuggestion,
+  type EditorCommentThread
+} from "@andesine/editor";
 import clsx from "clsx";
 import { type Component, createSignal, type JSX, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
@@ -16,10 +22,21 @@ interface ThreadKind {
   icon: string | (() => JSX.Element);
 }
 
+const getSuggestionLabel = ({ base, blocks, title }: EditorCommentSuggestion) => {
+  if (title) return "Suggested title";
+
+  if (!base.length) return "Suggested insertion";
+
+  return blocks.length ? "Suggested edit" : "Suggested deletion";
+};
 const ThreadTitle: Component<ThreadTitleProps> = (props) => {
   const [resolving, setResolving] = createSignal(false);
   const kind = (): ThreadKind => {
-    if (props.thread.quote) return { label: `“${props.thread.quote}”`, icon: "i-tabler:quote" };
+    const { quote, suggestion } = props.thread;
+
+    if (quote) return { label: `“${quote}”`, icon: "i-tabler:quote" };
+
+    if (suggestion) return { label: getSuggestionLabel(suggestion), icon: "i-lucide:file-diff" };
 
     return props.block ?? { label: "Removed block", icon: "i-lucide:square-dashed" };
   };
@@ -33,7 +50,10 @@ const ThreadTitle: Component<ThreadTitleProps> = (props) => {
 
     return typeof icon === "string" ? undefined : icon;
   };
+  // A suggestion's card shows its state.
   const status = () => {
+    if (props.thread.suggestion) return "";
+
     return { active: "", outdated: "Outdated", orphaned: "Removed" }[props.thread.status];
   };
   const count = () => props.thread.comments.length;
@@ -86,7 +106,7 @@ const ThreadTitle: Component<ThreadTitleProps> = (props) => {
         >
           {kind().label}
         </span>
-        <Show when={props.comments.canResolve && count() > 0}>
+        <Show when={props.comments.canResolve && count() > 0 && canToggleResolved(props.thread)}>
           <div
             class={clsx(
               "-my-0.5 shrink-0",

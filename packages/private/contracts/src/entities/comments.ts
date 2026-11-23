@@ -9,7 +9,7 @@ const commentAnchorType = z.object({
 const commentAnchorStatusType = z
   .enum(["active", "outdated", "orphaned"])
   .describe(
-    "active: the anchor and suggested blocks match; outdated: the anchored text or suggested blocks changed; orphaned: the text or blocks are gone"
+    "active: the anchor matches, or the suggestion applies on top of edits made since; outdated: the anchored text changed, or the suggestion conflicts with edits of the same words; orphaned: the text or blocks are gone. Open suggestions that no longer apply are resolved, and reopen when they apply again"
   );
 const commentContentType = z.string().trim().min(1).max(10000);
 const commentSuggestionType = z.object({
@@ -21,7 +21,14 @@ const commentSuggestionType = z.object({
     .nullable()
     .describe("Block after which an insertion goes, or null for the start of the entry"),
   base: z.array(contentNodeType).describe("The replaced blocks when the suggestion was saved"),
-  blocks: z.array(contentNodeType).describe("Suggested blocks, empty for a deletion")
+  blocks: z.array(contentNodeType).describe("Suggested blocks, empty for a deletion"),
+  title: z
+    .object({
+      base: z.string().describe("The entry title when the suggestion was saved"),
+      suggested: z.string().describe("Suggested entry title")
+    })
+    .optional()
+    .describe("Suggested entry title; its blocks are empty")
 });
 const commentType = z.object({
   id: id().describe("ID of the comment"),
@@ -45,6 +52,11 @@ const commentThreadType = z.object({
   authorID: id().nullable().describe("Membership that created the thread, or null when removed"),
   resolvedAt: z.iso.datetime().nullable().describe("Time when the thread was resolved"),
   resolvedByID: id().nullable().describe("Membership that resolved the thread"),
+  autoResolved: z
+    .boolean()
+    .describe(
+      "Whether the thread was resolved as its suggestion can't apply; it reopens once it can"
+    ),
   createdAt: z.iso.datetime().describe("Time when the thread was created"),
   comments: z.array(commentType).describe("Comments of the thread, oldest first")
 });

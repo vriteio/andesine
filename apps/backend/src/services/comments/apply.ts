@@ -7,7 +7,7 @@ import { getContentSnapshot } from "#backend/collaboration";
 import {
   type CommentThreadTarget,
   fetchCommentThread,
-  getSuggestionStatus,
+  rebaseSuggestion,
   resolveCommentThreadTarget,
   withEntryDocument,
   writeCommentChange
@@ -51,6 +51,8 @@ const applyCommentSuggestion = withAuthorization<
       .returning({ suggestion: commentThreads.suggestion });
     const suggestion = claimed?.suggestion;
 
+    let applied = suggestion;
+
     if (!suggestion) {
       throw new ORPCError("BAD_REQUEST", { message: "The thread has no open suggestion" });
     }
@@ -64,9 +66,11 @@ const applyCommentSuggestion = withAuthorization<
           getContentSnapshot
         );
 
-        if (getSuggestionStatus(document, suggestion) !== "active") {
+        const rebased = rebaseSuggestion(document, suggestion);
+
+        if (!rebased) {
           throw new ORPCError("CONFLICT", {
-            message: "The blocks changed since the suggestion was saved",
+            message: "The content changed since the suggestion was saved",
             data: { hints: ["Update the suggestion for the current content, or edit the entry"] }
           });
         }
@@ -79,20 +83,25 @@ const applyCommentSuggestion = withAuthorization<
               {
                 id: entryID,
                 expectedHash: hash,
-                operations: [
-                  {
-                    type: "replaceBlocks",
-                    blockIDs: suggestion.blockIDs,
-                    after: suggestion.after,
-                    blocks: suggestion.blocks
-                  }
-                ]
+                ...(rebased.title
+                  ? { name: rebased.title.suggested, expectedName: rebased.title.base }
+                  : {
+                      operations: [
+                        {
+                          type: "replaceBlocks" as const,
+                          blockIDs: rebased.blockIDs,
+                          after: rebased.after,
+                          blocks: rebased.blocks
+                        }
+                      ]
+                    })
               }
             ]
           });
 
           if (error) throw error;
 
+          applied = rebased;
           break;
         } catch (error) {
           const isStale =
@@ -116,8 +125,11 @@ const applyCommentSuggestion = withAuthorization<
       await transaction
         .update(commentThreads)
         .set({
+          // As applied, so the thread shows the actual change.
+          suggestion: applied,
           appliedAt: now,
           resolvedAt: now,
+          autoResolved: false,
           resolvedByID: memberID ? toUUID(memberID) : null,
           updatedAt: now
         })

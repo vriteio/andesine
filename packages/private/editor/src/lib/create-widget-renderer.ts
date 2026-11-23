@@ -14,6 +14,7 @@ interface WidgetComponentProps {
 }
 interface WidgetRendererConfig<Props extends object> extends WidgetDecorationOptions {
   class?: string;
+  attributes?: Record<string, string>;
   editor: Editor;
   key: string;
   owner: unknown;
@@ -26,6 +27,8 @@ interface SolidWidgetRenderer extends WidgetRenderer {
 }
 
 const SOLID_WIDGET_CACHE = Symbol("solidWidgetCache");
+// A prop, so a class change updates the element instead of redrawing it.
+const CLASS_PROP = "widgetClass";
 const createReactiveProps = <Props extends object>(initialProps: Props) => {
   const [props, setProps] = createSignal(initialProps);
   const reactiveProps = new Proxy({} as Props, {
@@ -43,6 +46,7 @@ const createWidgetRenderer = <Props extends object>(
 ): WidgetDecoration => {
   const {
     class: className,
+    attributes = {},
     editor,
     key,
     owner,
@@ -58,7 +62,7 @@ const createWidgetRenderer = <Props extends object>(
     editor,
     key,
     pos,
-    props,
+    props: { ...props, [CLASS_PROP]: className },
     context: (getPos) => ({ editor, getPos }),
     create: (renderProps) => {
       const element = document.createElement(tag);
@@ -72,15 +76,29 @@ const createWidgetRenderer = <Props extends object>(
         }
       );
 
-      element.contentEditable = "false";
+      // Only its own classes change, as ProseMirror adds one too.
+      const setClass = (next = "") => {
+        element.classList.remove(...shownClass.split(" ").filter(Boolean));
+        element.classList.add(...next.split(" ").filter(Boolean));
+        shownClass = next;
+      };
 
-      if (className) element.className = className;
+      let shownClass = "";
+
+      element.contentEditable = "false";
+      setClass(className);
+
+      for (const [name, value] of Object.entries(attributes)) element.setAttribute(name, value);
 
       return {
         destroy,
         element,
         updateProps(updatedProps) {
-          reactiveProps.setProps(() => updatedProps as Props & WidgetComponentProps);
+          setClass(updatedProps[CLASS_PROP] as string | undefined);
+          // Merged, as deferred updates come without the editor and position.
+          reactiveProps.setProps(
+            (previous) => ({ ...previous, ...updatedProps }) as Props & WidgetComponentProps
+          );
         }
       };
     },

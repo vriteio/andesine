@@ -21,13 +21,17 @@ import {
   lineNumbers,
   RectangleMarker,
   type DecorationSet,
-  type ViewUpdate
+  type ViewUpdate,
+  WidgetType
 } from "@codemirror/view";
 import type { HocuspocusProvider } from "@hocuspocus/provider";
 import type { NodeViewRenderer } from "@tiptap/core";
+import type { Decoration as ProseMirrorDecoration } from "@tiptap/pm/view";
 import { Selection, TextSelection } from "@tiptap/pm/state";
 import { untrack } from "solid-js";
 import type { EditorDiff } from "../../../client-types";
+import type { CodeChange } from "../../../lib/suggestion-diff";
+import { getSuggestionAttributes, markSuggestion } from "../../../lib/suggestion-render";
 import { findCodeLanguage } from "../../../lib/code-languages";
 import { isPositionInInheritedField } from "../../block-utils";
 import { createBlockRangeSelection } from "../../../extensions/block-selection";
@@ -49,6 +53,42 @@ interface CodeBlockViewOptions {
   diff?: EditorDiff;
   notify?(type: "success" | "error", text: string): void;
 }
+type DecorationSpecs = ReadonlyArray<Pick<ProseMirrorDecoration, "spec">>;
+
+/** A suggestion's removed code, shown in place. */
+class SuggestionCodeWidget extends WidgetType {
+  constructor(
+    readonly text: string,
+    readonly className: string,
+    readonly threadID?: string
+  ) {
+    super();
+  }
+
+  eq(other: SuggestionCodeWidget) {
+    const isSameThread = other.threadID === this.threadID;
+
+    return isSameThread && other.text === this.text && other.className === this.className;
+  }
+
+  toDOM() {
+    const element = markSuggestion(document.createElement("span"), this.className, this.threadID);
+
+    element.textContent = this.text;
+
+    return element;
+  }
+}
+
+/** From the suggestion preview's node decoration spec. */
+const getCodeChanges = (decorations: DecorationSpecs) => {
+  const spec = decorations.find(({ spec }) => spec.codeDiff)?.spec;
+
+  return {
+    changes: (spec?.codeDiff as CodeChange[] | undefined) ?? [],
+    threadID: spec?.threadID as string | undefined
+  };
+};
 const setShades = StateEffect.define<DecorationSet>();
 const shades = StateField.define<DecorationSet>({
   create: () => Decoration.none,
@@ -99,6 +139,7 @@ const createCodeBlockViewRenderer =
     const language = new Compartment();
     const writable = new Compartment();
     let node = props.node;
+    let outerDecorations: DecorationSpecs = props.decorations;
     let updating = false;
     let forwarding = false;
     let destroyed = false;
@@ -422,6 +463,25 @@ const createCodeBlockViewRenderer =
           );
         }
       }
+
+      const suggestion = getCodeChanges(outerDecorations);
+
+      for (const change of suggestion.changes) {
+        const className = `suggestion-${change.change}`;
+        const to = Math.min("at" in change ? change.at : change.to, text.length);
+
+        if ("at" in change) {
+          const widget = new SuggestionCodeWidget(change.text, className, suggestion.threadID);
+
+          decorations.push(Decoration.widget({ widget, side: -1 }).range(to));
+        } else if (change.from < to) {
+          const attributes = getSuggestionAttributes(className, suggestion.threadID);
+
+          decorations.push(
+            Decoration.mark({ class: className, attributes }).range(change.from, to)
+          );
+        }
+      }
       const nextShades = Decoration.set(decorations, true);
       const main = code.state.selection.main;
       const currentRange = code.state.field(mixedRange);
@@ -517,9 +577,10 @@ const createCodeBlockViewRenderer =
 
     return {
       dom,
-      update(next) {
+      update(next, decorations) {
         if (next.type !== node.type) return false;
         node = next;
+        outerDecorations = decorations;
         scheduleSync();
         return true;
       },

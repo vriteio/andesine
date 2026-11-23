@@ -112,14 +112,15 @@ const webhookEventDefinitions = {
   "comment.thread_resolved": {
     label: "Comment thread resolved",
     description:
-      "A comment thread was resolved, directly or by applying a suggestion. Applying a suggestion also saves the entry content.",
+      "A comment thread was resolved, directly, by applying a suggestion, or as its suggestion no longer applies (reason suggestion_outdated). Applying a suggestion also saves the entry content.",
     category: "comments",
     requiredPermissions: ["read:entries"],
     filters: ["collections"]
   },
   "comment.thread_reopened": {
     label: "Comment thread reopened",
-    description: "A resolved comment thread was reopened.",
+    description:
+      "A resolved comment thread was reopened, directly, by undoing an applied suggestion, by updating an outdated suggestion, or as it applies again.",
     category: "comments",
     requiredPermissions: ["read:entries"],
     filters: ["collections"]

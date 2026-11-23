@@ -55,7 +55,7 @@ interface CommentEditorProps {
   onCancel?(): void;
   onStep?(step: number): void;
   /** A rejection keeps the text. */
-  onSubmit(content: string): Promise<void>;
+  onSubmit(content: string): Promise<unknown>;
 }
 
 const CommentEditor: Component<CommentEditorProps> = (props) => {

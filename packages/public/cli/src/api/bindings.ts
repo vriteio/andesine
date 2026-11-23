@@ -59,6 +59,8 @@ const bindings: Record<
     client.comments.reply(input as OperationInput<"comments.reply">, options),
   "comments.resolve": (client, input, options) =>
     client.comments.resolve(input as OperationInput<"comments.resolve">, options),
+  "comments.setApplied": (client, input, options) =>
+    client.comments.setApplied(input as OperationInput<"comments.setApplied">, options),
   "comments.suggest": (client, input, options) =>
     client.comments.suggest(input as OperationInput<"comments.suggest">, options),
   "comments.update": (client, input, options) =>

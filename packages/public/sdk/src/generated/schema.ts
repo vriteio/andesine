@@ -774,7 +774,9 @@ export interface paths {
     put?: never;
     /**
      * Resolve or reopen a comment thread
-     * @description Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     * @description Resolves a thread, or reopens it with resolved false. A suggestion that no longer applies to the current content can't be reopened; update it instead, which reopens it.
+     *
+     *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
      */
     post: operations["comments.resolve"];
     delete?: never;
@@ -794,7 +796,7 @@ export interface paths {
     put?: never;
     /**
      * Suggest a change
-     * @description Starts a comment thread that suggests replacing consecutive blocks (blockIDs) with other blocks, or inserting blocks (after). Block IDs come from entries.get with contentFormat blocks. People with permission to update the entry can apply it.
+     * @description Starts a comment thread that suggests replacing consecutive blocks (blockIDs) with other blocks, inserting blocks (after), or a new entry title (title). Block IDs come from entries.get with contentFormat blocks. People with permission to update the entry can apply it. When your own open suggestion without replies or a note overlaps it, that thread gets the new change, which wins where both change the same words, and returns.
      *
      *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
      */
@@ -815,7 +817,7 @@ export interface paths {
     get?: never;
     /**
      * Update a suggestion
-     * @description Replaces the change of your own open suggestion, against the current content.
+     * @description Replaces the change of your own suggestion, against the current content. A suggestion resolved because it no longer applied reopens.
      *
      *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
      */
@@ -838,11 +840,33 @@ export interface paths {
     put?: never;
     /**
      * Apply a suggestion
-     * @description Replaces the blocks with the suggested ones and resolves the thread. Fails when the blocks changed since the suggestion was saved.
+     * @description Replaces the blocks or the title with the suggested ones and resolves the thread. Edits made since the suggestion was saved are kept; fails when they change the same words, attributes or blocks.
      *
      *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
      */
     post: operations["comments.apply"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/comment-threads/{id}/applied": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Mark a suggestion applied
+     * @description For editors that change the content themselves: marks an open suggestion applied and resolves it, or reopens an applied one, e.g. on undo. The content isn't changed.
+     *
+     *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     */
+    put: operations["comments.setApplied"];
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -2854,7 +2878,7 @@ export interface components {
             collectionID: string | null;
             threadID: string;
             /** @enum {string} */
-            reason: "resolved" | "suggestion_applied";
+            reason: "resolved" | "suggestion_applied" | "suggestion_outdated";
           };
         }
       | {
@@ -4089,7 +4113,7 @@ export interface components {
       /** @description Commented text when the thread was created */
       quote: string | null;
       /**
-       * @description active: the anchor and suggested blocks match; outdated: the anchored text or suggested blocks changed; orphaned: the text or blocks are gone
+       * @description active: the anchor matches, or the suggestion applies on top of edits made since; outdated: the anchored text changed, or the suggestion conflicts with edits of the same words; orphaned: the text or blocks are gone. Open suggestions that no longer apply are resolved, and reopen when they apply again
        * @enum {string}
        */
       status: "active" | "outdated" | "orphaned";
@@ -4105,6 +4129,13 @@ export interface components {
         base: components["schemas"]["ContentNode"][];
         /** @description Suggested blocks, empty for a deletion */
         blocks: components["schemas"]["ContentNode"][];
+        /** @description Suggested entry title; its blocks are empty */
+        title?: {
+          /** @description The entry title when the suggestion was saved */
+          base: string;
+          /** @description Suggested entry title */
+          suggested: string;
+        };
       } | null;
       /** @description Time when the suggestion was applied */
       appliedAt: string | null;
@@ -4114,6 +4145,8 @@ export interface components {
       resolvedAt: string | null;
       /** @description Membership that resolved the thread */
       resolvedByID: string | null;
+      /** @description Whether the thread was resolved as its suggestion can't apply; it reopens once it can */
+      autoResolved: boolean;
       /** @description Time when the thread was created */
       createdAt: string;
       /** @description Comments of the thread, oldest first */
@@ -11546,7 +11579,7 @@ export interface operations {
                     collectionID: string | null;
                     threadID: string;
                     /** @enum {string} */
-                    reason: "resolved" | "suggestion_applied";
+                    reason: "resolved" | "suggestion_applied" | "suggestion_outdated";
                   };
                 }
               | {
@@ -19028,6 +19061,8 @@ export interface operations {
           blocks?: components["schemas"]["ContentNodeInput"][];
           /** @description Suggested blocks in MDX, instead of blocks */
           mdx?: string;
+          /** @description Suggested entry title, instead of blocks; leave blockIDs empty */
+          title?: string;
           /**
            * @description Text of the comment
            * @default
@@ -19312,6 +19347,8 @@ export interface operations {
           blocks?: components["schemas"]["ContentNodeInput"][];
           /** @description Suggested blocks in MDX, instead of blocks */
           mdx?: string;
+          /** @description Suggested entry title, instead of blocks; leave blockIDs empty */
+          title?: string;
         };
       };
     };
@@ -19565,6 +19602,268 @@ export interface operations {
       cookie?: never;
     };
     requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CommentThread"];
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "BAD_REQUEST";
+                /** @constant */
+                status: 400;
+                /** @default Bad Request */
+                message: string;
+                data?: components["schemas"]["ValidationErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 401 */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "UNAUTHORIZED";
+                /** @constant */
+                status: 401;
+                /** @default Unauthorized */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 403 */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "FORBIDDEN";
+                /** @constant */
+                status: 403;
+                /** @default Forbidden */
+                message: string;
+                data?: components["schemas"]["ForbiddenErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "NOT_FOUND";
+                /** @constant */
+                status: 404;
+                /** @default Not Found */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "CONFLICT";
+                /** @constant */
+                status: 409;
+                /** @default Conflict */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 429 */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "TOO_MANY_REQUESTS";
+                /** @constant */
+                status: 429;
+                /** @default Too Many Requests */
+                message: string;
+                data?: components["schemas"]["RateLimitErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 500 */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "INTERNAL_SERVER_ERROR";
+                /** @constant */
+                status: 500;
+                /** @default Internal Server Error */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json":
+            | {
+                /** @constant */
+                defined: true;
+                /** @constant */
+                code: "SERVICE_UNAVAILABLE";
+                /** @constant */
+                status: 503;
+                /** @default Service Unavailable */
+                message: string;
+                data?: components["schemas"]["ErrorData"];
+              }
+            | {
+                /** @constant */
+                defined: false;
+                code: string;
+                status: number;
+                message: string;
+                data?: unknown;
+              };
+        };
+      };
+    };
+  };
+  "comments.setApplied": {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Required for OAuth: ID of the workspace to access. API keys use their own workspace. */
+        "x-workspace-id"?: string;
+      };
+      path: {
+        /** @example cth_example */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        /**
+         * @example {
+         *       "applied": true
+         *     }
+         */
+        "application/json": {
+          /** @description True to mark it applied, false to reopen it */
+          applied: boolean;
+        };
+      };
+    };
     responses: {
       /** @description OK */
       200: {

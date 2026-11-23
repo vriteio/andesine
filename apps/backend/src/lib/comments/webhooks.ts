@@ -27,14 +27,17 @@ type CommentWebhookEvent = {
     : never;
 }[OutboundEventData["type"]];
 
-/** One transaction for a comment write and its webhook; open no document inside (same lock). */
+/**
+ * One transaction for comment writes and their webhooks; open no document inside (same lock).
+ * Null or [] from `write` records no event and returns false.
+ */
 const writeCommentChange = async (
   database: DatabaseClient,
   workspaceID: string,
   target: CommentChangeTarget,
-  write: (transaction: DatabaseTransaction) => Promise<CommentChange>
-): Promise<void> => {
-  await database.transaction(async (transaction) => {
+  write: (transaction: DatabaseTransaction) => Promise<CommentChange | CommentChange[] | null>
+): Promise<boolean> => {
+  return database.transaction(async (transaction) => {
     const operation = createWebhookOperation(toWorkspaceID(workspaceID));
     // Locks the workspace before the writes, as webhook producers must.
     const recorder = await createWebhookRecorder({
@@ -46,20 +49,27 @@ const writeCommentChange = async (
       id: target.entryID,
       collectionID: target.collectionID
     });
-    const { key, event, finalize } = await write(transaction);
+    const written = await write(transaction);
+    const changes = written ? [written].flat() : [];
 
-    await recorder.record([
-      {
+    if (!changes.length) return false;
+
+    await recorder.record(
+      changes.map(({ key, event }) => ({
         event: createOutboundEvent(operation, key, {
           ...event,
           subject: context.subject,
           data: { ...event.data, collectionID: context.collectionID }
         } as OutboundEventData),
         resources: [{ ...context.subject, before: context.scope, after: context.scope }]
-      }
-    ]);
-    await finalize?.();
+      }))
+    );
+
+    for (const { finalize } of changes) await finalize?.();
+
+    return true;
   });
 };
 
 export { writeCommentChange };
+export type { CommentChange };

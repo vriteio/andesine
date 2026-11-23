@@ -36,12 +36,15 @@ interface CommentsState {
   threads: EditorCommentThread[];
   draft: CommentTargetDraft | null;
   active: string | null;
+  /** The thread whose card is under the pointer. */
+  hovered: string | null;
   decorations: DecorationSet;
 }
 interface CommentsMeta {
   threads?: EditorCommentThread[];
   draft?: CommentTargetDraft | null;
   active?: string | null;
+  hovered?: string | null;
 }
 interface CommentTargetDraft {
   target: EditorCommentTarget;
@@ -56,8 +59,12 @@ interface CommentThreadPosition {
 type CommentDraft = CommentTextDraft | CommentBlockDraft;
 type YSyncState = NonNullable<ReturnType<typeof ySyncPluginKey.getState>>;
 
-const commentsPluginKey = new PluginKey<CommentsState>("comments");
+// Title suggestions anchor to the title, which has no block ID.
+const TITLE_BLOCK_ID = "title";
+const TABLE_NODE_TYPES = new Set(["table", "tableRow", "tableCell", "tableHeader"]);
 const DRAFT_THREAD_ID = "draft";
+const commentsPluginKey = new PluginKey<CommentsState>("comments");
+const blocksByDoc = new WeakMap<ProseMirrorNode, Map<string, FoundBlock>>();
 
 const decodeBase64 = (value: string) => Uint8Array.from(atob(value), (char) => char.charCodeAt(0));
 const getYSync = (state: EditorState): YSyncState | null => {
@@ -65,8 +72,12 @@ const getYSync = (state: EditorState): YSyncState | null => {
 
   return ySync?.binding ? ySync : null;
 };
-/** The first block of a repeated ID wins. */
+/** The first block of a repeated ID wins; cached per (immutable) doc. */
 const getBlocks = (doc: ProseMirrorNode): Map<string, FoundBlock> => {
+  const cached = blocksByDoc.get(doc);
+
+  if (cached) return cached;
+
   const blocks = new Map<string, FoundBlock>();
 
   doc.descendants((node, pos) => {
@@ -74,8 +85,17 @@ const getBlocks = (doc: ProseMirrorNode): Map<string, FoundBlock> => {
 
     if (typeof id === "string" && !blocks.has(id)) blocks.set(id, { pos, node });
   });
+  blocksByDoc.set(doc, blocks);
 
   return blocks;
+};
+const getAnchorBlockIDs = ({ suggestion, blockID }: EditorCommentThread, hasRange: boolean) => {
+  // An insertion at the start goes after the title, which anchors it.
+  const isAtStart = suggestion && !suggestion.blockIDs.length && !suggestion.after;
+
+  if (suggestion?.title || isAtStart) return [TITLE_BLOCK_ID];
+
+  return !hasRange && suggestion?.blockIDs.length ? suggestion.blockIDs : [blockID];
 };
 const resolveRange = (ySync: YSyncState, start: RelativePosition, end: RelativePosition) => {
   const [from, to] = [start, end].map((position) => {
@@ -94,11 +114,17 @@ const createHighlight = (
   target: HighlightTarget,
   threadID: string | null,
   active: boolean,
-  getBlock: (blockID: string) => FoundBlock | null
+  getBlock: (blockID: string) => FoundBlock | null,
+  hovered = false
 ): Decoration | null => {
   const ySync = getYSync(state);
   const attributes = (className: string) => ({
-    class: clsx(className, !threadID && "comment-draft", active && "comment-active"),
+    class: clsx(
+      className,
+      !threadID && "comment-draft",
+      active && "comment-active",
+      hovered && "comment-hovered"
+    ),
     ...(threadID && { "data-comment-thread": threadID })
   });
 
@@ -117,8 +143,8 @@ const createHighlight = (
   }
 
   const block = target.blockID ? getBlock(target.blockID) : null;
-  // The table view draws it from the spec, as the table scrolls.
-  const isTable = block?.node.type.name === "table";
+  // Tables draw theirs in the table view; rows and cells get none, as an overlay counts as a cell.
+  const isTable = TABLE_NODE_TYPES.has(block?.node.type.name ?? "");
 
   return (
     block &&
@@ -134,31 +160,37 @@ const createDecorations = (
   state: EditorState,
   threads: EditorCommentThread[],
   draft: CommentTargetDraft | null,
-  active: string | null
+  active: string | null,
+  hovered: string | null
 ): DecorationSet => {
-  // Lazy, as most threads are on text.
-  let blocks: Map<string, FoundBlock> | null = null;
-
   const getBlock = (blockID: string) => {
-    blocks ??= getBlocks(state.doc);
+    const title = state.doc.firstChild;
 
-    return blocks.get(blockID) ?? null;
+    if (blockID === TITLE_BLOCK_ID) return title ? { pos: 0, node: title } : null;
+
+    return getBlocks(state.doc).get(blockID) ?? null;
   };
   const highlights = threads
     .filter(({ resolved }) => !resolved)
-    .map((thread) => {
+    .flatMap((thread) => {
       const anchor = thread.anchor && {
         start: decodeRelativePosition(decodeBase64(thread.anchor.start)),
         end: decodeRelativePosition(decodeBase64(thread.anchor.end))
       };
+      const blockIDs = getAnchorBlockIDs(thread, Boolean(anchor));
+      // Block suggestions draw their changes, so their blocks only anchor the card.
+      const isShaded = thread.id === active && !(thread.suggestion && !anchor);
 
-      return createHighlight(
-        state,
-        { blockID: thread.blockID, ...anchor },
-        thread.id,
-        thread.id === active,
-        getBlock
-      );
+      return blockIDs.map((blockID) => {
+        return createHighlight(
+          state,
+          { blockID, ...anchor },
+          thread.id,
+          isShaded,
+          getBlock,
+          thread.id === hovered
+        );
+      });
     });
   const draftHighlight =
     draft &&
@@ -261,6 +293,7 @@ const Comments = Extension.create({
             threads: [],
             draft: null,
             active: null,
+            hovered: null,
             decorations: DecorationSet.create(state.doc, [])
           }),
           apply: (tr, value, _, state) => {
@@ -268,6 +301,7 @@ const Comments = Extension.create({
             const threads = meta?.threads ?? value.threads;
             const draft = meta && "draft" in meta ? (meta.draft ?? null) : value.draft;
             const active = meta && "active" in meta ? (meta.active ?? null) : value.active;
+            const hovered = meta && "hovered" in meta ? (meta.hovered ?? null) : value.hovered;
             // Remote changes replace the whole document, so mapping would drop every highlight.
             const isRemoteChange = Boolean(tr.getMeta(ySyncPluginKey)?.isChangeOrigin);
 
@@ -276,7 +310,8 @@ const Comments = Extension.create({
                 threads,
                 draft,
                 active,
-                decorations: createDecorations(state, threads, draft, active)
+                hovered,
+                decorations: createDecorations(state, threads, draft, active, hovered)
               };
             }
 
@@ -294,6 +329,7 @@ const Comments = Extension.create({
 export {
   changesComments,
   Comments,
+  commentsPluginKey,
   DRAFT_THREAD_ID,
   getBlocks,
   getBlockCommentTarget,

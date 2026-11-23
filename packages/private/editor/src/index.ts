@@ -43,6 +43,10 @@ export type {
   EditorCommentDraft,
   EditorCommentPlace,
   EditorComments,
+  EditorCommentSuggestion,
+  EditorOwnSuggestion,
+  EditorSuggesting,
+  EditorSuggestionPatch,
   EditorCommentsPanel,
   EditorCommentThread,
   EditorImages,
@@ -76,3 +80,11 @@ export type {
   VersionComparison
 } from "./client-types";
 export { createVersionComparison } from "./extensions/version-diff";
+export {
+  canToggleResolved,
+  getStaleStatus,
+  isOpenSuggestion,
+  rebaseSuggestion
+} from "./lib/suggestion-status";
+export { isRejectedSave } from "./lib/suggestion-patches";
+export { applySuggestion } from "./extensions/suggestion-apply";

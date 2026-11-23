@@ -1025,7 +1025,10 @@
                 "properties": {
                   "collectionID": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
                   "threadID": { "type": "string" },
-                  "reason": { "enum": ["resolved", "suggestion_applied"], "type": "string" }
+                  "reason": {
+                    "enum": ["resolved", "suggestion_applied", "suggestion_outdated"],
+                    "type": "string"
+                  }
                 },
                 "required": ["collectionID", "threadID", "reason"],
                 "additionalProperties": false
@@ -3374,7 +3377,7 @@
           "status": {
             "enum": ["active", "outdated", "orphaned"],
             "type": "string",
-            "description": "active: the anchor and suggested blocks match; outdated: the anchored text or suggested blocks changed; orphaned: the text or blocks are gone"
+            "description": "active: the anchor matches, or the suggestion applies on top of edits made since; outdated: the anchored text changed, or the suggestion conflicts with edits of the same words; orphaned: the text or blocks are gone. Open suggestions that no longer apply are resolved, and reopen when they apply again"
           },
           "text": {
             "anyOf": [{ "type": "string" }, { "type": "null" }],
@@ -3403,6 +3406,18 @@
                     "type": "array",
                     "items": { "$ref": "#/components/schemas/ContentNode" },
                     "description": "Suggested blocks, empty for a deletion"
+                  },
+                  "title": {
+                    "type": "object",
+                    "properties": {
+                      "base": {
+                        "type": "string",
+                        "description": "The entry title when the suggestion was saved"
+                      },
+                      "suggested": { "type": "string", "description": "Suggested entry title" }
+                    },
+                    "required": ["base", "suggested"],
+                    "description": "Suggested entry title; its blocks are empty"
                   }
                 },
                 "required": ["blockIDs", "after", "base", "blocks"]
@@ -3427,6 +3442,10 @@
             "anyOf": [{ "type": "string" }, { "type": "null" }],
             "description": "Membership that resolved the thread"
           },
+          "autoResolved": {
+            "type": "boolean",
+            "description": "Whether the thread was resolved as its suggestion can't apply; it reopens once it can"
+          },
           "createdAt": { "type": "string", "description": "Time when the thread was created" },
           "comments": {
             "type": "array",
@@ -3447,6 +3466,7 @@
           "authorID",
           "resolvedAt",
           "resolvedByID",
+          "autoResolved",
           "createdAt",
           "comments"
         ]
@@ -13586,7 +13606,7 @@
                                 },
                                 "threadID": { "type": "string" },
                                 "reason": {
-                                  "enum": ["resolved", "suggestion_applied"],
+                                  "enum": ["resolved", "suggestion_applied", "suggestion_outdated"],
                                   "type": "string"
                                 }
                               },
@@ -23174,7 +23194,7 @@
       "post": {
         "operationId": "comments.resolve",
         "summary": "Resolve or reopen a comment thread",
-        "description": "Required API key permissions: entries. Write permissions also grant read access for the same resource.",
+        "description": "Resolves a thread, or reopens it with resolved false. A suggestion that no longer applies to the current content can't be reopened; update it instead, which reopens it.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
         "tags": ["comments"],
         "parameters": [
           {
@@ -23496,7 +23516,7 @@
       "post": {
         "operationId": "comments.suggest",
         "summary": "Suggest a change",
-        "description": "Starts a comment thread that suggests replacing consecutive blocks (blockIDs) with other blocks, or inserting blocks (after). Block IDs come from entries.get with contentFormat blocks. People with permission to update the entry can apply it.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+        "description": "Starts a comment thread that suggests replacing consecutive blocks (blockIDs) with other blocks, inserting blocks (after), or a new entry title (title). Block IDs come from entries.get with contentFormat blocks. People with permission to update the entry can apply it. When your own open suggestion without replies or a note overlaps it, that thread gets the new change, which wins where both change the same words, and returns.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
         "tags": ["comments"],
         "parameters": [
           {
@@ -23539,6 +23559,10 @@
                   "mdx": {
                     "type": "string",
                     "description": "Suggested blocks in MDX, instead of blocks"
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "Suggested entry title, instead of blocks; leave blockIDs empty"
                   },
                   "content": {
                     "type": "string",
@@ -23848,7 +23872,7 @@
       "put": {
         "operationId": "comments.updateSuggestion",
         "summary": "Update a suggestion",
-        "description": "Replaces the change of your own open suggestion, against the current content.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+        "description": "Replaces the change of your own suggestion, against the current content. A suggestion resolved because it no longer applied reopens.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
         "tags": ["comments"],
         "parameters": [
           {
@@ -23891,6 +23915,10 @@
                   "mdx": {
                     "type": "string",
                     "description": "Suggested blocks in MDX, instead of blocks"
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "Suggested entry title, instead of blocks; leave blockIDs empty"
                   }
                 },
                 "required": ["blockIDs"]
@@ -24185,7 +24213,7 @@
       "post": {
         "operationId": "comments.apply",
         "summary": "Apply a suggestion",
-        "description": "Replaces the blocks with the suggested ones and resolves the thread. Fails when the blocks changed since the suggestion was saved.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+        "description": "Replaces the blocks or the title with the suggested ones and resolves the thread. Edits made since the suggestion was saved are kept; fails when they change the same words, attributes or blocks.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
         "tags": ["comments"],
         "parameters": [
           {
@@ -24484,6 +24512,331 @@
             "lang": "typescript",
             "label": "SDK",
             "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.comments.apply({\n  id: \"cth_example\"\n});"
+          }
+        ]
+      }
+    },
+    "/comment-threads/{id}/applied": {
+      "put": {
+        "operationId": "comments.setApplied",
+        "summary": "Mark a suggestion applied",
+        "description": "For editors that change the content themselves: marks an open suggestion applied and resolves it, or reopens an applied one, e.g. on undo. The content isn't changed.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+        "tags": ["comments"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID of the comment thread with the suggestion"
+            },
+            "example": "cth_example"
+          },
+          {
+            "name": "x-workspace-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "applied": {
+                    "type": "boolean",
+                    "description": "True to mark it applied, false to reopen it"
+                  }
+                },
+                "required": ["applied"]
+              },
+              "example": { "applied": true }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/CommentThread" } }
+            }
+          },
+          "400": {
+            "description": "400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "BAD_REQUEST" },
+                        "status": { "const": 400 },
+                        "message": { "type": "string", "default": "Bad Request" },
+                        "data": { "$ref": "#/components/schemas/ValidationErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "UNAUTHORIZED" },
+                        "status": { "const": 401 },
+                        "message": { "type": "string", "default": "Unauthorized" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "FORBIDDEN" },
+                        "status": { "const": 403 },
+                        "message": { "type": "string", "default": "Forbidden" },
+                        "data": { "$ref": "#/components/schemas/ForbiddenErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "NOT_FOUND" },
+                        "status": { "const": 404 },
+                        "message": { "type": "string", "default": "Not Found" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "CONFLICT" },
+                        "status": { "const": 409 },
+                        "message": { "type": "string", "default": "Conflict" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "TOO_MANY_REQUESTS" },
+                        "status": { "const": 429 },
+                        "message": { "type": "string", "default": "Too Many Requests" },
+                        "data": { "$ref": "#/components/schemas/RateLimitErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "INTERNAL_SERVER_ERROR" },
+                        "status": { "const": 500 },
+                        "message": { "type": "string", "default": "Internal Server Error" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": true },
+                        "code": { "const": "SERVICE_UNAVAILABLE" },
+                        "status": { "const": 503 },
+                        "message": { "type": "string", "default": "Service Unavailable" },
+                        "data": { "$ref": "#/components/schemas/ErrorData" }
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "defined": { "const": false },
+                        "code": { "type": "string" },
+                        "status": { "type": "number" },
+                        "message": { "type": "string" },
+                        "data": {}
+                      },
+                      "required": ["defined", "code", "status", "message"]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-sdk-example": { "id": "cth_example", "applied": true },
+        "x-codeSamples": [
+          {
+            "lang": "typescript",
+            "label": "SDK",
+            "source": "import { createClient } from \"@andesine/sdk\";\n\nconst client = createClient({ apiKey: process.env.ANDESINE_API_KEY });\n\nawait client.comments.setApplied({\n  id: \"cth_example\",\n  applied: true\n});"
           }
         ]
       }

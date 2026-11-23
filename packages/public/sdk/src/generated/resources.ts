@@ -498,6 +498,8 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
     /**
      * Resolve or reopen a comment thread
      *
+     * Resolves a thread, or reopens it with resolved false. A suggestion that no longer applies to the current content can't be reopened; update it instead, which reopens it.
+     *
      * Required API key permissions: entries. Write permissions also grant read access for the same resource.
      *
      * @example
@@ -510,7 +512,7 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
     /**
      * Suggest a change
      *
-     * Starts a comment thread that suggests replacing consecutive blocks (blockIDs) with other blocks, or inserting blocks (after). Block IDs come from entries.get with contentFormat blocks. People with permission to update the entry can apply it.
+     * Starts a comment thread that suggests replacing consecutive blocks (blockIDs) with other blocks, inserting blocks (after), or a new entry title (title). Block IDs come from entries.get with contentFormat blocks. People with permission to update the entry can apply it. When your own open suggestion without replies or a note overlaps it, that thread gets the new change, which wins where both change the same words, and returns.
      *
      * Required API key permissions: entries. Write permissions also grant read access for the same resource.
      *
@@ -527,7 +529,7 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
     /**
      * Update a suggestion
      *
-     * Replaces the change of your own open suggestion, against the current content.
+     * Replaces the change of your own suggestion, against the current content. A suggestion resolved because it no longer applied reopens.
      *
      * Required API key permissions: entries. Write permissions also grant read access for the same resource.
      *
@@ -544,7 +546,7 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
     /**
      * Apply a suggestion
      *
-     * Replaces the blocks with the suggested ones and resolves the thread. Fails when the blocks changed since the suggestion was saved.
+     * Replaces the blocks or the title with the suggested ones and resolves the thread. Edits made since the suggestion was saved are kept; fails when they change the same words, attributes or blocks.
      *
      * Required API key permissions: entries. Write permissions also grant read access for the same resource.
      *
@@ -554,6 +556,20 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
      * });
      */
     apply: Operation<"comments.apply", Workspace>;
+    /**
+     * Mark a suggestion applied
+     *
+     * For editors that change the content themselves: marks an open suggestion applied and resolves it, or reopens an applied one, e.g. on undo. The content isn't changed.
+     *
+     * Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.comments.setApplied({
+     *   "id": "cth_example",
+     *   "applied": true
+     * });
+     */
+    setApplied: Operation<"comments.setApplied", Workspace>;
   };
   content: {
     /**
@@ -2030,6 +2046,16 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       pathParams: ["id"],
       queryParams: [],
       body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    setApplied: operation<"comments.setApplied", Workspace>(request, {
+      method: "put",
+      path: "/comment-threads/{id}/applied",
+      pathParams: ["id"],
+      queryParams: [],
+      body: true,
       multipart: false,
       binary: false,
       anonymous: false

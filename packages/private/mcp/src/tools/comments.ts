@@ -59,7 +59,7 @@ const registerListComments = (server: McpServer, context: ToolContext) => {
     {
       title: "List comments",
       description:
-        "Lists the comment threads of an entry; list_members has the names of authors and mentions. status: active (the quote and suggested blocks match), outdated (the quoted text or suggested blocks changed; currentText has the text), or orphaned (the text or blocks are gone). suggestion has the blocks it replaces (base) and the suggested blocks, as ProseMirror JSON.",
+        "Lists the comment threads of an entry; list_members has the names of authors and mentions. status: active (the quote matches; a suggestion applies, moved onto edits made since), outdated (the quoted text changed, and currentText has it; or a suggestion conflicts with edits of the same words), or orphaned (the text or blocks are gone). Open suggestions that no longer apply are resolved. suggestion has the blocks it replaces (base) and the suggested blocks, as ProseMirror JSON, on top of the current content.",
       inputSchema: {
         entry: entrySchema,
         resolved: z
@@ -141,7 +141,7 @@ const registerSuggestEdit = (server: McpServer, context: ToolContext) => {
     {
       title: "Suggest an edit",
       description:
-        "Suggests replacing consecutive blocks (blockIDs from fetch with format blocks) with MDX, or inserting MDX after a block, for people to review and apply. Empty mdx suggests deleting the blocks. Use it instead of edit_entry to propose changes for review.",
+        "Suggests replacing consecutive blocks (blockIDs from fetch with format blocks) with MDX, inserting MDX after a block, or a new entry title (title, with empty blockIDs), for people to review and apply. Empty mdx suggests deleting the blocks. Use it instead of edit_entry to propose changes for review. It joins your own overlapping suggestion when that has no replies or note, and returns that thread.",
       inputSchema: {
         entry: entrySchema,
         blockIDs: z.array(z.string()).describe("Consecutive blocks to replace; empty to insert"),
@@ -149,13 +149,16 @@ const registerSuggestEdit = (server: McpServer, context: ToolContext) => {
           .string()
           .optional()
           .describe("For an insertion: block after which the MDX goes (default: the start)"),
-        mdx: z.string().describe("Suggested blocks in MDX"),
+        mdx: z.string().optional().describe("Suggested blocks in MDX; set it or title"),
+        title: z.string().optional().describe("Suggested entry title, instead of mdx"),
         content: z.string().optional().describe("Comment explaining the suggestion, in Markdown"),
         mentions: z.array(z.email()).max(50).optional().describe("Emails of members to mention")
       },
       annotations: { ...writeAnnotations, title: "Suggest an edit" }
     },
-    runTool(async ({ entry, blockIDs, after, mdx, content, mentions }) => {
+    runTool(async ({ entry, blockIDs, after, mdx, title, content, mentions }) => {
+      if ((mdx === undefined) === (title === undefined)) throw new Error("Set mdx or title");
+
       const mentionIDs = mentions?.length ? await resolveMemberIDs(context, mentions) : undefined;
       const entryID = await resolveEntryID(context, entry);
 
@@ -165,6 +168,7 @@ const registerSuggestEdit = (server: McpServer, context: ToolContext) => {
           blockIDs,
           after: after ?? null,
           mdx,
+          title,
           content,
           mentionIDs
         })
@@ -177,7 +181,8 @@ const registerResolveComment = (server: McpServer, context: ToolContext) => {
     "resolve_comment",
     {
       title: "Resolve a comment thread",
-      description: "Resolves a comment thread, or reopens it with resolved false.",
+      description:
+        "Resolves a comment thread, or reopens it with resolved false. A suggestion that no longer applies can't be reopened; suggest the change again instead.",
       inputSchema: {
         thread: z.string().describe("Thread ID (cth_...)"),
         resolved: z.boolean().default(true)
@@ -195,7 +200,7 @@ const registerApplySuggestion = (server: McpServer, context: ToolContext) => {
     {
       title: "Apply a suggestion",
       description:
-        "Writes a thread's suggestion into the entry and resolves the thread. Fails when the suggested blocks changed.",
+        "Writes a thread's suggestion into the entry and resolves the thread. Edits made since the suggestion was saved are kept; fails when they change the same words.",
       inputSchema: { thread: z.string().describe("Thread ID (cth_...) with the suggestion") },
       annotations: { ...writeAnnotations, title: "Apply a suggestion" }
     },

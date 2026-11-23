@@ -153,43 +153,82 @@ const groupAnchors = (anchors: ThreadAnchor[]): AnchorGroup[] => {
 
   return groups;
 };
-/** Judged by closed heights, so an opened card doesn't turn into a button. */
+const stackGroup = (group: AnchorGroup, first: number, heights: Record<string, number>) => {
+  const tops: Record<string, number> = {};
+
+  let top = first;
+
+  for (const { id } of group.threads) {
+    tops[id] = top;
+    top += (heights[id] ?? 0) + CARD_GAP;
+  }
+
+  return { tops, bottom: top - CARD_GAP };
+};
+/** By closed heights, so an opened card stays a card; the active one sits by its anchor. */
 const placeThreads = (
   layout: CommentLayout | null,
   heights: Record<string, number>,
-  closedHeights: Record<string, number>
+  closedHeights: Record<string, number>,
+  active: string | null
 ): ThreadPlacement => {
   const groups = groupAnchors(layout?.anchors ?? []);
   const placement: ThreadPlacement = { tops: {}, buttons: [] };
-
-  let bottom = -Infinity;
-
-  if (!layout?.inline) return { tops: {}, buttons: groups };
-
-  for (const group of groups) {
-    const tops: Record<string, number> = {};
-    const first = Math.max(group.center - FIRST_COMMENT_CENTER, bottom + CARD_GAP);
-
-    let top = first;
-    let closedBottom = first;
-
-    for (const { id } of group.threads) {
-      tops[id] = top;
-      closedBottom = top + (closedHeights[id] ?? heights[id] ?? 0);
-      top += (heights[id] ?? 0) + CARD_GAP;
-    }
-
-    const coversBlock = layout.obstacles.some((range) => {
+  const activeIndex = groups.findIndex(({ threads }) => threads.some(({ id }) => id === active));
+  const below = activeIndex < 0 ? groups : groups.slice(activeIndex);
+  const above = activeIndex < 0 ? [] : groups.slice(0, activeIndex).reverse();
+  // Other cards keep their places without an active thread.
+  const hasResting = activeIndex >= 0 && layout?.inline;
+  const resting = hasResting ? placeThreads(layout, heights, closedHeights, null).tops : {};
+  const getRestingTop = (group: AnchorGroup) => {
+    return resting[group.threads[0].id] ?? group.center - FIRST_COMMENT_CENTER;
+  };
+  // Its bottom, or null when it'd cover a block, so it's a button instead.
+  const place = (group: AnchorGroup, first: number) => {
+    const { tops, bottom: groupBottom } = stackGroup(group, first, heights);
+    const last = group.threads[group.threads.length - 1].id;
+    const closedBottom = tops[last] + (closedHeights[last] ?? heights[last] ?? 0);
+    const coversBlock = layout!.obstacles.some((range) => {
       return first < range.bottom + BLOCK_SPACE && closedBottom > range.top - BLOCK_SPACE;
     });
 
     if (coversBlock) {
       placement.buttons.push(group);
-      continue;
+
+      return null;
     }
 
     Object.assign(placement.tops, tops);
-    bottom = top - CARD_GAP;
+
+    return groupBottom;
+  };
+
+  let bottom = -Infinity;
+  let top = Infinity;
+
+  if (!layout?.inline) return { tops: {}, buttons: groups };
+
+  for (const group of below) {
+    const natural = group.center - FIRST_COMMENT_CENTER;
+    const index = group.threads.findIndex(({ id }) => id === active);
+    // Cards before the active one in its group go above its default place.
+    const offset = group.threads.slice(0, Math.max(index, 0)).reduce((sum, { id }) => {
+      return sum + (heights[id] ?? 0) + CARD_GAP;
+    }, 0);
+    const first = index < 0 ? Math.max(getRestingTop(group), bottom + CARD_GAP) : natural - offset;
+    const placedBottom = place(group, first);
+
+    if (placedBottom === null) continue;
+
+    top = Math.min(top, first);
+    bottom = placedBottom;
+  }
+
+  for (const group of above) {
+    const height = stackGroup(group, 0, heights).bottom;
+    const first = Math.min(getRestingTop(group), top - CARD_GAP - height);
+
+    if (place(group, first) !== null) top = first;
   }
 
   return placement;

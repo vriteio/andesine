@@ -1,0 +1,39 @@
+diff --git a/dist/index.cjs b/dist/index.cjs
+index cef5aaaf985584a4396f00e71541cb2b91d62422..a2aa00cd2ab869f6085bd7511c98de1af6ac3383 100644
+--- a/dist/index.cjs
++++ b/dist/index.cjs
+@@ -175,7 +175,7 @@ const UniqueID = _tiptap_core.Extension.create({
+ 							return;
+ 						}
+ 						const nextNode = newNodes[i + 1];
+-						if (nextNode && node.content.size === 0) {
++						if (nextNode && node.isTextblock && node.content.size === 0) {
+ 							const nextNodeInTr = tr.doc.nodeAt(nextNode.pos);
+ 							if ((nextNodeInTr === null || nextNodeInTr === void 0 ? void 0 : nextNodeInTr.attrs[attributeName]) && nextNodeInTr.attrs[attributeName] !== id) return;
+ 							tr.setNodeMarkup(nextNode.pos, void 0, {
+diff --git a/dist/index.js b/dist/index.js
+index 2c6be972480b5ced287d59be7b2b8012241d9246..3a3bd484fb9c954bb819165525763a003f5c90b4 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -171,7 +171,7 @@ const UniqueID = Extension.create({
+ 							return;
+ 						}
+ 						const nextNode = newNodes[i + 1];
+-						if (nextNode && node.content.size === 0) {
++						if (nextNode && node.isTextblock && node.content.size === 0) {
+ 							const nextNodeInTr = tr.doc.nodeAt(nextNode.pos);
+ 							if ((nextNodeInTr === null || nextNodeInTr === void 0 ? void 0 : nextNodeInTr.attrs[attributeName]) && nextNodeInTr.attrs[attributeName] !== id) return;
+ 							tr.setNodeMarkup(nextNode.pos, void 0, {
+diff --git a/src/unique-id.ts b/src/unique-id.ts
+index 74d820f6a93ae2fdfa98e0d9aa0f01878daf5780..3a88267a496d2c952aeeee21ccdccc3aca6630f5 100644
+--- a/src/unique-id.ts
++++ b/src/unique-id.ts
+@@ -314,7 +314,7 @@ export const UniqueID = Extension.create<UniqueIDOptions>({
+ 
+               const nextNode = newNodes[i + 1]
+ 
+-              if (nextNode && node.content.size === 0) {
++              if (nextNode && node.isTextblock && node.content.size === 0) {
+                 const nextNodeInTr = tr.doc.nodeAt(nextNode.pos)
+                 if (
+                   nextNodeInTr?.attrs[attributeName] &&

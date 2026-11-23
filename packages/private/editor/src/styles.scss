@@ -104,14 +104,19 @@ header[data-type="title"] {
 // Comments
 // Blocks get an overlay, as version diffs do; tables in their scroll container (see the table view).
 .comment-highlight {
-  @apply rounded-t-sm border-b-2 border-solid border-tertiary bg-gradient-to-tr from-primary/8 to-secondary/8;
+  @apply rounded-t-sm border-b-2 border-solid border-tertiary/40 bg-gradient-to-tr from-primary/8 to-secondary/8 transition-colors;
 
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 
+  &:hover,
+  &.comment-hovered {
+    @apply border-tertiary;
+  }
+
   &.comment-draft,
   &.comment-active {
-    @apply from-primary/15 to-secondary/15;
+    @apply border-tertiary from-primary/15 to-secondary/15;
   }
 }
 
@@ -140,6 +145,11 @@ header[data-type="title"] {
   left: var(--code-visible-left, 0px);
   width: var(--code-visible-width, 100%);
   right: auto;
+}
+
+// Shades a card's first comment while its content is hovered.
+[data-comment-thread-card][data-comment-linked] .comment-item:not(.comment-item ~ .comment-item) {
+  @apply bg-gradient-to-r from-gray-500/10 to-transparent;
 }
 
 .comment-table-shade {
@@ -411,6 +421,130 @@ header[data-type="title"] {
 
 .prose-editor :where(h1, h2, h3, h4, h5, h6):has(.version-diff-badges-anchor)::before {
   @apply hidden;
+}
+
+// Suggestion previews
+.suggestion-added,
+.suggestion-removed {
+  @apply cursor-pointer rounded-t-sm border-b-2 border-solid transition-colors;
+
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.suggestion-added {
+  @apply border-green-500 bg-green-500/15;
+}
+
+.suggestion-removed {
+  @apply border-red-500 bg-red-500/15 line-through decoration-red-500;
+}
+
+// Not an ::after overlay, which comment highlights use on the same blocks.
+.suggestion-added-block,
+.suggestion-removed-block {
+  @apply cursor-pointer rounded-lg;
+  background-color: var(--suggestion-tint);
+  box-shadow:
+    -0.5rem 0 0 var(--suggestion-tint),
+    0.5rem 0 0 var(--suggestion-tint);
+}
+
+.suggestion-added-block {
+  --suggestion-tint: rgb(34 197 94 / 0.1);
+}
+
+.suggestion-removed-block {
+  @apply line-through decoration-red-500;
+  --suggestion-tint: rgb(239 68 68 / 0.1);
+}
+
+hr.suggestion-removed-block {
+  @apply border-red-500;
+}
+
+// Read-only editor for a suggested block.
+.suggestion-block {
+  [data-type="title"],
+  [data-editor-menu-container] {
+    @apply hidden;
+  }
+
+  .ProseMirror {
+    @apply pb-0!;
+  }
+
+  // The editor's trailing paragraph; the block is never a paragraph here.
+  .ProseMirror > p:last-child {
+    @apply hidden;
+  }
+}
+
+// Reaches past the list marker; lists indent 1.625em.
+:is(ul, ol):not([data-type="taskList"])
+  > li:is(.suggestion-added-block, .suggestion-removed-block) {
+  box-shadow:
+    calc(-1.625em - 0.5rem) 0 0 var(--suggestion-tint),
+    0.5rem 0 0 var(--suggestion-tint);
+}
+
+// Dividers keep the tint over their hover background.
+[data-type="horizontal-rule"]:is(.suggestion-added-block, .suggestion-removed-block):hover {
+  background-color: var(--suggestion-tint);
+}
+
+:is(tr, td, th):is(.suggestion-added-block, .suggestion-removed-block) {
+  @apply rounded-none;
+  box-shadow: none;
+}
+
+// Changed-attributes chip, e.g. a code block's language.
+.suggestion-attributes {
+  @apply relative;
+
+  &::before {
+    @apply absolute right-3 top-0 z-2 -translate-y-1/2 cursor-pointer whitespace-nowrap rounded-md border border-solid border-green-500 bg-green-50 px-1.5 py-0.5 font-sans text-xs font-medium text-green-700 transition-colors;
+    content: attr(data-suggestion-attributes) / "";
+  }
+}
+
+// Open suggestions fade, unless opened or hovered; nested ones too.
+.suggestion-faded:not(:hover) {
+  &.suggestion-added,
+  .suggestion-added {
+    @apply border-green-500/40 bg-green-500/8;
+  }
+
+  &.suggestion-removed,
+  .suggestion-removed {
+    @apply border-red-500/40 bg-red-500/8 decoration-red-500/70;
+  }
+
+  &.suggestion-added-block,
+  .suggestion-added-block {
+    --suggestion-tint: rgb(34 197 94 / 0.04);
+  }
+
+  &.suggestion-removed-block,
+  .suggestion-removed-block {
+    @apply decoration-red-500/70;
+    --suggestion-tint: rgb(239 68 68 / 0.04);
+  }
+
+  &.suggestion-attributes::before,
+  .suggestion-attributes::before {
+    @apply border-green-500/40 text-green-700/60;
+  }
+}
+
+// A replaced block with comments stays, before its suggested copy, so the comments show.
+.suggestion-commented {
+  @apply opacity-60;
+}
+
+// Hidden, but kept to anchor its card; out of flow, e.g. in grid cells.
+.suggestion-replaced {
+  @apply absolute! invisible! h-0! overflow-hidden! m-0! p-0! border-0!;
 }
 
 // Drop and gap cursors

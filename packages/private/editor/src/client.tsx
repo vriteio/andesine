@@ -75,9 +75,18 @@ import {
   NodeCharacterLimit,
   VersionDiff,
   Comments,
+  createSuggestionFork,
+  drawSuggestedBlock,
+  Suggesting,
+  SuggestionApply,
+  SuggestionPreview,
+  syncOwnSuggestions,
   updateComments
 } from "./extensions";
 import { DragHandleMenu } from "./ui/drag-handle";
+import type { SuggestedBlockProps } from "./extensions/suggestion-preview";
+import type { WidgetComponentProps } from "./lib/create-widget-renderer";
+import { getThreadAttributes } from "./lib/suggestion-render";
 import type { EditorProps } from "./client-types";
 import { useEditorProvider } from "./use-editor-provider";
 import {
@@ -95,9 +104,12 @@ const ClientEditor: Component<EditorProps> = (props) => {
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [menuContainerRef, setMenuContainerRef] = createRef<HTMLElement | null>(null);
   const [editorContentElement, setEditorContentElement] = createSignal<HTMLElement | null>(null);
+  const [forkRevision, setForkRevision] = createSignal(0);
   const owner = getOwner();
   const instances = new Set<Editor>();
   const collaborative = () => props.content === undefined;
+  // A boolean, so new suggestions don't rebuild the editor.
+  const suggestingMode = createMemo(() => Boolean(props.suggesting));
   const provider = useEditorProvider({
     url: () => props.url,
     doc: () => props.doc,
@@ -109,6 +121,23 @@ const ClientEditor: Component<EditorProps> = (props) => {
     notify: props.notify
   });
 
+  const SuggestedBlock: Component<SuggestedBlockProps & WidgetComponentProps> = (blockProps) => {
+    // Untracked: new props would rebuild the editor; the widget key changes instead.
+    const block = untrack(() => ({ ...blockProps }));
+
+    return (
+      <div {...getThreadAttributes(block.threadID)}>
+        <ClientEditor
+          content={{ type: "doc", content: [{ type: "title" }, block.block] }}
+          editable={false}
+          images={props.images}
+          links={props.links}
+          elementViews={props.elementViews}
+          onEditor={(editor) => drawSuggestedBlock(editor, block)}
+        />
+      </div>
+    );
+  };
   const collaborationUser = () => {
     return props.collaborationUser || { name: "Anonymous", color: "#f59e0b" };
   };
@@ -125,17 +154,49 @@ const ClientEditor: Component<EditorProps> = (props) => {
       return null;
     }
 
+    const fork =
+      currentProvider && suggestingMode() ? createSuggestionFork(currentProvider.document) : null;
+
+    // Tracked, so restart() rebuilds the fork.
+    if (fork) forkRevision();
+
     const collaborationExtensions = currentProvider
       ? [
+          // Edits in the fork aren't shared, nor are the cursors in it.
           Collaboration.configure({
-            awareness: currentProvider.awareness,
+            awareness: fork ? null : currentProvider.awareness,
             canChangeImages: () => props.images?.enabled() ?? false,
-            document: currentProvider.document
+            document: fork?.document ?? currentProvider.document
           }),
-          CollaborationCaret.configure({
-            provider: currentProvider,
-            user: collaborationUser()
-          })
+          ...(fork
+            ? [
+                Suggesting.configure({
+                  fork,
+                  suggesting: () => props.suggesting,
+                  restart: () => setForkRevision((revision) => revision + 1),
+                  owner,
+                  renderBlock: SuggestedBlock
+                })
+              ]
+            : [
+                CollaborationCaret.configure({
+                  provider: currentProvider,
+                  user: collaborationUser()
+                }),
+                SuggestionApply.configure({
+                  setApplied: async (id, applied) => props.comments?.setApplied(id, applied)
+                }),
+                SuggestionPreview.configure({
+                  shown: () => untrack(() => props.comments?.showSuggestions ?? false),
+                  owner,
+                  renderBlock: SuggestedBlock,
+                  needsParent: (node) => {
+                    const name = node.type === "element" ? String(node.attrs?.name) : null;
+
+                    return Boolean(name && untrack(() => props.elementViews?.parents(name)));
+                  }
+                })
+              ])
         ]
       : [];
     const diffExtensions = props.diff ? [VersionDiff.configure({ ...props.diff, owner })] : [];
@@ -296,6 +357,9 @@ const ClientEditor: Component<EditorProps> = (props) => {
           untrack(() => {
             const titleNode = editor.state.doc.firstChild;
 
+            // A fork's title is saved as a suggestion, not as a rename.
+            if (fork) return;
+
             if (titleNode?.type.name !== "title") return;
 
             const title = normalizeEntryTitle(titleNode.textContent);
@@ -306,6 +370,8 @@ const ClientEditor: Component<EditorProps> = (props) => {
       });
 
       instances.add(instance);
+      // After the views, which still read the fork as the editor closes.
+      instance.on("destroy", () => setTimeout(() => fork?.destroy()));
 
       return instance;
     });
@@ -355,6 +421,21 @@ const ClientEditor: Component<EditorProps> = (props) => {
     const threads = props.comments?.threads ?? [];
 
     if (currentEditor) untrack(() => updateComments(currentEditor, { threads }));
+  });
+
+  createEffect(
+    on(
+      () => props.comments?.showSuggestions,
+      () => editor()?.commands.updateDecorations("suggestionPreview"),
+      { defer: true }
+    )
+  );
+
+  createEffect(() => {
+    const currentEditor = editor();
+    const own = props.suggesting?.own;
+
+    if (currentEditor && own) untrack(() => syncOwnSuggestions(currentEditor, own));
   });
 
   // Entry links show their entries' current titles, e.g. after a rename.

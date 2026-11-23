@@ -150,14 +150,15 @@ const appendChildBlock = (
       tr.setNodeMarkup(pos, undefined, { ...node.attrs, ...data, source: formatElement(data) });
     }
 
-    // Into the new block's text. One without, e.g. a self-closing element, keeps the selection:
-    // the text after it can be hidden or far away, e.g. after a file in a file tree.
+    // A block without text, e.g. self-closing, keeps the selection, which can be far away.
     const text = Selection.findFrom(tr.doc.resolve(from), 1, true);
+    const hasText = text && text.from < from + created.nodeSize;
 
-    if (text && text.from < from + created.nodeSize) tr.setSelection(text).scrollIntoView();
+    if (hasText) tr.setSelection(text).scrollIntoView();
 
     editor.view.dispatch(tr);
-    editor.view.focus();
+
+    if (hasText) editor.view.focus();
 
     return true;
   } catch {
@@ -200,6 +201,7 @@ const createElementExtensionView = (options: ElementExtensionViewOptions): Eleme
   const updatePlace = () => setPlace(getElementPlace(options.editor, options.getPos()));
 
   let lastBase: PlaceBase | null = null;
+  let destroyed = false;
 
   // Siblings and children change without updating this node, so these transactions recount; other
   // changes, e.g. typing elsewhere, keep the node, its position, its parent, and the selection away.
@@ -230,7 +232,8 @@ const createElementExtensionView = (options: ElementExtensionViewOptions): Eleme
     const owner = options.editor.state.doc.nodeAt(options.getPos() ?? -1)?.attrs.id;
     const meta: PresentationMeta = { owner, presentation };
 
-    if (!owner) return;
+    // Cleanups run while ProseMirror updates the view, where a dispatch reads stale positions.
+    if (!owner || destroyed) return;
 
     options.editor.view.dispatch(
       options.editor.state.tr.setMeta(elementPresentationKey, meta).setMeta("addToHistory", false)
@@ -398,6 +401,7 @@ const createElementExtensionView = (options: ElementExtensionViewOptions): Eleme
       setState(next);
     },
     destroy() {
+      destroyed = true;
       options.editor.off("transaction", onTransaction);
       uiObserver.disconnect();
       dispose();

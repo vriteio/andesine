@@ -4,6 +4,7 @@ import { deleteComment } from "./delete";
 import { listCommentThreads } from "./list";
 import { replyToCommentThread } from "./reply";
 import { resolveCommentThread } from "./resolve";
+import { setSuggestionApplied } from "./set-applied";
 import { suggestChange } from "./suggest";
 import { updateComment } from "./update";
 import { updateSuggestion } from "./update-suggestion";
@@ -15,6 +16,7 @@ const Comments = {
   list: listCommentThreads,
   reply: replyToCommentThread,
   resolve: resolveCommentThread,
+  setApplied: setSuggestionApplied,
   suggest: suggestChange,
   update: updateComment,
   updateSuggestion

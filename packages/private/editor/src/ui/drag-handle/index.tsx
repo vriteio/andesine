@@ -300,9 +300,12 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       hideDragHandle();
     };
 
+    // `editor.view` is gone once the editor is destroyed.
+    const editorDOM = props.editor.view.dom;
+
     scrollContainer?.addEventListener("pointermove", handlePointerMove);
     scrollContainer?.addEventListener("pointerleave", handlePointerLeave);
-    props.editor.view.dom.addEventListener("scroll", updateDragHandleVisibility, true);
+    editorDOM.addEventListener("scroll", updateDragHandleVisibility, true);
     window.addEventListener("dragover", handleDragOver);
     window.addEventListener("dragend", stopAutoScroll);
     window.addEventListener("drop", stopAutoScroll);
@@ -346,7 +349,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       moveDragHandle.clear();
       scrollContainer?.removeEventListener("pointermove", handlePointerMove);
       scrollContainer?.removeEventListener("pointerleave", handlePointerLeave);
-      props.editor.view.dom.removeEventListener("scroll", updateDragHandleVisibility, true);
+      editorDOM.removeEventListener("scroll", updateDragHandleVisibility, true);
       window.removeEventListener("dragover", handleDragOver);
       window.removeEventListener("dragend", stopAutoScroll);
       window.removeEventListener("drop", stopAutoScroll);
