@@ -198,7 +198,11 @@ const IconPicker: Component<IconPickerProps> = (props) => {
                 class=":base-2: z-50 m-0 rounded-[0.625rem] bg-white p-0 pointer-events-auto"
                 style={{ "transform-origin": "var(--transform-origin)" }}
               >
-                <div class=":base: flex w-max max-w-full flex-col gap-2 p-2">
+                {/* Keys stay in the picker, e.g. Enter on an icon, inside a menu without a portal. */}
+                <div
+                  class=":base: flex w-max max-w-full flex-col gap-2 p-2"
+                  onKeyDown={(event) => event.stopPropagation()}
+                >
                   <div class=":base: flex items-center gap-1">
                     <Input
                       ref={(input) => {
@@ -210,7 +214,6 @@ const IconPicker: Component<IconPickerProps> = (props) => {
                       placeholder="Search icons"
                       value={query()}
                       setValue={setQuery}
-                      onKeyDown={(event) => event.stopPropagation()}
                       onEnter={(event) => event.preventDefault()}
                     />
                     <Show when={props.clearable && props.value}>

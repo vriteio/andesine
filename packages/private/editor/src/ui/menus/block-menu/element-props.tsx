@@ -82,7 +82,9 @@ const connectFormToMenu = (form: HTMLElement) => {
   const onFormKeyDown = (event: KeyboardEvent) => {
     const target = event.target as HTMLElement;
     const step = getStep(event);
-    const isInOpenSelect = Boolean(target.closest('[aria-expanded="true"], [role="listbox"]'));
+    const isInOpenSelect = Boolean(
+      target.closest('[aria-expanded="true"], [role="listbox"], [role="dialog"]')
+    );
     const fields = getFields();
     const next = fields[fields.findIndex((field) => field.contains(target)) + step];
 
@@ -254,6 +256,8 @@ const ElementPropsForm = (props: ElementPropsFormProps) => {
                     <div class="flex w-full min-w-0 flex-col gap-1 p-1">
                       <span class="text-xs text-gray-500">{label()}</span>
                       <IconPicker
+                        portal={false}
+                        positioningStrategy="absolute"
                         value={value() === undefined ? undefined : String(value())}
                         sets={icons().sets}
                         loadSet={icons().loadSet}

@@ -28,7 +28,12 @@ import {
   selectStop
 } from "#editor/ui/keyboard-stops";
 import type { ElementViews } from "#editor/client-types";
-import { acceptsBlock, addsRejectedChildren, getAccepts } from "#editor/lib/element-content";
+import {
+  acceptsBlock,
+  addsRejectedChildren,
+  getAccepts,
+  getElementAncestors
+} from "#editor/lib/element-content";
 
 interface ElementsOptions {
   notify?(type: "success" | "error", text: string): void;
@@ -368,13 +373,17 @@ const Elements = Extension.create<ElementsOptions>({
           const opensSelfClosing = transaction.getMeta("uiEvent") === "drop";
           let valid = true;
 
-          transaction.doc.descendants((node) => {
+          transaction.doc.descendants((node, pos) => {
             if (node.type.name !== "element") {
               return;
             }
             try {
               const data = getElementData(node.attrs);
-              if (data.selfClosing && node.childCount && !opensSelfClosing) {
+              const isOpened = data.selfClosing && node.childCount && !opensSelfClosing;
+              // A view shows a self-closing element's content too, so any content opens it.
+              const ancestors = isOpened ? getElementAncestors(transaction.doc, pos) : [];
+
+              if (isOpened && !elementViews?.resolve(data.name, ancestors)) {
                 valid = false;
               }
             } catch {

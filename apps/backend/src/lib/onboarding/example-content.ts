@@ -89,10 +89,10 @@ The entries below show how to do each step.
 ## In this guide
 
 <CardGrid>
-<Card title="Write and organize" description="The editor, formatting, collections, and search." />
-<Card title="Properties and schemas" description="Structured fields for the entries of a collection." />
-<Card title="Publish your content" description="Drafts, versions, and channels." />
-<Card title="Connect apps and agents" description="MCP, the API and SDK, Pages, and the CLI." />
+<Card title="Write and organize">The editor, formatting, collections, and search.</Card>
+<Card title="Properties and schemas">Structured fields for the entries of a collection.</Card>
+<Card title="Publish your content">Drafts, versions, and channels.</Card>
+<Card title="Connect apps and agents">MCP, the API and SDK, Pages, and the CLI.</Card>
 </CardGrid>
 
 | Entry | What you learn |

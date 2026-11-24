@@ -109,7 +109,7 @@ const createElementViewRenderer =
 
         closing.replaceChildren(...renderClosingTag(`</${editing ? draftName : name}>`, editing));
       }
-      contentDOM.hidden = node.attrs.selfClosing;
+      contentDOM.hidden = node.attrs.selfClosing && !extensionView.active();
       badge.update();
       closing.hidden = node.attrs.selfClosing || extensionView.active();
       opening.hidden = extensionView.active();
@@ -328,7 +328,7 @@ const createElementViewRenderer =
 
     contentDOM.addEventListener("mousedown", (event) => {
       const pos = getPos();
-      if (!canEdit() || node.childCount || node.attrs.selfClosing || typeof pos !== "number") {
+      if (!canEdit() || node.childCount || typeof pos !== "number") {
         return;
       }
       event.preventDefault();
