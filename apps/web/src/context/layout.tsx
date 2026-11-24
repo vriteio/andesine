@@ -64,7 +64,7 @@ const LayoutProvider: ParentComponent = (props) => {
             leftSidePanelWidth,
             rightSidePanelWidth
           })
-        )}; path=/; SameSite=Lax`;
+        )}; path=/; max-age=31536000; SameSite=Lax`;
       },
       { defer: true }
     )

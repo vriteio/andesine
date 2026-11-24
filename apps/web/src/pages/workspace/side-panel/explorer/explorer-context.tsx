@@ -97,9 +97,10 @@ const ExplorerProvider: ParentComponent = (props) => {
     // An empty state is kept, so collapsed collections don't expand again.
     nextExpandedState[workspaceID] = expanded;
 
+    // A year, so it outlasts browser restarts, unlike a session cookie.
     document.cookie = `${EXPLORER_STATE_COOKIE}=${encodeURIComponent(
       JSON.stringify(nextExpandedState)
-    )}; path=/; SameSite=Lax`;
+    )}; path=/; max-age=31536000; SameSite=Lax`;
   };
   const levelIDs = createMemo(() => {
     return {
