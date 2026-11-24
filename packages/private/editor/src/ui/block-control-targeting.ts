@@ -273,6 +273,14 @@ const registerSelectionControlHiding = (editor: Editor, hideControls: () => void
   };
 };
 
+/** The hidden block that a suggestion's copy at the point is drawn in place of. */
+const getReplacedBlockAtPoint = (editor: Editor, x: number, y: number): HTMLElement | null => {
+  const copy = editor.view.root.elementFromPoint(x, y)?.closest<HTMLElement>(".ProseMirror-widget");
+  const id = copy?.dataset.id ?? copy?.querySelector<HTMLElement>("[data-id]")?.dataset.id;
+  const selector = id && `.suggestion-replaced[data-id="${CSS.escape(id)}"]`;
+
+  return selector ? editor.view.dom.querySelector<HTMLElement>(selector) : null;
+};
 const getBlockControlHitAtY = (
   editor: Editor,
   y: number,
@@ -291,7 +299,10 @@ const getBlockControlHitAtY = (
 
   if (structureHit.target) return structureHit;
 
-  const position = view.posAtCoords({ left: x, top: y });
+  const replacedBlock = getReplacedBlockAtPoint(editor, x, y);
+  const position = replacedBlock
+    ? { pos: view.posAtDOM(replacedBlock, 0), inside: -1 }
+    : view.posAtCoords({ left: x, top: y });
 
   if (!position) return structureHit;
 

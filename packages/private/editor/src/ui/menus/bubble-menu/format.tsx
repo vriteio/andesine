@@ -2,6 +2,7 @@ import clsx from "clsx";
 import { type Component, For, Show, createSignal, onCleanup } from "solid-js";
 import { type Editor } from "@tiptap/core";
 import { Card, IconButton, Shortcut, Tooltip } from "@andesine/components";
+import { getBlockRangeOfSelection } from "#editor/extensions";
 import { useBlockMenuContext } from "#editor/ui/menus/block-menu";
 
 interface FormatMenuItemGroup {
@@ -245,23 +246,18 @@ const FormatMenu: Component<FormatMenuProps> = (props) => {
             icon="i-lucide:ellipsis"
             onClick={(event) => {
               const reference = event.currentTarget;
-              const { selection, doc } = props.editor.state;
-              let from = 0;
-              let to = 0;
+              const range = getBlockRangeOfSelection(props.editor);
 
               event.preventDefault();
               event.stopPropagation();
-              doc.nodesBetween(selection.from, selection.to, (node, pos) => {
-                from = from || pos;
-                to = pos + node.nodeSize;
 
-                return false;
-              });
+              if (!range) return;
+
               openMenu(reference);
               props.editor
                 .chain()
                 .setMeta("bubbleMenu", "hide")
-                .setBlockSelection({ from, to })
+                .setBlockSelection(range)
                 .focus()
                 .run();
             }}

@@ -52,44 +52,32 @@ const isSameBlockSelection = (selection: Selection, nextSelection: NodeRangeSele
     selection.eq(nextSelection)
   );
 };
-const setBlockSelectionAtCoords = (
+/** The block that a right click at the point selects. */
+const getBlockRangeAtCoords = (
   editor: Editor,
   coords: { left: number; top: number }
-): boolean => {
-  const { doc, selection } = editor.state;
+): BlockSelectionRange | null => {
+  const { doc } = editor.state;
   const { pos } = editor.view.posAtCoords(coords) || {};
   // In an element view, the top-level block, or a child that the view opts in.
   const viewBlock = getViewTargetAtPoint(editor, coords.left, coords.top, false, "menu");
 
   if (viewBlock) {
-    const to = viewBlock.pos + viewBlock.node.nodeSize;
+    const from = viewBlock.pos;
 
-    if (!(isBlockSelection(selection) && selection.from <= viewBlock.pos && selection.to >= to)) {
-      editor.commands.setBlockSelection({
-        from: viewBlock.pos,
-        to,
-        depth: doc.resolve(viewBlock.pos).depth
-      });
-    }
-
-    return true;
+    return { from, to: from + viewBlock.node.nodeSize, depth: doc.resolve(from).depth };
   }
 
-  if (typeof pos !== "number") return false;
+  if (typeof pos !== "number") return null;
 
   const resolvedPos = doc.resolve(pos);
   for (let depth = resolvedPos.depth; depth > 0; depth -= 1) {
     if (resolvedPos.node(depth).type.name !== "element") continue;
 
     const childDepth = Math.min(depth + 1, resolvedPos.depth);
-    const child = resolvedPos.node(childDepth);
     const from = resolvedPos.before(childDepth);
-    const to = from + child.nodeSize;
 
-    if (!(isBlockSelection(selection) && selection.from <= from && selection.to >= to)) {
-      editor.commands.setBlockSelection({ from, to, depth: childDepth - 1 });
-    }
-    return true;
+    return { from, to: from + resolvedPos.node(childDepth).nodeSize, depth: childDepth - 1 };
   }
   const pointElement = document.elementFromPoint(coords.left, coords.top);
   const schemaField =
@@ -103,15 +91,7 @@ const setBlockSelectionAtCoords = (
     const fragmentFrom = $fragment.depth ? $fragment.before(1) : $fragment.pos;
     const fragment = doc.nodeAt(fragmentFrom);
 
-    if (fragment) {
-      editor.commands.setBlockSelection({
-        from: fragmentFrom,
-        to: fragmentFrom + fragment.nodeSize,
-        depth: 0
-      });
-
-      return true;
-    }
+    if (fragment) return { from: fragmentFrom, to: fragmentFrom + fragment.nodeSize, depth: 0 };
   }
 
   // In a fragment, its block, as at the top level; the fragment's own controls are on its header.
@@ -124,33 +104,53 @@ const setBlockSelectionAtCoords = (
           : pos - (resolvedPos.nodeBefore?.nodeSize ?? 0);
     const child = doc.nodeAt(childFrom);
 
-    if (child) {
-      const childTo = childFrom + child.nodeSize;
-
-      if (!(
-        isBlockSelection(selection) &&
-        selection.from <= childFrom &&
-        selection.to >= childTo
-      )) {
-        editor.commands.setBlockSelection({ from: childFrom, to: childTo, depth: 1 });
-      }
-
-      return true;
-    }
+    if (child) return { from: childFrom, to: childFrom + child.nodeSize, depth: 1 };
   }
 
   const node = resolvedPos.node(1) || resolvedPos.nodeAfter;
-
-  if (!node) return false;
-
   const from = resolvedPos.start(1);
-  const to = from + node.nodeSize - 2;
 
-  if (!(isBlockSelection(selection) && selection.from <= from && selection.to >= to)) {
-    editor.chain().setBlockSelection({ from, to }).run();
-  }
+  return node ? { from, to: from + node.nodeSize - 2 } : null;
+};
+const setBlockSelectionAtCoords = (
+  editor: Editor,
+  coords: { left: number; top: number }
+): boolean => {
+  const { selection } = editor.state;
+  const range = getBlockRangeAtCoords(editor, coords);
+  // A block selection that covers the range stays, e.g. the selected blocks a menu acts on.
+  const isCovered =
+    isBlockSelection(selection) &&
+    range &&
+    selection.from <= range.from &&
+    selection.to >= range.to;
 
-  return true;
+  if (range && !isCovered) editor.commands.setBlockSelection(range);
+
+  return Boolean(range);
+};
+/** The blocks that right clicks at the selection's ends select, or one of them if they aren't siblings. */
+const getBlockRangeOfSelection = (editor: Editor): BlockSelectionRange | null => {
+  const { doc, selection } = editor.state;
+  const start = editor.view.coordsAtPos(selection.from, 1);
+  const end = editor.view.coordsAtPos(selection.to, -1);
+  const startRange = getBlockRangeAtCoords(editor, {
+    left: start.left + 1,
+    top: (start.top + start.bottom) / 2
+  });
+  const endRange = getBlockRangeAtCoords(editor, {
+    left: end.left - 1,
+    top: (end.top + end.bottom) / 2
+  });
+  const areSiblings =
+    startRange &&
+    endRange &&
+    startRange.depth === endRange.depth &&
+    doc.resolve(startRange.from).node(startRange.depth ?? 0) ===
+      doc.resolve(endRange.to).node(endRange.depth ?? 0);
+
+  // An end out of view has no block, e.g. the start of a long selection.
+  return areSiblings ? { ...startRange, to: endRange.to } : (startRange ?? endRange);
 };
 const centerSelectionEnd = ({ view, state }: Editor) => {
   const container = view.dom.closest<HTMLElement>("[data-editor-scrollable-container]");
@@ -384,5 +384,6 @@ export {
   isBlockSelection,
   isFragmentChildBlockSelection,
   isSameBlockSelection,
+  getBlockRangeOfSelection,
   setBlockSelectionAtCoords
 };
