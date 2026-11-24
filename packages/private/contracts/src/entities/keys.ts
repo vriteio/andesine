@@ -4,6 +4,7 @@ import * as z from "zod";
 const keyPermissionType = z.enum([
   "entries",
   "read:entries",
+  "comments",
   "versions",
   "read:versions",
   "publishing",

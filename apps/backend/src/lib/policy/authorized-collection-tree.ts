@@ -170,13 +170,16 @@ const getKeyActions = (auth: SessionData): CollectionAccess => {
     entryActions.push("entry:read");
   }
 
+  if (hasGrantedPermission(permissions, "comments")) {
+    entryActions.push("comment:create");
+  }
+
   if (hasGrantedPermission(permissions, "entries")) {
     entryActions.push(
       "entry:create",
       "entry:update",
       "entry:move",
       "entry:delete",
-      "comment:create",
       "comment:resolve"
     );
   }

@@ -13,6 +13,9 @@ interface ParsedPermission {
   resource: string;
 }
 type AuthorizationRequirements = TypedAuthorizationRequirements | true;
+
+// Editing covers commenting.
+const IMPLIED_PERMISSIONS: Record<string, string> = { content: "comments", entries: "comments" };
 const parsePermission = (permission: string): ParsedPermission => {
   const [accessOrResource, readResource] = permission.split(":");
 
@@ -24,6 +27,7 @@ const hasPermission = (granted: string, required: string): boolean => {
   const grantedPermission = parsePermission(granted);
   const requiredPermission = parsePermission(required);
 
+  if (IMPLIED_PERMISSIONS[granted] === required) return true;
   if (grantedPermission.resource !== requiredPermission.resource) return false;
 
   return grantedPermission.access === "write" || requiredPermission.access === "read";

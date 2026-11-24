@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.16.0
+
+- `api comments` commands, except `list`, `resolve`, `apply`, and `set-applied`, need the new
+  `comments` key permission with `read:entries`; `entries` includes both.
+- `andesine mcp` lists `add_comment` and `suggest_edit` for keys with the `comments` permission.
+- Requires `@andesine/sdk` 0.14.0.
+
 ## 0.15.0
 
 - `api memberships invite --link` creates a single-use invite link instead of an email

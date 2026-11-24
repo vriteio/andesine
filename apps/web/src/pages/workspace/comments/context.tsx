@@ -33,10 +33,14 @@ interface CommentsContextValue {
   setDraft: Setter<EditorCommentDraft | null>;
   loading: Accessor<boolean>;
   setLoading: Setter<boolean>;
-  suggesting: Accessor<boolean>;
-  setSuggesting: Setter<boolean>;
+  /** Unset follows the role: commenters suggest, editors edit. */
+  suggesting: Accessor<boolean | undefined>;
+  setSuggesting: Setter<boolean | undefined>;
   suggestionsShown: Accessor<boolean>;
   setSuggestionsShown: Setter<boolean>;
+  /** Opens a draft on the entry's first block; null without an editor. */
+  startComment: Accessor<(() => void) | null>;
+  setStartComment: Setter<(() => void) | null>;
 }
 
 const COMMENTS_PANEL_ID = "comments";
@@ -53,8 +57,9 @@ const CommentsProvider: ParentComponent = (props) => {
   const [loading, setLoading] = createSignal(true);
   const [draft, setDraft] = createSignal<EditorCommentDraft | null>(null);
   const [sheetOpened, setSheetOpened] = createSignal(false);
-  const [suggesting, setSuggesting] = createSignal(false);
+  const [suggesting, setSuggesting] = createSignal<boolean>();
   const [suggestionsShown, setSuggestionsShown] = createSignal(true);
+  const [startComment, setStartComment] = createSignal<(() => void) | null>(null);
   const md = createMediaQuery("(min-width: 768px)");
   const mobile = () => !md();
   const panelOpened = () => {
@@ -104,7 +109,9 @@ const CommentsProvider: ParentComponent = (props) => {
         suggesting,
         setSuggesting,
         suggestionsShown,
-        setSuggestionsShown
+        setSuggestionsShown,
+        startComment,
+        setStartComment
       }}
     >
       {props.children}

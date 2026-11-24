@@ -1,5 +1,5 @@
 import { useParams, useSearchParams } from "@solidjs/router";
-import { type Component, createMemo, For, Show, Suspense } from "solid-js";
+import { type Component, createMemo, createSignal, For, Show, Suspense } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
 import { useRouteData } from "#web/lib/navigation";
 import { Button, IconButton, Skeleton, Tooltip } from "@andesine/components";
@@ -12,6 +12,7 @@ import {
   createVersionDetailsResponse
 } from "#web/lib/data";
 import { PublishingMenu } from "./publishing-menu";
+import { EditingModeMenu } from "./editing-mode-menu";
 import { SchemaApplication } from "./schema-application";
 import clsx from "clsx";
 import { usePublishing } from "#web/context/publishing";
@@ -24,6 +25,7 @@ const EditorToolbar: Component = () => {
   const publishing = usePublishing();
   const comments = useComments();
   const routeData = useRouteData();
+  const [publishingShown, setPublishingShown] = createSignal(false);
   const versionID = () => (typeof searchParams.version === "string" ? searchParams.version : "");
   const snapshotID = () => {
     return typeof searchParams.snapshotID === "string" ? searchParams.snapshotID : "";
@@ -55,20 +57,12 @@ const EditorToolbar: Component = () => {
 
     return content.entriesCollection().findOne({ id: params.slug });
   });
-  // Hidden while suggesting, which always shows the suggestions.
-  const hasSuggestions = () => {
-    return !comments.suggesting() && (comments.comments()?.threads ?? []).some(isOpenSuggestion);
-  };
-  // Commenters always suggest, so they have no switch.
   const canSuggest = () => {
-    const collectionID = entry()?.collectionID ?? null;
-
-    return (
-      Boolean(entry()) &&
-      content.canEntry(collectionID, "entry:update") &&
-      content.canEntry(collectionID, "comment:create")
-    );
+    return Boolean(entry()) && content.canEntry(entry()?.collectionID ?? null, "comment:create");
   };
+  const canUpdate = () => content.canEntry(entry()?.collectionID ?? null, "entry:update");
+  const suggesting = () => comments.suggesting() ?? !canUpdate();
+  const hasSuggestions = () => (comments.comments()?.threads ?? []).some(isOpenSuggestion);
   const deletedEntry = createMemo(() => {
     if (!params.slug?.startsWith("ent_") || routeData()) return null;
 
@@ -283,7 +277,7 @@ const EditorToolbar: Component = () => {
             />
           </Tooltip>
         </Show>
-        <Show when={!versionID() && hasSuggestions()}>
+        <Show when={!versionID() && hasSuggestions() && !canSuggest()}>
           <Tooltip
             content={comments.suggestionsShown() ? "Hide suggestions" : "Show suggestions"}
             placement="bottom"
@@ -298,28 +292,22 @@ const EditorToolbar: Component = () => {
             />
           </Tooltip>
         </Show>
-        <Show when={!versionID() && canSuggest()}>
-          <Tooltip
-            content={comments.suggesting() ? "Stop suggesting" : "Suggest changes"}
-            placement="bottom"
-            fixed
-          >
-            <IconButton
-              icon="i-lucide:file-pen-line"
-              variant={comments.suggesting() ? "secondary" : "ghost"}
-              label={comments.suggesting() ? "Suggesting" : undefined}
-              onClick={() => comments.setSuggesting((suggesting) => !suggesting)}
-              aria-label="Suggest changes"
-              aria-pressed={comments.suggesting()}
-            />
-          </Tooltip>
-        </Show>
         <Show when={!versionID() && entry()}>
           {(currentEntry) => (
             <div class="hidden md:block">
-              <PublishingMenu entryID={currentEntry().id} />
+              <PublishingMenu entryID={currentEntry().id} onShownChange={setPublishingShown} />
             </div>
           )}
+        </Show>
+        <Show when={!versionID() && canSuggest()}>
+          <EditingModeMenu
+            suggesting={suggesting()}
+            canEdit={canUpdate()}
+            compact={publishingShown()}
+            suggestionsShown={hasSuggestions() ? comments.suggestionsShown() : undefined}
+            setSuggesting={comments.setSuggesting}
+            setSuggestionsShown={comments.setSuggestionsShown}
+          />
         </Show>
         <Show when={!content.offline() && !versionID() && schema() && schemaCollection()}>
           <SchemaApplication

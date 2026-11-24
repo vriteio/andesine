@@ -4,6 +4,7 @@ import { type Permission } from "../entities/roles";
 const keyPermissionRequirements: Record<KeyPermission, Permission[]> = {
   "entries": ["content"],
   "read:entries": [],
+  "comments": ["comments"],
   "collections": ["content"],
   "read:collections": [],
   "versions": ["content"],

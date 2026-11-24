@@ -706,7 +706,7 @@ export interface paths {
      * Create a comment thread
      * @description Starts a comment thread on an entry, a block (blockID) or a text range (quote). A quote is plain text as readers see it, with blocks and hard breaks as line breaks (\n). It must occur once in the entry, or in the block when blockID is set, unless offset gives its position. A suggestion replaces a quote within one paragraph, without line breaks; suggest changes whole blocks.
      *
-     *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     *     Required API key permissions: read:entries, comments. Write permissions also grant read access for the same resource.
      */
     post: operations["comments.createThread"];
     delete?: never;
@@ -726,7 +726,7 @@ export interface paths {
     put?: never;
     /**
      * Reply to a comment thread
-     * @description Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     * @description Required API key permissions: read:entries, comments. Write permissions also grant read access for the same resource.
      */
     post: operations["comments.reply"];
     delete?: never;
@@ -749,7 +749,7 @@ export interface paths {
      * Delete a comment
      * @description Deletes your own comment, or any comment with permission to resolve. Deleting the first comment deletes the thread.
      *
-     *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     *     Required API key permissions: read:entries, comments. Write permissions also grant read access for the same resource.
      */
     delete: operations["comments.delete"];
     options?: never;
@@ -758,7 +758,7 @@ export interface paths {
      * Update a comment
      * @description Changes your own comment. Omitted mentions stay unchanged.
      *
-     *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     *     Required API key permissions: read:entries, comments. Write permissions also grant read access for the same resource.
      */
     patch: operations["comments.update"];
     trace?: never;
@@ -798,7 +798,7 @@ export interface paths {
      * Suggest a change
      * @description Starts a comment thread that suggests replacing consecutive blocks (blockIDs) with other blocks, inserting blocks (after), or a new entry title (title). Block IDs come from entries.get with contentFormat blocks. People with permission to update the entry can apply it. When your own open suggestion without replies or a note overlaps it, that thread gets the new change, which wins where both change the same words, and returns.
      *
-     *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     *     Required API key permissions: read:entries, comments. Write permissions also grant read access for the same resource.
      */
     post: operations["comments.suggest"];
     delete?: never;
@@ -819,7 +819,7 @@ export interface paths {
      * Update a suggestion
      * @description Replaces the change of your own suggestion, against the current content. A suggestion resolved because it no longer applied reopens.
      *
-     *     Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     *     Required API key permissions: read:entries, comments. Write permissions also grant read access for the same resource.
      */
     put: operations["comments.updateSuggestion"];
     post?: never;
@@ -3587,6 +3587,7 @@ export interface components {
           permissions: (
             | "entries"
             | "read:entries"
+            | "comments"
             | "versions"
             | "read:versions"
             | "publishing"
@@ -12916,6 +12917,7 @@ export interface operations {
               permissions: (
                 | "entries"
                 | "read:entries"
+                | "comments"
                 | "versions"
                 | "read:versions"
                 | "publishing"
@@ -13211,6 +13213,7 @@ export interface operations {
             permissions: (
               | "entries"
               | "read:entries"
+              | "comments"
               | "versions"
               | "read:versions"
               | "publishing"
@@ -13752,6 +13755,7 @@ export interface operations {
             permissions: (
               | "entries"
               | "read:entries"
+              | "comments"
               | "versions"
               | "read:versions"
               | "publishing"

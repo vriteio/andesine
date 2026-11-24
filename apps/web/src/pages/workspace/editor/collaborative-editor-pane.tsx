@@ -89,12 +89,12 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
     markEditorReady,
     handleProvider
   } = useDocumentLoadState(selectedDocumentID);
+  // Suggestions edit a local fork, so a read-only connection doesn't stop them.
+  const readOnly = () => documentLoadState().collaborationReadOnly && !props.suggesting;
   const collaborationStatus = () => {
     const state = documentLoadState();
 
-    if (props.editable && state.collaborationReadOnly && !state.resettingSchemaContent) {
-      return "read-only";
-    }
+    if (props.editable && readOnly() && !state.resettingSchemaContent) return "read-only";
 
     return getCollaborationStatus(state);
   };
@@ -107,7 +107,7 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
       props.editable &&
       !state.problem &&
       (state.initialSyncComplete || state.hasLocalSnapshot) &&
-      !state.collaborationReadOnly &&
+      !readOnly() &&
       (props.mode !== "schema" || schemaConnected) &&
       !state.resettingSchemaContent
     );
@@ -127,8 +127,10 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
       entryID,
       enabled: () => {
         const state = documentLoadState();
+        const isConnected = state.connection === "connected" && state.authenticated;
 
-        return editable() && state.connection === "connected" && state.authenticated;
+        // Uploads need edit rights, which a read-only connection lacks.
+        return editable() && !state.collaborationReadOnly && isConnected;
       }
     });
   });

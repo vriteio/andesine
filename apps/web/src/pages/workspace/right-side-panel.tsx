@@ -247,6 +247,7 @@ const RightSidePanelIcon: Component<RightSidePanelIconProps> = (props) => (
 );
 const RightSidePanel: Component = () => {
   const { layout } = useLayout();
+  const { content } = useWorkspace();
   const [searchParams, setSearchParams] = useSearchParams();
   const options = useRightSidePanelOptions();
   const loading = useRightSidePanelLoading();
@@ -254,9 +255,10 @@ const RightSidePanel: Component = () => {
     const requested = searchParams[RIGHT_SIDE_PANEL_PARAM];
     const requestedOptionID = typeof requested === "string" && requested ? requested : "versions";
     const option = options().find((item) => item.id === requestedOptionID);
+    // A requested panel shows once its extension starts or permissions load, not another meanwhile.
+    const isWaiting = (loading() && requested) || content.accessLoading();
 
-    // A requested extension panel shows once its extension starts, not another panel meanwhile.
-    return option || (loading() && requested ? undefined : options()[0]);
+    return option || (isWaiting ? undefined : options()[0]);
   });
   const selectOption = (option: RightSidePanelOption) => {
     setSearchParams({

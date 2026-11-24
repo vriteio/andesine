@@ -15,6 +15,7 @@ const MCP_KEY_PERMISSIONS = new Set<KeyPermission>([
   "versions",
   "publishing",
   "read:entries",
+  "comments",
   "read:collections",
   "read:versions",
   "read:publishing"

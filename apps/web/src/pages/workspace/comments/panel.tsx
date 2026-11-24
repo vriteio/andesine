@@ -1,4 +1,4 @@
-import { createRef, ScrollShadow, ToggleGroup } from "@andesine/components";
+import { Button, createRef, ScrollShadow, ToggleGroup } from "@andesine/components";
 import type { EditorCommentThread } from "@andesine/editor";
 import { ThreadCard } from "@andesine/editor/comments";
 import clsx from "clsx";
@@ -15,7 +15,8 @@ const FILTER_OPTIONS = [
 ];
 
 const CommentsPanel: Component = () => {
-  const { comments, active, activate, activatedInPanel, order, loading, draft } = useComments();
+  const { comments, active, activate, activatedInPanel, order, loading, draft, startComment } =
+    useComments();
   const [filter, setFilter] = createSignal<CommentsFilter>("open");
   // Title hovered, or chosen with the arrow keys.
   const [selectedThread, setSelectedThread] = createSignal<string | null>(null);
@@ -212,9 +213,28 @@ const CommentsPanel: Component = () => {
               <For
                 each={threadIDs()}
                 fallback={
-                  <p class="mx-1 text-sm text-gray-400">
-                    {filter() === "resolved" ? "No resolved comments." : "No comments yet."}
-                  </p>
+                  <div class="flex flex-col">
+                    <Show when={filter() === "open" && current().canComment && startComment()}>
+                      {(start) => (
+                        <Button
+                          class="flex w-full items-center justify-start gap-1 py-0.5 pl-0.5"
+                          variant="ghost"
+                          size="medium"
+                          onClick={() => start()()}
+                        >
+                          <div class="flex h-6 w-6 items-center justify-center">
+                            <div class="i-tabler:message-plus h-5 w-5 text-gray-400" />
+                          </div>
+                          <span class="flex-1 text-left line-clamp-1">Add comment</span>
+                        </Button>
+                      )}
+                    </Show>
+                    <p class="mx-1 mt-1 text-left text-xs text-gray-400">
+                      {filter() === "resolved"
+                        ? "No resolved comments."
+                        : "Select text or a block to comment on it."}
+                    </p>
+                  </div>
                 }
               >
                 {(threadID) => (
@@ -233,7 +253,13 @@ const CommentsPanel: Component = () => {
                         data-comment-panel-thread={threadID}
                         // Title presses count as on the card, so a draft isn't dropped.
                         data-comment-thread-card={threadID}
-                        onPointerDown={() => active() !== threadID && activate(threadID, true)}
+                        onPointerDown={(event) => {
+                          const isMenu =
+                            event.target instanceof Element &&
+                            event.target.closest("[data-comment-menu]");
+
+                          if (!isMenu && active() !== threadID) activate(threadID, true);
+                        }}
                       >
                         <ThreadTitle
                           thread={thread()}

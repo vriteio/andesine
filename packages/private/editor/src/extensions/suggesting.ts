@@ -59,6 +59,7 @@ interface SuggestingStorage {
   pending: number;
   /** The last host, for the save as the mode closes. */
   host?: EditorSuggesting;
+  fork: SuggestionFork | null;
   requestSave?(): void;
 }
 interface SuggestionFork {
@@ -66,6 +67,7 @@ interface SuggestionFork {
   document: Doc;
   /** Cached until the main document changes. */
   getMain(schema: Schema): JSONContent;
+  getMainDoc(schema: Schema): ProseMirrorNode;
   destroy(): void;
 }
 
@@ -86,10 +88,15 @@ const createSuggestionFork = (main: Doc): SuggestionFork => {
   const document = new Doc();
   const forward = (update: Uint8Array) => {
     // Before the fork applies it, as that redraws the differences.
+    mainDoc = null;
     mainJSON = null;
     applyUpdate(document, update, MAIN_ORIGIN);
   };
+  const getMainDoc = (schema: Schema) => {
+    return (mainDoc ??= yXmlFragmentToProseMirrorRootNode(main.getXmlFragment("default"), schema));
+  };
 
+  let mainDoc: ProseMirrorNode | null = null;
   let mainJSON: JSONContent | null = null;
 
   applyUpdate(document, encodeStateAsUpdate(main), MAIN_ORIGIN);
@@ -98,12 +105,8 @@ const createSuggestionFork = (main: Doc): SuggestionFork => {
   return {
     main,
     document,
-    getMain: (schema) => {
-      return (mainJSON ??= yXmlFragmentToProseMirrorRootNode(
-        main.getXmlFragment("default"),
-        schema
-      ).toJSON());
-    },
+    getMain: (schema) => (mainJSON ??= getMainDoc(schema).toJSON()),
+    getMainDoc,
     destroy: () => {
       main.off("update", forward);
       document.destroy();
@@ -256,6 +259,28 @@ const saveSuggestions = async (
 
   return results.every((result) => result.status === "fulfilled" || isRejectedSave(result.reason));
 };
+/** Whether a block reads the same in the shared document, so comments on it anchor there. */
+const isSharedBlock = (editor: Editor, blockID: string) => {
+  const fork = (editor.storage.suggesting as SuggestingStorage | undefined)?.fork;
+  const block = getBlocks(editor.state.doc).get(blockID);
+  const main = fork && getBlocks(fork.getMainDoc(editor.schema)).get(blockID);
+
+  if (!fork) return true;
+
+  return Boolean(block && main && block.node.textContent === main.node.textContent);
+};
+/** Whether the smallest block around a range is shared, as the server anchors quotes in it. */
+const isSharedRange = (editor: Editor, from: number, to: number) => {
+  const $from = editor.state.doc.resolve(from);
+
+  for (let depth = $from.sharedDepth(to); depth > 0; depth--) {
+    const { id } = $from.node(depth).attrs;
+
+    if (typeof id === "string") return isSharedBlock(editor, id);
+  }
+
+  return !editor.storage.suggesting;
+};
 /** Restarts the fork when one of the user's loaded suggestions is resolved or deleted. */
 const syncOwnSuggestions = (editor: Editor, own: EditorOwnSuggestion[]) => {
   const ids = new Set(own.map(({ threadID }) => threadID));
@@ -282,7 +307,8 @@ const Suggesting = Extension.create<SuggestingOptions, SuggestingStorage>({
       restart: () => this.options.restart(),
       loading: false,
       pending: 0,
-      host: this.options.suggesting()
+      host: this.options.suggesting(),
+      fork: this.options.fork
     };
   },
   addDecorations() {
@@ -365,7 +391,12 @@ const Suggesting = Extension.create<SuggestingOptions, SuggestingStorage>({
             saveTimer = setTimeout(() => {
               saveTimer = undefined;
               void save(getDocuments).then((saved) => {
-                if (!saved && !destroyed && !saveTimer) schedule(RETRY_DELAY);
+                if (destroyed) return;
+
+                // New threads are in known now, so the preview stops drawing them.
+                editor.commands.updateDecorations("suggestionPreview");
+
+                if (!saved && !saveTimer) schedule(RETRY_DELAY);
               });
             }, delay);
           };
@@ -427,4 +458,11 @@ const Suggesting = Extension.create<SuggestingOptions, SuggestingStorage>({
   }
 });
 
-export { createSuggestionFork, drawSuggestedBlock, Suggesting, syncOwnSuggestions };
+export {
+  createSuggestionFork,
+  drawSuggestedBlock,
+  isSharedBlock,
+  isSharedRange,
+  Suggesting,
+  syncOwnSuggestions
+};

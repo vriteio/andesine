@@ -15,7 +15,12 @@ import {
 import { type Editor, isTextSelection } from "@tiptap/core";
 import { BubbleMenuPlugin } from "@tiptap/extension-bubble-menu";
 import { Portal } from "solid-js/web";
-import { getTextCommentTarget, isBlockSelection, updateComments } from "#editor/extensions";
+import {
+  getTextCommentTarget,
+  isBlockSelection,
+  isSharedRange,
+  updateComments
+} from "#editor/extensions";
 import { EDITOR_MENU_Z_INDEX } from "#editor/ui/constants";
 import { useBlockMenuContext } from "#editor/ui/menus/block-menu";
 import { rangeContainsCode, rangeContainsInheritedField } from "#editor/ui/block-utils";
@@ -35,11 +40,13 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
   const [wrapper, setWrapper] = createSignal<HTMLElement | null>(null);
   const [opened, setOpened] = createSignal(false);
   const [mode, setMode] = createSignal<BubbleMenuMode>("format");
+  const [shared, setShared] = createSignal(true);
   const updateTextMenuSelectionRange = () => {
     const selection = props.editor.state.selection;
 
     if (isTextSelection(selection) && !selection.empty) {
       setTextMenuSelectionRange({ from: selection.from, to: selection.to });
+      setShared(isSharedRange(props.editor, selection.from, selection.to));
     }
   };
   const handleShow = () => {
@@ -129,7 +136,7 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
               editor={props.editor}
               opened={opened()}
               readOnly={props.readOnly}
-              onComment={props.comments?.canComment ? startComment : undefined}
+              onComment={props.comments?.canComment && shared() ? startComment : undefined}
               setMode={setMode}
             />
           </Match>

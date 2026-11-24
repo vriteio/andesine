@@ -160,6 +160,8 @@ const CommentCard: Component<CommentCardProps> = (props) => {
               setOpened={setMenuOpened}
               trigger={() => (
                 <div
+                  // Opens without activating the thread, which would move it.
+                  data-comment-menu
                   class={
                     !menuOpened()
                       ? "shrink-0 opacity-20 media-mouse:hidden media-mouse:group-hover:flex media-mouse:group-hover:opacity-100"

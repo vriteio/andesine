@@ -88,3 +88,5 @@ export {
 } from "./lib/suggestion-status";
 export { isRejectedSave } from "./lib/suggestion-patches";
 export { applySuggestion } from "./extensions/suggestion-apply";
+export { updateComments } from "./extensions/comments";
+export { isSharedBlock } from "./extensions/suggesting";

@@ -37,12 +37,14 @@ const resources: Array<{
   id: Resource;
   label: string;
   defaultView?: boolean;
+  readLabel?: string;
 }> = [
   {
     id: "content",
     label: "Content",
-    description: "Create, edit, and delete entries and collections",
-    defaultView: true
+    description: "Comment on entries, or create, edit, and delete entries and collections",
+    defaultView: true,
+    readLabel: "Comment"
   },
   {
     id: "publishing",
@@ -106,7 +108,7 @@ const { accessToPermissions, emptyAccess, permissionsToAccess } = createPermissi
     { id: "api_keys", read: "read:api_keys", write: "api_keys" },
     { id: "billing", read: "read:billing", write: "billing" },
     { id: "webhooks", read: "read:webhooks", write: "webhooks" },
-    { id: "content", write: "content" },
+    { id: "content", read: "comments", write: "content" },
     { id: "publishing", write: "publishing" },
     {
       id: "restricted_collections",
@@ -255,6 +257,9 @@ const RoleSettingsPage: Component = () => {
                   options={(resource.defaultView === true
                     ? [
                         { value: "default", label: "View" },
+                        ...(resource.readLabel
+                          ? [{ value: "read", label: resource.readLabel }]
+                          : []),
                         { value: "write", label: "Manage" }
                       ]
                     : [
@@ -262,15 +267,14 @@ const RoleSettingsPage: Component = () => {
                         { value: "read", label: "View" },
                         { value: "write", label: "Manage" }
                       ]
-                  ).filter(
-                    (option) =>
-                      option.value === "default" ||
-                      canGrantRolePermission(
-                        (option.value === "write"
-                          ? resource.id
-                          : `read:${resource.id}`) as Permission
-                      )
-                  )}
+                  ).filter((option) => {
+                    const [permission] = accessToPermissions({
+                      ...emptyAccess(),
+                      [resource.id]: option.value
+                    });
+
+                    return option.value === "default" || canGrantRolePermission(permission);
+                  })}
                 />
               </Setting>
             )}

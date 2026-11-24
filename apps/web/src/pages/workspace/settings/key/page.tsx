@@ -37,6 +37,7 @@ import { BrowserAccessSection, originPattern } from "./browser-access-section";
 type Resource =
   | "ai-answers"
   | "collections"
+  | "comments"
   | "entries"
   | "memberships"
   | "publishing"
@@ -47,6 +48,11 @@ type ResourceAccess = Record<Resource, AccessLevel>;
 
 const resources: Array<{ id: Resource; label: string; description: string }> = [
   { id: "entries", label: "Entries", description: "Content entries within collections" },
+  {
+    id: "comments",
+    label: "Comments",
+    description: "Comment on entries and suggest edits; needs Entries read"
+  },
   { id: "versions", label: "Versions", description: "Entry versions and version history" },
   { id: "publishing", label: "Publishing", description: "Published content and channels" },
   { id: "collections", label: "Collections", description: "Collection structure and metadata" },
@@ -76,6 +82,7 @@ const { accessToPermissions, permissionsToAccess } = createPermissionAccessMappe
 >({
   resources: [
     { id: "entries", read: "read:entries", write: "entries" },
+    { id: "comments", write: "comments" },
     { id: "versions", read: "read:versions", write: "versions" },
     { id: "publishing", read: "read:publishing", write: "publishing" },
     { id: "collections", read: "read:collections", write: "collections" },
@@ -318,7 +325,7 @@ const KeySettingsPage: Component = () => {
                         [resource.id]: value as AccessLevel
                       }));
                     }}
-                    options={(resource.id === "ai-answers"
+                    options={(resource.id === "ai-answers" || resource.id === "comments"
                       ? [
                           { value: "default" as const, label: "None" },
                           { value: "write" as const, label: "Allow" }

@@ -1079,7 +1079,7 @@ const commands: APICommand[] = [
     path: "/entries/{entryID}/comment-threads",
     summary: "Create a comment thread",
     description:
-      "Starts a comment thread on an entry, a block (blockID) or a text range (quote). A quote is plain text as readers see it, with blocks and hard breaks as line breaks (\\n). It must occur once in the entry, or in the block when blockID is set, unless offset gives its position. A suggestion replaces a quote within one paragraph, without line breaks; suggest changes whole blocks.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+      "Starts a comment thread on an entry, a block (blockID) or a text range (quote). A quote is plain text as readers see it, with blocks and hard breaks as line breaks (\\n). It must occur once in the entry, or in the block when blockID is set, unless offset gives its position. A suggestion replaces a quote within one paragraph, without line breaks; suggest changes whole blocks.\n\nRequired API key permissions: read:entries, comments. Write permissions also grant read access for the same resource.",
     example: {
       entryID: "ent_example",
       quote: "teh",
@@ -1209,7 +1209,7 @@ const commands: APICommand[] = [
     path: "/comments/{id}",
     summary: "Delete a comment",
     description:
-      "Deletes your own comment, or any comment with permission to resolve. Deleting the first comment deletes the thread.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+      "Deletes your own comment, or any comment with permission to resolve. Deleting the first comment deletes the thread.\n\nRequired API key permissions: read:entries, comments. Write permissions also grant read access for the same resource.",
     example: {
       id: "cmt_example"
     },
@@ -1346,7 +1346,7 @@ const commands: APICommand[] = [
     path: "/comment-threads/{threadID}/comments",
     summary: "Reply to a comment thread",
     description:
-      "Required API key permissions: entries. Write permissions also grant read access for the same resource.",
+      "Required API key permissions: read:entries, comments. Write permissions also grant read access for the same resource.",
     example: {
       threadID: "cth_example",
       content: "Done."
@@ -1552,7 +1552,7 @@ const commands: APICommand[] = [
     path: "/entries/{entryID}/suggestions",
     summary: "Suggest a change",
     description:
-      "Starts a comment thread that suggests replacing consecutive blocks (blockIDs) with other blocks, inserting blocks (after), or a new entry title (title). Block IDs come from entries.get with contentFormat blocks. People with permission to update the entry can apply it. When your own open suggestion without replies or a note overlaps it, that thread gets the new change, which wins where both change the same words, and returns.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+      "Starts a comment thread that suggests replacing consecutive blocks (blockIDs) with other blocks, inserting blocks (after), or a new entry title (title). Block IDs come from entries.get with contentFormat blocks. People with permission to update the entry can apply it. When your own open suggestion without replies or a note overlaps it, that thread gets the new change, which wins where both change the same words, and returns.\n\nRequired API key permissions: read:entries, comments. Write permissions also grant read access for the same resource.",
     example: {
       entryID: "ent_example",
       blockIDs: ["blk_example"],
@@ -1707,7 +1707,7 @@ const commands: APICommand[] = [
     path: "/comments/{id}",
     summary: "Update a comment",
     description:
-      "Changes your own comment. Omitted mentions stay unchanged.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+      "Changes your own comment. Omitted mentions stay unchanged.\n\nRequired API key permissions: read:entries, comments. Write permissions also grant read access for the same resource.",
     example: {
       id: "cmt_example",
       content: "Please check this again."
@@ -1786,7 +1786,7 @@ const commands: APICommand[] = [
     path: "/comment-threads/{id}/suggestion",
     summary: "Update a suggestion",
     description:
-      "Replaces the change of your own suggestion, against the current content. A suggestion resolved because it no longer applied reopens.\n\nRequired API key permissions: entries. Write permissions also grant read access for the same resource.",
+      "Replaces the change of your own suggestion, against the current content. A suggestion resolved because it no longer applied reopens.\n\nRequired API key permissions: read:entries, comments. Write permissions also grant read access for the same resource.",
     example: {
       id: "cth_example",
       blockIDs: ["blk_example"],

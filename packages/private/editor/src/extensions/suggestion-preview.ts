@@ -571,8 +571,10 @@ const SuggestionPreview = Extension.create<SuggestionPreviewOptions>({
           });
         };
         const blocks = getBlocks(state.doc);
+        // Suggesting mode draws the user's loaded suggestions as edits.
+        const known = editor.storage.suggesting?.known;
         const threads = comments.threads
-          .filter(isOpenSuggestion)
+          .filter((thread) => isOpenSuggestion(thread) && !known?.has(thread.id))
           .sort((a, b) => Number(b.id === comments.active) - Number(a.id === comments.active));
         const isActive = (thread: EditorCommentThread) => {
           return [comments.active, comments.hovered].includes(thread.id);

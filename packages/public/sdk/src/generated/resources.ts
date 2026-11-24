@@ -445,7 +445,7 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
      *
      * Starts a comment thread on an entry, a block (blockID) or a text range (quote). A quote is plain text as readers see it, with blocks and hard breaks as line breaks (\n). It must occur once in the entry, or in the block when blockID is set, unless offset gives its position. A suggestion replaces a quote within one paragraph, without line breaks; suggest changes whole blocks.
      *
-     * Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     * Required API key permissions: read:entries, comments. Write permissions also grant read access for the same resource.
      *
      * @example
      * await client.comments.createThread({
@@ -459,7 +459,7 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
     /**
      * Reply to a comment thread
      *
-     * Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     * Required API key permissions: read:entries, comments. Write permissions also grant read access for the same resource.
      *
      * @example
      * await client.comments.reply({
@@ -473,7 +473,7 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
      *
      * Changes your own comment. Omitted mentions stay unchanged.
      *
-     * Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     * Required API key permissions: read:entries, comments. Write permissions also grant read access for the same resource.
      *
      * @example
      * await client.comments.update({
@@ -487,7 +487,7 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
      *
      * Deletes your own comment, or any comment with permission to resolve. Deleting the first comment deletes the thread.
      *
-     * Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     * Required API key permissions: read:entries, comments. Write permissions also grant read access for the same resource.
      *
      * @example
      * await client.comments.delete({
@@ -514,7 +514,7 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
      *
      * Starts a comment thread that suggests replacing consecutive blocks (blockIDs) with other blocks, inserting blocks (after), or a new entry title (title). Block IDs come from entries.get with contentFormat blocks. People with permission to update the entry can apply it. When your own open suggestion without replies or a note overlaps it, that thread gets the new change, which wins where both change the same words, and returns.
      *
-     * Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     * Required API key permissions: read:entries, comments. Write permissions also grant read access for the same resource.
      *
      * @example
      * await client.comments.suggest({
@@ -531,7 +531,7 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
      *
      * Replaces the change of your own suggestion, against the current content. A suggestion resolved because it no longer applied reopens.
      *
-     * Required API key permissions: entries. Write permissions also grant read access for the same resource.
+     * Required API key permissions: read:entries, comments. Write permissions also grant read access for the same resource.
      *
      * @example
      * await client.comments.updateSuggestion({

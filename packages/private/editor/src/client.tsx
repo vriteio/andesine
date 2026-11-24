@@ -168,6 +168,16 @@ const ClientEditor: Component<EditorProps> = (props) => {
             canChangeImages: () => props.images?.enabled() ?? false,
             document: fork?.document ?? currentProvider.document
           }),
+          SuggestionPreview.configure({
+            shown: () => untrack(() => props.comments?.showSuggestions ?? false),
+            owner,
+            renderBlock: SuggestedBlock,
+            needsParent: (node) => {
+              const name = node.type === "element" ? String(node.attrs?.name) : null;
+
+              return Boolean(name && untrack(() => props.elementViews?.parents(name)));
+            }
+          }),
           ...(fork
             ? [
                 Suggesting.configure({
@@ -185,16 +195,6 @@ const ClientEditor: Component<EditorProps> = (props) => {
                 }),
                 SuggestionApply.configure({
                   setApplied: async (id, applied) => props.comments?.setApplied(id, applied)
-                }),
-                SuggestionPreview.configure({
-                  shown: () => untrack(() => props.comments?.showSuggestions ?? false),
-                  owner,
-                  renderBlock: SuggestedBlock,
-                  needsParent: (node) => {
-                    const name = node.type === "element" ? String(node.attrs?.name) : null;
-
-                    return Boolean(name && untrack(() => props.elementViews?.parents(name)));
-                  }
                 })
               ])
         ]

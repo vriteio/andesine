@@ -1,6 +1,7 @@
 import { createSignal } from "solid-js";
 import { type JSONValue } from "./protocol";
 import { ExtensionRequestError, request } from "./requests";
+import { hasPermission as isGranted } from "@andesine/contracts/permissions";
 
 interface ExtensionContext {
   permissions: string[];
@@ -48,9 +49,7 @@ const useConfiguration = <T extends Record<string, JSONValue> = Record<string, J
 const usePermissions = () => permissions;
 /** Whether the effective permissions include `permission`; a write permission includes its read. */
 const hasPermission = (permission: string): boolean => {
-  const write = permission.startsWith("read:") ? permission.slice(5) : null;
-
-  return permissions().some((granted) => granted === permission || granted === write);
+  return permissions().some((granted) => isGranted(granted, permission));
 };
 /**
  * SDK `fetch` that calls Andesine with the member's session; forbidden operations return HTTP 403.

@@ -14,7 +14,9 @@ import {
   applySuggestion,
   getStaleStatus,
   isRejectedSave,
-  rebaseSuggestion
+  isSharedBlock,
+  rebaseSuggestion,
+  updateComments
 } from "@andesine/editor";
 import {
   createAsync,
@@ -227,11 +229,11 @@ const EditorPane: Component = () => {
     return !content.syncing() && content.canEntry(collectionID(), "comment:create");
   };
   const canUpdate = () => content.canEntry(collectionID(), "entry:update");
-  // Commenters only suggest, once their suggestions load; not syncing, which would rebuild the fork.
+  // Once their suggestions load; not syncing, which would rebuild the fork.
   const suggesting = () => {
     const canSuggest = content.canEntry(collectionID(), "comment:create");
 
-    return canSuggest && !commentsPanel.loading() && (commentsPanel.suggesting() || !canUpdate());
+    return canSuggest && !commentsPanel.loading() && (commentsPanel.suggesting() ?? !canUpdate());
   };
   const getAuthorName = (authorID: string | null) => {
     const profile = members().get(authorID ?? "")?.profile;
@@ -348,12 +350,11 @@ const EditorPane: Component = () => {
     threads: liveThreads(),
     authorName: getAuthorName(ownMemberID()),
     authorImage: members().get(ownMemberID() ?? "")?.profile.image ?? undefined,
-    // Suggesting mode has no new comments, as its text isn't shared.
-    canComment: canComment() && !suggesting(),
+    canComment: canComment(),
     canResolve: canResolve(),
     // Suggesting mode shows the fork, which applying would change.
     canApply: canResolve() && canUpdate() && !suggesting(),
-    showSuggestions: commentsPanel.suggestionsShown() && !suggesting(),
+    showSuggestions: commentsPanel.suggestionsShown(),
     create: async (input) => {
       const entryID = availableEntryID();
 
@@ -436,6 +437,17 @@ const EditorPane: Component = () => {
       setDeletingThread(false);
     }
   };
+  const commentFirstBlock = () => {
+    const editor = editorInstance();
+    const block = editor?.state.doc.content.content.find(({ type, attrs }) => {
+      return type.name !== "title" && typeof attrs.id === "string";
+    });
+    const blockID = block?.attrs.id as string | undefined;
+
+    if (!editor || !blockID || !isSharedBlock(editor, blockID)) return;
+
+    updateComments(editor, { draft: { target: { blockID }, draft: { blockID } } });
+  };
   const editable = createMemo(() => {
     const canEdit = canUpdate() || suggesting();
 
@@ -449,16 +461,20 @@ const EditorPane: Component = () => {
   };
 
   createEffect(() => commentsPanel.setComments(comments()));
+  commentsPanel.setStartComment(() => commentFirstBlock);
   createEffect(
     on(availableEntryID, () => {
       commentsPanel.activate(null, false);
       commentsPanel.setOrder([]);
       setCommentThreads([]);
       commentsPanel.setLoading(true);
-      commentsPanel.setSuggesting(false);
+      commentsPanel.setSuggesting(undefined);
     })
   );
-  onCleanup(() => commentsPanel.setComments(null));
+  onCleanup(() => {
+    commentsPanel.setComments(null);
+    commentsPanel.setStartComment(null);
+  });
 
   // In effects, so loading doesn't suspend the editor.
   createEffect(() => {

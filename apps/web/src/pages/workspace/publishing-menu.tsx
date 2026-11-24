@@ -9,7 +9,7 @@ import {
 import { createAsync, revalidate, useSearchParams } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
 import clsx from "clsx";
-import { type Component, createMemo, createSignal, type JSX, Show } from "solid-js";
+import { type Component, createEffect, createMemo, createSignal, type JSX, Show } from "solid-js";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
 import { usePublishing } from "#web/context/publishing";
@@ -26,6 +26,7 @@ import { formatDateTime, formatRelativeTime } from "#web/lib/primitives";
 interface PublishingMenuProps {
   entryID: string;
   triggerVariant?: "menu" | "toolbar";
+  onShownChange?(shown: boolean): void;
 }
 interface PublishingStatusIconProps {
   status: PublishingDisplayStatus;
@@ -164,6 +165,7 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
 
     return "not-published";
   };
+  const shown = () => !content.offline() && displayStatus();
 
   const revalidateChannel = (channel = selectedChannel()) => {
     void revalidate(publishingPublicationsQuery.keyFor({ entryID: props.entryID }));
@@ -343,9 +345,11 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
     return groups;
   });
 
+  createEffect(() => props.onShownChange?.(Boolean(shown())));
+
   return (
     <>
-      <Show when={!content.offline() && displayStatus()}>
+      <Show when={shown()}>
         {(currentStatus) => (
           <DropdownMenu
             title="Publish"

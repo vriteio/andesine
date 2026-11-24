@@ -11,6 +11,7 @@ import type {
 import { createImageMenuItems } from "./image";
 import { isBlockSelection } from "#editor/extensions/block-selection";
 import { getBlockCommentTarget, updateComments } from "#editor/extensions/comments";
+import { isSharedBlock } from "#editor/extensions/suggesting";
 import { DropdownMenu, IconButton, type MenuItem } from "@andesine/components";
 import { debounce } from "@solid-primitives/scheduled";
 import { type Editor, type EditorEvents } from "@tiptap/core";
@@ -160,7 +161,7 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
     const editor = props.editor;
     const draft = editor && props.comments?.canComment ? getBlockCommentTarget(editor) : null;
 
-    if (!editor || !draft) return [];
+    if (!editor || !draft || !isSharedBlock(editor, draft.target.blockID!)) return [];
 
     return [
       {

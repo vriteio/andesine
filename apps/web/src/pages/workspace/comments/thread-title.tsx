@@ -21,6 +21,11 @@ interface ThreadKind {
   label: string;
   icon: string | (() => JSX.Element);
 }
+interface ThreadOutcome {
+  label: string;
+  icon: string;
+  class: string;
+}
 
 const getSuggestionLabel = ({ base, blocks, title }: EditorCommentSuggestion) => {
   if (title) return "Suggested title";
@@ -50,13 +55,38 @@ const ThreadTitle: Component<ThreadTitleProps> = (props) => {
 
     return typeof icon === "string" ? undefined : icon;
   };
-  // A suggestion's card shows its state.
+  // A suggestion's outcome shows on the right.
   const status = () => {
     if (props.thread.suggestion) return "";
 
     return { active: "", outdated: "Outdated", orphaned: "Removed" }[props.thread.status];
   };
+  const outcome = (): ThreadOutcome | null => {
+    const { resolved, suggestion } = props.thread;
+    const gray = "text-gray-400";
+
+    if (suggestion?.applied) {
+      return { label: "Applied", icon: "i-lucide:check", class: "text-green-600" };
+    }
+
+    if (suggestion && props.thread.status === "outdated") {
+      return { label: "Outdated", icon: "i-lucide:history", class: gray };
+    }
+
+    if (suggestion && props.thread.status === "orphaned") {
+      return { label: "Removed", icon: "i-lucide:square-dashed", class: gray };
+    }
+
+    if (!resolved) return null;
+
+    if (suggestion) return { label: "Rejected", icon: "i-lucide:x", class: "text-red-600" };
+
+    return { label: "Resolved", icon: "i-lucide:check", class: gray };
+  };
   const count = () => props.thread.comments.length;
+  const canToggle = () => {
+    return props.comments.canResolve && count() > 0 && canToggleResolved(props.thread);
+  };
   const countLabel = () => {
     return count() === 0 ? "New comment" : count() === 1 ? "1 comment" : `${count()} comments`;
   };
@@ -106,11 +136,29 @@ const ThreadTitle: Component<ThreadTitleProps> = (props) => {
         >
           {kind().label}
         </span>
-        <Show when={props.comments.canResolve && count() > 0 && canToggleResolved(props.thread)}>
+        <Show when={outcome()}>
+          {(current) => (
+            <span
+              class={clsx(
+                "flex shrink-0 items-center gap-1 pr-1 text-sm font-medium",
+                current().class,
+                canToggle() && (props.opened ? "hidden" : "media-mouse:group-hover:hidden")
+              )}
+            >
+              <span class={clsx(current().icon, "h-4 w-4")} />
+              {current().label}
+            </span>
+          )}
+        </Show>
+        <Show when={canToggle()}>
           <div
             class={clsx(
               "-my-0.5 shrink-0",
-              !props.opened && "media-mouse:opacity-0 media-mouse:group-hover:opacity-100"
+              // Replaces the outcome on hover.
+              !props.opened &&
+                (outcome()
+                  ? "hidden media-mouse:group-hover:block"
+                  : "media-mouse:opacity-0 media-mouse:group-hover:opacity-100")
             )}
           >
             <IconButton

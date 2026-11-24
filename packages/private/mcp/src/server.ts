@@ -1,3 +1,4 @@
+import { hasPermission } from "@andesine/contracts/permissions";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   createMemoryCheckpointStore,
@@ -60,8 +61,8 @@ const TOOL_PERMISSIONS: Record<ToolName, string[]> = {
   unpublish: ["publishing"],
   list_comments: ["read:entries"],
   list_members: ["read:memberships"],
-  add_comment: ["entries"],
-  suggest_edit: ["entries"],
+  add_comment: ["comments"],
+  suggest_edit: ["comments"],
   resolve_comment: ["entries"],
   apply_suggestion: ["entries"],
   upload_image: ["entries"]
@@ -102,9 +103,7 @@ const isAllowed = (required: string[], permissions?: string[]): boolean => {
   if (!permissions || !required.length) return true;
 
   return required.some((permission) => {
-    return (
-      permissions.includes(permission) || permissions.includes(permission.replace("read:", ""))
-    );
+    return permissions.some((granted) => hasPermission(granted, permission));
   });
 };
 

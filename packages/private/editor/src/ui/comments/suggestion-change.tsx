@@ -67,11 +67,6 @@ const describeSuggestion = ({ base, blocks, title }: EditorCommentSuggestion) =>
 
 const SuggestionChange: Component<SuggestionChangeProps> = (props) => {
   const [applying, setApplying] = createSignal(false);
-  const state = () => {
-    if (props.suggestion.applied) return "Applied";
-
-    return { active: null, outdated: "Outdated", orphaned: "Removed" }[props.thread.status];
-  };
   const isOpen = () => !props.thread.resolved && !props.suggestion.applied;
   const attributes = createMemo(() => {
     return collectAttributeChanges(props.suggestion.base, props.suggestion.blocks);
@@ -91,10 +86,7 @@ const SuggestionChange: Component<SuggestionChangeProps> = (props) => {
     <div class="flex flex-col gap-1">
       <div class="flex gap-1 text-sm text-gray-500">
         <div class="i-lucide:file-diff mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
-        <span>
-          {describeSuggestion(props.suggestion)}
-          <Show when={state()}>{(label) => <span class="text-gray-400"> · {label()}</span>}</Show>
-        </span>
+        <span>{describeSuggestion(props.suggestion)}</span>
       </div>
       <Show when={attributes().length}>
         <ul class="flex flex-col gap-1 text-sm text-gray-500">
@@ -128,8 +120,9 @@ const SuggestionChange: Component<SuggestionChangeProps> = (props) => {
             <IconButton
               class="flex-row-reverse pr-1"
               icon="i-lucide:check"
-              iconProps={{ class: "h-4 w-4" }}
-              label={() => <span class="px-1">Apply</span>}
+              iconProps={{ class: "h-3.5 w-3.5" }}
+              label={() => <span class="pl-0.5 pr-1">Apply</span>}
+              size="xs"
               variant="primary"
               loading={applying()}
               onClick={apply}
@@ -139,10 +132,10 @@ const SuggestionChange: Component<SuggestionChangeProps> = (props) => {
             <IconButton
               class="flex-row-reverse pr-1"
               icon="i-lucide:x"
-              iconProps={{ class: "h-4 w-4" }}
-              label={() => <span class="px-1">Reject</span>}
-              variant="ghost"
-              text="soft"
+              iconProps={{ class: "h-3.5 w-3.5" }}
+              label={() => <span class="pl-0.5 pr-1">Reject</span>}
+              size="xs"
+              variant="secondary"
               loading={props.rejecting}
               onClick={props.onReject}
             />

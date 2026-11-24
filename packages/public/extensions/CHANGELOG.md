@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.12.0
+
+- `hasPermission("comments")` is true with `entries`, which includes commenting.
+
 ## 0.11.0
 
 - No changes; versioned with the other public Andesine packages.

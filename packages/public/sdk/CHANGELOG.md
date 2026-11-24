@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.0
+
+- New `comments` key permission: comment, reply, and suggest edits without editing entries,
+  together with `read:entries`. `entries` includes both. Resolving and applying still need
+  `entries`.
+
 ## 0.13.0
 
 - `memberships.invite` can create a single-use link instead of an email invitation: pass
