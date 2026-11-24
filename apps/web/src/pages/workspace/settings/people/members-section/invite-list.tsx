@@ -132,7 +132,7 @@ const InviteList: Component<InviteListProps> = (props) => {
         detail: "Pending invitation",
         icon: "i-lucide:mail",
         id: invite.id,
-        label: invite.email
+        label: invite.email ?? "Invite link"
       }));
   });
 

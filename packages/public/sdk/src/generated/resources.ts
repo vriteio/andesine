@@ -1112,7 +1112,7 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
     /**
      * Invite a workspace member
      *
-     * Creates an invitation and attempts email delivery. Check emailDelivery in the result. Requires the Pro plan and permission to delegate the selected role. Existing membership or pending invitation returns a conflict.
+     * Creates an invitation and attempts email delivery. Check emailDelivery in the result. With link instead of email, creates a single-use link that anyone can accept, with emailDelivery manual. Requires the Pro plan and permission to delegate the selected role. Existing membership or pending invitation returns a conflict.
      *
      * Required API key permissions: memberships. Write permissions also grant read access for the same resource.
      *

@@ -24,7 +24,7 @@ const invitations = pgTable(
     workspaceID: uuid("workspace_id")
       .notNull()
       .references(() => workspaces.id, { onDelete: "cascade" }),
-    email: varchar("email", { length: 320 }).notNull(),
+    email: varchar("email", { length: 320 }),
     roleID: uuid("role_id").notNull(),
     invitedBy: uuid("invited_by").references(() => memberships.id, {
       onDelete: "set null"

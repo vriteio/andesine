@@ -107,7 +107,7 @@ const RoleList: Component<RoleListProps> = (props) => {
         detail: "Pending invitation — will be moved to Viewer",
         icon: "i-lucide:mail",
         id: invite.id,
-        label: invite.email
+        label: invite.email ?? "Invite link"
       }));
 
     return [...members, ...invites];

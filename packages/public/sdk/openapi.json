@@ -4158,7 +4158,10 @@
         "type": "object",
         "properties": {
           "id": { "type": "string", "description": "ID of the invite" },
-          "email": { "type": "string", "description": "Email address of the invited user" },
+          "email": {
+            "type": "string",
+            "description": "Email address of the invited user; none for a link anyone can accept"
+          },
           "roleID": { "type": "string", "description": "ID of the role to assign" },
           "invitedBy": {
             "type": "string",
@@ -4182,7 +4185,6 @@
         },
         "required": [
           "id",
-          "email",
           "roleID",
           "status",
           "createdAt",
@@ -40085,7 +40087,7 @@
       "post": {
         "operationId": "memberships.invite",
         "summary": "Invite a workspace member",
-        "description": "Creates an invitation and attempts email delivery. Check emailDelivery in the result. Requires the Pro plan and permission to delegate the selected role. Existing membership or pending invitation returns a conflict.\n\nRequired API key permissions: memberships. Write permissions also grant read access for the same resource.",
+        "description": "Creates an invitation and attempts email delivery. Check emailDelivery in the result. With link instead of email, creates a single-use link that anyone can accept, with emailDelivery manual. Requires the Pro plan and permission to delegate the selected role. Existing membership or pending invitation returns a conflict.\n\nRequired API key permissions: memberships. Write permissions also grant read access for the same resource.",
         "tags": ["memberships"],
         "requestBody": {
           "required": true,
@@ -40098,9 +40100,13 @@
                     "type": "string",
                     "description": "Email address of the user to invite"
                   },
+                  "link": {
+                    "const": true,
+                    "description": "Create a single-use link that anyone can accept, instead of an email"
+                  },
                   "roleID": { "type": "string", "description": "ID of the role to assign" }
                 },
-                "required": ["email", "roleID"]
+                "required": ["roleID"]
               },
               "example": { "email": "editor@example.com", "roleID": "rl_example" }
             }

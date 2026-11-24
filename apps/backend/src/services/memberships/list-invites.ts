@@ -57,7 +57,7 @@ const listInvitesOperation = async (
 
       return {
         id,
-        email: invite.email,
+        email: invite.email ?? undefined,
         inviteLink: createInviteLink({ id, expiresAt: invite.expiresAt }),
         workspaceID: toWorkspaceID(workspaceID),
         roleID: toRoleID(invite.roleID),

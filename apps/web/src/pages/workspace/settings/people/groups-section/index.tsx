@@ -120,7 +120,7 @@ const GroupsSection: Component = () => {
       .map((invitation) => ({
         id: invitation.id,
         icon: "i-lucide:mail",
-        label: invitation.email,
+        label: invitation.email ?? "Invite link",
         detail: "Pending invitation — group assignment will be removed"
       }));
 

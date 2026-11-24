@@ -103,22 +103,19 @@ const acceptInvite = async (input: {
 
     if (!user) throw new ORPCError("UNAUTHORIZED", { message: "User not found" });
 
-    // Checked again; the workspace lock keeps invites accepted at the same time in order.
-    if (getEffectivePlan(workspace.subscriptionPlan) !== "pro") {
-      const members = await countMembers(tx, workspace.id);
+    const isOtherAccount =
+      invite.email && user.email.trim().toLowerCase() !== invite.email.trim().toLowerCase();
 
-      if (members >= FREE_MEMBER_LIMIT) throwFreeMemberLimit();
-    }
-
-    if (user.email.trim().toLowerCase() !== invite.email.trim().toLowerCase()) {
+    if (isOtherAccount) {
       throw new ORPCError("INVITE_ACCOUNT_MISMATCH", {
         status: 403,
         message: `This invite was sent to ${invite.email}. Sign in with that account to accept it.`
       });
     }
     if (invite.status === "accepted") {
+      // Only the invited account learns the workspace; anyone can open a used link.
       throw new ORPCError("INVITE_ALREADY_ACCEPTED", {
-        data: { workspaceID: toWorkspaceID(invite.workspaceID) },
+        data: invite.email ? { workspaceID: toWorkspaceID(invite.workspaceID) } : undefined,
         status: 409,
         message: "This invitation has already been accepted"
       });
@@ -139,20 +136,30 @@ const acceptInvite = async (input: {
       });
     }
 
-    await tx
-      .insert(memberships)
-      .values({
-        userID,
-        workspaceID: invite.workspaceID,
-        roleID: invite.roleID
-      })
-      .onConflictDoNothing({
-        target: [memberships.workspaceID, memberships.userID]
-      });
-    const [membership] = await tx
+    const [existingMembership] = await tx
       .select()
       .from(memberships)
       .where(and(eq(memberships.userID, userID), eq(memberships.workspaceID, invite.workspaceID)));
+
+    // A member opening a link keeps it unused.
+    if (existingMembership && !invite.email) {
+      return { workspace, membership: existingMembership, updatedGroups: [], joined: false };
+    }
+
+    // Checked again; the workspace lock keeps invites accepted at the same time in order.
+    if (getEffectivePlan(workspace.subscriptionPlan) !== "pro") {
+      const members = await countMembers(tx, workspace.id);
+
+      if (members >= FREE_MEMBER_LIMIT) throwFreeMemberLimit();
+    }
+
+    // The workspace lock keeps the membership found above current.
+    const [membership] = existingMembership
+      ? [existingMembership]
+      : await tx
+          .insert(memberships)
+          .values({ userID, workspaceID: invite.workspaceID, roleID: invite.roleID })
+          .returning();
     const invitationGroups = await tx
       .select({ groupID: groupInvitations.groupID })
       .from(groupInvitations)
@@ -196,13 +203,14 @@ const acceptInvite = async (input: {
       invitationGroups.map(({ groupID }) => groupID)
     );
 
-    return { workspace, membership, updatedGroups };
+    return { workspace, membership, updatedGroups, joined: true };
   });
 
   return {
     workspaceID: toWorkspaceID(result.workspace.id),
     workspaceName: result.workspace.name,
     updatedGroups: result.updatedGroups,
+    joined: result.joined,
     membership: {
       id: toMembershipID(result.membership.id),
       userID: toUserID(result.membership.userID),

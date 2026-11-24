@@ -65,18 +65,29 @@ const membershipsContract = baseContract.prefix("/memberships").router({
     .route({
       summary: "Invite a workspace member",
       description:
-        "Creates an invitation and attempts email delivery. Check emailDelivery in the result. Requires the Pro plan and permission to delegate the selected role. Existing membership or pending invitation returns a conflict.",
+        "Creates an invitation and attempts email delivery. Check emailDelivery in the result. With link instead of email, creates a single-use link that anyone can accept, with emailDelivery manual. Requires the Pro plan and permission to delegate the selected role. Existing membership or pending invitation returns a conflict.",
       tags: ["memberships"],
       method: "POST",
       path: "/"
     })
     .meta({ example: { email: "editor@example.com", roleID: "rl_example" } })
-    .meta({ required: { session: true, key: ["memberships"] } })
+    // Checked before the handler, so the invitation limit counts only allowed requests.
+    .meta({ required: { session: ["memberships"], key: ["memberships"] } })
     .input(
-      z.object({
-        email: z.email().describe("Email address of the user to invite"),
-        roleID: id().describe("ID of the role to assign")
-      })
+      z
+        .object({
+          email: z.email().optional().describe("Email address of the user to invite"),
+          link: z
+            .literal(true)
+            .optional()
+            .describe("Create a single-use link that anyone can accept, instead of an email"),
+          roleID: id().describe("ID of the role to assign")
+        })
+        // Explicit, so a missing email never creates an open link.
+        .refine((input) => Boolean(input.email) !== Boolean(input.link), {
+          message: "Use exactly one of email or link",
+          path: ["email"]
+        })
     )
     .output(membershipInviteResultType),
   listInvites: authenticatedContract
@@ -102,7 +113,7 @@ const membershipsContract = baseContract.prefix("/memberships").router({
       path: "/invites/{id}/resend"
     })
     .meta({ example: { id: "inv_example" } })
-    .meta({ required: { session: true, key: ["memberships"] } })
+    .meta({ required: { session: ["memberships"], key: ["memberships"] } })
     .input(
       z.object({
         id: id().describe("ID of the pending invitation")

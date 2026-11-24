@@ -1752,7 +1752,7 @@ export interface paths {
     put?: never;
     /**
      * Invite a workspace member
-     * @description Creates an invitation and attempts email delivery. Check emailDelivery in the result. Requires the Pro plan and permission to delegate the selected role. Existing membership or pending invitation returns a conflict.
+     * @description Creates an invitation and attempts email delivery. Check emailDelivery in the result. With link instead of email, creates a single-use link that anyone can accept, with emailDelivery manual. Requires the Pro plan and permission to delegate the selected role. Existing membership or pending invitation returns a conflict.
      *
      *     Required API key permissions: memberships. Write permissions also grant read access for the same resource.
      */
@@ -4517,8 +4517,8 @@ export interface components {
     Invite: {
       /** @description ID of the invite */
       id: string;
-      /** @description Email address of the invited user */
-      email: string;
+      /** @description Email address of the invited user; none for a link anyone can accept */
+      email?: string;
       /** @description ID of the role to assign */
       roleID: string;
       /** @description ID of the member who created the invite */
@@ -32200,7 +32200,12 @@ export interface operations {
          */
         "application/json": {
           /** @description Email address of the user to invite */
-          email: string;
+          email?: string;
+          /**
+           * @description Create a single-use link that anyone can accept, instead of an email
+           * @constant
+           */
+          link?: true;
           /** @description ID of the role to assign */
           roleID: string;
         };

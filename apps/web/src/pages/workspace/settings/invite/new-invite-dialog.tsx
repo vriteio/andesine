@@ -4,15 +4,21 @@ import { type Component, createEffect, createSignal } from "solid-js";
 import { useClipboard } from "#web/context/clipboard";
 
 interface NewInviteDialogProps {
-  delivery: "sent" | "manual" | "failed";
+  delivery: InviteDialogDelivery;
   link: string;
   onClose(): void;
 }
+
+type InviteDialogDelivery = "sent" | "manual" | "failed" | "link";
 
 const NewInviteDialog: Component<NewInviteDialogProps> = (props) => {
   const { copyText } = useClipboard();
   const [copied, setCopied] = createSignal(false);
   const description = () => {
+    if (props.delivery === "link") {
+      return "Anyone with this link can join the workspace once. Share it only with the person you're inviting.";
+    }
+
     if (props.delivery === "manual") {
       return "Email delivery is not configured. Share this link directly with the invitee.";
     }
@@ -69,3 +75,4 @@ const NewInviteDialog: Component<NewInviteDialogProps> = (props) => {
 };
 
 export { NewInviteDialog };
+export type { InviteDialogDelivery };

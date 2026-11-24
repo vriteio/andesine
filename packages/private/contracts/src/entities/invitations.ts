@@ -4,7 +4,11 @@ import * as z from "zod";
 const inviteStatusType = z.enum(["pending", "accepted", "expired"]);
 const inviteType = z.object({
   id: id().describe("ID of the invite"),
-  email: z.email().max(320).describe("Email address of the invited user"),
+  email: z
+    .email()
+    .max(320)
+    .optional()
+    .describe("Email address of the invited user; none for a link anyone can accept"),
   roleID: id().describe("ID of the role to assign"),
   invitedBy: id().optional().describe("ID of the member who created the invite"),
   status: inviteStatusType.describe("Current status of the invite"),

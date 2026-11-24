@@ -16,7 +16,7 @@ import { and, eq, lt } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
 interface InviteMemberInput {
-  email: string;
+  email?: string;
   roleID: string;
   inviterID?: string;
 }
@@ -26,7 +26,7 @@ const inviteMemberOperation = async (
 ) => {
   const workspaceID = toUUID(input.workspaceID);
   const roleID = toUUID(input.roleID);
-  const normalizedEmail = input.email.trim().toLowerCase();
+  const normalizedEmail = input.email?.trim().toLowerCase() || null;
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const result = await db.transaction(async (tx) => {
     const [workspace] = await tx
@@ -75,10 +75,9 @@ const inviteMemberOperation = async (
       if (members + invites >= FREE_MEMBER_LIMIT) throwFreeMemberLimit();
     }
 
-    const [existingUser] = await tx
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.email, normalizedEmail));
+    const [existingUser] = normalizedEmail
+      ? await tx.select({ id: users.id }).from(users).where(eq(users.email, normalizedEmail))
+      : [];
 
     if (existingUser) {
       const [existingMember] = await tx
@@ -100,16 +99,18 @@ const inviteMemberOperation = async (
       }
     }
 
-    const [existingInvite] = await tx
-      .select({ id: invitations.id })
-      .from(invitations)
-      .where(
-        and(
-          eq(invitations.workspaceID, workspaceID),
-          eq(invitations.email, normalizedEmail),
-          eq(invitations.status, "pending")
-        )
-      );
+    const [existingInvite] = normalizedEmail
+      ? await tx
+          .select({ id: invitations.id })
+          .from(invitations)
+          .where(
+            and(
+              eq(invitations.workspaceID, workspaceID),
+              eq(invitations.email, normalizedEmail),
+              eq(invitations.status, "pending")
+            )
+          )
+      : [];
 
     if (existingInvite) {
       throw new ORPCError("INVITE_ALREADY_PENDING", {
@@ -146,7 +147,7 @@ const inviteMemberOperation = async (
     emailDelivery,
     invite: {
       id: toInviteID(result.invite.id),
-      email: result.invite.email,
+      email: result.invite.email ?? undefined,
       roleID: toRoleID(result.invite.roleID),
       invitedBy: result.invite.invitedBy ? toMembershipID(result.invite.invitedBy) : undefined,
       status: result.invite.status,

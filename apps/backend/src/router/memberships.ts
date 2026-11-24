@@ -1,4 +1,5 @@
 import { getUserAuthorization } from "#backend/lib/policy";
+import { enforceRateLimit, RATE_LIMITS } from "#backend/lib/security";
 import { emitGroupEvent, emitMembershipEvent } from "#backend/events";
 import { authorized } from "#backend/lib/transport/middleware/authorized";
 import { Auth } from "#backend/services/auth";
@@ -23,6 +24,16 @@ const emitUpdatedGroups = (input: {
       }
     });
   }
+};
+/** Invites and resends share one budget per workspace, as each can send an email. */
+const limitInvitations = (workspaceID: string, headers?: Headers): Promise<void> => {
+  return enforceRateLimit({
+    scope: "invitations",
+    key: workspaceID,
+    limit: RATE_LIMITS.invitations,
+    message: "Too many invitations. Try again later.",
+    headers
+  });
 };
 const handlers = api.memberships;
 const authorizedHandlers = handlers.use(authorized);
@@ -73,6 +84,8 @@ const membershipsRouter = handlers.router({
     await Billing.updateSeats({ workspaceID: context.auth.workspaceID });
   }),
   invite: authorizedHandlers.invite.handler(async ({ context, input }) => {
+    await limitInvitations(context.auth.workspaceID, context.resHeaders);
+
     const newInviteDetails = await Memberships.invite({
       auth: context.auth,
       email: input.email,
@@ -92,6 +105,8 @@ const membershipsRouter = handlers.router({
     return Memberships.listInvites({ ...input, auth: context.auth });
   }),
   resendInvite: authorizedHandlers.resendInvite.handler(async ({ context, input }) => {
+    await limitInvitations(context.auth.workspaceID, context.resHeaders);
+
     const { emailDelivery } = await Memberships.resendInvite({
       id: input.id,
       auth: context.auth
@@ -136,20 +151,22 @@ const membershipsRouter = handlers.router({
       userID: context.auth.session.userID,
       workspaceID: result.workspaceID
     });
-    await Billing.updateSeats({ workspaceID: result.workspaceID });
 
-    emitMembershipEvent(result.workspaceID, {
-      action: "membership:add",
-      data: result.membership
-    });
-    emitUpdatedGroups({
-      groups: result.updatedGroups,
-      workspaceID: result.workspaceID
-    });
-    capture("invite_accepted", {
-      userID: context.auth.session.userID,
-      workspaceID: result.workspaceID
-    });
+    if (result.joined) {
+      await Billing.updateSeats({ workspaceID: result.workspaceID });
+      emitMembershipEvent(result.workspaceID, {
+        action: "membership:add",
+        data: result.membership
+      });
+      emitUpdatedGroups({
+        groups: result.updatedGroups,
+        workspaceID: result.workspaceID
+      });
+      capture("invite_accepted", {
+        userID: context.auth.session.userID,
+        workspaceID: result.workspaceID
+      });
+    }
 
     return {
       workspaceID: result.workspaceID,

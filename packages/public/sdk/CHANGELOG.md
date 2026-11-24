@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.13.0
+
+- `memberships.invite` can create a single-use link instead of an email invitation: pass
+  `link: true` in place of `email`. Anyone signed in can accept the link once; it returns
+  `emailDelivery: "manual"`. Pass exactly one of `email` or `link`.
+- `Invite.email` is optional: invitations from links have no email.
+- Invitations and resends are limited to 100 per workspace per hour; more return
+  `TOO_MANY_REQUESTS` with `retryAfterSeconds`.
+
 ## 0.12.0
 
 - `comments` methods for comment threads on entries: `list` (paginated), `createThread`, `reply`,

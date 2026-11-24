@@ -3970,7 +3970,7 @@ const commands: APICommand[] = [
     path: "/memberships",
     summary: "Invite a workspace member",
     description:
-      "Creates an invitation and attempts email delivery. Check emailDelivery in the result. Requires the Pro plan and permission to delegate the selected role. Existing membership or pending invitation returns a conflict.\n\nRequired API key permissions: memberships. Write permissions also grant read access for the same resource.",
+      "Creates an invitation and attempts email delivery. Check emailDelivery in the result. With link instead of email, creates a single-use link that anyone can accept, with emailDelivery manual. Requires the Pro plan and permission to delegate the selected role. Existing membership or pending invitation returns a conflict.\n\nRequired API key permissions: memberships. Write permissions also grant read access for the same resource.",
     example: {
       email: "editor@example.com",
       roleID: "rl_example"
@@ -4000,13 +4000,25 @@ const commands: APICommand[] = [
       {
         name: "email",
         location: "body",
-        required: true,
+        required: false,
         schema: {
           type: "string",
           description: "Email address of the user to invite"
         },
         flag: "email",
         kind: "string",
+        nullable: false
+      },
+      {
+        name: "link",
+        location: "body",
+        required: false,
+        schema: {
+          const: true,
+          description: "Create a single-use link that anyone can accept, instead of an email"
+        },
+        flag: "link",
+        kind: "boolean",
         nullable: false
       },
       {

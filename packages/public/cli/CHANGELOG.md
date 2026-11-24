@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.0
+
+- `api memberships invite --link` creates a single-use invite link instead of an email
+  invitation. Use exactly one of `--email` or `--link`.
+- Requires `@andesine/sdk` 0.13.0.
+
 ## 0.14.0
 
 - `api comments` commands for comment threads: list, create, reply, update, delete, resolve, and

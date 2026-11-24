@@ -50,7 +50,9 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
 
     if (route === "workspace") return true;
 
-    if (route === "group" || route === "invite" || route === "role") {
+    if (route === "invite") return hasPermission("memberships");
+
+    if (route === "group" || route === "role") {
       return (
         currentWorkspace()?.subscriptionPlan === "pro" &&
         hasPermission(route === "role" ? "roles" : "memberships")
@@ -189,14 +191,11 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
   });
   createEffect(() => {
     const route = activeRoute();
+    const isPeopleSubpage = route === "group" || route === "invite" || route === "role";
 
     if (!currentWorkspace()) return;
 
-    if (
-      (route === "group" || route === "invite" || route === "role") &&
-      (currentWorkspace()?.subscriptionPlan !== "pro" ||
-        !hasPermission(route === "role" ? "roles" : "memberships"))
-    ) {
+    if (isPeopleSubpage && !canAccessRoute()) {
       const fallbackRoute = "people";
 
       navigate(`/${params.workspaceID || ""}/settings/${fallbackRoute}`, { replace: true });

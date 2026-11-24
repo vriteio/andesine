@@ -129,6 +129,7 @@ const SettingsMenu: Component = () => {
     const groupActive = isRoute("/group") || editingGroup;
     const keyActive = isRoute("/key") || editingKey;
     const publishableKey = keyActive && location.query.kind === "publishable";
+    const bulkInvite = isRoute("/invite") && location.query.type === "bulk";
     const editingWebhook = Boolean(params.webhookID) && !params.extensionID;
     const viewingEvents = editingWebhook && location.pathname.endsWith("/events");
     const webhookActive = isRoute("/webhook") || editingWebhook;
@@ -175,10 +176,10 @@ const SettingsMenu: Component = () => {
                   subItems: [
                     {
                       icon: "i-lucide:user-plus",
-                      label: "Invite member",
+                      label: bulkInvite ? "Invite members" : "Invite member",
                       href: `${settingsPath()}/invite`,
                       active: isRoute("/invite"),
-                      visible: hasPermission("memberships") && isPro
+                      visible: hasPermission("memberships")
                     },
                     {
                       icon: editingRole ? "i-lucide:pencil" : "i-lucide:circle-plus",

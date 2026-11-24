@@ -241,7 +241,7 @@ const GroupSettingsPage: Component = () => {
                 <Setting
                   label={
                     <span class="flex min-w-0 items-center gap-1.5">
-                      <span class="min-w-0 truncate">{invitation.email}</span>
+                      <span class="min-w-0 truncate">{invitation.email ?? "Invite link"}</span>
                       <span class="shrink-0 rounded-md bg-gray-100 border border-gray-200 px-1 py-px text-xs text-gray-500">
                         {roleName(invitation.roleID)}
                       </span>

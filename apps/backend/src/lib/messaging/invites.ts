@@ -8,7 +8,7 @@ import { toInviteID } from "@andesine/contracts/primitives";
 type InviteDelivery = "sent" | "manual" | "failed";
 interface DeliverableInvite {
   id: string;
-  email: string;
+  email: string | null;
   invitedBy: string | null;
   expiresAt: Date;
 }
@@ -43,6 +43,8 @@ const deliverInvite = async (input: {
   const publicInviteID = toInviteID(invite.id);
   const inviteLink = createInviteLink({ id: publicInviteID, expiresAt: invite.expiresAt });
   let inviterName = "Someone";
+
+  if (!invite.email) return { emailDelivery: "manual", inviteLink };
 
   if (invite.invitedBy) {
     const [inviter] = await db

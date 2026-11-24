@@ -25,6 +25,7 @@ const RATE_LIMITS = {
   oauthToken: { max: 600, window: 60 },
   oauthRegistration: { max: 60, window: 60 },
   inviteAcceptance: { max: 20, window: 60 },
+  invitations: { max: 100, window: 3600 },
   collaboration: { max: 30, window: 60 }
 } as const;
 // Only a last resort against abuse; monthly quotas limit normal use.

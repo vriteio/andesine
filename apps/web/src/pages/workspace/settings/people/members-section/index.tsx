@@ -1,8 +1,8 @@
-import { Fragment, IconButton, Tooltip } from "@andesine/components";
+import { IconButton } from "@andesine/components";
 import { createAsync, revalidate, useNavigate, useParams } from "@solidjs/router";
 import { type Component, Show, Suspense, useTransition } from "solid-js";
-import { Dynamic } from "solid-js/web";
 import { useWorkspace } from "#web/context/workspace";
+import { useDelegationPermissions } from "#web/lib/policy/delegation";
 import { TreeSkeleton } from "#web/components/tree";
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
@@ -46,6 +46,7 @@ const InvitationsSubsection: Component<InvitationSubsectionProps> = (props) => {
 
 const MembersSection: Component = () => {
   const { currentWorkspace, hasPermission } = useWorkspace();
+  const { canGrantRole } = useDelegationPermissions();
   const navigate = useNavigate();
   const params = useParams<{ workspaceID?: string }>();
   const members = createAsync(() => membershipsQuery());
@@ -54,12 +55,14 @@ const MembersSection: Component = () => {
   const canManageProFeatures = () => canManage() && isPro();
   const invites = createAsync(async () => (canManage() ? invitesQuery() : []));
   const roles = createAsync(() => rolesQuery());
-  const inviteLimitReason = () => {
+  const canInvite = () => {
     const used = (members()?.length ?? 0) + (invites()?.length ?? 0);
+    const hasSeat = isPro() || used < FREE_MEMBER_LIMIT;
+    const hasRole = (roles() || []).some((role) => {
+      return canGrantRole(role) && (isPro() || role.baseRole === "admin");
+    });
 
-    if (isPro() || used < FREE_MEMBER_LIMIT) return "";
-
-    return `The Free plan has up to ${FREE_MEMBER_LIMIT} members, including pending invites`;
+    return canManage() && hasSeat && hasRole;
   };
   const [membersRefreshing, startMembersRefresh] = useTransition();
   const refreshMembers = (onRevalidated = () => {}) => {
@@ -79,20 +82,14 @@ const MembersSection: Component = () => {
           description="Manage people who have access to this workspace"
           fade={false}
         >
-          <Show when={canManage()}>
-            <Dynamic
-              component={inviteLimitReason() ? Tooltip : Fragment}
-              content={inviteLimitReason()}
-            >
-              <IconButton
-                label={() => <span class="px-1">Invite member</span>}
-                class="flex-row-reverse pr-1"
-                disabled={Boolean(inviteLimitReason())}
-                onClick={() => navigate(`/${params.workspaceID || ""}/settings/invite`)}
-                iconProps={{ class: "h-4 w-4" }}
-                icon="i-lucide:plus"
-              />
-            </Dynamic>
+          <Show when={canInvite()}>
+            <IconButton
+              label={() => <span class="px-1">Invite member</span>}
+              class="flex-row-reverse pr-1"
+              onClick={() => navigate(`/${params.workspaceID || ""}/settings/invite`)}
+              iconProps={{ class: "h-4 w-4" }}
+              icon="i-lucide:plus"
+            />
           </Show>
         </Setting>
         <div class="relative flex w-full flex-col">

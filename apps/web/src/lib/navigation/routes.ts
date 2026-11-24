@@ -81,8 +81,8 @@ const routesData: Record<
     title: "People",
     breadcrumbs: [{ label: "Settings" }, { label: "People", path: "/settings/people" }]
   }),
-  "/:workspaceID/settings/invite": () => ({
-    title: "Invite member",
+  "/:workspaceID/settings/invite": (_params, query) => ({
+    title: query.type === "bulk" ? "Invite members" : "Invite member",
     breadcrumbs: [
       { label: "Settings" },
       { label: "People", path: "/settings/people" },
