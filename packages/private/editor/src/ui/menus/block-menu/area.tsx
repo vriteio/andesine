@@ -8,7 +8,7 @@ import type {
 } from "#editor/client-types";
 import { DropdownArea, useShortcuts } from "@andesine/components";
 import { type Editor, type EditorEvents, isTextSelection } from "@tiptap/core";
-import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
+import { Fragment, type Node as ProseMirrorNode, Slice } from "@tiptap/pm/model";
 import {
   type Accessor,
   createEffect,
@@ -55,7 +55,16 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
 
     if (!editor || editor.isDestroyed) return false;
 
-    const { dom, text } = editor.view.serializeForClipboard(editor.state.selection.content());
+    const { selection } = editor.state;
+    const { $from, $to } = selection;
+    const isBlockRange = isBlockSelection(selection) && $from.sameParent($to);
+    const content = $from.parent.content.cut($from.parentOffset, $to.parentOffset);
+    // Only the selected blocks; parts of one, e.g. list items, keep it, so the list type stays.
+    const blocks = content.firstChild?.type.isInGroup("block")
+      ? content
+      : Fragment.from($from.parent.copy(content));
+    const slice = isBlockRange ? new Slice(blocks, 0, 0) : selection.content();
+    const { dom, text } = editor.view.serializeForClipboard(slice);
 
     void (async () => {
       try {

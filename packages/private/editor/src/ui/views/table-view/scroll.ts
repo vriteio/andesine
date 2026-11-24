@@ -11,8 +11,11 @@ const getTableScrollContainer = (element: HTMLElement): HTMLElement | null => {
 
   return table?.querySelector<HTMLElement>("[data-table-scroll-container]") || null;
 };
+/** The width of a table without set column widths, which fits without scrolling. */
 const getTableContentWidth = (element: HTMLElement): number => {
-  return getTableNodeView(element)?.clientWidth || 0;
+  const content = getTableNodeView(element)?.querySelector<HTMLElement>("[data-table-content]");
+
+  return parseFloat(content?.style.getPropertyValue("--table-content-width") ?? "") || 0;
 };
 
 export { getTableContentWidth, getTableElement, getTableScrollContainer };

@@ -173,6 +173,11 @@ header[data-type="title"] {
 
 [data-table-scroll-container] {
   @apply relative overflow-x-auto overflow-y-hidden overscroll-x-none;
+
+  &::-webkit-scrollbar-track {
+    margin-left: var(--table-left-space, 0.5rem);
+    margin-right: var(--table-column-end, 0.5rem);
+  }
 }
 
 :is(.block-selection-shade, .collaboration-block-selection-shade)[data-table-selection-shade] {
@@ -1069,6 +1074,11 @@ header:only-of-type.is-empty:first-child::before,
 .prose-editor .code-block-node .cm-scroller {
   @apply scrollbar-sm overscroll-x-none;
   padding-right: var(--code-right-space, 1.5rem);
+
+  &::-webkit-scrollbar-track {
+    margin-left: var(--code-left-space, 0.5rem);
+    margin-right: var(--code-right-space, 0.5rem);
+  }
 }
 .prose-editor .code-block-node .cm-content {
   flex-grow: 0;
@@ -1149,6 +1159,16 @@ header:only-of-type.is-empty:first-child::before,
 }
 
 /* Horizontal scrollbars */
+// On any background, e.g. a white card; the blocks limit the tracks to their column.
+.prose-editor .code-block-node .cm-scroller,
+[data-table-scroll-container] {
+  &::-webkit-scrollbar {
+    @apply bg-transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    @apply border-transparent bg-clip-padding;
+  }
+}
 // Chromium doesn't repaint scrollbar pseudo-elements on hover, so toggle the scrollbar itself
 // Safari doesn't add a scrollbar's height to the layout, so the scroller's height is fixed instead
 @media (hover: hover) and (pointer: fine) {
@@ -1167,6 +1187,11 @@ header:only-of-type.is-empty:first-child::before,
     &:not(:hover, :has(:focus-visible)) {
       @apply overflow-x-hidden;
     }
+  }
+
+  // In the background's bottom padding, so the scrollbar is at its bottom.
+  .prose-editor .code-block-node:not([data-element-plain]) .cm-scroller[data-overflowing] {
+    margin-bottom: -0.5rem;
   }
 }
 

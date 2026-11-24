@@ -38,9 +38,24 @@ const getBlockReach = (element: Element, block: boolean): number => {
 const getBlockScrollers = (root: HTMLElement): HTMLElement[] => {
   return [...root.querySelectorAll<HTMLElement>(BLOCK_SCROLLERS)];
 };
+/** The nearest ancestor that clips a block, e.g. a card in an element view, or the panel. */
+const getClipContainer = (dom: HTMLElement): HTMLElement | null => {
+  const panel = dom.closest<HTMLElement>("[data-editor-scrollable-container]");
+
+  for (
+    let element = dom.parentElement;
+    element && element !== panel;
+    element = element.parentElement
+  ) {
+    if (getComputedStyle(element).overflowX !== "visible") return element;
+  }
+
+  return panel;
+};
 
 export {
   getBlockReach,
+  getClipContainer,
   getBlockScrollers,
   isBlockAtScrollEnd,
   isBlockAtScrollStart,

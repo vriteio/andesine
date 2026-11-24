@@ -4,6 +4,7 @@ import {
   invalidateBlockControlLayout
 } from "#editor/ui/block-control-sizing";
 import type { TableView } from "@tiptap/extension-table";
+import { getClipContainer } from "#editor/ui/block-scroll";
 
 const createTableViewport = (editor: Editor, view: TableView, onLayout: () => void) => {
   const dom = document.createElement("div");
@@ -18,7 +19,7 @@ const createTableViewport = (editor: Editor, view: TableView, onLayout: () => vo
   let initialized = false;
 
   const updateLayout = () => {
-    const container = dom.closest<HTMLElement>("[data-editor-scrollable-container]");
+    const container = getClipContainer(dom);
 
     frame = null;
     if (!dom.isConnected || !container) return;
@@ -38,15 +39,20 @@ const createTableViewport = (editor: Editor, view: TableView, onLayout: () => vo
     shadows.style.left = `${-inset}px`;
     shadows.style.width = `${width}px`;
     shadows.style.height = `${height}px`;
-    view.dom.style.setProperty("--table-content-width", `${contentWidth}px`);
-    view.dom.style.setProperty("--table-left-space", `${Math.max(24, inset)}px`);
     // At the scroll's end, the column "+" button and its spacing end at the column's edge, by the
     // block controls: 6px on each side of the button, which `extend.tsx` sizes by the same query.
     const addColumnSpace = window.matchMedia("(min-width: 1024px)").matches ? 24 : 28;
+    const columnEnd = Math.floor(width - inset - contentWidth);
+    const rightSpace = Math.max(104, columnEnd + addColumnSpace);
 
+    // On the scroller, for its scrollbar too; the content inherits them.
+    viewport.style.setProperty("--table-left-space", `${Math.max(24, inset)}px`);
+    viewport.style.setProperty("--table-column-end", `${Math.max(24, columnEnd)}px`);
+    view.dom.style.setProperty("--table-right-space", `${rightSpace}px`);
+    // Without set column widths, the table and the space after it fit, so it doesn't scroll.
     view.dom.style.setProperty(
-      "--table-right-space",
-      `${Math.max(104, Math.floor(width - inset - contentWidth) + addColumnSpace)}px`
+      "--table-content-width",
+      `${Math.max(0, contentWidth - (rightSpace - columnEnd))}px`
     );
 
     viewport.dataset.tableScrollStart = String(scrollStart);

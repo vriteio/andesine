@@ -1,22 +1,29 @@
 import type { Editor, EditorEvents } from "@tiptap/core";
 import type { EditorView } from "@codemirror/view";
 import { invalidateBlockControlLayout } from "../../block-control-sizing";
+import { getClipContainer } from "../../block-scroll";
 
 const createCodeBlockViewport = (editor: Editor, dom: HTMLElement, code: EditorView) => {
   const spacer = document.createElement("div");
-  const observer = new ResizeObserver(() => scheduleLayout());
+  const observer = new ResizeObserver(() => scheduleLayout(true));
 
   let frame: number | null = null;
   let container: HTMLElement | null = null;
   let parent: HTMLElement | null = null;
   let initialized = false;
+  // The clip container changes only with the layout, e.g. when an element view mounts.
+  let resized = true;
+  let lastDoc = code.state.doc;
 
   const updateLayout = () => {
-    const nextContainer = dom.closest<HTMLElement>("[data-editor-scrollable-container]");
+    const isContainerStale = resized || !container?.isConnected;
+    const nextContainer = isContainerStale ? getClipContainer(dom) : container;
     const nextParent = dom.parentElement;
 
     frame = null;
     if (!dom.isConnected || !nextContainer || !nextParent) return;
+
+    resized = false;
 
     if (nextContainer !== container) {
       if (container) observer.unobserve(container);
@@ -65,12 +72,22 @@ const createCodeBlockViewport = (editor: Editor, dom: HTMLElement, code: EditorV
     if (!initialized || atStart) code.scrollDOM.scrollLeft = scrollStart;
     initialized = true;
   };
-  const scheduleLayout = () => {
+  const scheduleLayout = (isResize = false) => {
+    resized ||= isResize;
     if (frame === null) frame = requestAnimationFrame(updateLayout);
   };
-  // Not for transactions with only selection or plugin state, e.g. the hovered block.
+  const onResize = () => scheduleLayout(true);
+  // Only for this block's code, e.g. a new line number digit; the observer sees other changes.
   const onTransaction = ({ transaction }: EditorEvents["transaction"]) => {
-    if (transaction.docChanged) scheduleLayout();
+    if (!transaction.docChanged) return;
+
+    // After the node view syncs the code into the editor, which it does in a microtask.
+    queueMicrotask(() => {
+      if (code.state.doc === lastDoc) return;
+
+      lastDoc = code.state.doc;
+      scheduleLayout();
+    });
   };
 
   spacer.className = "code-block-scroll-spacer";
@@ -79,13 +96,13 @@ const createCodeBlockViewport = (editor: Editor, dom: HTMLElement, code: EditorV
   observer.observe(dom);
   observer.observe(code.contentDOM);
   editor.on("transaction", onTransaction);
-  window.addEventListener("resize", scheduleLayout);
+  window.addEventListener("resize", onResize);
   scheduleLayout();
 
   return () => {
     observer.disconnect();
     editor.off("transaction", onTransaction);
-    window.removeEventListener("resize", scheduleLayout);
+    window.removeEventListener("resize", onResize);
     if (frame !== null) cancelAnimationFrame(frame);
     spacer.remove();
   };
