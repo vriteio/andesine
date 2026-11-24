@@ -29,6 +29,11 @@ const apiKeys = pgTable(
       .array()
       .notNull()
       .default(sql`'{}'`),
+    // Secret keys only: restricted collections the key can access; nested ones need their own entry.
+    restrictedCollectionIDs: uuid("restricted_collection_ids")
+      .array()
+      .notNull()
+      .default(sql`'{}'`),
     /** Publishable keys only: the raw key, encrypted, so the app can show it again. */
     encryptedValue: text("encrypted_value"),
     extensionID: uuid("extension_id").references(() => extensions.id, { onDelete: "cascade" }),

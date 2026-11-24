@@ -39,8 +39,8 @@ const AccessSection: Component<AccessSectionProps> = (props) => {
         label="Include restricted content"
         description={
           canApproveRestricted() || props.draft.restrictedContent
-            ? "Send events for restricted collections, including ones restricted later"
-            : "Requires workspace-wide access to restricted collections"
+            ? "Send events for all restricted collections, including ones restricted later"
+            : "Select restricted collections below, or get workspace-wide access to include all"
         }
         checked={props.draft.restrictedContent}
         disabled={props.disabled || !canApproveRestricted()}

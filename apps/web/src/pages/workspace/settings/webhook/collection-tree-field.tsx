@@ -7,7 +7,6 @@ import {
   createEffect,
   createMemo,
   createSignal,
-  on,
   Show,
   untrack,
   useContext
@@ -22,13 +21,17 @@ import {
 } from "#web/components/tree";
 import { useWorkspace } from "#web/context/workspace";
 import type { Webhook } from "#web/lib/data";
+import { coversRestrictedLineage } from "@andesine/contracts/permissions";
 import { getScopeItems, MAX_SELECTED_SCOPE_ITEMS } from "./configuration";
 
 interface CollectionTreeFieldProps {
   disabled: boolean;
+  /** Whether "All" and selected collections cover restricted content without own selections. */
   restrictedContent: boolean;
   /** Lists only collections with publishing enabled; their topmost ones become top-level. */
   publishingOnly?: boolean;
+  /** Lists only restricted collections; nested ones stay under their restricted ancestors. */
+  restrictedOnly?: boolean;
   scope: Webhook["collections"];
   setScope(scope: Webhook["collections"]): void;
 }
@@ -168,10 +171,11 @@ const CollectionTree: Component<CollectionTreeProps> = (props) => {
     </div>
   );
 };
-// Checking a collection selects its whole subtree. Unchecking a collection covered by a
-// checked ancestor (or by "All") replaces that ancestor with its remaining children.
+// Checking a collection selects its subtree; restricted collections need their own selection unless
+// `restrictedContent` is on. Unchecking a covered collection replaces its covering root (or "All")
+// with the remaining children.
 const CollectionTreeField: Component<CollectionTreeFieldProps> = (props) => {
-  const { content, hasPermission } = useWorkspace();
+  const { content } = useWorkspace();
   const [opened, setOpened] = createSignal(false);
   const allNodes = createMemo(() => {
     const collections = content.collectionsCollection().find().fetch();
@@ -191,19 +195,18 @@ const CollectionTreeField: Component<CollectionTreeFieldProps> = (props) => {
       })
     );
   });
-  // Restricted collections are listed only when they are included and the member may approve
-  // that. The local tree already omits collections the member cannot access.
-  const showRestricted = () => {
-    return props.restrictedContent && hasPermission("read:restricted_collections");
-  };
+  // The local tree already omits collections the member cannot access.
   const isVisible = (node: CollectionNode) => {
-    const allowedByRestriction = showRestricted() || !node.restricted;
     const allowedByPublishing =
       !props.publishingOnly ||
       node.id === TREE_ROOT_ID ||
       content.isCollectionPublishingEnabled(node.id);
+    const allowedByRestrictedOnly =
+      !props.restrictedOnly ||
+      node.id === TREE_ROOT_ID ||
+      content.collections.isRestrictionRoot({ collectionID: node.id });
 
-    return allowedByRestriction && allowedByPublishing;
+    return allowedByPublishing && allowedByRestrictedOnly;
   };
   const nodes = createMemo(() => {
     const visible = [...allNodes().values()].filter(isVisible);
@@ -249,14 +252,34 @@ const CollectionTreeField: Component<CollectionTreeFieldProps> = (props) => {
   const getChildren = (id: string) => {
     return id === ALL_COLLECTIONS_ID ? topLevelIDs() : nodes().get(id)?.children || [];
   };
-  const getCoveringRoot = (id: string): string | null => {
-    if (props.scope.mode === "all") return ALL_COLLECTIONS_ID;
+  // Matches the server: each restricted boundary on the path needs its own selected collection.
+  const isCovered = (id: string, rootIDs: Set<string>): boolean => {
+    const node = nodes().get(id);
+    const lineage = [...(node?.ancestors ?? []), id];
+    const boundaryIDs = lineage.filter((lineageID) => {
+      return content.collections.isRestrictionRoot({ collectionID: lineageID });
+    });
+    const selected = lineage.some((lineageID) => rootIDs.has(lineageID));
+
+    if (props.restrictedContent || !node?.restricted) return selected;
 
     return (
-      nodes()
-        .get(id)
-        ?.ancestors.find((ancestor) => roots().has(ancestor)) ?? null
+      selected &&
+      coversRestrictedLineage(lineage, boundaryIDs, (lineageID) => {
+        return rootIDs.has(lineageID);
+      })
     );
+  };
+  const getCoveringRoot = (id: string): string | null => {
+    const node = nodes().get(id);
+
+    if (props.scope.mode === "all") {
+      return props.restrictedContent || !node?.restricted ? ALL_COLLECTIONS_ID : null;
+    }
+
+    if (!isCovered(id, roots())) return null;
+
+    return [...(node?.ancestors ?? [])].reverse().find((ancestor) => roots().has(ancestor)) ?? null;
   };
   const getState = (id: string): CollectionState => {
     const hasSelectedDescendant = [...roots()].some((root) => {
@@ -277,16 +300,27 @@ const CollectionTreeField: Component<CollectionTreeFieldProps> = (props) => {
     if (next.length <= MAX_SELECTED_SCOPE_ITEMS) props.setScope({ mode: "selected", roots: next });
   };
   const select = (id: string) => {
-    const uncovered = [...roots()].filter((root) => !nodes().get(root)?.ancestors.includes(id));
-
     if (id === ALL_COLLECTIONS_ID) {
       props.setScope({ mode: "all" });
 
       return;
     }
 
-    // A newly selected root replaces any selected descendants it now covers.
-    setRoots([...uncovered, id]);
+    // "All" becomes the top-level collections it covers, so adding one keeps the rest.
+    const current =
+      props.scope.mode === "all"
+        ? topLevelIDs().filter((topLevelID) => getState(topLevelID) === true)
+        : [...roots()];
+    const next = [...new Set([...current, id])];
+
+    // A newly selected root replaces the selected descendants that stay covered without them.
+    setRoots(
+      next.filter((root) => {
+        const isDescendant = Boolean(nodes().get(root)?.ancestors.includes(id));
+
+        return !isDescendant || !isCovered(root, new Set(next.filter((other) => other !== root)));
+      })
+    );
   };
   const deselect = (id: string) => {
     const coveringRoot = id === ALL_COLLECTIONS_ID ? null : getCoveringRoot(id);
@@ -297,7 +331,7 @@ const CollectionTreeField: Component<CollectionTreeFieldProps> = (props) => {
       return;
     }
 
-    if (!coveringRoot) {
+    if (roots().has(id) || !coveringRoot) {
       setRoots([...roots()].filter((root) => root !== id));
 
       return;
@@ -313,7 +347,10 @@ const CollectionTreeField: Component<CollectionTreeFieldProps> = (props) => {
     const siblings = path.flatMap((parentID, index) => {
       const next = path[index + 1] ?? id;
 
-      return getChildren(parentID).filter((childID) => childID !== next);
+      // Only covered siblings stay, so restricted ones are not granted by the split.
+      return getChildren(parentID).filter((childID) => {
+        return childID !== next && getState(childID) === true;
+      });
     });
 
     setRoots([...kept, ...siblings]);
@@ -339,20 +376,6 @@ const CollectionTreeField: Component<CollectionTreeFieldProps> = (props) => {
     setSelected: (id, selected) => (selected ? select(id) : deselect(id))
   };
 
-  // Excluding restricted content also removes restricted collections from the selection.
-  createEffect(
-    on(
-      () => props.restrictedContent,
-      (restrictedContent) => {
-        const selected = [...roots()];
-        const kept = selected.filter((id) => !allNodes().get(id)?.restricted);
-
-        if (!restrictedContent && kept.length !== selected.length) setRoots(kept);
-      },
-      { defer: true }
-    )
-  );
-
   return (
     <CollectionTreeContext.Provider value={context}>
       <div class="flex w-62 max-w-full flex-col gap-2">
@@ -365,7 +388,9 @@ const CollectionTreeField: Component<CollectionTreeFieldProps> = (props) => {
             setOpened={setOpened}
             disabled={props.disabled}
             sameWidth
-            cardProps={{ class: "max-h-96 overflow-y-auto bg-white p-1 scrollbar-sm scrollbar-white" }}
+            cardProps={{
+              class: "max-h-96 overflow-y-auto bg-white p-1 scrollbar-sm scrollbar-white"
+            }}
             trigger={() => (
               <Button
                 class="flex w-full items-center px-2"

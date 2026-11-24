@@ -17,7 +17,8 @@ const keyPermissionRequirements: Record<KeyPermission, Permission[]> = {
   "webhooks": ["webhooks"],
   "read:webhooks": ["read:webhooks"],
   // All session users can ask AI; key management still requires api_keys.
-  "ai-answers": []
+  "ai-answers": [],
+  "read:restricted_collections": ["read:restricted_collections"]
 };
 
 export { keyPermissionRequirements };

@@ -379,6 +379,13 @@
       "when": 1795510045253,
       "tag": "0053_allow-link-invitations",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1795518829744,
+      "tag": "0054_restricted-collections-for-keys",
+      "breakpoints": true
     }
   ]
 }

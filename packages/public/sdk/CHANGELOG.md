@@ -8,6 +8,11 @@
 - `Invite.email` is optional: invitations from links have no email.
 - Invitations and resends are limited to 100 per workspace per hour; more return
   `TOO_MANY_REQUESTS` with `retryAfterSeconds`.
+- Secret API keys can access restricted collections: the new `read:restricted_collections` key
+  permission covers all of them, or the key's restricted collections (set in the app) cover
+  their subcollections. Nested restricted collections need their own entry, as for members.
+- Webhook scopes can select restricted collections without `restrictedContent`; nested restricted
+  collections need their own selection. `restrictedContent` still includes all of them.
 
 ## 0.12.0
 

@@ -1,7 +1,4 @@
-import {
-  RESTRICTED_CONTENT_PERMISSION,
-  type ExtensionPublishableKey
-} from "@andesine/contracts/extensions";
+import { type ExtensionPublishableKey } from "@andesine/contracts/extensions";
 import { type Key, type KeyPermission } from "@andesine/contracts/entities";
 import { toUUID } from "@andesine/contracts/primitives";
 import { apiKeys, type DatabaseTransaction } from "@andesine/server/database";
@@ -32,20 +29,12 @@ const getManagedKeyPermissions = (auth: SessionData, answers: boolean): KeyPermi
 
   return ["read:publishing", "ai-answers"];
 };
-/** Keys never read restricted collections, so restricted access doesn't count. */
 const assertReadableCollections = async (
   auth: SessionData,
   database: DatabaseTransaction,
   collectionIDs: string[]
 ): Promise<void> => {
-  const extension = auth.extension!;
-  const permissions = extension.permissions.filter((permission) => {
-    return permission !== RESTRICTED_CONTENT_PERMISSION;
-  });
-  const tree = await loadAuthorizedCollectionTree({
-    auth: { ...auth, extension: { ...extension, permissions } },
-    database
-  });
+  const tree = await loadAuthorizedCollectionTree({ auth, database });
   const unreadable = collectionIDs.find((id) => !tree.canEntry(id, "publishing:read"));
 
   if (unreadable) {

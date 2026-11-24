@@ -54,7 +54,13 @@ interface SessionData {
     scopes?: string[];
     workspaceID?: string;
   };
-  key?: { keyID: string; permissions: KeyPermission[]; publishable?: PublishableKeyScope };
+  key?: {
+    keyID: string;
+    permissions: KeyPermission[];
+    publishable?: PublishableKeyScope;
+    /** Secret keys: restricted short collection IDs; nested ones need their own entry. */
+    restrictedCollectionIDs?: string[];
+  };
   extension?: ExtensionAuthorization;
   /** Extension frontend requests without read:restricted_collections see no restricted content. */
   hideRestricted?: boolean;
@@ -101,7 +107,8 @@ const sessionDataType: z.ZodType<SessionData> = z.discriminatedUnion("type", [
           collectionIDs: z.array(z.string()).optional(),
           allowedOrigins: z.array(z.string())
         })
-        .optional()
+        .optional(),
+      restrictedCollectionIDs: z.array(z.string()).optional()
     })
   })
 ]);

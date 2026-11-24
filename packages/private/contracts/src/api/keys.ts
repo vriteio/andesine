@@ -21,6 +21,16 @@ const publishableFields = {
     .optional()
     .describe("Publishable keys: browser origins that can use the key, with localhost")
 };
+// Secret keys only; read:restricted_collections covers all restricted content instead.
+const secretFields = {
+  restrictedCollectionIDs: z
+    .array(publicID("coll"))
+    .max(50)
+    .optional()
+    .describe(
+      "Secret keys: restricted collections the key can access, with subcollections; nested restricted collections need their own entry"
+    )
+};
 const keysContract = baseContract.prefix("/keys").router({
   create: sessionContract
     .input(
@@ -28,7 +38,8 @@ const keysContract = baseContract.prefix("/keys").router({
         name: z.string().min(1).max(100).describe("Name for the API key"),
         kind: keyKindType.default("secret").describe("Kind of the API key; it cannot change"),
         permissions: z.array(keyPermissionType).describe("Permissions to grant to the API key"),
-        ...publishableFields
+        ...publishableFields,
+        ...secretFields
       })
     )
     .output(keyWithRawKeyType),
@@ -56,7 +67,8 @@ const keysContract = baseContract.prefix("/keys").router({
           .array(keyPermissionType)
           .optional()
           .describe("New permissions for the API key"),
-        ...publishableFields
+        ...publishableFields,
+        ...secretFields
       })
     )
     .output(z.void()),

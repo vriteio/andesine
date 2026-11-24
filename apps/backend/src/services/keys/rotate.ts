@@ -1,7 +1,8 @@
 import { apiKeys, workspaces } from "@andesine/server/database";
 import { assertKeyDelegation } from "#backend/lib/policy/delegation";
+import { assertRestrictedKeyDelegation } from "#backend/lib/policy/delegation-collections";
 import type { SessionData } from "#backend/lib/policy/session";
-import { toUUID } from "@andesine/contracts/primitives";
+import { toCollectionID, toUUID } from "@andesine/contracts/primitives";
 import { db } from "#backend/lib/adapters";
 import { type Key } from "@andesine/contracts/entities";
 import { withAuthorization } from "#backend/lib/policy";
@@ -52,6 +53,13 @@ const rotateKeyOperation = async (
     assertUnmanagedKey(oldKey);
 
     assertKeyDelegation(input.auth, oldKey.permissions);
+    // The new raw key carries the old key's restricted access.
+    await assertRestrictedKeyDelegation(
+      input.auth,
+      oldKey.restrictedCollectionIDs.map(toCollectionID),
+      oldKey.permissions,
+      tx
+    );
 
     const value = generateKeyValue(oldKey.kind);
 
@@ -69,6 +77,7 @@ const rotateKeyOperation = async (
         permissions: oldKey.permissions,
         collectionIDs: oldKey.collectionIDs,
         allowedOrigins: oldKey.allowedOrigins,
+        restrictedCollectionIDs: oldKey.restrictedCollectionIDs,
         encryptedValue: encryptKeyValue(oldKey.kind, raw),
         prefix: value.prefix,
         workspaceID,

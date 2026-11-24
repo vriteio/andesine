@@ -1,6 +1,7 @@
 import { type DatabaseClient } from "@andesine/server/database";
 import { type WebhookConfiguration, type WebhookScope } from "@andesine/contracts/webhooks";
 import { type Collection } from "@andesine/contracts/entities";
+import { coversRestrictedLineage } from "@andesine/contracts/permissions";
 import { loadCollectionTree } from "../data/collection-tree";
 
 interface WebhookScopeCollection {
@@ -22,6 +23,8 @@ interface WebhookScopeAccess {
   allowsChannel: (code: string) => boolean;
   allowsCollection: (collectionID: string | null) => boolean;
   allowsCapturedScope: (scope: WebhookResourceScope) => boolean;
+  /** The location rules without the collection filter. */
+  allowsLocation: (scope: WebhookResourceScope) => boolean;
 }
 interface LoadWebhookScopeIndexInput {
   database: DatabaseClient;
@@ -80,6 +83,20 @@ const matchesWebhookCollections = (
     collections.roots.some((root) => scope.ancestry.some(({ id }) => id === root))
   );
 };
+// Ancestry and boundaries are nearest first; the coverage check takes them root first.
+const coversRestrictedScope = (
+  index: WebhookScopeIndex,
+  scope: WebhookResourceScope,
+  collections: WebhookConfiguration["collections"]
+): boolean => {
+  const lineage = scope.ancestry.map(({ id }) => id).reverse();
+  const boundaryIDs = getRestrictedWebhookScopeIDs(index, scope).reverse();
+
+  return (
+    collections.mode === "selected" &&
+    coversRestrictedLineage(lineage, boundaryIDs, (id) => collections.roots.includes(id))
+  );
+};
 // The stored scope is the webhook's whole visibility boundary. Required read permissions
 // follow the selected events and are checked against the manager when configuring.
 const createWebhookScopeAccess = (
@@ -88,19 +105,27 @@ const createWebhookScopeAccess = (
 ): WebhookScopeAccess => {
   const allowsChannel = (code: string): boolean =>
     Boolean(index.rootID) && (scope.channels.mode === "all" || scope.channels.codes.includes(code));
-  const allowsCapturedScope = (resourceScope: WebhookResourceScope): boolean => {
-    const knownRoots =
-      scope.collections.mode === "all" ||
-      scope.collections.roots.some((root) => index.collections.has(root));
+  const allowsLocation = (resourceScope: WebhookResourceScope): boolean => {
     const hasRestrictedBoundary = getRestrictedWebhookScopeIDs(index, resourceScope).length > 0;
 
     return (
       resourceScope.workspaceID === index.workspaceID &&
       Boolean(index.rootID) &&
       resourceScope.ancestry.length > 0 &&
+      (!hasRestrictedBoundary ||
+        scope.restrictedContent ||
+        coversRestrictedScope(index, resourceScope, scope.collections))
+    );
+  };
+  const allowsCapturedScope = (resourceScope: WebhookResourceScope): boolean => {
+    const knownRoots =
+      scope.collections.mode === "all" ||
+      scope.collections.roots.some((root) => index.collections.has(root));
+
+    return (
       knownRoots &&
       matchesWebhookCollections(resourceScope, scope.collections) &&
-      (!hasRestrictedBoundary || scope.restrictedContent)
+      allowsLocation(resourceScope)
     );
   };
   const allowsCollection = (collectionID: string | null): boolean => {
@@ -109,7 +134,7 @@ const createWebhookScopeAccess = (
     return resourceScope !== null && allowsCapturedScope(resourceScope);
   };
 
-  return { allowsChannel, allowsCollection, allowsCapturedScope };
+  return { allowsChannel, allowsCollection, allowsCapturedScope, allowsLocation };
 };
 
 export {

@@ -4,6 +4,8 @@
 
 - `api memberships invite --link` creates a single-use invite link instead of an email
   invitation. Use exactly one of `--email` or `--link`.
+- `api webhooks` scopes can select restricted collections without `restricted-content`; nested
+  restricted collections need their own selection.
 - Requires `@andesine/sdk` 0.13.0.
 
 ## 0.14.0

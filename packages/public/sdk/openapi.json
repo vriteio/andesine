@@ -2045,7 +2045,7 @@
           },
           "restrictedContent": {
             "type": "boolean",
-            "description": "Include restricted collections, including ones restricted later"
+            "description": "Include all restricted collections in the scope, including ones restricted later; without it, each restricted collection, nested ones included, must be selected"
           },
           "id": { "type": "string" },
           "workspaceID": { "type": "string" },
@@ -2427,7 +2427,8 @@
                     "read:roles",
                     "webhooks",
                     "read:webhooks",
-                    "ai-answers"
+                    "ai-answers",
+                    "read:restricted_collections"
                   ],
                   "type": "string"
                 },
@@ -15892,7 +15893,8 @@
                                 "read:roles",
                                 "webhooks",
                                 "read:webhooks",
-                                "ai-answers"
+                                "ai-answers",
+                                "read:restricted_collections"
                               ],
                               "type": "string"
                             },
@@ -16262,7 +16264,8 @@
                           "read:roles",
                           "webhooks",
                           "read:webhooks",
-                          "ai-answers"
+                          "ai-answers",
+                          "read:restricted_collections"
                         ],
                         "type": "string"
                       },
@@ -16628,7 +16631,8 @@
                           "read:roles",
                           "webhooks",
                           "read:webhooks",
-                          "ai-answers"
+                          "ai-answers",
+                          "read:restricted_collections"
                         ],
                         "type": "string"
                       },
@@ -27479,7 +27483,7 @@
                   },
                   "restrictedContent": {
                     "type": "boolean",
-                    "description": "Include restricted collections, including ones restricted later"
+                    "description": "Include all restricted collections in the scope, including ones restricted later; without it, each restricted collection, nested ones included, must be selected"
                   }
                 },
                 "required": [
@@ -28151,7 +28155,7 @@
                   },
                   "restrictedContent": {
                     "type": "boolean",
-                    "description": "Include restricted collections, including ones restricted later"
+                    "description": "Include all restricted collections in the scope, including ones restricted later; without it, each restricted collection, nested ones included, must be selected"
                   },
                   "expectedRevision": { "type": "number" }
                 },

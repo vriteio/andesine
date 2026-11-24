@@ -22,6 +22,9 @@ interface KeyScopeInput {
   permissions: KeyPermission[];
   collectionIDs?: string[];
   allowedOrigins?: string[];
+  restrictedCollectionIDs?: string[];
+  /** Already on the key, so not re-checked; they may be in the trash. */
+  storedRestrictedCollectionIDs?: string[];
 }
 
 interface KeyScope {
@@ -29,6 +32,8 @@ interface KeyScope {
   /** UUIDs, for the database. */
   collectionIDs: string[];
   allowedOrigins: string[];
+  /** UUIDs, for the database. */
+  restrictedCollectionIDs: string[];
 }
 
 const publishablePermissions: readonly KeyPermission[] = publishableKeyPermissionType.options;
@@ -58,6 +63,7 @@ const mapAPIKey = (key: typeof apiKeys.$inferSelect): Key => ({
   permissions: key.permissions,
   collectionIDs: key.collectionIDs.map(toCollectionID),
   allowedOrigins: key.allowedOrigins,
+  restrictedCollectionIDs: key.restrictedCollectionIDs.map(toCollectionID),
   value: key.encryptedValue && decrypt(key.encryptedValue, config.SECRET),
   prefix: key.prefix,
   extensionID: key.extensionID && toExtensionID(key.extensionID),
@@ -80,32 +86,8 @@ const assertUnmanagedKey = (key: typeof apiKeys.$inferSelect): void => {
     data: { hints: ["Delete the key to revoke it, or change it in the extension."] }
   });
 };
-/**
- * Checks the rules of a key kind and returns the scope to store. Secret keys have no scope.
- * Publishable keys read published content only, from their collections (all when none are set)
- * and allowed origins.
- */
-const resolveKeyScope = async (workspaceID: string, input: KeyScopeInput): Promise<KeyScope> => {
-  const collectionIDs = [...new Set(input.collectionIDs ?? [])].map(toUUID);
-  const allowedOrigins = [...new Set(input.allowedOrigins ?? [])];
-
-  if (input.kind === "secret") {
-    const hasScope = collectionIDs.length > 0 || allowedOrigins.length > 0;
-
-    if (hasScope) throw badRequest("Only publishable keys have collections and origins.");
-
-    return { permissions: input.permissions, collectionIDs, allowedOrigins };
-  }
-
-  const hasValidPermissions =
-    input.permissions.includes("read:publishing") &&
-    input.permissions.every((permission) => publishablePermissions.includes(permission));
-
-  if (!hasValidPermissions) {
-    throw badRequest("Publishable keys have read:publishing, and optionally ai-answers.");
-  }
-
-  if (!allowedOrigins.length) throw badRequest("Publishable keys need an allowed origin.");
+const assertCollectionsExist = async (workspaceID: string, collectionIDs: string[]) => {
+  if (!collectionIDs.length) return;
 
   const found = await db
     .select({ id: collections.id })
@@ -121,11 +103,60 @@ const resolveKeyScope = async (workspaceID: string, input: KeyScopeInput): Promi
   if (found.length !== collectionIDs.length) {
     throw new ORPCError("NOT_FOUND", { message: "A collection of the key does not exist." });
   }
+};
+/**
+ * Checks the rules of a key kind and returns the scope to store. Secret keys can access the
+ * restricted content of their restricted collections. Publishable keys read published content
+ * only, from their collections (all when none are set) and allowed origins.
+ */
+const resolveKeyScope = async (workspaceID: string, input: KeyScopeInput): Promise<KeyScope> => {
+  const collectionIDs = [...new Set(input.collectionIDs ?? [])].map(toUUID);
+  const allowedOrigins = [...new Set(input.allowedOrigins ?? [])];
+  const restrictedCollectionIDs = [...new Set(input.restrictedCollectionIDs ?? [])].map(toUUID);
+
+  if (input.kind === "secret") {
+    const hasPublishableScope = collectionIDs.length > 0 || allowedOrigins.length > 0;
+
+    if (hasPublishableScope) {
+      throw badRequest("Only publishable keys have collections and origins.");
+    }
+
+    const storedCollectionIDs = new Set(input.storedRestrictedCollectionIDs?.map(toUUID));
+
+    await assertCollectionsExist(
+      workspaceID,
+      restrictedCollectionIDs.filter((id) => !storedCollectionIDs.has(id))
+    );
+
+    return {
+      permissions: input.permissions,
+      collectionIDs,
+      allowedOrigins,
+      restrictedCollectionIDs
+    };
+  }
+
+  if (restrictedCollectionIDs.length) {
+    throw badRequest("Only secret keys have restricted collections.");
+  }
+
+  const hasValidPermissions =
+    input.permissions.includes("read:publishing") &&
+    input.permissions.every((permission) => publishablePermissions.includes(permission));
+
+  if (!hasValidPermissions) {
+    throw badRequest("Publishable keys have read:publishing, and optionally ai-answers.");
+  }
+
+  if (!allowedOrigins.length) throw badRequest("Publishable keys need an allowed origin.");
+
+  await assertCollectionsExist(workspaceID, collectionIDs);
 
   return {
     permissions: [...new Set(input.permissions)],
     collectionIDs,
-    allowedOrigins
+    allowedOrigins,
+    restrictedCollectionIDs
   };
 };
 

@@ -5,6 +5,7 @@ import {
 } from "@andesine/server/webhooks/recording";
 import { type WebhookConfiguration } from "@andesine/contracts/webhooks";
 import { loadAuthorizedCollectionTree } from "#backend/lib/policy/authorized-collection-tree";
+import { assertRestrictedScopeDelegation } from "#backend/lib/policy/delegation-collections";
 import { hasAuthPermission } from "#backend/lib/policy/permissions";
 import type { SessionData } from "#backend/lib/policy/session";
 import { toUUID } from "@andesine/contracts/primitives";
@@ -107,6 +108,15 @@ const assertWebhookAuthority = async (input: WebhookAuthorityInput): Promise<voi
     throw new ORPCError("FORBIDDEN", {
       message: "The webhook scope includes an unavailable or restricted collection"
     });
+  }
+
+  if (!input.retained && configuration.collections.mode === "selected") {
+    await assertRestrictedScopeDelegation(
+      auth,
+      configuration.collections.roots,
+      [],
+      input.database
+    );
   }
 
   if (!input.retained && channelCodes.length) {

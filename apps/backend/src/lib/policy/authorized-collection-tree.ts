@@ -15,6 +15,7 @@ import {
   type CollectionAccess,
   type CollectionAction,
   type EntryAction,
+  coversRestrictedLineage,
   hasPermission
 } from "@andesine/contracts/permissions";
 import type { EntryAuthorizationSource } from "./authorized-entry-sources";
@@ -86,10 +87,18 @@ const getRestrictedBoundaryIDs = (
 };
 const isCollectionVisible = (
   auth: SessionData,
+  collection: Collection,
   boundaryIDs: string[],
   permissionsByBoundaryID: Map<string, Permission[]>
 ): boolean => {
   if (canReadAllRestrictedCollections(auth) || boundaryIDs.length === 0) return true;
+
+  if (auth.type === "key") {
+    return coversRestrictedLineage([...collection.ancestors, collection.id], boundaryIDs, (id) => {
+      return auth.key?.restrictedCollectionIDs?.includes(id) ?? false;
+    });
+  }
+
   if (!getUserAuthorization(auth) || auth.hideRestricted) return false;
 
   return boundaryIDs.every((boundaryID) => permissionsByBoundaryID.has(boundaryID));
@@ -279,7 +288,9 @@ const createAuthorizedCollectionTree = (
   for (const collection of input.allCollections) {
     const boundaryIDs = getRestrictedBoundaryIDs(collection, restrictedBoundaryIDs);
 
-    if (!isCollectionVisible(input.auth, boundaryIDs, input.permissionsByBoundaryID)) continue;
+    if (!isCollectionVisible(input.auth, collection, boundaryIDs, input.permissionsByBoundaryID)) {
+      continue;
+    }
 
     const access =
       input.auth.type === "key" || input.auth.type === "extension"

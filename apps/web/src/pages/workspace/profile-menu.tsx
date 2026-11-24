@@ -145,9 +145,10 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
                     />
                   )
                 : "i-lucide:hexagon",
-              selected: ws.id === currentWorkspace()?.id,
+              selected:
+                ws.id === currentWorkspace()?.id && ws.userID === currentWorkspace()?.userID,
               onClick() {
-                return switchWorkspace(ws.id);
+                return switchWorkspace(ws.id, ws.userID);
               }
             }))
           ] as unknown as Array<MenuItem | (() => JSX.Element)>;

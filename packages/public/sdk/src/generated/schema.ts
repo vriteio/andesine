@@ -3434,7 +3434,7 @@ export interface components {
             mode: "selected";
             codes: string[];
           };
-      /** @description Include restricted collections, including ones restricted later */
+      /** @description Include all restricted collections in the scope, including ones restricted later; without it, each restricted collection, nested ones included, must be selected */
       restrictedContent: boolean;
       id: string;
       workspaceID: string;
@@ -3600,6 +3600,7 @@ export interface components {
             | "webhooks"
             | "read:webhooks"
             | "ai-answers"
+            | "read:restricted_collections"
           )[];
         }
       | {
@@ -12928,6 +12929,7 @@ export interface operations {
                 | "webhooks"
                 | "read:webhooks"
                 | "ai-answers"
+                | "read:restricted_collections"
               )[];
               /** @description Publishable keys: the collections, with their descendants, that the key can read; none for all */
               collectionIDs: string[];
@@ -13222,6 +13224,7 @@ export interface operations {
               | "webhooks"
               | "read:webhooks"
               | "ai-answers"
+              | "read:restricted_collections"
             )[];
             /** @description Publishable keys: the collections, with their descendants, that the key can read; none for all */
             collectionIDs: string[];
@@ -13762,6 +13765,7 @@ export interface operations {
               | "webhooks"
               | "read:webhooks"
               | "ai-answers"
+              | "read:restricted_collections"
             )[];
             /** @description Publishable keys: the collections, with their descendants, that the key can read; none for all */
             collectionIDs: string[];
@@ -22015,7 +22019,7 @@ export interface operations {
                 mode: "selected";
                 codes: string[];
               };
-          /** @description Include restricted collections, including ones restricted later */
+          /** @description Include all restricted collections in the scope, including ones restricted later; without it, each restricted collection, nested ones included, must be selected */
           restrictedContent: boolean;
         };
       };
@@ -22550,7 +22554,7 @@ export interface operations {
                 mode: "selected";
                 codes: string[];
               };
-          /** @description Include restricted collections, including ones restricted later */
+          /** @description Include all restricted collections in the scope, including ones restricted later; without it, each restricted collection, nested ones included, must be selected */
           restrictedContent?: boolean;
           expectedRevision: number;
         };

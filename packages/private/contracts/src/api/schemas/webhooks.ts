@@ -64,7 +64,9 @@ const webhookConfigurationType = z.strictObject({
   channels: webhookChannelScopeType,
   restrictedContent: z
     .boolean()
-    .describe("Include restricted collections, including ones restricted later")
+    .describe(
+      "Include all restricted collections in the scope, including ones restricted later; without it, each restricted collection, nested ones included, must be selected"
+    )
 });
 const webhookCreateInputType = webhookConfigurationType.extend({
   enabled: z.boolean().default(true)

@@ -1,5 +1,6 @@
 import { apiKeys } from "@andesine/server/database";
 import { assertKeyDelegation } from "#backend/lib/policy/delegation";
+import { assertRestrictedKeyDelegation } from "#backend/lib/policy/delegation-collections";
 import { toUUID } from "@andesine/contracts/primitives";
 import { db } from "#backend/lib/adapters";
 import { type Key } from "@andesine/contracts/entities";
@@ -40,6 +41,12 @@ const createKey = withAuthorization<CreateKeyInput, undefined, Key & { rawKey: s
   { permissions: { session: ["api_keys"] } },
   async ({ auth, input, workspaceID }) => {
     assertKeyDelegation(auth, input.permissions);
+    await assertRestrictedKeyDelegation(
+      auth,
+      input.restrictedCollectionIDs ?? [],
+      input.permissions,
+      db
+    );
     return createKeyOperation({ ...input, workspaceID });
   }
 );

@@ -16,7 +16,8 @@ const keyPermissionType = z.enum([
   "read:roles",
   "webhooks",
   "read:webhooks",
-  "ai-answers"
+  "ai-answers",
+  "read:restricted_collections"
 ]);
 /** A secret key stays on servers; a publishable key is safe in browsers, for published content. */
 const keyKindType = z.enum(["secret", "publishable"]);
@@ -40,6 +41,11 @@ const keyType = z.object({
   allowedOrigins: z
     .array(z.string())
     .describe("Publishable keys: the browser origins that can use the key, with localhost"),
+  restrictedCollectionIDs: z
+    .array(publicID("coll"))
+    .describe(
+      "Secret keys: restricted collections the key can access, with subcollections; nested restricted collections need their own entry"
+    ),
   value: z
     .string()
     .nullable()

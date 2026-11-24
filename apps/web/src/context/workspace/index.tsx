@@ -57,7 +57,8 @@ interface WorkspaceContextValue {
   sessions(): SessionInfo[];
   hasPermission(required: Permission): boolean;
   subscribeToUpdates(listener: (event: WorkspaceEvent) => void): () => void;
-  switchWorkspace(id: string): Promise<void>;
+  /** Without a user ID, switches to the active account's entry of the workspace when it has one. */
+  switchWorkspace(id: string, userID?: string): Promise<void>;
   content: ReturnType<typeof useWorkspaceContent>;
 }
 
@@ -123,6 +124,7 @@ const WorkspaceProvider: ParentComponent = (props) => {
   const sessions = createAsync(() => listSessionsQuery());
   const workspaces = createAsync(() => listWorkspacesQuery());
   const [openedEntry, setOpenedEntry] = createSignal<OpenedEntry | null>(null);
+  const [switching, setSwitching] = createSignal(false);
   const refreshWorkspaces = () => revalidate("workspaces");
   const switchWorkspaceMutation = createMutation(() => ({
     mutationFn: async (input: {
@@ -130,6 +132,8 @@ const WorkspaceProvider: ParentComponent = (props) => {
       targetSessionToken?: string;
       previousSessionToken?: string;
     }) => {
+      setSwitching(true);
+
       if (input.targetSessionToken) {
         const { error } = await authClient.multiSession.setActive({
           sessionToken: input.targetSessionToken
@@ -146,15 +150,15 @@ const WorkspaceProvider: ParentComponent = (props) => {
       window.location.href = `/${workspaceID}/`;
     },
     onError: async (_error, input) => {
-      if (!input.targetSessionToken || !input.previousSessionToken) return;
+      if (input.targetSessionToken && input.previousSessionToken) {
+        const { error } = await authClient.multiSession.setActive({
+          sessionToken: input.previousSessionToken
+        });
 
-      const { error } = await authClient.multiSession.setActive({
-        sessionToken: input.previousSessionToken
-      });
-
-      if (error) {
-        console.error("Failed to restore the previous session", error);
+        if (error) console.error("Failed to restore the previous session", error);
       }
+
+      setSwitching(false);
     }
   }));
   // Plain functions, not memos: server memos compute once, before the workspaces may have loaded.
@@ -192,7 +196,9 @@ const WorkspaceProvider: ParentComponent = (props) => {
       workspace?.admin || hasGrantedPermission(workspace?.permissions || [], required)
     );
   };
-  const content = useWorkspaceContent(workspaceID, () => currentSession()?.user.id || "");
+  // Detached while switching, so the old page neither syncs nor stores with the next account.
+  const contentUserID = () => (switching() ? "" : currentSession()?.user.id || "");
+  const content = useWorkspaceContent(workspaceID, contentUserID);
   createEffect(() => {
     const workspace = currentWorkspace();
     const session = currentSession();
@@ -237,7 +243,7 @@ const WorkspaceProvider: ParentComponent = (props) => {
   });
   createEffect(() => {
     const currentWorkspaceID = workspaceID();
-    const currentUserID = currentSession()?.user.id;
+    const currentUserID = contentUserID();
 
     if (typeof window === "undefined" || !currentWorkspaceID || !currentUserID) return;
 
@@ -323,12 +329,16 @@ const WorkspaceProvider: ParentComponent = (props) => {
       }
     })();
   });
-  const switchWorkspace = async (workspaceID: string) => {
-    if (isOffline()) throw new Error("Workspace switching is unavailable while offline");
-    if (workspaceID === params.workspaceID) return;
-
-    const targetWorkspace = (workspaces() ?? []).find((workspace) => workspace.id === workspaceID);
+  const switchWorkspace = async (workspaceID: string, userID?: string) => {
+    const targetWorkspace = (workspaces() ?? []).find((workspace) => {
+      return workspace.id === workspaceID && (!userID || workspace.userID === userID);
+    });
     const current = currentWorkspace();
+    const isCurrent =
+      workspaceID === params.workspaceID && targetWorkspace?.userID === current?.userID;
+
+    if (isOffline()) throw new Error("Workspace switching is unavailable while offline");
+    if (isCurrent) return;
 
     if (!targetWorkspace) {
       throw new Error("Workspace not found");

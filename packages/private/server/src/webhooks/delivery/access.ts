@@ -67,12 +67,6 @@ const getDeliveryAccessStopReason = async (
   const index =
     scopeIndex ?? (await loadWebhookScopeIndex({ database, workspaceID, includeDeleted: true }));
   const access = createWebhookScopeAccess(configuration, index);
-  // A resource's current location only needs to avoid restricted content; leaving
-  // the selected collections after the event does not withdraw the recorded event.
-  const currentAccess = createWebhookScopeAccess(
-    { ...configuration, collections: { mode: "all" } },
-    index
-  );
   const rows = await database
     .select()
     .from(outboundEventResources)
@@ -109,6 +103,7 @@ const getDeliveryAccessStopReason = async (
     }
   }
 
+  // Leaving the selected collections after the event does not withdraw the recorded event.
   const allowsCurrent = (resource: WebhookEventResource, allowMissing: boolean): boolean => {
     const current =
       resource.kind === "entry"
@@ -119,7 +114,7 @@ const getDeliveryAccessStopReason = async (
 
     return current === undefined
       ? allowMissing
-      : current !== null && currentAccess.allowsCapturedScope(current);
+      : current !== null && access.allowsLocation(current);
   };
 
   if (event.subject.kind === "channel") {

@@ -2,4 +2,5 @@ export { collectionAccessType, collectionActionType, entryActionType } from "./a
 export type { CollectionAccess, CollectionAction, EntryAction } from "./actions";
 export { keyPermissionRequirements } from "./key-requirements";
 export { hasPermission } from "./requirements";
+export { coversRestrictedLineage } from "./restricted-coverage";
 export type { AuthorizationRequirements } from "./requirements";

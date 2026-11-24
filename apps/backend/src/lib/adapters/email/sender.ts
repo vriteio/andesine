@@ -19,9 +19,7 @@ interface EmailDeliveryResult {
 const createEmailSender = (): {
   sendEmail: EmailSender;
   client:
-    | Resend
-    | nodemailer.Transporter<nodemailer.SentMessageInfo, nodemailer.TransportOptions>
-    | null;
+    Resend | nodemailer.Transporter<nodemailer.SentMessageInfo, nodemailer.TransportOptions> | null;
 } => {
   if (config.RESEND_API_KEY) {
     const resend = new Resend(config.RESEND_API_KEY);

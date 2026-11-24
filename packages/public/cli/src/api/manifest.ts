@@ -8699,7 +8699,8 @@ const commands: APICommand[] = [
         required: true,
         schema: {
           type: "boolean",
-          description: "Include restricted collections, including ones restricted later"
+          description:
+            "Include all restricted collections in the scope, including ones restricted later; without it, each restricted collection, nested ones included, must be selected"
         },
         flag: "restricted-content",
         kind: "boolean",
@@ -9604,7 +9605,8 @@ const commands: APICommand[] = [
         required: false,
         schema: {
           type: "boolean",
-          description: "Include restricted collections, including ones restricted later"
+          description:
+            "Include all restricted collections in the scope, including ones restricted later; without it, each restricted collection, nested ones included, must be selected"
         },
         flag: "restricted-content",
         kind: "boolean",

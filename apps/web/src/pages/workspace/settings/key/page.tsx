@@ -31,6 +31,7 @@ import { useWorkspace } from "#web/context/workspace";
 import { apiKeyQuery, useKeyMutations, type Webhook } from "#web/lib/data";
 import { type AccessLevel, createPermissionAccessMapper } from "#web/lib/permissions";
 import { getScopeItems } from "../webhook/configuration";
+import { CollectionTreeField } from "../webhook/collection-tree-field";
 import { BrowserAccessSection, originPattern } from "./browser-access-section";
 
 type Resource =
@@ -89,7 +90,7 @@ const KeySettingsPage: Component = () => {
   const notify = useNotify();
   const { copyText } = useClipboard();
   const { canGrantKeyPermission } = useDelegationPermissions();
-  const { hasPermission } = useWorkspace();
+  const { content, hasPermission } = useWorkspace();
   const navigate = useNavigate();
   const params = useParams<{ workspaceID?: string; keyID?: string }>();
   const [searchParams, setSearchParams] = useSearchParams<{ kind?: string }>();
@@ -114,6 +115,11 @@ const KeySettingsPage: Component = () => {
   );
   const [resourceAccess, setResourceAccess] = createSignal<ResourceAccess>(permissionsToAccess([]));
   const [collections, setCollections] = createSignal<Webhook["collections"]>({ mode: "all" });
+  // "All" grants read:restricted_collections, which also covers future restricted collections.
+  const [restrictedCollections, setRestrictedCollections] = createSignal<Webhook["collections"]>({
+    mode: "selected",
+    roots: []
+  });
   const [allowedOrigins, setAllowedOrigins] = createSignal<string[]>([]);
   const [answers, setAnswers] = createSignal(false);
   const [revealedKey, setRevealedKey] = createSignal<{ value: string; kind: KeyKind }>();
@@ -124,6 +130,13 @@ const KeySettingsPage: Component = () => {
   });
   const publishable = () => kind() === "publishable";
   const managed = () => Boolean(key()?.extensionID);
+  const hasRestrictedCollections = () => {
+    return content
+      .collectionsCollection()
+      .find()
+      .fetch()
+      .some(({ restricted }) => restricted);
+  };
   const disabled = () => {
     return (
       !hasPermission("api_keys") ||
@@ -135,7 +148,14 @@ const KeySettingsPage: Component = () => {
   };
   // Publishable keys always read published content, and can answer questions about it.
   const permissions = (): KeyPermission[] => {
-    if (!publishable()) return accessToPermissions(resourceAccess());
+    if (!publishable()) {
+      return [
+        ...accessToPermissions(resourceAccess()),
+        ...(restrictedCollections().mode === "all"
+          ? (["read:restricted_collections"] as const)
+          : [])
+      ];
+    }
 
     return answers() ? ["read:publishing", "ai-answers"] : ["read:publishing"];
   };
@@ -148,6 +168,12 @@ const KeySettingsPage: Component = () => {
       currentPermissions.length !== selected.length ||
       selected.some((permission) => !currentPermissions.includes(permission))
     );
+  });
+  const restrictedCollectionsChanged = createMemo(() => {
+    const current = key()?.restrictedCollectionIDs ?? [];
+    const selected = getScopeItems(restrictedCollections());
+
+    return current.length !== selected.length || selected.some((id) => !current.includes(id));
   });
   const fillError = createMemo((): string => {
     const noCollections = collections().mode === "selected" && !getScopeItems(collections()).length;
@@ -201,6 +227,11 @@ const KeySettingsPage: Component = () => {
           : { mode: "all" }
       );
       setAllowedOrigins(currentKey.allowedOrigins);
+      setRestrictedCollections(
+        currentKey.permissions.includes("read:restricted_collections")
+          ? { mode: "all" }
+          : { mode: "selected", roots: currentKey.restrictedCollectionIDs }
+      );
       setAnswers(currentKey.permissions.includes("ai-answers"));
     }
   });
@@ -307,6 +338,23 @@ const KeySettingsPage: Component = () => {
               )}
             </For>
           </SettingsSection>
+          <Show when={hasRestrictedCollections()}>
+            <SettingsSection label="Restricted access">
+              <Setting
+                label="Restricted collections"
+                description="Restricted collections that the key can access, with their subcollections"
+                fade={false}
+              >
+                <CollectionTreeField
+                  disabled={disabled()}
+                  restrictedContent={restrictedCollections().mode === "all"}
+                  restrictedOnly
+                  scope={restrictedCollections()}
+                  setScope={setRestrictedCollections}
+                />
+              </Setting>
+            </SettingsSection>
+          </Show>
         </Show>
         <div class="w-full h-4 flex justify-center items-center">
           <div class="flex-1 h-px bg-gray-200" />
@@ -328,7 +376,11 @@ const KeySettingsPage: Component = () => {
                         collectionIDs: getScopeItems(collections()),
                         allowedOrigins: allowedOrigins()
                       }
-                    : {};
+                    : {
+                        ...(restrictedCollectionsChanged() && {
+                          restrictedCollectionIDs: getScopeItems(restrictedCollections())
+                        })
+                      };
 
                   if (keyID()) {
                     updateKeyMutation.mutate({

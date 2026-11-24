@@ -31,7 +31,14 @@ const getKeySessionData = async (token: string): Promise<SessionData> => {
 
     // Grant changes update key rows without clearing the cache.
     if (cachedData?.key) {
-      return { ...cachedData, key: { ...cachedData.key, permissions: key.permissions } };
+      return {
+        ...cachedData,
+        key: {
+          ...cachedData.key,
+          permissions: key.permissions,
+          restrictedCollectionIDs: key.restrictedCollectionIDs.map(toCollectionID)
+        }
+      };
     }
 
     await redis.del(cacheKey);
@@ -50,6 +57,7 @@ const getKeySessionData = async (token: string): Promise<SessionData> => {
     key: {
       keyID: toKeyID(key.id),
       permissions: key.permissions,
+      restrictedCollectionIDs: key.restrictedCollectionIDs.map(toCollectionID),
       ...(key.kind === "publishable" && {
         publishable: {
           ...(key.collectionIDs.length && {

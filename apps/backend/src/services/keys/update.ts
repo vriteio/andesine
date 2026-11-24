@@ -1,9 +1,10 @@
 import { apiKeys } from "@andesine/server/database";
 import { assertKeyDelegation } from "#backend/lib/policy/delegation";
+import { assertRestrictedKeyDelegation } from "#backend/lib/policy/delegation-collections";
 import { toCollectionID, toUUID } from "@andesine/contracts/primitives";
 import { db } from "#backend/lib/adapters";
 import { type KeyPermission } from "@andesine/contracts/entities";
-import { withAuthorization } from "#backend/lib/policy";
+import { type SessionData, withAuthorization } from "#backend/lib/policy";
 import { assertUnmanagedKey, resolveKeyScope } from "#backend/lib/data";
 import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
@@ -14,10 +15,11 @@ interface UpdateKeyInput {
   permissions?: KeyPermission[];
   collectionIDs?: string[];
   allowedOrigins?: string[];
+  restrictedCollectionIDs?: string[];
 }
 
 const updateKeyOperation = async (
-  input: UpdateKeyInput & { workspaceID: string }
+  input: UpdateKeyInput & { auth: SessionData; workspaceID: string }
 ): Promise<void> => {
   const where = and(
     eq(apiKeys.id, toUUID(input.id)),
@@ -29,12 +31,27 @@ const updateKeyOperation = async (
 
   assertUnmanagedKey(key);
 
+  const storedCollectionIDs = key.restrictedCollectionIDs.map(toCollectionID);
+  const restrictedCollectionIDs = input.restrictedCollectionIDs ?? storedCollectionIDs;
+  const addedCollectionIDs = restrictedCollectionIDs.filter((id) => {
+    return !storedCollectionIDs.includes(id);
+  });
+
+  // New permissions apply in all restricted collections; added ones are checked with the current.
+  if (input.permissions) {
+    await assertRestrictedKeyDelegation(input.auth, restrictedCollectionIDs, input.permissions, db);
+  } else {
+    await assertRestrictedKeyDelegation(input.auth, addedCollectionIDs, key.permissions, db);
+  }
+
   // The kind cannot change, so the changed values are checked with the stored ones.
   const scope = await resolveKeyScope(input.workspaceID, {
     kind: key.kind,
     permissions: input.permissions ?? key.permissions,
     collectionIDs: input.collectionIDs ?? key.collectionIDs.map(toCollectionID),
-    allowedOrigins: input.allowedOrigins ?? key.allowedOrigins
+    allowedOrigins: input.allowedOrigins ?? key.allowedOrigins,
+    restrictedCollectionIDs,
+    storedRestrictedCollectionIDs: storedCollectionIDs
   });
 
   await db
@@ -46,7 +63,7 @@ const updateKey = withAuthorization<UpdateKeyInput>(
   { permissions: { session: ["api_keys"] } },
   async ({ auth, input, workspaceID }) => {
     if (input.permissions !== undefined) assertKeyDelegation(auth, input.permissions);
-    return updateKeyOperation({ ...input, workspaceID });
+    return updateKeyOperation({ ...input, auth, workspaceID });
   }
 );
 
