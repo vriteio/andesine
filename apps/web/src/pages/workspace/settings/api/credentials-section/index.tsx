@@ -1,5 +1,5 @@
 import { Card, IconButton } from "@andesine/components";
-import { Tree, TREE_ROOT_ID, type TreeMap, TreeSkeleton } from "#web/components/tree";
+import { PAGE_TREE_SIZE, Tree, TREE_ROOT_ID, type TreeMap, TreeSkeleton } from "#web/components/tree";
 import { useNotify } from "#web/context/notifications";
 import { client, type Key, type KeyKind, type KeyPermission } from "#web/lib/api";
 import { createAsync, revalidate, useNavigate, useParams } from "@solidjs/router";
@@ -197,7 +197,7 @@ const APIKeyList: Component<APIKeyListProps> = (props) => {
         <Tree
           keyboard
           tree={keysTree}
-          itemHeight="2rem"
+          {...PAGE_TREE_SIZE}
           renderItem={(itemID) => {
             const key = () => visibleKeys().find((currentKey) => currentKey.id === itemID)!;
 

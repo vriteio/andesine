@@ -48,6 +48,10 @@ const config = defineConfig({
     },
     transformerVariantGroup()
   ],
+  shortcuts: [
+    // Default layer, so it overrides `:base:` sizes
+    ["text-row", "md:text-[15px]", { layer: "default" }]
+  ],
   presets: [
     presetIcons({ collections: { andesine: andesineIcons } }),
     presetWind3(),

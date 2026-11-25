@@ -2,8 +2,8 @@ import { Combobox as ArkCombobox, createListCollection } from "@ark-ui/solid/com
 import { createMediaQuery } from "@solid-primitives/media";
 import clsx from "clsx";
 import { createEffect, createMemo, createSignal, For, type JSX, Show } from "solid-js";
-import { Dynamic, Portal } from "solid-js/web";
-import { Fragment } from "./fragment";
+import { Dynamic } from "solid-js/web";
+import { PresencePortal } from "./presence-portal";
 import { createRef } from "../ref";
 
 interface ComboboxOption {
@@ -268,7 +268,7 @@ const Combobox = <O extends ComboboxOption>(props: ComboboxProps<O>): JSX.Elemen
           )}
         />
       </ArkCombobox.Control>
-      <Dynamic component={!optionsInline() && props.portal !== false ? Portal : Fragment}>
+      <PresencePortal portal={!optionsInline() && props.portal !== false}>
         <ArkCombobox.Positioner
           class={clsx(
             ":base: z-50 select-none",
@@ -337,7 +337,7 @@ const Combobox = <O extends ComboboxOption>(props: ComboboxProps<O>): JSX.Elemen
                         <ArkCombobox.ItemText
                           title={option.label}
                           class={clsx(
-                            ":base: flex-1 pr-1 text-start text-sm line-clamp-1",
+                            ":base: min-w-0 flex-1 pr-1 text-start text-sm truncate",
                             selected()
                               ? ":base: bg-gradient-to-tr bg-clip-text text-transparent media-mouse:group-data-[highlighted]/combobox-item:text-white"
                               : ":base: text-gray-700"
@@ -356,7 +356,7 @@ const Combobox = <O extends ComboboxOption>(props: ComboboxProps<O>): JSX.Elemen
             </div>
           </ArkCombobox.Content>
         </ArkCombobox.Positioner>
-      </Dynamic>
+      </PresencePortal>
     </ArkCombobox.Root>
   );
 };

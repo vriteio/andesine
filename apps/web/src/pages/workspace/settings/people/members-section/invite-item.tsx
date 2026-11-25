@@ -92,7 +92,7 @@ const InviteItem: Component<{
         icon={
           <div
             class={clsx(
-              "h-5 w-5 text-gray-400",
+              "h-5.5 w-5.5 text-gray-400",
               props.invite.email ? "i-lucide:mail" : "i-lucide:link"
             )}
           />

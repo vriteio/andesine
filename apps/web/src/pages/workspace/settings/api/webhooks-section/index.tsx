@@ -2,7 +2,7 @@ import { Button, Card, IconButton } from "@andesine/components";
 import { createAsync, revalidate, useNavigate, useParams } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
 import { type Component, createMemo, createSignal, ErrorBoundary, Show, Suspense } from "solid-js";
-import { Tree, TREE_ROOT_ID, type TreeMap, TreeSkeleton } from "#web/components/tree";
+import { PAGE_TREE_SIZE, Tree, TREE_ROOT_ID, type TreeMap, TreeSkeleton } from "#web/components/tree";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
 import { client } from "#web/lib/api";
@@ -69,7 +69,7 @@ const WebhookList: Component<WebhookListProps> = (props) => {
       <Tree
         keyboard
         tree={webhooksTree}
-        itemHeight="2rem"
+        {...PAGE_TREE_SIZE}
         renderItem={(itemID) => {
           const webhook = () => orderedWebhooks().find((current) => current.id === itemID)!;
 

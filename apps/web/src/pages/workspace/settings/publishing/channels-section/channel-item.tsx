@@ -81,7 +81,7 @@ const ChannelItem: Component<ChannelItemProps> = (props) => {
         checkbox={editable()}
         selectable={editable()}
         class={clsx("min-h-8 px-1 py-0.5", props.loading && "animate-pulse")}
-        icon={<div class="i-lucide:radio h-5 w-5 text-gray-400" />}
+        icon={<div class="i-lucide:radio h-5.5 w-5.5 text-gray-400" />}
         renderLabel={(label) => (
           <div class="flex min-w-0 flex-1 items-center gap-1.5">
             <div class="flex min-w-0 flex-1 items-center gap-1.5" title={props.channel.name}>

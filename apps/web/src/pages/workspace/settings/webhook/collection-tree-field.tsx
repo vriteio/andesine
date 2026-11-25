@@ -89,13 +89,14 @@ const CollectionNodeItem: Component<CollectionNodeItemProps> = (props) => {
         id={props.id}
         label={all() ? currentWorkspace()?.name || "Workspace" : node()?.name || ""}
         topLevel={all()}
+        class="text-row"
         icon={
           <Show
             when={all() && workspaceLogo()}
             fallback={
               <div
                 class={clsx(
-                  "h-6 w-6 text-gray-400",
+                  "h-5 w-5 text-gray-400",
                   icon(),
                   state() !== false && "bg-gradient-to-tr"
                 )}
@@ -106,7 +107,7 @@ const CollectionNodeItem: Component<CollectionNodeItemProps> = (props) => {
               <img
                 src={logo()}
                 alt={`${currentWorkspace()?.name} logo`}
-                class="h-6 w-6 rounded-md object-contain"
+                class="h-5 w-5 rounded-md object-contain"
               />
             )}
           </Show>
@@ -122,6 +123,8 @@ const CollectionNodeItem: Component<CollectionNodeItemProps> = (props) => {
             >
               <Checkbox
                 checked={state()}
+                controlClass="h-4.5 w-4.5"
+                iconClass="h-3.5 w-3.5"
                 setChecked={(selected) => tree.setSelected(props.id, selected)}
               />
             </div>

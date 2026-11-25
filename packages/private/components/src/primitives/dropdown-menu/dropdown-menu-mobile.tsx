@@ -113,11 +113,11 @@ const MobileMenuOption = <O extends MenuItem>(props: MobileMenuOptionProps<O>) =
           onClick={() => props.onNavigate(props.option)}
         >
           <MobileMenuIcon option={props.option} />
-          <div class="flex flex-1 items-center gap-4">
+          <div class="flex min-w-0 flex-1 items-center gap-4">
             <span
               title={props.option.label}
               class={clsx(
-                "flex-1 text-start text-[16px] font-medium line-clamp-1",
+                "min-w-0 flex-1 text-start text-[16px] font-medium truncate",
                 props.option.color === "danger" ? "text-red-500" : "text-gray-700"
               )}
             >
@@ -141,11 +141,11 @@ const MobileMenuOption = <O extends MenuItem>(props: MobileMenuOptionProps<O>) =
               <div class="absolute inset-0 -z-1 rounded-md bg-gradient-to-tr opacity-10 media-mouse:group-data-[highlighted]/menu-item:opacity-100 pointer-events-none" />
             </Show>
             <MobileMenuIcon option={props.option} loading={loading()} />
-            <div class="flex flex-1 gap-4">
+            <div class="flex min-w-0 flex-1 gap-4">
               <span
                 title={props.option.label}
                 class={clsx(
-                  "flex-1 text-start text-[16px] font-medium line-clamp-1",
+                  "min-w-0 flex-1 text-start text-[16px] font-medium truncate",
                   props.option.selected
                     ? "bg-gradient-to-tr bg-clip-text text-transparent media-mouse:group-data-[highlighted]/menu-item:text-white media-mouse:group-data-[highlighted]/menu-item:from-white media-mouse:group-data-[highlighted]/menu-item:to-white"
                     : props.option.color === "danger"

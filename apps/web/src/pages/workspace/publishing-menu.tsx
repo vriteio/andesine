@@ -383,7 +383,7 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
               >
                 <button
                   type="button"
-                  class="group relative flex min-h-7 w-full flex-1 select-none items-center gap-1 overflow-hidden rounded-lg pl-0.5 text-left font-medium outline-none @hover:bg-gradient-to-r @hover:from-gray-500/10 @hover:to-transparent"
+                  class="group relative flex min-h-7.5 w-full flex-1 select-none items-center gap-1 overflow-hidden rounded-lg pl-0.75 text-left font-medium outline-none @hover:bg-gradient-to-r @hover:from-gray-500/10 @hover:to-transparent"
                   aria-label="Open publish menu"
                 >
                   <PublishingStatusIcon status={currentStatus()} size="large" />

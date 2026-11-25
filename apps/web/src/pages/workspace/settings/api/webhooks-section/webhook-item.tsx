@@ -170,7 +170,7 @@ const WebhookItem: Component<WebhookItemProps> = (props) => {
         class={clsx("px-1 py-0.5", props.loading && "animate-pulse")}
         icon={
           <Tooltip content={getStateLabel(props.webhook)} fixed>
-            <div class={clsx("h-5 w-5", getStateIcon(props.webhook))} />
+            <div class={clsx("h-5.5 w-5.5", getStateIcon(props.webhook))} />
           </Tooltip>
         }
         onClick={props.onEvents}

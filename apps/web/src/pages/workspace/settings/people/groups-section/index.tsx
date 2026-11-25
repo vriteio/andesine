@@ -2,7 +2,7 @@ import { Card, IconButton } from "@andesine/components";
 import { createAsync, revalidate, useNavigate, useParams } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
 import { type Component, createSignal, Show, Suspense, useTransition } from "solid-js";
-import { Tree, TREE_ROOT_ID, type TreeMap, TreeSkeleton } from "#web/components/tree";
+import { PAGE_TREE_SIZE, Tree, TREE_ROOT_ID, type TreeMap, TreeSkeleton } from "#web/components/tree";
 import {
   ActionConfirmationDialog,
   type AffectedItem
@@ -196,7 +196,7 @@ const GroupsSection: Component = () => {
               <Tree
                 keyboard
                 tree={groupsTree}
-                itemHeight="2rem"
+                {...PAGE_TREE_SIZE}
                 renderItem={(itemID) => {
                   const group = () => visibleGroups().find((current) => current.id === itemID)!;
 

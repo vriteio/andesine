@@ -9,12 +9,13 @@ import {
   type JSX,
   Show
 } from "solid-js";
-import { Dynamic, Portal } from "solid-js/web";
+import { Dynamic } from "solid-js/web";
 import { ScrollShadow } from "../fragments/scroll-shadow";
 import { createRef } from "../ref";
 import { Button, IconButton } from "./button";
 import { Card } from "./card";
 import { Fragment } from "./fragment";
+import { PresencePortal } from "./presence-portal";
 import { Input } from "./input";
 import { Tooltip } from "./tooltip";
 
@@ -188,7 +189,7 @@ const IconPicker: Component<IconPickerProps> = (props) => {
           )}
         />
       </Dynamic>
-      <Dynamic component={props.portal === false ? Fragment : Portal}>
+      <PresencePortal portal={props.portal}>
         <ArkPopover.Positioner class=":base: z-50">
           <ArkPopover.Content
             asChild={(contentProps) => (
@@ -288,7 +289,7 @@ const IconPicker: Component<IconPickerProps> = (props) => {
             )}
           />
         </ArkPopover.Positioner>
-      </Dynamic>
+      </PresencePortal>
     </ArkPopover.Root>
   );
 };

@@ -6,9 +6,9 @@ const VERSION_ITEM_HEIGHT = "2.75rem";
 
 const VersionHistorySkeleton: Component = () => {
   return (
-    <div class="flex flex-col gap-0.5">
+    <div class="flex flex-col gap-px">
       {["w-36", "w-44", "w-32", "w-40"].map((className) => (
-        <div class="flex items-center gap-1.5 px-1" style={{ height: VERSION_ITEM_HEIGHT }}>
+        <div class="flex items-center gap-1.5 pl-1.25 pr-1" style={{ height: VERSION_ITEM_HEIGHT }}>
           <div class="flex items-start gap-1.5">
             <Skeleton class="h-5 w-5 rounded-md" />
             <div class="flex flex-1 flex-col gap-1">

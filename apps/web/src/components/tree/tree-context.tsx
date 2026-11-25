@@ -55,6 +55,7 @@ interface TreeContextActions {
 type TreeContextType = [TreeContextValue, TreeContextActions];
 
 const TREE_ROOT_ID = "~";
+const PAGE_TREE_SIZE = { itemHeight: "2rem", gap: "0.125rem" } as const;
 const TreeContext = createContext<TreeContextType>();
 
 interface TreeProviderProps {
@@ -70,8 +71,8 @@ interface TreeProviderProps {
 
 const TreeProvider: ParentComponent<TreeProviderProps> = (props) => {
   const md = createMediaQuery("(min-width: 768px)");
-  const itemHeight = () => props.itemHeight ?? "1.75rem";
-  const gap = () => props.gap ?? "0.125rem";
+  const itemHeight = () => props.itemHeight ?? "1.875rem";
+  const gap = () => props.gap ?? 1;
   const toCSSLength = (size: TreeSize) => {
     return typeof size === "number" ? `${size}px` : size;
   };
@@ -250,5 +251,5 @@ const TreeProvider: ParentComponent<TreeProviderProps> = (props) => {
 
 const useTree = () => useContext(TreeContext)!;
 
-export { TREE_ROOT_ID, TreeProvider, useTree };
+export { PAGE_TREE_SIZE, TREE_ROOT_ID, TreeProvider, useTree };
 export type { TreeData, TreeMap, TreeContextType, TreeSize };

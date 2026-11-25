@@ -133,7 +133,8 @@ const CommentCard: Component<CommentCardProps> = (props) => {
     <DropdownArea>
       <div
         class={clsx(
-          "comment-item group relative flex flex-col gap-1 py-1 pl-0.5 pr-0.5 rounded-lg",
+          "comment-item group relative flex flex-col gap-1 py-1 pr-0.5 rounded-lg",
+          props.onPanel ? "pl-0.75" : "pl-0.5",
           !editing() &&
             "media-mouse:hover:bg-gradient-to-r media-mouse:hover:from-gray-500/10 media-mouse:hover:to-transparent",
           menuOpened() && "bg-gradient-to-r from-gray-500/10 to-transparent",
@@ -142,13 +143,14 @@ const CommentCard: Component<CommentCardProps> = (props) => {
       >
         <div
           class={clsx(
-            "pointer-events-none absolute left-3.25 top-7 w-px rounded-full bg-gray-300",
+            "pointer-events-none absolute top-7 w-px rounded-full bg-gray-300",
+            props.onPanel ? "left-3.5" : "left-3.25",
             props.continues ? "-bottom-1.5" : "bottom-1"
           )}
         />
         <div class="flex h-6 items-center gap-1 min-w-0">
           <AuthorIcon image={props.comment.authorImage} />
-          <span class="min-w-0 flex-1 text-base font-medium leading-tight text-gray-900 line-clamp-1">
+          <span class="min-w-0 flex-1 text-base font-medium leading-tight text-gray-900 truncate text-row">
             {props.comment.authorName}
           </span>
           <Show when={options().length > 0}>
@@ -314,9 +316,17 @@ const ThreadCard: Component<ThreadCardProps> = (props) => {
                   {/* No handler: a press on the thread focuses it. */}
                   <button
                     type="button"
-                    class="relative flex items-center gap-1 py-1 pl-0.5 rounded-lg text-sm font-medium text-gray-500 media-mouse:hover:bg-gradient-to-r media-mouse:hover:from-gray-500/10 media-mouse:hover:to-transparent"
+                    class={clsx(
+                      "relative flex items-center gap-1 py-1 rounded-lg text-sm font-medium text-gray-500 media-mouse:hover:bg-gradient-to-r media-mouse:hover:from-gray-500/10 media-mouse:hover:to-transparent",
+                      props.onPanel ? "pl-0.75" : "pl-0.5"
+                    )}
                   >
-                    <div class="pointer-events-none absolute left-3.25 top-7 -bottom-1.5 w-px rounded-full bg-gray-300" />
+                    <div
+                      class={clsx(
+                        "pointer-events-none absolute top-7 -bottom-1.5 w-px rounded-full bg-gray-300",
+                        props.onPanel ? "left-3.5" : "left-3.25"
+                      )}
+                    />
                     <div class="flex h-6 w-6 shrink-0 items-center justify-center">
                       <div class="i-lucide:chevrons-up-down h-5 w-5 text-gray-400" />
                     </div>
@@ -331,19 +341,21 @@ const ThreadCard: Component<ThreadCardProps> = (props) => {
           <Show when={props.focused && canReply()}>
             <div
               class={clsx(
-                "relative flex flex-col gap-1 pt-1 pl-0.5 pr-0.5",
+                "relative flex flex-col gap-1 pt-1 pr-0.5",
+                props.onPanel ? "pl-0.75" : "pl-0.5",
                 !props.scrollable && "pb-1"
               )}
             >
               <div
                 class={clsx(
-                  "pointer-events-none absolute left-3.25 top-7 w-px rounded-full bg-gray-300",
+                  "pointer-events-none absolute top-7 w-px rounded-full bg-gray-300",
+                  props.onPanel ? "left-3.5" : "left-3.25",
                   props.scrollable ? "bottom-0" : "bottom-1"
                 )}
               />
               <div class="flex h-6 items-center gap-1 min-w-0">
                 <AuthorIcon image={props.comments.authorImage} />
-                <span class="min-w-0 flex-1 text-base font-medium leading-tight text-gray-900 line-clamp-1">
+                <span class="min-w-0 flex-1 text-base font-medium leading-tight text-gray-900 truncate text-row">
                   {props.comments.authorName}
                 </span>
               </div>

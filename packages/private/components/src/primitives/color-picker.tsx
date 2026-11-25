@@ -1,10 +1,9 @@
 import { ColorPicker as ArkColorPicker, type Color, parseColor } from "@ark-ui/solid/color-picker";
 import clsx from "clsx";
 import { type Component, createEffect, createMemo, createSignal, For, on, Show } from "solid-js";
-import { Dynamic, Portal } from "solid-js/web";
 import { Button } from "./button";
 import { Card } from "./card";
-import { Fragment } from "./fragment";
+import { PresencePortal } from "./presence-portal";
 import { Input } from "./input";
 
 interface ColorPickerProps {
@@ -99,7 +98,7 @@ const ColorPicker: Component<ColorPickerProps> = (props) => {
           )}
         />
       </ArkColorPicker.Control>
-      <Dynamic component={props.portal === false ? Fragment : Portal}>
+      <PresencePortal portal={props.portal}>
         <ArkColorPicker.Positioner class="z-50">
           <ArkColorPicker.Content
             asChild={(contentProps) => (
@@ -152,7 +151,7 @@ const ColorPicker: Component<ColorPickerProps> = (props) => {
             )}
           />
         </ArkColorPicker.Positioner>
-      </Dynamic>
+      </PresencePortal>
     </ArkColorPicker.Root>
   );
 };

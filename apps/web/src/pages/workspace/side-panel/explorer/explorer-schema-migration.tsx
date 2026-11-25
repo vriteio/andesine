@@ -63,7 +63,7 @@ const ExplorerSchemaMigrationMenu: Component<ExplorerSchemaMigrationProps> = (pr
               </Switch>
             </div>
             <div class="min-w-0 flex-1">
-              <p class="line-clamp-1 text-sm font-medium text-gray-700">
+              <p class="truncate text-sm font-medium text-gray-700">
                 {getMigrationLabel(currentMigration)}
               </p>
               <p class="text-xs text-gray-400 leading-none">

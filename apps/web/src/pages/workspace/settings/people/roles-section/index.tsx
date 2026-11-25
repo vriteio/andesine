@@ -3,7 +3,7 @@ import { createAsync, revalidate, useNavigate, useParams } from "@solidjs/router
 import { createMutation } from "@tanstack/solid-query";
 import { type Component, createMemo, createSignal, Show, Suspense, useTransition } from "solid-js";
 
-import { Tree, TREE_ROOT_ID, type TreeMap, TreeSkeleton } from "#web/components/tree";
+import { PAGE_TREE_SIZE, Tree, TREE_ROOT_ID, type TreeMap, TreeSkeleton } from "#web/components/tree";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
 import { settleBulkAction } from "#web/lib/primitives";
@@ -135,7 +135,7 @@ const RoleList: Component<RoleListProps> = (props) => {
         <Tree
           keyboard
           tree={rolesTree}
-          itemHeight="2rem"
+          {...PAGE_TREE_SIZE}
           renderItem={(itemID) => {
             const role = () => optimisticRoles().find((current) => current.id === itemID)!;
 

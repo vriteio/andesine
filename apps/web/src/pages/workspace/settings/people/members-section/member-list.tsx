@@ -1,7 +1,7 @@
 import { Card } from "@andesine/components";
 import { createMutation } from "@tanstack/solid-query";
 import { type Component, createMemo, createSignal, Show } from "solid-js";
-import { Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
+import { PAGE_TREE_SIZE, Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
 import { useNotify } from "#web/context/notifications";
 import { settleBulkAction } from "#web/lib/primitives";
 import { client } from "#web/lib/api";
@@ -159,7 +159,7 @@ const WorkspaceMemberList: Component<WorkspaceMemberListProps> = (props) => {
         <Tree
           keyboard
           tree={membersTree}
-          itemHeight="2rem"
+          {...PAGE_TREE_SIZE}
           renderItem={(itemID) => {
             const member = () => optimisticMembers().find((current) => current.id === itemID)!;
 

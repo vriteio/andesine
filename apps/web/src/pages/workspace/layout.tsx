@@ -97,7 +97,7 @@ const WorkspaceRightSidePanel: Component<WorkspaceRightSidePanelProps> = (props)
             "max-width": `${MAX_SIDE_PANEL_WIDTH}px`
           }}
         >
-          <div class="flex h-full w-full flex-col p-2">
+          <div class="flex h-full w-full flex-col py-2 pl-2 pr-1">
             <Suspense fallback={<div class="h-full w-full" />}>
               <RightSidePanel />
             </Suspense>
@@ -253,15 +253,15 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
                   "max-width": `${MAX_SIDE_PANEL_WIDTH}px`
                 }}
               >
-                <div class="flex h-full w-full flex-col p-2">
+                <div class="flex h-full w-full flex-col py-2 pl-2 pr-1">
                   <Menu
                     activePanel={activePanel()}
                     openSearch={() => setSearchOpened(true)}
                     openPanel={openPanel}
-                    class="w-full px-1"
+                    class="w-full pl-1 pr-2"
                   />
                   <SidePanel />
-                  <ProfileMenu class="p-1" />
+                  <ProfileMenu class="p-1 pr-2" />
                 </div>
               </div>
               <VerticalResizeHandle

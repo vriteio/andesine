@@ -1,4 +1,4 @@
-import { Tree, TREE_ROOT_ID, TreeSkeleton } from "#web/components/tree";
+import { PAGE_TREE_SIZE, Tree, TREE_ROOT_ID, TreeSkeleton } from "#web/components/tree";
 import { Card } from "@andesine/components";
 import { type Component, createMemo, Show, Suspense, useTransition } from "solid-js";
 import { createAsync, revalidate } from "@solidjs/router";
@@ -47,7 +47,7 @@ const ConnectedAppList: Component<ConnectedAppListProps> = (props) => {
       <Tree
         keyboard
         tree={appsTree}
-        itemHeight="2rem"
+        {...PAGE_TREE_SIZE}
         renderItem={(itemID) => {
           const app = () => visibleApps().find(({ clientID }) => clientID === itemID)!;
 

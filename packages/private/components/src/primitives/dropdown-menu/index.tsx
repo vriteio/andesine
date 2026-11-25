@@ -13,7 +13,8 @@ import {
   Show,
   splitProps
 } from "solid-js";
-import { Dynamic, Portal } from "solid-js/web";
+import { Dynamic } from "solid-js/web";
+import { PresencePortal } from "../presence-portal";
 import { Shortcut } from "../shortcut";
 import { Spinner } from "../spinner";
 import { Menu, useMenuContext } from "@ark-ui/solid/menu";
@@ -113,11 +114,11 @@ const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
                   {typeof option.icon === "function" && <Dynamic component={option.icon} />}
                 </div>
               </Show>
-              <div class="px-1 flex flex-1 gap-4 items-center">
+              <div class="px-1 flex min-w-0 flex-1 gap-4 items-center">
                 <span
                   title={option.label}
                   class={clsx(
-                    "flex-1 text-start text-sm line-clamp-1",
+                    "min-w-0 flex-1 text-start text-sm truncate",
                     option.color === "danger" ? "text-red-500" : "text-gray-700"
                   )}
                 >
@@ -126,7 +127,7 @@ const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
                 <div class="h-4 w-4 i-lucide-chevron-right text-gray-400" />
               </div>
             </Menu.TriggerItem>
-            <Dynamic component={props.portal === false ? Fragment : Portal}>
+            <PresencePortal portal={props.portal}>
               <Menu.Positioner>
                 <Menu.Content
                   asChild={(contentProps) => (
@@ -143,7 +144,7 @@ const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
                         ...(props.cardProps?.style || {})
                       }}
                     >
-                      <div class="overflow-auto scrollbar-sm flex-1 min-w-fit">
+                      <div class="overflow-auto scrollbar-sm flex-1 min-w-0">
                         <div class="flex flex-col w-full gap-0.5">
                           <MenuItems
                             items={subOptions()}
@@ -157,7 +158,7 @@ const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
                   )}
                 />
               </Menu.Positioner>
-            </Dynamic>
+            </PresencePortal>
           </Menu.Root>
         );
       }
@@ -227,11 +228,11 @@ const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
                   </div>
                 </Show>
               </Show>
-              <div class="px-1 flex flex-1 gap-4">
+              <div class="px-1 flex min-w-0 flex-1 gap-4">
                 <span
                   title={option.label}
                   class={clsx(
-                    "flex-1 text-start text-sm line-clamp-1",
+                    "min-w-0 flex-1 text-start text-sm truncate",
                     option.selected
                       ? "bg-gradient-to-tr bg-clip-text text-transparent media-mouse:group-data-[highlighted]/menu-item:text-white media-mouse:group-data-[highlighted]/menu-item:from-white media-mouse:group-data-[highlighted]/menu-item:to-white"
                       : option.color === "danger"

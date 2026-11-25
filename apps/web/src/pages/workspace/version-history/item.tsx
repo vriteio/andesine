@@ -162,6 +162,7 @@ const VersionHistoryItem: Component<VersionHistoryItemProps> = (props) => {
         id={props.version.id}
         label={label()}
         labelMaxLength={MAX_VERSION_NAME_LENGTH}
+        class="text-row"
         topLevel
         selectable
         highlighted={props.active}
@@ -175,7 +176,7 @@ const VersionHistoryItem: Component<VersionHistoryItemProps> = (props) => {
                 type="button"
                 aria-label={timeframeToggleLabel()}
                 title={timeframeToggleLabel()}
-                class="group/version-icon absolute inset-y-0 left-0 flex w-7 items-start pl-0.5 pt-0.5"
+                class="group/version-icon absolute inset-y-0 left-0 flex w-7 items-start pl-0.75 pt-0.5"
                 onClick={(event) => {
                   event.stopPropagation();
                   onToggle()();
@@ -285,7 +286,12 @@ const VersionHistoryItem: Component<VersionHistoryItemProps> = (props) => {
                       : "shrink-0"
                   }
                 >
-                  <IconButton icon="i-lucide:ellipsis-vertical" variant="ghost" />
+                  <IconButton
+                    icon="i-lucide:ellipsis-vertical"
+                    class="h-7 w-7"
+                    iconProps={{ class: "h-4.5 w-4.5" }}
+                    variant="ghost"
+                  />
                 </div>
               )}
             />

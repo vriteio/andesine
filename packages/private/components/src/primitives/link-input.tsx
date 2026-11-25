@@ -156,7 +156,7 @@ const LinkInput = (props: LinkInputProps): JSX.Element => {
                         )}
                       />
                     </div>
-                    <ArkCombobox.ItemText class=":base: min-w-0 flex-1 pl-1 text-left line-clamp-1">
+                    <ArkCombobox.ItemText class=":base: min-w-0 flex-1 pl-1 text-left truncate">
                       {option.label}
                     </ArkCombobox.ItemText>
                   </ArkCombobox.Item>

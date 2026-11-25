@@ -1,4 +1,5 @@
 import { IconButton, Skeleton, Tooltip } from "@andesine/components";
+import { PanelLayout } from "#web/components/panel-layout";
 import { useLocation, useParams, useSearchParams } from "@solidjs/router";
 import { type Component, createEffect, createMemo, For, type JSX, Show, Suspense } from "solid-js";
 import { Dynamic } from "solid-js/web";
@@ -45,12 +46,9 @@ const extensionOptions = new WeakMap<RunningExtensionPanel, RightSidePanelOption
 
 const VersionHistoryPanelFallback: Component = () => {
   return (
-    <div class="flex min-h-0 w-full flex-1 flex-col overflow-hidden px-1">
-      <div class="flex h-9 shrink-0 items-center">
-        <h2 class="text-2xl font-semibold">Versions</h2>
-      </div>
+    <PanelLayout title="Versions" class="flex-1">
       <VersionHistorySkeleton />
-    </div>
+    </PanelLayout>
   );
 };
 
@@ -268,7 +266,7 @@ const RightSidePanel: Component = () => {
 
   return (
     <div class="flex min-h-0 w-full flex-1 flex-col">
-      <div class="flex w-full gap-1 px-1">
+      <div class="flex w-full gap-1 px-1 md:pr-2">
         <Show when={options().length === 0 && layout.rightSidePanelWidth > 0}>
           <Skeleton class={["h-7 w-7 rounded-lg", "h-7 w-7 rounded-lg", "h-7 w-7 rounded-lg"]} />
         </Show>

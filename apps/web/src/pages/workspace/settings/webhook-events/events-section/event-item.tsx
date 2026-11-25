@@ -154,7 +154,7 @@ const EventItem: Component<EventItemProps> = (props) => {
           iconClass="self-start mt-0.5"
           icon={
             <Tooltip content={stateTooltip()} fixed>
-              <div class={clsx("h-5 w-5", eventStateIcons[props.event.state])} />
+              <div class={clsx("h-5.5 w-5.5", eventStateIcons[props.event.state])} />
             </Tooltip>
           }
           onClick={() => toggleExpanded(props.event.id)}

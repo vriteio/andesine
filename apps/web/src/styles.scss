@@ -121,6 +121,14 @@ body {
     overflow-y: hidden;
   }
 }
+// Side panels keep the 4px moved in from their outer padding
+@screen md {
+  @media (hover: hover) and (pointer: fine) {
+    .scrollbar-panel.scrollbar-hover[data-overflowing] {
+      @apply pr-1;
+    }
+  }
+}
 
 // Ark UI visibility state
 [hidden] {

@@ -1,4 +1,4 @@
-import { Tree, TREE_ROOT_ID, TreeSkeleton } from "#web/components/tree";
+import { PAGE_TREE_SIZE, Tree, TREE_ROOT_ID, TreeSkeleton } from "#web/components/tree";
 import { Card, IconButton } from "@andesine/components";
 import { type Component, createMemo, Show, Suspense, useTransition } from "solid-js";
 import { Setting } from "../../setting";
@@ -78,7 +78,7 @@ const PasskeyList: Component<PasskeyListProps> = (props) => {
       <Tree
         keyboard
         tree={passkeysTree}
-        itemHeight="2rem"
+        {...PAGE_TREE_SIZE}
         renderItem={(itemID) => {
           const passkey = () => optimisticPasskeys().find(({ id }) => id === itemID)!;
 

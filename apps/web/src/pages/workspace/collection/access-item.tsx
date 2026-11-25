@@ -77,7 +77,7 @@ const AccessItem: Component<AccessItemProps> = (props) => {
         checkbox={!props.disabled}
         selectable={!props.disabled}
         class={clsx("px-1 py-0.5", props.loading && "animate-pulse")}
-        icon={<div class={clsx(props.icon, "h-5 w-5 text-gray-400")} />}
+        icon={<div class={clsx(props.icon, "h-5.5 w-5.5 text-gray-400")} />}
         onClick={() => {
           if (!props.disabled) setSelection([props.id]);
         }}

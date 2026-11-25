@@ -1,10 +1,9 @@
 import { createListCollection, Select as ArkSelect } from "@ark-ui/solid/select";
 import clsx from "clsx";
 import { createMemo, For, type JSX, Show } from "solid-js";
-import { Dynamic, Portal } from "solid-js/web";
 import { Button } from "./button";
 import { Card } from "./card";
-import { Fragment } from "./fragment";
+import { PresencePortal } from "./presence-portal";
 
 interface Option {
   label: string;
@@ -65,7 +64,7 @@ const Select = <O extends Option>(props: SelectProps<O>): JSX.Element => {
           )}
         />
       </ArkSelect.Control>
-      <Dynamic component={props.portal === false ? Fragment : Portal}>
+      <PresencePortal portal={props.portal}>
         <ArkSelect.Positioner class="z-50 select-none">
           <ArkSelect.Content
             asChild={(contentProps) => (
@@ -79,7 +78,7 @@ const Select = <O extends Option>(props: SelectProps<O>): JSX.Element => {
                 )}
                 style={{ "transform-origin": "var(--transform-origin)" }}
               >
-                <div class="min-w-fit flex-1 overflow-auto scrollbar-sm">
+                <div class="min-w-0 flex-1 overflow-auto scrollbar-sm">
                   <div class="flex w-full flex-col gap-0.5">
                     <For each={props.options}>
                       {(option) => {
@@ -101,7 +100,7 @@ const Select = <O extends Option>(props: SelectProps<O>): JSX.Element => {
                             <ArkSelect.ItemText
                               title={option.label}
                               class={clsx(
-                                "flex-1 px-1 text-start text-sm line-clamp-1",
+                                "min-w-0 flex-1 px-1 text-start text-sm truncate",
                                 selected()
                                   ? "bg-gradient-to-tr bg-clip-text text-transparent media-mouse:group-data-[highlighted]/select-item:text-white media-mouse:group-data-[highlighted]/select-item:from-white media-mouse:group-data-[highlighted]/select-item:to-white"
                                   : "text-gray-700"
@@ -119,7 +118,7 @@ const Select = <O extends Option>(props: SelectProps<O>): JSX.Element => {
             )}
           />
         </ArkSelect.Positioner>
-      </Dynamic>
+      </PresencePortal>
     </ArkSelect.Root>
   );
 };

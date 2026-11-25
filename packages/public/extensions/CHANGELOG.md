@@ -2,6 +2,7 @@
 
 ## 0.12.0
 
+- `Tree` takes `size`: `small` for panels (30px rows, 15px text) or `medium` (default) for pages.
 - `hasPermission("comments")` is true with `entries`, which includes commenting.
 
 ## 0.11.0

@@ -1,4 +1,5 @@
-import { Button, createRef, ScrollShadow, ToggleGroup } from "@andesine/components";
+import { Button, createRef, ToggleGroup } from "@andesine/components";
+import { PanelLayout } from "#web/components/panel-layout";
 import type { EditorCommentThread } from "@andesine/editor";
 import { ThreadCard } from "@andesine/editor/comments";
 import clsx from "clsx";
@@ -179,34 +180,28 @@ const CommentsPanel: Component = () => {
       }}
       onPointerLeave={(event) => event.pointerType === "mouse" && setSelectedThread(null)}
     >
-      <div class="pointer-events-none absolute inset-y-0 left-0 right-3 overflow-hidden">
-        <ScrollShadow
-          color="panel"
-          offset={{ top: hasResolved() ? "4.5rem" : "2.25rem" }}
-          scrollableContainerRef={scrollContainer}
-        />
-      </div>
-      <div
-        ref={setScrollContainer}
-        class="relative flex min-h-0 w-full flex-1 flex-col scrollbar-panel scrollbar-hover overflow-y-auto overflow-x-hidden px-1 pb-2"
+      <PanelLayout
+        title="Comments"
+        class="flex-1"
+        contentClass="overflow-x-hidden pb-2"
+        scrollRef={setScrollContainer}
+        subheader={
+          <Show when={hasResolved()}>
+            <div class="flex pb-2">
+              <ToggleGroup
+                value={filter()}
+                setValue={(value) => {
+                  setFilter(value === "resolved" ? "resolved" : "open");
+                  activate(null, false);
+                }}
+                options={FILTER_OPTIONS}
+                wrapperClass="p-0.5 gap-0.5"
+                itemClass="px-2 py-0.5 text-sm"
+              />
+            </div>
+          </Show>
+        }
       >
-        <div class="sticky top-0 z-20 -ml-1 flex h-9 shrink-0 items-center bg-white pl-1 md:bg-gray-100">
-          <h2 class="text-2xl font-semibold">Comments</h2>
-        </div>
-        <Show when={hasResolved()}>
-          <div class="sticky top-9 z-20 -ml-1 flex shrink-0 bg-white pb-2 pl-1 md:bg-gray-100">
-            <ToggleGroup
-              value={filter()}
-              setValue={(value) => {
-                setFilter(value === "resolved" ? "resolved" : "open");
-                activate(null, false);
-              }}
-              options={FILTER_OPTIONS}
-              wrapperClass="p-0.5 gap-0.5"
-              itemClass="px-2 py-0.5 text-sm"
-            />
-          </div>
-        </Show>
         <div class="flex flex-col gap-3">
           <Show when={!loading() && comments()} fallback={<CommentsSkeleton />}>
             {(current) => (
@@ -217,7 +212,7 @@ const CommentsPanel: Component = () => {
                     <Show when={filter() === "open" && current().canComment && startComment()}>
                       {(start) => (
                         <Button
-                          class="flex w-full items-center justify-start gap-1 py-0.5 pl-0.5"
+                          class="flex w-full items-center justify-start gap-1 py-0.75 pl-0.75 text-row"
                           variant="ghost"
                           size="medium"
                           onClick={() => start()()}
@@ -225,7 +220,7 @@ const CommentsPanel: Component = () => {
                           <div class="flex h-6 w-6 items-center justify-center">
                             <div class="i-tabler:message-plus h-5 w-5 text-gray-400" />
                           </div>
-                          <span class="flex-1 text-left line-clamp-1">Add comment</span>
+                          <span class="min-w-0 flex-1 text-left truncate">Add comment</span>
                         </Button>
                       )}
                     </Show>
@@ -245,7 +240,7 @@ const CommentsPanel: Component = () => {
                           // Room for the hover shade, taken from the gap.
                           "-mb-1 flex flex-col gap-0.5 rounded-lg pb-1 transition-opacity",
                           // Below the sticky header.
-                          hasResolved() ? "scroll-mt-18" : "scroll-mt-9",
+                          hasResolved() ? "scroll-mt-20.5" : "scroll-mt-11.5",
                           shownActive() && shownActive() !== threadID && "opacity-60",
                           selectedThread() === threadID &&
                             "bg-gradient-to-r from-gray-500/10 to-transparent"
@@ -292,7 +287,7 @@ const CommentsPanel: Component = () => {
             )}
           </Show>
         </div>
-      </div>
+      </PanelLayout>
     </div>
   );
 };

@@ -122,17 +122,17 @@ const HighlightedText: Component<HighlightedTextProps> = (props) => {
 };
 const SearchResultContent: Component<SearchResultContentProps> = (props) => (
   <>
-    <div class="flex h-5 w-6 shrink-0 items-center justify-center">
+    <div class="-mt-0.75 flex h-6 w-6 shrink-0 items-center justify-center">
       <Show
         when={typeof props.icon === "string" ? props.icon : undefined}
         keyed
         fallback={props.icon}
       >
-        {(icon) => <div class={clsx("h-5 w-5", props.iconClass || "text-gray-400", icon)} />}
+        {(icon) => <div class={clsx("h-5.5 w-5.5", props.iconClass || "text-gray-400", icon)} />}
       </Show>
     </div>
     <div class="flex min-w-0 flex-1 flex-col leading-tight">
-      <span class="line-clamp-1 leading-4.5">{props.label}</span>
+      <span class="truncate leading-4.5">{props.label}</span>
       <span class="max-w-4/5 line-clamp-2 text-xs font-normal leading-tight text-gray-400">
         <Show when={props.sublabel} fallback={"..."} keyed>
           {(sublabel) => (
@@ -205,18 +205,18 @@ const SearchResultsSkeleton: Component<SearchResultsSkeletonProps> = (props) => 
     <For each={SKELETON_WIDTHS}>
       {(widths) => (
         <div
-          class="flex w-full items-start gap-1.5 px-1"
+          class="flex w-full items-start gap-1.5 pl-0.75 pr-1"
           style={{
             height:
               props.preview === false ? SEARCH_RESULT_SOURCE_HEIGHT : SEARCH_RESULT_SKELETON_HEIGHT
           }}
         >
-          <div class="flex w-full items-start gap-1.5">
-            <Skeleton class="h-5 w-5 rounded-md" />
+          <div class="flex w-full items-start gap-1.25">
+            <Skeleton class="h-5.5 w-5.5 rounded-md" />
             <div
               class={clsx(
                 "flex flex-col gap-1.5",
-                props.preview === false ? "max-w-[calc(100%_-_1.625rem)]" : "flex-1"
+                props.preview === false ? "max-w-[calc(100%_-_1.6875rem)]" : "flex-1"
               )}
             >
               <Skeleton

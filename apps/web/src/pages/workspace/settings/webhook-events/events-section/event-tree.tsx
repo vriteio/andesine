@@ -35,6 +35,7 @@ const EventTree: Component<EventTreeProps> = (props) => {
       keyboard
       tree={treeMap}
       itemHeight={EVENT_ITEM_HEIGHT}
+      gap="0.125rem"
       selectionTransform={() => []}
       renderLevel={(id) => (
         // A row can re-render briefly after its event leaves the list, e.g. on a filter change.

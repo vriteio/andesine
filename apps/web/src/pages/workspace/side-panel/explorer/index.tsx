@@ -5,6 +5,7 @@ import {
   useTree,
   useTreeMarquee
 } from "#web/components/tree";
+import { PanelLayout } from "#web/components/panel-layout";
 import { useWorkspace } from "#web/context/workspace";
 import {
   type Card,
@@ -14,7 +15,6 @@ import {
   DropdownMenu,
   IconButton,
   type MenuItem,
-  ScrollShadow,
   Shortcut,
   Button
 } from "@andesine/components";
@@ -222,23 +222,15 @@ const Explorer = () => {
             resetFocus();
           }}
         >
-          <div class="relative flex min-h-0 w-full flex-1">
-            <div class="pointer-events-none absolute inset-y-0 left-0 right-3 overflow-hidden">
-              <ScrollShadow
-                color="panel"
-                offset={{ top: "2.25rem" }}
-                scrollableContainerRef={scrollableContainerRef}
-              />
-            </div>
-            <div
-              ref={setScrollableContainerRef}
-              class="relative flex min-h-0 w-full flex-1 flex-col scrollbar-panel scrollbar-hover overflow-y-auto px-1"
-            >
-              <div
-                ref={setTitleRef}
-                class="group/explorer-header sticky top-0 z-20 -mx-1 flex h-9 shrink-0 items-center gap-2 px-1 bg-white md:bg-gray-100"
-              >
-                <h2 class="text-2xl font-semibold flex-1">Explorer</h2>
+          <PanelLayout
+            title="Explorer"
+            titleClass="flex-1"
+            headerClass="group/explorer-header gap-2"
+            class="flex-1"
+            headerRef={setTitleRef}
+            scrollRef={setScrollableContainerRef}
+            headerActions={
+              <>
                 <div
                   class={clsx(
                     hasHeaderOptions() && "media-mouse:group-hover/explorer-header:opacity-0",
@@ -256,7 +248,7 @@ const Explorer = () => {
                   />
                 </div>
                 <Show when={mounted() && hasHeaderOptions()}>
-                  <div class="md:absolute right-1">
+                  <div class="md:absolute right-0">
                     <DropdownMenu
                       title="Explorer"
                       cardProps={
@@ -283,113 +275,110 @@ const Explorer = () => {
                     />
                   </div>
                 </Show>
-              </div>
-              <div
-                ref={setContentContainerRef}
-                class="relative flex flex-1 flex-col"
-                style={{ gap }}
-              >
-                <TreeSelection />
-                <Show when={!loading()} fallback={<TreeSkeleton itemHeight={itemHeight} />}>
-                  <For each={collectionIDs()}>
-                    {(collectionID) => {
-                      const collection = () => content.collections.get({ collectionID });
-                      const collectionOverlay = () => {
-                        return (
-                          publishing.getCollectionOverlay(collectionID) ??
-                          publishing.getPendingCollectionOverlay(collectionID)
-                        );
-                      };
-
+              </>
+            }
+          >
+            <div ref={setContentContainerRef} class="relative flex flex-1 flex-col" style={{ gap }}>
+              <TreeSelection />
+              <Show when={!loading()} fallback={<TreeSkeleton itemHeight={itemHeight} />}>
+                <For each={collectionIDs()}>
+                  {(collectionID) => {
+                    const collection = () => content.collections.get({ collectionID });
+                    const collectionOverlay = () => {
                       return (
-                        <Show
-                          when={collection()}
-                          fallback={
-                            <Show when={collectionOverlay()}>
-                              {(overlay) => <OverlayCollection collection={overlay()} topLevel />}
-                            </Show>
-                          }
-                        >
-                          {(workingCollection) => (
-                            <DropdownArea {...EXPLORER_GESTURE_PROPS}>
-                              <ExplorerCollection collection={workingCollection()} topLevel />
-                            </DropdownArea>
-                          )}
-                        </Show>
+                        publishing.getCollectionOverlay(collectionID) ??
+                        publishing.getPendingCollectionOverlay(collectionID)
                       );
-                    }}
-                  </For>
-                  <For each={entryIDs()}>
-                    {(entryID) => {
-                      const entry = () => content.entries.get({ entryID });
-                      const entryOverlay = () => {
-                        return (
-                          publishing.getEntryOverlay(entryID) ??
-                          publishing.getPendingEntryOverlay(entryID)
-                        );
-                      };
+                    };
 
-                      return (
-                        <Show
-                          when={entry()}
-                          fallback={
-                            <Show when={entryOverlay()}>
-                              {(overlay) => <OverlayEntry entry={overlay()} topLevel />}
-                            </Show>
-                          }
-                        >
-                          {(workingEntry) => (
-                            <DropdownArea {...EXPLORER_GESTURE_PROPS}>
-                              <ExplorerEntry entry={workingEntry()} topLevel />
-                            </DropdownArea>
-                          )}
-                        </Show>
-                      );
-                    }}
-                  </For>
-                  <Show
-                    when={
-                      !collectionIDs().length &&
-                      !entries().length &&
-                      !entryOverlays().length &&
-                      !pendingEntryOverlays().length
-                    }
-                  >
-                    <div>
-                      <For each={createOptions()}>
-                        {(option) => (
-                          <Button
-                            onClick={option.onClick}
-                            class="flex justify-start items-center w-full group/button gap-1 pl-0.5 py-0.5"
-                            variant="ghost"
-                            size="medium"
-                          >
-                            <div class="flex h-6 w-6 items-center justify-center">
-                              <div class={clsx(option.icon, "h-5 w-5 text-gray-400")} />
-                            </div>
-                            <span class="text-left flex-1 line-clamp-1">{option.label}</span>
-                            <Show when={option.shortcut}>
-                              {(shortcut) => (
-                                <Shortcut
-                                  class="opacity-0 media-mouse:group-hover/button:opacity-50 font-mono text-[90%]"
-                                  shortcut={shortcut()}
-                                />
-                              )}
-                            </Show>
-                          </Button>
+                    return (
+                      <Show
+                        when={collection()}
+                        fallback={
+                          <Show when={collectionOverlay()}>
+                            {(overlay) => <OverlayCollection collection={overlay()} topLevel />}
+                          </Show>
+                        }
+                      >
+                        {(workingCollection) => (
+                          <DropdownArea {...EXPLORER_GESTURE_PROPS}>
+                            <ExplorerCollection collection={workingCollection()} topLevel />
+                          </DropdownArea>
                         )}
-                      </For>
-                    </div>
-                  </Show>
+                      </Show>
+                    );
+                  }}
+                </For>
+                <For each={entryIDs()}>
+                  {(entryID) => {
+                    const entry = () => content.entries.get({ entryID });
+                    const entryOverlay = () => {
+                      return (
+                        publishing.getEntryOverlay(entryID) ??
+                        publishing.getPendingEntryOverlay(entryID)
+                      );
+                    };
+
+                    return (
+                      <Show
+                        when={entry()}
+                        fallback={
+                          <Show when={entryOverlay()}>
+                            {(overlay) => <OverlayEntry entry={overlay()} topLevel />}
+                          </Show>
+                        }
+                      >
+                        {(workingEntry) => (
+                          <DropdownArea {...EXPLORER_GESTURE_PROPS}>
+                            <ExplorerEntry entry={workingEntry()} topLevel />
+                          </DropdownArea>
+                        )}
+                      </Show>
+                    );
+                  }}
+                </For>
+                <Show
+                  when={
+                    !collectionIDs().length &&
+                    !entries().length &&
+                    !entryOverlays().length &&
+                    !pendingEntryOverlays().length
+                  }
+                >
+                  <div>
+                    <For each={createOptions()}>
+                      {(option) => (
+                        <Button
+                          onClick={option.onClick}
+                          class="flex justify-start items-center w-full group/button gap-1 pl-0.75 py-0.75 text-row"
+                          variant="ghost"
+                          size="medium"
+                        >
+                          <div class="flex h-6 w-6 items-center justify-center">
+                            <div class={clsx(option.icon, "h-5 w-5 text-gray-400")} />
+                          </div>
+                          <span class="text-left min-w-0 flex-1 truncate">{option.label}</span>
+                          <Show when={option.shortcut}>
+                            {(shortcut) => (
+                              <Shortcut
+                                class="opacity-0 media-mouse:group-hover/button:opacity-50 font-mono text-[90%]"
+                                shortcut={shortcut()}
+                              />
+                            )}
+                          </Show>
+                        </Button>
+                      )}
+                    </For>
+                  </div>
                 </Show>
-                <div ref={setDropRef} class="flex-1">
-                  <Show when={isDraggedOver()}>
-                    <div class="top-0 left-0 -z-10 rounded-lg absolute h-full w-full opacity-10 bg-gradient-to-tr" />
-                  </Show>
-                </div>
+              </Show>
+              <div ref={setDropRef} class="flex-1">
+                <Show when={isDraggedOver()}>
+                  <div class="top-0 left-0 -z-10 rounded-lg absolute h-full w-full opacity-10 bg-gradient-to-tr" />
+                </Show>
               </div>
             </div>
-          </div>
+          </PanelLayout>
           <Show when={marquee.boxSelection().active}>
             <Portal>
               <div

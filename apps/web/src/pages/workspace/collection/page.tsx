@@ -3,7 +3,7 @@ import { Title } from "#web/components/title";
 import { createAsync, revalidate, useParams } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
 import { type Component, createMemo, createSignal, onCleanup, Show } from "solid-js";
-import { Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
+import { PAGE_TREE_SIZE, Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
 import { client } from "#web/lib/api";
@@ -319,7 +319,7 @@ const CollectionPage: Component = () => {
                           <div class="relative flex w-full flex-col">
                             <Tree
                               tree={groupTree}
-                              itemHeight="2rem"
+                              {...PAGE_TREE_SIZE}
                               renderItem={(itemID) => {
                                 const group = () => {
                                   return assignedGroups().find((current) => current.id === itemID)!;
@@ -380,7 +380,7 @@ const CollectionPage: Component = () => {
                           <div class="relative flex w-full flex-col">
                             <Tree
                               tree={memberTree}
-                              itemHeight="2rem"
+                              {...PAGE_TREE_SIZE}
                               renderItem={(itemID) => {
                                 const member = () => {
                                   return assignedMembers().find(

@@ -188,7 +188,7 @@ const TreeItem: Component<TreeItemProps> = (props) => {
   return (
     <div
       class={clsx(
-        ":base: relative flex min-w-0 flex-1 gap-1 font-medium items-center pl-0.5 rounded-r-lg group @hover:cursor-pointer w-full overflow-hidden select-none focus-visible:outline-none",
+        ":base: relative flex min-w-0 flex-1 gap-1 font-medium items-center pl-0.75 rounded-r-lg group @hover:cursor-pointer w-full overflow-hidden select-none focus-visible:outline-none",
         (props.selectable || (keyboardItems && focusedSource() === "keyboard")) &&
           isFocused(props.id) &&
           !selected() &&
@@ -312,7 +312,7 @@ const TreeItem: Component<TreeItemProps> = (props) => {
               />
             }
           >
-            <span class="flex-1 line-clamp-1">{props.label}</span>
+            <span class="min-w-0 flex-1 truncate">{props.label}</span>
           </Show>
         )}
       >

@@ -1,0 +1,20 @@
+import { usePresenceContext } from "@ark-ui/solid/presence";
+import { type ParentComponent, Show } from "solid-js";
+import { Dynamic, Portal } from "solid-js/web";
+import { Fragment } from "./fragment";
+
+interface PresencePortalProps {
+  portal?: boolean;
+}
+
+const PresencePortal: ParentComponent<PresencePortalProps> = (props) => {
+  const presence = usePresenceContext();
+
+  return (
+    <Show when={!presence().unmounted}>
+      <Dynamic component={props.portal === false ? Fragment : Portal}>{props.children}</Dynamic>
+    </Show>
+  );
+};
+
+export { PresencePortal };

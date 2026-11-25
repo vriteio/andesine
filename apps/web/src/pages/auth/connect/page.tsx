@@ -167,10 +167,10 @@ const ConnectPage: Component = () => {
                     )}
                   </Show>
                   <div class="flex min-w-0 flex-col justify-center">
-                    <span class="text-sm leading-5 font-medium text-gray-900 line-clamp-1">
+                    <span class="text-sm leading-5 font-medium text-gray-900 truncate">
                       {target().name}
                     </span>
-                    <span class="text-xs leading-none text-gray-500 line-clamp-1">
+                    <span class="text-xs leading-none text-gray-500 truncate">
                       {accountLabel()}
                     </span>
                   </div>

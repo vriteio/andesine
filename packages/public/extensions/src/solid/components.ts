@@ -308,6 +308,8 @@ interface TreeProps {
   items: TreeItem[];
   selected?: string;
   emptyLabel?: string;
+  /** `small` fits panels, `medium` (default) fits pages. */
+  size?: "small" | "medium";
   onSelect?(id: string): void;
 }
 interface NavigationItem {

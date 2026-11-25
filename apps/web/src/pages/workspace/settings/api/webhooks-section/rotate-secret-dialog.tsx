@@ -72,8 +72,8 @@ const RotateSecretDialog: Component<RotateSecretDialogProps> = (props) => {
         <div class="flex h-6 w-6 items-center justify-center">
           <div class="i-lucide:webhook h-5 w-5 text-gray-400" />
         </div>
-        <div class="flex flex-1 items-center gap-1.5">
-          <span class="line-clamp-1 font-medium">{visibleWebhook()?.name}</span>
+        <div class="flex min-w-0 flex-1 items-center gap-1.5">
+          <span class="truncate font-medium">{visibleWebhook()?.name}</span>
           <div class="h-4 w-px shrink-0 rounded-full bg-gray-200" />
           <span class="shrink-0 font-mono text-xs text-gray-400">
             {getWebhookHost(visibleWebhook()?.url || "")}

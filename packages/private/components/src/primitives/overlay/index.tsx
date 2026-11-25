@@ -1,8 +1,7 @@
-import { Fragment } from "../fragment";
+import { PresencePortal } from "../presence-portal";
 import { Dialog } from "@ark-ui/solid/dialog";
 import clsx from "clsx";
 import { type Component, createSignal, type JSX, splitProps } from "solid-js";
-import { Dynamic, Portal } from "solid-js/web";
 import styles from "./styles.module.scss";
 
 interface OverlayProps extends JSX.HTMLAttributes<HTMLDivElement> {
@@ -39,6 +38,8 @@ const Overlay: Component<OverlayProps> = (props) => {
     <Dialog.Root
       open={props.opened}
       modal
+      lazyMount
+      unmountOnExit
       trapFocus={props.trapFocus !== false}
       preventScroll={props.lockScroll !== false}
       restoreFocus={props.restoreFocus !== false}
@@ -50,7 +51,7 @@ const Overlay: Component<OverlayProps> = (props) => {
         }
       }}
     >
-      <Dynamic component={props.portal === false ? Fragment : Portal}>
+      <PresencePortal portal={props.portal}>
         <Dialog.Positioner
           {...passedProps}
           class={clsx(
@@ -91,7 +92,7 @@ const Overlay: Component<OverlayProps> = (props) => {
             {props.children}
           </Dialog.Content>
         </Dialog.Positioner>
-      </Dynamic>
+      </PresencePortal>
     </Dialog.Root>
   );
 };

@@ -109,11 +109,11 @@ const ThreadTitle: Component<ThreadTitleProps> = (props) => {
 
   return (
     <div
-      class="group relative flex flex-col gap-1 py-1 pl-0.5"
+      class="group relative flex flex-col gap-1 py-1 pl-0.75"
       data-comment-thread-title={props.thread.id}
     >
       {/* Guideline to the first comment. */}
-      <div class="pointer-events-none absolute left-3.25 top-7 -bottom-1.5 w-px rounded-full bg-gray-300" />
+      <div class="pointer-events-none absolute left-3.5 top-7 -bottom-1.5 w-px rounded-full bg-gray-300" />
       <div class="flex h-6 min-w-0 items-center gap-1">
         <div class="flex h-6 w-6 shrink-0 items-center justify-center text-gray-400">
           <Show
@@ -130,7 +130,7 @@ const ThreadTitle: Component<ThreadTitleProps> = (props) => {
         </div>
         <span
           class={clsx(
-            "min-w-0 flex-1 text-base font-medium leading-tight line-clamp-1",
+            "min-w-0 flex-1 text-base font-medium leading-tight truncate text-row",
             props.thread.status === "orphaned" ? "text-gray-400 line-through" : "text-gray-900"
           )}
         >

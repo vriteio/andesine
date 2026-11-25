@@ -57,7 +57,7 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
     return defaultChannel ? "Pending changes" : `Pending changes in ${channelName}`;
   };
   return (
-    <div class="flex relative min-h-7">
+    <div class="flex relative min-h-7.5">
       <Show when={swipe.swiping()}>
         <div class="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-gray-50 to-transparent">
           <div
@@ -76,15 +76,15 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
         style={{ transform: `translateX(-${swipe.offset()}px)` }}
       >
         <TreeItem
-          class="!overflow-visible"
+          class="!overflow-visible text-row"
           id={props.entry.id}
           label={props.entry.name}
           topLevel={props.topLevel}
           icon={
-            <div class="relative h-full w-full">
+            <div class="relative flex h-full w-full items-center justify-center">
               <div
                 class={clsx(
-                  "h-full w-full text-gray-400 i-lucide:file-text",
+                  "h-5 w-5 text-gray-400 i-lucide:file-text",
                   isSelected(props.entry.id) && "bg-gradient-to-tr"
                 )}
               />
@@ -190,6 +190,8 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
                       <IconButton
                         data-entry-menu-trigger
                         icon="i-lucide:ellipsis-vertical"
+                        class="h-7 w-7"
+                        iconProps={{ class: "h-4.5 w-4.5" }}
                         variant="ghost"
                       />
                     </div>
@@ -200,13 +202,13 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
               <Show when={opened() && !menuOpened()}>
                 <div
                   class={clsx(
-                    "hidden media-mouse:flex justify-center items-center h-7 w-7 absolute right-0 top-0",
+                    "hidden media-mouse:flex justify-center items-center h-7 w-7 absolute right-0 top-0.25",
                     selection().length <= 1 && "media-mouse:group-hover:hidden"
                   )}
                 >
                   <div
                     class={clsx(
-                      "bg-gradient-to-tr h-4 w-4 from-secondary via-primary to-secondary",
+                      "bg-gradient-to-tr h-3.5 w-3.5 from-secondary via-primary to-secondary",
                       canEdit() ? "i-lucide:pencil" : "i-lucide:eye"
                     )}
                   />

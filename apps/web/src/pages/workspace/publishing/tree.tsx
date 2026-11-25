@@ -161,11 +161,11 @@ const PublishingPanelEntry: Component<PublishingPanelEntryProps> = (props) => {
     <TreeItem
       id={props.entry.id}
       label={props.entry.name}
-      class={props.topLevel ? undefined : "!rounded-none"}
+      class={clsx("text-row", !props.topLevel && "!rounded-none")}
       icon={
         <div
           class={clsx(
-            "h-full w-full i-lucide:file-text",
+            "h-5 w-5 i-lucide:file-text",
             isSelected(props.entry.id) ? "bg-gradient-to-tr" : "text-gray-400"
           )}
         />
@@ -290,12 +290,12 @@ const PublishingPanelCollection: Component<PublishingPanelCollectionProps> = (pr
       <TreeItem
         id={props.collection.collectionID}
         label={props.collection.name}
-        class={props.topLevel ? undefined : "!rounded-none"}
+        class={clsx("text-row", !props.topLevel && "!rounded-none")}
         topLevel={props.topLevel}
         icon={
           <div
             class={clsx(
-              "h-6 w-6 text-gray-400 transition-transform",
+              "h-5 w-5 text-gray-400 transition-transform",
               selectionState() === true && "bg-gradient-to-tr",
               isExpanded(props.collection.collectionID)
                 ? "i-material-symbols:folder-open-rounded"
@@ -484,12 +484,12 @@ const PublishingPanelTree: Component<PublishingPanelTreeProps> = (props) => {
         renderContent={(treeContent) => (
           <div class="relative flex min-h-0 w-full flex-1">
             <div class="pointer-events-none absolute inset-y-0 left-0 right-3 overflow-hidden">
-              <ScrollShadow color="contrast" scrollableContainerRef={scrollableContainerRef} />
+              <ScrollShadow color="panel" scrollableContainerRef={scrollableContainerRef} />
             </div>
             <div
               ref={setScrollableContainerRef}
               data-tree-marquee
-              class="relative flex min-h-0 w-full flex-1 flex-col scrollbar-panel scrollbar-hover overflow-y-auto px-1"
+              class="relative flex min-h-0 w-full flex-1 flex-col scrollbar-panel scrollbar-hover overflow-y-auto px-1 md:pr-2"
             >
               {treeContent}
             </div>

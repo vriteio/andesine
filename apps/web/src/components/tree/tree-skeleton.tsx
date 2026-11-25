@@ -9,7 +9,8 @@ interface TreeSkeletonProps {
   size?: TreeSkeletonSize;
 }
 interface TreeSkeletonSizeClasses {
-  gap: string;
+  list: string;
+  row: string;
   icon: string;
   label: string;
 }
@@ -17,8 +18,8 @@ interface TreeSkeletonSizeClasses {
 type TreeSkeletonSize = "medium" | "small";
 
 const sizeClasses: Record<TreeSkeletonSize, TreeSkeletonSizeClasses> = {
-  medium: { gap: "gap-1", icon: "h-6 w-6", label: "h-6" },
-  small: { gap: "gap-1.5", icon: "h-5 w-5 rounded-md", label: "h-5 rounded-md" }
+  medium: { list: "gap-0.5", row: "gap-1 px-1", icon: "h-6 w-6", label: "h-6" },
+  small: { list: "gap-px", row: "gap-1.5 pl-1.25 pr-1", icon: "h-5 w-5 rounded-md", label: "h-5 rounded-md" }
 };
 const labelWidths = ["w-36", "w-44", "w-32", "w-40"];
 
@@ -27,11 +28,12 @@ const TreeSkeleton: Component<TreeSkeletonProps> = (props) => {
   const rows = () => Array.from({ length: props.rowCount ?? 4 }, (_, index) => index);
 
   return (
-    <For each={rows()}>
+    <div class={clsx("flex flex-col", size().list)}>
+      <For each={rows()}>
       {(index) => (
         <div
-          class={clsx("flex items-center px-1", size().gap)}
-          style={{ height: props.itemHeight || "1.75rem" }}
+          class={clsx("flex items-center", size().row)}
+          style={{ height: props.itemHeight || "1.875rem" }}
         >
           <Skeleton
             class={[
@@ -44,7 +46,8 @@ const TreeSkeleton: Component<TreeSkeletonProps> = (props) => {
           />
         </div>
       )}
-    </For>
+      </For>
+    </div>
   );
 };
 

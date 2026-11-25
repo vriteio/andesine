@@ -2,7 +2,7 @@ import { type ExtensionWebhookState } from "@andesine/contracts/extensions";
 import { createAsync, revalidate, useNavigate } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
 import { type Component, createMemo, Show } from "solid-js";
-import { Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
+import { PAGE_TREE_SIZE, Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
 import { useNotify } from "#web/context/notifications";
 import { client } from "#web/lib/api";
 import { createOptimisticOverrides } from "#web/lib/primitives";
@@ -125,7 +125,7 @@ const WebhooksSection: Component<WebhooksSectionProps> = (props) => {
             <Tree
               keyboard
               tree={webhooksTree}
-              itemHeight="2rem"
+              {...PAGE_TREE_SIZE}
               renderItem={(itemID) => {
                 const webhook = () => webhooks().find(({ webhookID }) => webhookID === itemID)!;
 

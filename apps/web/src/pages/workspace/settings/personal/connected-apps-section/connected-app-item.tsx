@@ -77,7 +77,7 @@ const ConnectedAppItem: Component<ConnectedAppItemProps> = (props) => {
         icon={
           <div
             class={clsx(
-              "h-5 w-5 text-gray-400",
+              "h-5.5 w-5.5 text-gray-400",
               props.type === "cli" ? "i-lucide:square-terminal" : "i-lucide:plug"
             )}
           />

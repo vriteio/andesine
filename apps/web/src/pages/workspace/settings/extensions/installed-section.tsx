@@ -4,7 +4,7 @@ import { createAsync, revalidate, useNavigate, useParams } from "@solidjs/router
 import { createMutation } from "@tanstack/solid-query";
 import { type Component, createMemo, createSignal, ErrorBoundary, Show, Suspense } from "solid-js";
 import { ActionConfirmationDialog } from "#web/components/action-confirmation-dialog";
-import { Tree, TREE_ROOT_ID, type TreeMap, TreeSkeleton } from "#web/components/tree";
+import { PAGE_TREE_SIZE, Tree, TREE_ROOT_ID, type TreeMap, TreeSkeleton } from "#web/components/tree";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
 import { client } from "#web/lib/api";
@@ -61,7 +61,7 @@ const InstalledList: Component<InstalledListProps> = (props) => {
       <Tree
         keyboard
         tree={tree}
-        itemHeight="2rem"
+        {...PAGE_TREE_SIZE}
         renderItem={(itemID) => {
           const extension = () => extensions().find((current) => current.id === itemID)!;
 

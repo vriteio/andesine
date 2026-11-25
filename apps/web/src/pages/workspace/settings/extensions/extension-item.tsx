@@ -135,12 +135,12 @@ const ExtensionItem: Component<ExtensionItemProps> = (props) => {
         class={clsx("px-1 py-0.5", props.loading && "animate-pulse")}
         icon={
           <Tooltip content={getStateLabel(props.extension)} enabled={hasState()} fixed>
-            <div class="relative h-5 w-5">
+            <div class="relative h-5.5 w-5.5">
               <ExtensionIcon
                 name={props.extension.name}
                 icon={props.extension.icon}
                 iconStyles={props.extension.iconStyles}
-                class="h-5 w-5"
+                class="h-5.5 w-5.5"
               />
               {/* The state, as a badge on the icon's corner. */}
               <Show when={hasState()}>

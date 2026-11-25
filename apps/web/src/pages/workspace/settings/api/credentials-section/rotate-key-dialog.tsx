@@ -93,8 +93,8 @@ const RotateKeyDialog: Component<RotateKeyDialogProps> = (props) => {
         <div class="h-6 w-6 flex justify-center items-center">
           <div class="i-lucide:key-round h-5 w-5 text-gray-400" />
         </div>
-        <div class="flex items-center flex-1 gap-1.5">
-          <span class="font-medium line-clamp-1">{visibleKey()?.name}</span>
+        <div class="flex min-w-0 items-center flex-1 gap-1.5">
+          <span class="font-medium truncate">{visibleKey()?.name}</span>
           <div class="w-px h-4 bg-gray-200 rounded-full shrink-0" />
           <span class="text-xs shrink-0 font-mono text-gray-400">{visibleKey()?.prefix}...</span>
         </div>

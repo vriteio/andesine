@@ -1,4 +1,5 @@
 import {
+  PAGE_TREE_SIZE,
   TREE_ROOT_ID,
   Tree,
   TreeItem,
@@ -22,6 +23,7 @@ const ExtensionTreeNode: Component<TreeNodeProps> = (props) => {
   const [{ isExpanded }, { toggleExpanded }] = useTree();
   const item = createMemo(() => props.host.props.items.find(({ id }) => id === props.id));
   const isLevel = () => props.tree()[props.id] !== undefined;
+  const small = () => props.host.props.size === "small";
   // Icon classes from extension items come from its generated CSS.
   const icon = () => {
     if (item()?.icon) return item()!.icon;
@@ -38,7 +40,8 @@ const ExtensionTreeNode: Component<TreeNodeProps> = (props) => {
         id={props.id}
         label={item()?.label ?? ""}
         highlighted={props.host.props.selected === props.id}
-        icon={<div class={clsx("h-5 w-5 text-gray-400", icon())} />}
+        class={small() ? "text-row" : undefined}
+        icon={<div class={clsx(small() ? "h-5 w-5" : "h-5.5 w-5.5", "text-gray-400", icon())} />}
         onClick={() => {
           if (isLevel()) toggleExpanded(props.id);
 
@@ -82,11 +85,13 @@ const toTreeMap = (items: TreeItemData[]): TreeMap => {
 };
 const ExtensionTree: Component<HostComponentProps<"Tree">> = (props) => {
   const tree = createMemo(() => toTreeMap(props.props.items));
+  const small = () => props.props.size === "small";
 
   return (
     <Tree
       tree={tree}
-      itemHeight="2rem"
+      itemHeight={small() ? undefined : PAGE_TREE_SIZE.itemHeight}
+      gap={small() ? undefined : PAGE_TREE_SIZE.gap}
       emptyMessage={props.props.emptyLabel ?? "No items"}
       renderLevel={(id) => <ExtensionTreeNode id={id} tree={tree} host={props} />}
       renderItem={(id) => <ExtensionTreeNode id={id} tree={tree} host={props} />}

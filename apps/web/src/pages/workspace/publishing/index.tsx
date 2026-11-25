@@ -9,6 +9,7 @@ import {
 import { createAsync, revalidate, useParams, useSearchParams } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
 import clsx from "clsx";
+import { PANEL_TITLE_ROW_CLASS } from "#web/components/panel-layout";
 import { type Component, type ComponentProps, createMemo, createSignal, Show } from "solid-js";
 import { useLayout } from "#web/context/layout";
 import { useNotify } from "#web/context/notifications";
@@ -281,8 +282,8 @@ const PublishingPanel: Component<PublishingPanelProps> = (props) => {
   return (
     <DropdownArea>
       <div class="flex min-h-0 w-full flex-1 flex-col">
-        <div data-tree-interaction class="flex shrink-0 flex-col px-1">
-          <div class="group/publishing-header relative flex h-9 items-center gap-2">
+        <div data-tree-interaction class="flex shrink-0 flex-col px-1 md:pr-2">
+          <div class={clsx(PANEL_TITLE_ROW_CLASS, "group/publishing-header gap-2")}>
             <h2 class="min-w-0 flex-1 truncate text-2xl font-semibold">Publishing</h2>
             <Show when={hasHeaderOptions()}>
               <div class="absolute right-0">
@@ -317,14 +318,14 @@ const PublishingPanel: Component<PublishingPanelProps> = (props) => {
               </div>
             </Show>
           </div>
-          <span class="ml-1 text-gray-400 text-xs leading-normal">
+          <span class="ml-1 truncate text-gray-400 text-xs leading-normal">
             {publishingCollection()?.name}
           </span>
         </div>
         <Show
           when={response()}
           fallback={
-            <div class="px-1">
+            <div class="px-1 md:pr-2">
               <PublishingPanelContentSkeleton />
             </div>
           }
@@ -333,9 +334,9 @@ const PublishingPanel: Component<PublishingPanelProps> = (props) => {
             <Show
               when={!currentResponse().error}
               fallback={
-                <div class="flex flex-1 flex-col px-1 pt-1">
+                <div class="flex flex-1 flex-col px-1 pt-1 md:pr-2">
                   <Button
-                    class="flex w-full items-center justify-start gap-1 py-0.5 pl-0.5"
+                    class="flex w-full items-center justify-start gap-1 py-0.75 pl-0.75 text-row"
                     variant="ghost"
                     size="medium"
                     onClick={() => {
@@ -347,7 +348,7 @@ const PublishingPanel: Component<PublishingPanelProps> = (props) => {
                     <div class="flex h-6 w-6 items-center justify-center">
                       <div class="i-lucide:refresh-cw h-4.5 w-4.5 text-gray-400" />
                     </div>
-                    <span class="flex-1 text-left line-clamp-1">Try again</span>
+                    <span class="min-w-0 flex-1 text-left truncate">Try again</span>
                   </Button>
                   <p class="mx-1 mt-1 text-xs text-gray-400">
                     Publishing status could not be loaded. Check your connection and try again.
@@ -358,11 +359,11 @@ const PublishingPanel: Component<PublishingPanelProps> = (props) => {
               <Show
                 when={currentResponse().result && pendingCount() > 0}
                 fallback={
-                  <div class="flex h-7 w-full items-center gap-1 pl-1.5 font-medium">
+                  <div class="flex h-7.5 w-full items-center gap-1 pl-1.75 font-medium text-row">
                     <div class="flex h-6 w-6 items-center justify-center">
                       <div class="h-5 w-5 text-green-500 i-material-symbols:check-circle-outline-rounded" />
                     </div>
-                    <span class="min-w-0 flex-1 line-clamp-1">No pending changes</span>
+                    <span class="min-w-0 flex-1 truncate">No pending changes</span>
                   </div>
                 }
               >

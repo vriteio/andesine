@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { createRef, ScrollShadow } from "@andesine/components";
+import { PanelLayout } from "#web/components/panel-layout";
 import { A, createAsync, useLocation, useParams } from "@solidjs/router";
 import { type Component, createMemo, For, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
@@ -45,7 +45,7 @@ const SettingsMenuItemRow: Component<SettingsMenuItemRowProps> = (props) => (
     type={props.item.href ? undefined : "button"}
     onClick={props.item.onClick}
     class={clsx(
-      ":base: group relative flex min-h-7 w-full flex-1 select-none items-center gap-1 overflow-hidden rounded-r-lg pl-0.5 text-left font-medium focus:outline-none",
+      ":base: group relative flex min-h-7.5 w-full flex-1 select-none items-center gap-1 overflow-hidden rounded-r-lg pl-0.75 text-left font-medium text-row focus:outline-none",
       !props.nested && ":base: rounded-l-lg",
       !props.item.active &&
         ":base: @hover:bg-gradient-to-r @hover:from-gray-500/10 @hover:to-transparent"
@@ -82,7 +82,7 @@ const SettingsMenuItemRow: Component<SettingsMenuItemRowProps> = (props) => (
         )}
       </Show>
     </div>
-    <span class="relative flex-1 line-clamp-1" title={props.item.label}>
+    <span class="relative min-w-0 flex-1 truncate" title={props.item.label}>
       {props.item.label}
     </span>
     <Show when={props.item.indicator}>
@@ -104,7 +104,6 @@ const SettingsMenu: Component = () => {
     name?: string;
   }>();
   const { sessions, currentWorkspace, hasPermission } = useWorkspace();
-  const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const routeExtension = useRouteExtension();
   const settingsPath = () => `/${params.workspaceID || ""}/settings`;
   // Managers see when an update or a revocation keeps an extension disabled.
@@ -288,63 +287,44 @@ const SettingsMenu: Component = () => {
   });
 
   return (
-    <div class="relative flex min-h-0 w-full md:flex-1">
-      <div class="pointer-events-none absolute inset-y-0 left-0 right-3 overflow-hidden">
-        <ScrollShadow
-          color="panel"
-          offset={{ top: "2.25rem" }}
-          scrollableContainerRef={scrollableContainerRef}
-        />
-      </div>
-      <div
-        ref={setScrollableContainerRef}
-        class="relative flex min-h-0 w-full flex-col scrollbar-panel scrollbar-hover overflow-y-auto px-1 pb-1 md:flex-1"
-      >
-        <div class="sticky top-0 z-20 -mx-1 flex h-9 shrink-0 items-center px-1 bg-white md:bg-gray-100">
-          <h2 class="min-w-0 truncate text-2xl font-semibold">Settings</h2>
-        </div>
-        <div class="flex flex-col gap-3">
-          <For each={menu()}>
-            {(subMenu) => (
-              <MenuSection label={subMenu.label}>
-                <For each={subMenu.items.filter((item) => item.visible ?? true)}>
-                  {(item) => {
-                    const activeChild = () => {
-                      return item.subItems?.find((subItem) => {
-                        return (subItem.visible ?? true) && subItem.active;
-                      });
-                    };
+    <PanelLayout title="Settings" class="md:flex-1" contentClass="pb-1">
+      <div class="flex flex-col gap-3">
+        <For each={menu()}>
+          {(subMenu) => (
+            <MenuSection label={subMenu.label}>
+              <For each={subMenu.items.filter((item) => item.visible ?? true)}>
+                {(item) => {
+                  const activeChild = () => {
+                    return item.subItems?.find((subItem) => {
+                      return (subItem.visible ?? true) && subItem.active;
+                    });
+                  };
 
-                    return (
-                      <>
-                        <SettingsMenuItemRow item={item} />
-                        <Show when={activeChild()}>
-                          {(child) => (
-                            <div class="relative flex">
-                              <div class="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-r from-secondary via-primary to-transparent opacity-10" />
-                              <div class="relative flex min-w-3.5 items-center justify-end pl-0.5">
-                                <div class="h-full w-px rounded-full bg-gradient-to-b" />
-                              </div>
-                              <div class="relative flex flex-1 flex-col">
-                                <SettingsMenuItemRow
-                                  item={child()}
-                                  nested
-                                  activeBackground={false}
-                                />
-                              </div>
+                  return (
+                    <>
+                      <SettingsMenuItemRow item={item} />
+                      <Show when={activeChild()}>
+                        {(child) => (
+                          <div class="relative flex">
+                            <div class="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-r from-secondary via-primary to-transparent opacity-10" />
+                            <div class="relative flex min-w-3.75 items-center justify-end pl-0.75">
+                              <div class="h-full w-px rounded-full bg-gradient-to-b" />
                             </div>
-                          )}
-                        </Show>
-                      </>
-                    );
-                  }}
-                </For>
-              </MenuSection>
-            )}
-          </For>
-        </div>
+                            <div class="relative flex min-w-0 flex-1 flex-col">
+                              <SettingsMenuItemRow item={child()} nested activeBackground={false} />
+                            </div>
+                          </div>
+                        )}
+                      </Show>
+                    </>
+                  );
+                }}
+              </For>
+            </MenuSection>
+          )}
+        </For>
       </div>
-    </div>
+    </PanelLayout>
   );
 };
 

@@ -1,7 +1,7 @@
 import { Card } from "@andesine/components";
 import { createMutation } from "@tanstack/solid-query";
 import { type Component, createMemo, createSignal, Show } from "solid-js";
-import { Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
+import { PAGE_TREE_SIZE, Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
 import { useClipboard } from "#web/context/clipboard";
 import { useNotify } from "#web/context/notifications";
 import { settleBulkAction } from "#web/lib/primitives";
@@ -153,7 +153,7 @@ const InviteList: Component<InviteListProps> = (props) => {
         <Tree
           keyboard
           tree={invitesTree}
-          itemHeight="2rem"
+          {...PAGE_TREE_SIZE}
           renderItem={(itemID) => {
             const invite = () => optimisticInvites().find((current) => current.id === itemID)!;
 

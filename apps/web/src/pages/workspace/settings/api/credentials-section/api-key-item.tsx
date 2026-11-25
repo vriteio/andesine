@@ -112,14 +112,14 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
             fallback={
               <div
                 class={clsx(
-                  "h-5 w-5 text-gray-400",
+                  "h-5.5 w-5.5 text-gray-400",
                   props.kind === "publishable" ? "i-tabler:circle-key" : "i-lucide:key-round"
                 )}
               />
             }
           >
             <Tooltip content={`Expires ${formatRelativeTime(props.expiresAt!)}`} fixed>
-              <div class="h-5 w-5 i-lucide:clock bg-gradient-to-tr from-primary to-secondary" />
+              <div class="h-5.5 w-5.5 i-lucide:clock bg-gradient-to-tr from-primary to-secondary" />
             </Tooltip>
           </Show>
         }

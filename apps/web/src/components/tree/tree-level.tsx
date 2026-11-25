@@ -34,7 +34,7 @@ const TreeLevel: Component<TreeLevelProps> = (props) => {
     <Show when={isRoot() || isExpanded(props.levelID)}>
       <Show when={!isRoot()}>
         <div class="flex" style={{ "margin-top": gap }}>
-          <div class="min-w-3.5 pl-0.5 flex justify-end items-center">
+          <div class="min-w-3.75 pl-0.75 flex justify-end items-center">
             <div
               class={clsx(
                 "h-full w-px rounded-full bg-gray-300",

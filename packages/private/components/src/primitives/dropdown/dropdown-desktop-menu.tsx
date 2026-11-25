@@ -1,9 +1,8 @@
 import clsx from "clsx";
 import { type Component, type ComponentProps, type JSX } from "solid-js";
-import { Dynamic, Portal } from "solid-js/web";
 import { Menu } from "@ark-ui/solid/menu";
 import { Card } from "../card";
-import { Fragment } from "../fragment";
+import { PresencePortal } from "../presence-portal";
 
 interface DropdownDesktopMenuProps {
   cardProps?: Partial<ComponentProps<typeof Card>>;
@@ -13,7 +12,7 @@ interface DropdownDesktopMenuProps {
 }
 
 const DropdownDesktopMenu: Component<DropdownDesktopMenuProps> = (props) => (
-  <Dynamic component={props.portal === false ? Fragment : Portal}>
+  <PresencePortal portal={props.portal}>
     <Menu.Positioner class="select-none">
       <Menu.Content
         asChild={(contentProps) => (
@@ -33,12 +32,12 @@ const DropdownDesktopMenu: Component<DropdownDesktopMenuProps> = (props) => (
               props.cardProps?.class
             )}
           >
-            <div class="min-w-fit flex-1 overflow-auto scrollbar-sm">{props.children}</div>
+            <div class="min-w-0 flex-1 overflow-auto scrollbar-sm">{props.children}</div>
           </Card>
         )}
       />
     </Menu.Positioner>
-  </Dynamic>
+  </PresencePortal>
 );
 
 export { DropdownDesktopMenu };

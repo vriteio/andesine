@@ -131,9 +131,9 @@ const OverlayEntry: Component<OverlayEntryProps> = (props) => {
 
   return (
     <DropdownArea {...EXPLORER_GESTURE_PROPS}>
-      <div class="flex min-h-7 w-full" data-entry={props.entry.entryID} data-explorer-item>
+      <div class="flex min-h-7.5 w-full" data-entry={props.entry.entryID} data-explorer-item>
         <TreeItem
-          class="!overflow-visible"
+          class="!overflow-visible text-row"
           id={overlayID()}
           label={props.entry.name}
           topLevel={props.topLevel}
@@ -145,10 +145,10 @@ const OverlayEntry: Component<OverlayEntryProps> = (props) => {
             if (!loading()) setMenuOpened(true);
           }}
           icon={
-            <div class="relative h-full w-full">
+            <div class="relative flex h-full w-full items-center justify-center">
               <div
                 class={clsx(
-                  "h-full w-full text-gray-400 i-lucide:file-text",
+                  "h-5 w-5 text-gray-400 i-lucide:file-text",
                   isSelected(overlayID()) && "bg-gradient-to-tr"
                 )}
               />
@@ -185,8 +185,8 @@ const OverlayEntry: Component<OverlayEntryProps> = (props) => {
                 when={dropdownOptions().length > 0}
                 fallback={
                   <Show when={opened()}>
-                    <div class="absolute right-0 top-0 hidden h-7 w-7 items-center justify-center media-mouse:flex media-mouse:group-hover:hidden">
-                      <div class="h-4 w-4 bg-gradient-to-tr from-secondary via-primary to-secondary i-lucide:eye" />
+                    <div class="absolute right-0 top-0.25 hidden h-7 w-7 items-center justify-center media-mouse:flex media-mouse:group-hover:hidden">
+                      <div class="h-3.5 w-3.5 bg-gradient-to-tr from-secondary via-primary to-secondary i-lucide:eye" />
                     </div>
                   </Show>
                 }
@@ -220,6 +220,8 @@ const OverlayEntry: Component<OverlayEntryProps> = (props) => {
                         <IconButton
                           data-entry-menu-trigger
                           icon="i-lucide:ellipsis-vertical"
+                          class="h-7 w-7"
+                          iconProps={{ class: "h-4.5 w-4.5" }}
                           variant="ghost"
                         />
                       </div>
@@ -229,11 +231,11 @@ const OverlayEntry: Component<OverlayEntryProps> = (props) => {
                 <Show when={opened() && !menuOpened()}>
                   <div
                     class={clsx(
-                      "absolute right-0 top-0 hidden h-7 w-7 items-center justify-center media-mouse:flex",
+                      "absolute right-0 top-0.25 hidden h-7 w-7 items-center justify-center media-mouse:flex",
                       selection().length <= 1 && "media-mouse:group-hover:hidden"
                     )}
                   >
-                    <div class="h-4 w-4 bg-gradient-to-tr from-secondary via-primary to-secondary i-lucide:eye" />
+                    <div class="h-3.5 w-3.5 bg-gradient-to-tr from-secondary via-primary to-secondary i-lucide:eye" />
                   </div>
                 </Show>
               </Show>

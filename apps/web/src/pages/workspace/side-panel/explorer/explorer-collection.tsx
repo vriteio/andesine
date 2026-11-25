@@ -116,7 +116,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
             )}
           />
         </Show>
-        <div class="flex relative min-h-7">
+        <div class="flex relative min-h-7.5">
           <Show when={swipe.swiping()}>
             <div class="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-gray-50 to-transparent">
               <div
@@ -137,7 +137,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
             style={{ transform: `translateX(-${swipe.offset()}px)` }}
           >
             <TreeItem
-              class="!overflow-visible"
+              class="!overflow-visible text-row"
               id={props.collection.id}
               label={props.collection.name}
               topLevel={props.topLevel}
@@ -170,11 +170,11 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
               }}
               labelMaxLength={MAX_CONTENT_NAME_LENGTH}
               icon={
-                <div class="relative flex justify-center items-center">
+                <div class="relative flex h-full w-full justify-center items-center">
                   <div
                     data-element="collection-icon"
                     class={clsx(
-                      "h-6 w-6 text-gray-400 transition-transform",
+                      "h-5 w-5 text-gray-400 transition-transform",
                       (isSelected(props.collection.id) || isDraggedOver() || highlighted()) &&
                         "bg-gradient-to-tr",
                       isExpanded(props.collection.id)
@@ -310,6 +310,8 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                           <IconButton
                             data-collection-menu-trigger
                             icon="i-lucide:ellipsis-vertical"
+                            class="h-7 w-7"
+                            iconProps={{ class: "h-4.5 w-4.5" }}
                             variant="ghost"
                           />
                         </div>
@@ -321,7 +323,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                     {(migration) => (
                       <div
                         class={clsx(
-                          "absolute right-0 top-0 hidden h-7 items-center justify-center media-mouse:flex",
+                          "absolute right-0 top-0.25 hidden h-7 items-center justify-center media-mouse:flex",
                           selection().length <= 1 && "media-mouse:group-hover:hidden"
                         )}
                       >
@@ -332,11 +334,11 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                   <Show when={!schemaMigration() && collectionEditorOpened() && !menuOpened()}>
                     <div
                       class={clsx(
-                        "hidden media-mouse:flex justify-center items-center h-7 w-7 absolute right-0 top-0",
+                        "hidden media-mouse:flex justify-center items-center h-7 w-7 absolute right-0 top-0.25",
                         selection().length <= 1 && "media-mouse:group-hover:hidden"
                       )}
                     >
-                      <div class="i-lucide:pencil bg-gradient-to-tr h-4 w-4 from-secondary via-primary to-secondary" />
+                      <div class="i-lucide:pencil bg-gradient-to-tr h-3.5 w-3.5 from-secondary via-primary to-secondary" />
                     </div>
                   </Show>
                 </Show>

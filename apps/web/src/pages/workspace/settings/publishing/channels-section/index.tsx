@@ -4,7 +4,7 @@ import { createAsync, revalidate } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
 import { type Component, createSignal, Show, Suspense, useTransition } from "solid-js";
 import { ActionConfirmationDialog } from "#web/components/action-confirmation-dialog";
-import { Tree, TREE_ROOT_ID, type TreeMap, TreeSkeleton } from "#web/components/tree";
+import { PAGE_TREE_SIZE, Tree, TREE_ROOT_ID, type TreeMap, TreeSkeleton } from "#web/components/tree";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
 import { client } from "#web/lib/api";
@@ -276,7 +276,7 @@ const ChannelsSection: Component = () => {
                 <Tree
                   keyboard
                   tree={tree}
-                  itemHeight="2rem"
+                  {...PAGE_TREE_SIZE}
                   renderItem={(channelCode) => {
                     const channel = () => {
                       return visibleChannels().find((candidate) => candidate.code === channelCode)!;

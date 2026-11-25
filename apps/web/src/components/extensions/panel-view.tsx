@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { createRef, ScrollShadow } from "@andesine/components";
+import { PanelLayout } from "#web/components/panel-layout";
 import { type RunningExtensionPanel } from "#web/lib/extensions";
 import { type Component, type JSX, Show } from "solid-js";
 import { ExtensionView } from "./extension-view";
@@ -32,31 +32,18 @@ const ExtensionPanelView: Component<ExtensionPanelViewProps> = (props) => {
     props.item.panel.view,
     () => props.context
   );
-  const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
 
   return (
-    <div class="flex min-h-0 w-full flex-1 flex-col overflow-hidden px-1">
-      <div class="flex h-9 shrink-0 items-center">
-        <h2 class="truncate text-2xl font-semibold">{props.item.panel.name}</h2>
-      </div>
+    <PanelLayout title={props.item.panel.name} class="flex-1">
       <Show
         when={!unavailable()}
         fallback={<span class="text-sm text-gray-500">This panel is unavailable.</span>}
       >
-        {/* Room for the view's shadows, e.g. a full-width button's, which the view's box clips. */}
-        <div class="relative -mx-1 flex min-h-0 flex-1" hidden={!rendered()}>
-          <div class="pointer-events-none absolute inset-y-0 left-0 right-3 overflow-hidden">
-            <ScrollShadow color="contrast" scrollableContainerRef={scrollableContainerRef} />
-          </div>
-          <div
-            ref={setScrollableContainerRef}
-            class="min-h-0 w-full flex-1 scrollbar-panel scrollbar-hover overflow-y-auto"
-          >
-            <ExtensionView host={host} viewID={viewID} class="w-full px-1 pb-2" />
-          </div>
+        <div class="w-full" hidden={!rendered()}>
+          <ExtensionView host={host} viewID={viewID} class="w-full pb-2" />
         </div>
       </Show>
-    </div>
+    </PanelLayout>
   );
 };
 

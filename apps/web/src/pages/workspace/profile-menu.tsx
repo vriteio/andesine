@@ -82,13 +82,13 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
           <div class="flex min-h-10 min-w-0 flex-col justify-center md:min-h-0">
             <span
               class={clsx(
-                "text-[16px] font-medium text-gray-900 line-clamp-1 md:text-sm",
-                currentUser?.image ? "leading-none md:leading-none" : "leading-5 md:leading-5"
+                "text-[16px] font-medium text-gray-900 truncate md:text-sm",
+                currentUser?.image ? "leading-tight md:leading-tight" : "leading-5 md:leading-5"
               )}
             >
               {currentUser?.name || currentUser?.email}
             </span>
-            <span class="text-sm leading-4 text-gray-500 line-clamp-1 md:text-xs md:leading-none">
+            <span class="text-sm leading-4 text-gray-500 truncate md:text-xs md:leading-tight">
               {currentUser?.email}
             </span>
           </div>
@@ -119,15 +119,15 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
                   <div class="flex min-h-10 min-w-0 flex-col justify-center md:min-h-0">
                     <span
                       class={clsx(
-                        "text-[16px] font-medium text-gray-900 line-clamp-1 md:text-sm",
+                        "text-[16px] font-medium text-gray-900 truncate md:text-sm",
                         session.user?.image
-                          ? "leading-none md:leading-none"
+                          ? "leading-tight md:leading-tight"
                           : "leading-5 md:leading-5"
                       )}
                     >
                       {session.user?.name || session.user?.email}
                     </span>
-                    <span class="text-sm leading-4 text-gray-500 line-clamp-1 md:text-xs md:leading-none">
+                    <span class="text-sm leading-4 text-gray-500 truncate md:text-xs md:leading-tight">
                       {session.user?.email}
                     </span>
                   </div>
@@ -285,7 +285,7 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
                 )}
               </Show>
               <Show when={!props.compact}>
-                <span class="flex-1 truncate text-start text-sm font-medium">
+                <span class="min-w-0 flex-1 truncate text-start text-sm font-medium">
                   {currentWorkspace()?.name || "Workspace"}
                 </span>
                 <div class="i-lucide:chevrons-up-down h-4 w-4 text-gray-400" />

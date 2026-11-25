@@ -121,7 +121,8 @@ const useTreeMarquee = (
 
       if (!rect) return stopAutoScroll();
 
-      const threshold = 36;
+      // Reaches past the 46px sticky panel header.
+      const threshold = 46;
       const speed =
         box.currentY < rect.top + threshold
           ? Math.max(-12, (box.currentY - rect.top - threshold) / 3)

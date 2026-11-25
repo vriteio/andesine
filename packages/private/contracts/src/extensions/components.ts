@@ -362,7 +362,9 @@ const extensionComponentDefinitions = {
     props: z.strictObject({
       items: treeItemsType,
       selected: z.string().max(100).optional(),
-      emptyLabel: z.string().max(200).optional()
+      emptyLabel: z.string().max(200).optional(),
+      /** `small` fits panels, `medium` (default) fits pages. */
+      size: z.enum(["small", "medium"]).optional()
     }),
     events: { onSelect: z.tuple([z.string()]) },
     children: false

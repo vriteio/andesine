@@ -136,7 +136,7 @@ const OverlayCollection: Component<OverlayCollectionProps> = (props) => {
         data-explorer-item
       >
         <TreeItem
-          class="!overflow-visible"
+          class="!overflow-visible text-row"
           id={props.collection.collectionID}
           label={props.collection.name}
           topLevel={props.topLevel}
@@ -150,7 +150,7 @@ const OverlayCollection: Component<OverlayCollectionProps> = (props) => {
             <div class="relative flex h-full w-full items-center justify-center">
               <div
                 class={clsx(
-                  "h-full w-full text-gray-400",
+                  "h-5 w-5 text-gray-400",
                   isSelected(props.collection.collectionID) && "bg-gradient-to-tr",
                   isExpanded(props.collection.collectionID)
                     ? "i-material-symbols:folder-open-rounded"
@@ -206,6 +206,8 @@ const OverlayCollection: Component<OverlayCollectionProps> = (props) => {
                         <IconButton
                           data-collection-menu-trigger
                           icon="i-lucide:ellipsis-vertical"
+                          class="h-7 w-7"
+                          iconProps={{ class: "h-4.5 w-4.5" }}
                           variant="ghost"
                         />
                       </div>

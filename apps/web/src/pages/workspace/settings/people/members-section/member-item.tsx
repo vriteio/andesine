@@ -124,9 +124,9 @@ const MemberItem: Component<{
         icon={
           <Show
             when={props.member.profile.image}
-            fallback={<div class="i-lucide:id-card h-5 w-5 text-gray-400" />}
+            fallback={<div class="i-lucide:id-card h-5.5 w-5.5 text-gray-400" />}
           >
-            {(image) => <img src={image()} alt="" class="h-5 w-5 rounded-md object-cover" />}
+            {(image) => <img src={image()} alt="" class="h-5.5 w-5.5 rounded-md object-cover" />}
           </Show>
         }
         renderLabel={(label) => (
