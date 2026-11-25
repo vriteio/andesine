@@ -136,7 +136,7 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
         return { entryID, error: true };
       }
     },
-    { deferStream: true, initialValue: null }
+    { initialValue: null }
   );
   const publicationResponse = () => {
     const latest = publications.latest;

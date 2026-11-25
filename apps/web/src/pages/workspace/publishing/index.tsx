@@ -122,7 +122,7 @@ const PublishingPanel: Component<PublishingPanelProps> = (props) => {
         return { ...input, error: true };
       }
     },
-    { deferStream: true, initialValue: null }
+    { initialValue: null }
   );
   const response = () => {
     const input = queryInput();

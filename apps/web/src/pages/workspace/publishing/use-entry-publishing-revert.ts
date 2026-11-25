@@ -61,7 +61,7 @@ const useEntryPublishingRevert = (props: UseEntryPublishingRevertInput) => {
         return { channel, collectionID: currentCollectionID, error: true };
       }
     },
-    { deferStream: true, initialValue: null }
+    { initialValue: null }
   );
   const response = () => {
     const channel = publishing.channel();

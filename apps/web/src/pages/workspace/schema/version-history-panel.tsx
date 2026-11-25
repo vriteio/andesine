@@ -81,7 +81,7 @@ const SchemaVersionHistoryPanel: Component<SchemaVersionHistoryPanelProps> = (pr
         response: await schemaVersionHistoryQuery({ schemaID: currentSchemaID, limit: 50 })
       };
     },
-    { deferStream: true, initialValue: null }
+    { initialValue: null }
   );
   const historyResponse = () => {
     const latest = versionHistory.latest;

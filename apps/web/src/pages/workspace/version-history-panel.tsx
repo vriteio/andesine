@@ -69,7 +69,7 @@ const VersionHistoryPanel: Component<VersionHistoryPanelProps> = (props) => {
         response: await versionHistoryQuery({ entryID: currentEntryID, limit: 50 })
       };
     },
-    { deferStream: true, initialValue: null }
+    { initialValue: null }
   );
   const historyResponse = () => {
     const latest = versionHistory.latest;
