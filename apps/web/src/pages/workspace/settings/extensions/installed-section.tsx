@@ -33,11 +33,7 @@ interface LoadErrorProps {
 const ACTION_LABELS = { enable: "enabled", disable: "disabled", uninstall: "uninstalled" };
 
 const InstalledList: Component<InstalledListProps> = (props) => {
-  // The side menu and notices share this query; deferring keeps its server data from staying pending.
-  const extensions = createAsync(() => extensionsQuery(props.workspaceID), {
-    initialValue: [],
-    deferStream: true
-  });
+  const extensions = createAsync(() => extensionsQuery(props.workspaceID), { initialValue: [] });
   const getExtensions = (ids: string[]) => {
     return extensions().filter((extension) => ids.includes(extension.id));
   };

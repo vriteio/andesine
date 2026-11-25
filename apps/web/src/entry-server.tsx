@@ -67,8 +67,16 @@ const render: Render = async (request, template) => {
     );
   });
 
-  // A failed render rejects the shell; the error is reported there.
-  void Promise.resolve(appStream.pipeTo(writable)).catch(() => undefined);
+  const writer = writable.getWriter();
+  const encoder = new TextEncoder();
+  // Solid calls end() when done, though its types omit it.
+  const sink = {
+    write: (chunk: string) => void writer.write(encoder.encode(chunk)).catch(() => undefined),
+    end: () => void writer.close().catch(() => undefined)
+  };
+
+  // Not pipeTo(): it releases the lock before closing, and Workers then drop the last writes.
+  appStream.pipe(sink);
 
   try {
     await shellReady;
