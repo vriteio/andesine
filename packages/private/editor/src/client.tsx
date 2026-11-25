@@ -586,26 +586,31 @@ const ClientEditor: Component<EditorProps> = (props) => {
                 class="w-full prose-editor z-1 max-w-[44rem] prose prose-headings:font-semibold prose-headings:text-gray-700 prose-bold:text-gray-700 flex flex-col relative"
                 id="editor-container"
               >
+                {/* The keyed editor, so menu cleanups don't read the memo while it's disposed */}
                 <Show when={editableEditor()} keyed>
-                  {/* Order of menus is important, as every `registerPlugin()` call re-triggers `onDestroy` */}
-                  <SlashMenu
-                    editor={editor()!}
-                    menuContainerRef={menuContainerRef}
-                    mode={props.mode || "entry"}
-                    elementViews={props.elementViews}
-                  />
-                  <BubbleMenu
-                    editor={editor()!}
-                    links={props.links}
-                    comments={props.comments}
-                    menuContainerRef={menuContainerRef}
-                  />
-                  <LinkBubbleMenu
-                    editor={editor()!}
-                    links={props.links}
-                    menuContainerRef={menuContainerRef}
-                  />
-                  <DragHandleMenu editor={editor()!} menuContainerRef={menuContainerRef} />
+                  {(currentEditor) => (
+                    <>
+                      {/* Order of menus is important, as every `registerPlugin()` call re-triggers `onDestroy` */}
+                      <SlashMenu
+                        editor={currentEditor}
+                        menuContainerRef={menuContainerRef}
+                        mode={props.mode || "entry"}
+                        elementViews={props.elementViews}
+                      />
+                      <BubbleMenu
+                        editor={currentEditor}
+                        links={props.links}
+                        comments={props.comments}
+                        menuContainerRef={menuContainerRef}
+                      />
+                      <LinkBubbleMenu
+                        editor={currentEditor}
+                        links={props.links}
+                        menuContainerRef={menuContainerRef}
+                      />
+                      <DragHandleMenu editor={currentEditor} menuContainerRef={menuContainerRef} />
+                    </>
+                  )}
                 </Show>
                 <Show when={props.comments && menuContainerRef() ? editor() : null} keyed>
                   {(currentEditor) => (

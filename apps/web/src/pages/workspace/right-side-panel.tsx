@@ -1,5 +1,6 @@
 import { IconButton, Skeleton, Tooltip } from "@andesine/components";
-import { PanelLayout } from "#web/components/panel-layout";
+import { PANEL_TITLE_ROW_CLASS, PanelLayout } from "#web/components/panel-layout";
+import clsx from "clsx";
 import { useLocation, useParams, useSearchParams } from "@solidjs/router";
 import { type Component, createEffect, createMemo, For, type JSX, Show, Suspense } from "solid-js";
 import { Dynamic } from "solid-js/web";
@@ -209,13 +210,7 @@ const useRightSidePanelOptions = () => {
       icon: "i-lucide:radio",
       component: PublishingPanel,
       fallback: PublishingPanelFallback,
-      available: () => {
-        return (
-          publishingAvailable() ||
-          (searchParams[RIGHT_SIDE_PANEL_PARAM] === PUBLISHING_PANEL_ID &&
-            !publishingAvailabilityResolved())
-        );
-      }
+      available: publishingAvailable
     }
   ];
 
@@ -249,6 +244,8 @@ const RightSidePanel: Component = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const options = useRightSidePanelOptions();
   const loading = useRightSidePanelLoading();
+  // Latched, so the options show together on load, not one by one, and later loads don't hide them.
+  const optionsReady = createMemo((ready) => ready || !loading(), false);
   const selectedOption = createMemo(() => {
     const requested = searchParams[RIGHT_SIDE_PANEL_PARAM];
     const requestedOptionID = typeof requested === "string" && requested ? requested : "versions";
@@ -267,10 +264,10 @@ const RightSidePanel: Component = () => {
   return (
     <div class="flex min-h-0 w-full flex-1 flex-col">
       <div class="flex w-full gap-1 px-1 md:pr-2">
-        <Show when={options().length === 0 && layout.rightSidePanelWidth > 0}>
+        <Show when={!optionsReady() && layout.rightSidePanelWidth > 0}>
           <Skeleton class={["h-7 w-7 rounded-lg", "h-7 w-7 rounded-lg", "h-7 w-7 rounded-lg"]} />
         </Show>
-        <For each={options()}>
+        <For each={optionsReady() ? options() : []}>
           {(option) => {
             const selected = () => selectedOption()?.id === option.id;
 
@@ -303,8 +300,15 @@ const RightSidePanel: Component = () => {
           when={layout.rightSidePanelWidth > 0 && selectedOption()}
           fallback={
             <Show when={layout.rightSidePanelWidth > 0}>
-              {/* While panels load, only the option skeletons show; each panel has its own. */}
-              <Show when={!loading()}>
+              {/* While panels load, only the shared title row shows; each panel has its own body. */}
+              <Show
+                when={!loading()}
+                fallback={
+                  <div class={clsx(PANEL_TITLE_ROW_CLASS, "w-full px-1 md:pr-2")}>
+                    <Skeleton class="h-7 w-36 rounded-lg" />
+                  </div>
+                }
+              >
                 <VersionHistoryPanelFallback />
               </Show>
             </Show>

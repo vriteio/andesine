@@ -53,7 +53,7 @@ const Explorer = () => {
   const [focusInside, setFocusInside] = createSignal(false);
   const [menuOpened, setMenuOpened] = createSignal(false);
   const debouncedLoading = createDebounced(content.loading, 100);
-  const loading = () => !mounted() || debouncedLoading();
+  const loading = () => !mounted() || content.loading() || debouncedLoading();
   const getSelectionGroup = (id: string) => {
     return publishing.getCollectionOverlay(id) ||
       publishing.getPendingCollectionOverlay(id) ||

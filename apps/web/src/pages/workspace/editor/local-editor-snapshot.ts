@@ -1,6 +1,10 @@
 import type { EditorProvider } from "@andesine/editor";
 import { getWorkspaceDatabaseName } from "#web/context/workspace/indexeddb";
-import { clearDocument, WorkspaceIndexedDBPersistence } from "#web/context/workspace/y-indexeddb";
+import {
+  clearDocument,
+  getReadOnlySnapshot,
+  WorkspaceIndexedDBPersistence
+} from "#web/context/workspace/y-indexeddb";
 
 const LOCAL_SNAPSHOT_TIMEOUT = 10_000;
 
@@ -33,7 +37,7 @@ interface LocalEditorSnapshotInput {
   workspaceID(): string;
   userID(): string;
   discardLocalSnapshot(): boolean;
-  setLocalSnapshot(documentID: string, available: boolean): void;
+  setLocalSnapshot(documentID: string, available: boolean, readOnly: boolean): void;
   setLocalSnapshotTimeout(documentID: string): void;
   setLocalSnapshotFailure(documentID: string): void;
   notifyError(text: string): void;
@@ -63,7 +67,15 @@ const createLocalEditorSnapshotLifecycle = (input: LocalEditorSnapshotInput) => 
       await withTimeout(persistence.whenSynced, LOCAL_SNAPSHOT_TIMEOUT);
 
       const available = provider.document.store.clients.size > 0;
-      input.setLocalSnapshot(documentID, available);
+      // Unknown counts as editable, so the snapshot is only discarded, never kept by mistake.
+      const readOnly =
+        available &&
+        (await withTimeout(
+          getReadOnlySnapshot(databaseName, documentID),
+          LOCAL_SNAPSHOT_TIMEOUT
+        ).catch(() => false));
+
+      input.setLocalSnapshot(documentID, available, readOnly);
       return {
         renderImmediately: available,
         cleanup() {

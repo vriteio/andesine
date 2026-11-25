@@ -6,6 +6,8 @@ interface DocumentLoadState {
   documentID: string | null;
   isCheckingLocal: boolean;
   hasLocalSnapshot: boolean;
+  /** The local copy holds only server state, as it was made without edit rights. */
+  readOnlySnapshot: boolean;
   localTimeoutCount: number;
   connection: CollaborationConnection;
   authenticated: boolean;
@@ -31,6 +33,7 @@ const createDocumentLoadState = (
   documentID,
   isCheckingLocal: Boolean(documentID),
   hasLocalSnapshot: false,
+  readOnlySnapshot: false,
   localTimeoutCount,
   connection: "connecting",
   authenticated: false,
@@ -67,11 +70,16 @@ const useDocumentLoadState = (selectedDocumentID: Accessor<string | undefined>) 
       return update(currentState);
     });
   };
-  const setLocalSnapshot = (documentID: string, hasLocalSnapshot: boolean) => {
+  const setLocalSnapshot = (
+    documentID: string,
+    hasLocalSnapshot: boolean,
+    readOnlySnapshot: boolean
+  ) => {
     updateDocumentState(documentID, (currentState) => ({
       ...currentState,
       isCheckingLocal: false,
       hasLocalSnapshot,
+      readOnlySnapshot,
       problem: !hasLocalSnapshot && isOffline() ? "not-cached" : currentState.problem
     }));
   };
@@ -128,10 +136,11 @@ const useDocumentLoadState = (selectedDocumentID: Accessor<string | undefined>) 
 
       if (currentState.documentID !== documentID) return;
 
-      if (
-        event.scope === "readonly" &&
-        (currentState.hasLocalSnapshot || currentState.initialSyncComplete)
-      ) {
+      const hasLocalState = currentState.hasLocalSnapshot || currentState.initialSyncComplete;
+      // Local state from an editable session may hold edits the server won't take.
+      const mayHoldLocalEdits = hasLocalState && !currentState.readOnlySnapshot;
+
+      if (event.scope === "readonly" && mayHoldLocalEdits) {
         setDiscardLocalSnapshot(true);
         setDocumentLoadState({
           ...createDocumentLoadState(documentID),
@@ -146,6 +155,7 @@ const useDocumentLoadState = (selectedDocumentID: Accessor<string | undefined>) 
         ...currentState,
         authenticated: true,
         collaborationReadOnly: event.scope === "readonly",
+        readOnlySnapshot: event.scope === "readonly",
         problem: null
       }));
     };

@@ -3,6 +3,7 @@ import { useEditorLinks } from "./links";
 import { ICON_PICKER_SETS, loadIconSet } from "#web/lib/extensions/icon-masks";
 import { pruneCachedImages } from "#web/context/workspace/image-cache";
 import { getWorkspaceDatabaseName } from "#web/context/workspace/indexeddb";
+import { setReadOnlySnapshot } from "#web/context/workspace/y-indexeddb";
 import { IconButton } from "@andesine/components";
 import {
   Editor,
@@ -74,7 +75,8 @@ const LOCAL_SKELETON_DELAY = 100;
 const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props) => {
   const notify = useNotify();
   const [viewsRenderedFor, setViewsRenderedFor] = createSignal<string | null>(null);
-  const [skeletonDelayPassed, setSkeletonDelayPassed] = createSignal(false);
+  // A skeleton already shows while the document is unknown, e.g. on page load, so it continues.
+  const [skeletonDelayPassed, setSkeletonDelayPassed] = createSignal(!props.availableDocumentID);
   const elementViews = config.PUBLIC_EXTENSIONS_ENABLED ? createElementViews() : undefined;
   const extensionActions = config.PUBLIC_EXTENSIONS_ENABLED ? createBlockActions() : undefined;
   const selectedDocumentID = () => props.documentID;
@@ -163,8 +165,21 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
   createEffect(() => {
     props.onLoadStateChange?.(documentLoadState());
   });
+  // Saved once the connection's rights are known, so the next load can keep a read-only copy.
+  createEffect(() => {
+    const { documentID, authenticated, readOnlySnapshot } = documentLoadState();
+    const userID = props.user?.id;
+
+    if (!documentID || !authenticated || !userID) return;
+
+    const databaseName = getWorkspaceDatabaseName(props.workspaceID, userID);
+
+    void setReadOnlySnapshot(databaseName, documentID, readOnlySnapshot).catch(() => undefined);
+  });
   createEffect(
-    on(selectedDocumentID, () => {
+    on(selectedDocumentID, (_, previousDocumentID) => {
+      if (previousDocumentID === undefined && skeletonDelayPassed()) return;
+
       const timeout = setTimeout(() => setSkeletonDelayPassed(true), LOCAL_SKELETON_DELAY);
 
       setSkeletonDelayPassed(false);

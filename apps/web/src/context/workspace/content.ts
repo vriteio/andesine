@@ -156,6 +156,12 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, userID: Accessor<str
   const entriesCollection = () => contentCollections().entries;
   const collectionsCollection = () => contentCollections().collections;
   const schemasCollection = () => contentCollections().schemas;
+  // Pending until the collections match: the switch runs after render, and without a user it detaches.
+  const switchPending = () => {
+    const current = contentCollections();
+
+    return current.workspaceID !== workspaceID() || current.userID !== userID();
+  };
   const activeSchemaMigrationCollectionIDs = createMemo(() => {
     return new Set(
       [...schemaMigrations().values()]
@@ -902,14 +908,14 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, userID: Accessor<str
       );
     },
     persistOfflineAccess,
-    accessLoading,
+    accessLoading: () => switchPending() || accessLoading(),
     entriesCollection,
     collectionsCollection,
     schemasCollection,
     disposeWorkspaceContent,
     applyWorkspaceEvent,
     syncWorkspaceContent,
-    loading,
+    loading: () => switchPending() || loading(),
     syncing,
     snapshotError,
     publishing,

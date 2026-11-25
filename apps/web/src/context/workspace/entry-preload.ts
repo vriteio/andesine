@@ -6,12 +6,7 @@ import {
   WORKSPACE_UPDATES_STORE_NAME,
   openWorkspaceDatabase
 } from "./indexeddb";
-import type { PersistedUpdate } from "./y-indexeddb";
-
-interface PreloadedEntryState {
-  id: string;
-  hash: string;
-}
+import type { EntryStateRecord, PersistedUpdate } from "./y-indexeddb";
 
 const fromBase64 = (value: string): Uint8Array => {
   return Uint8Array.from(atob(value), (character) => character.charCodeAt(0));
@@ -31,7 +26,7 @@ const preloadEntryStates = async (databaseName: string, entryIDs: string[]): Pro
     const preloaded = await Promise.all(
       entryIDs.map((id) => {
         return database.get(WORKSPACE_ENTRY_STATES_STORE_NAME, id) as Promise<
-          PreloadedEntryState | undefined
+          EntryStateRecord | undefined
         >;
       })
     );
@@ -64,9 +59,12 @@ const preloadEntryStates = async (databaseName: string, entryIDs: string[]): Pro
       }
 
       void updatesStore.add({ entryID: entry.id, update } satisfies PersistedUpdate);
-      void transaction
-        .objectStore(WORKSPACE_ENTRY_STATES_STORE_NAME)
-        .put({ id: entry.id, hash: entry.hash } satisfies PreloadedEntryState);
+      // Kept with its other fields, e.g. the read-only mark; server state doesn't change them.
+      void transaction.objectStore(WORKSPACE_ENTRY_STATES_STORE_NAME).put({
+        ...preloaded[entryIDs.indexOf(entry.id)],
+        id: entry.id,
+        hash: entry.hash
+      } satisfies EntryStateRecord);
     }
 
     await transaction.done;

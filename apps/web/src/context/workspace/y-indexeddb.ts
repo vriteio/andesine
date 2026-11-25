@@ -12,6 +12,11 @@ interface PersistedUpdate {
   entryID: string;
   update: Uint8Array;
 }
+interface EntryStateRecord {
+  id: string;
+  hash?: string;
+  readOnly?: boolean;
+}
 interface WorkspaceIndexedDBPersistenceOptions {
   onError?(error: unknown): void;
 }
@@ -69,6 +74,39 @@ const clearDocument = async (name: string, entryID: string): Promise<void> => {
   }
 };
 
+/** Whether the entry's local copy was saved without edit rights, so it holds only server state. */
+const getReadOnlySnapshot = async (name: string, entryID: string): Promise<boolean> => {
+  const database = await openPersistenceDatabase(name);
+
+  try {
+    const record = (await database.get(WORKSPACE_ENTRY_STATES_STORE_NAME, entryID)) as
+      EntryStateRecord | undefined;
+
+    return Boolean(record?.readOnly);
+  } finally {
+    database.close();
+  }
+};
+const setReadOnlySnapshot = async (
+  name: string,
+  entryID: string,
+  readOnly: boolean
+): Promise<void> => {
+  const database = await openPersistenceDatabase(name);
+
+  try {
+    const transaction = database.transaction(WORKSPACE_ENTRY_STATES_STORE_NAME, "readwrite");
+    const record = (await transaction.store.get(entryID)) as EntryStateRecord | undefined;
+
+    if (Boolean(record?.readOnly) !== readOnly) {
+      void transaction.store.put({ ...record, id: entryID, readOnly });
+    }
+
+    await transaction.done;
+  } finally {
+    database.close();
+  }
+};
 const pruneDocuments = async (
   name: string,
   hasDocument: (documentID: string) => boolean
@@ -327,5 +365,11 @@ class WorkspaceIndexedDBPersistence {
   }
 }
 
-export { WorkspaceIndexedDBPersistence, clearDocument, pruneDocuments };
-export type { PersistedUpdate };
+export {
+  WorkspaceIndexedDBPersistence,
+  clearDocument,
+  getReadOnlySnapshot,
+  pruneDocuments,
+  setReadOnlySnapshot
+};
+export type { EntryStateRecord, PersistedUpdate };
