@@ -8,6 +8,7 @@ import { getContentSnapshot } from "#backend/collaboration";
 import {
   fetchCommentThread,
   filterWorkspaceMembershipIDs,
+  getCommentAuthor,
   prepareSuggestion,
   readEntryDocument,
   resolveCommentEntry,
@@ -15,7 +16,7 @@ import {
   type CommentEntryTarget,
   type SuggestionPatch
 } from "#backend/lib/comments";
-import { getUserAuthorization, withAuthorization } from "#backend/lib/policy";
+import { createEmptyCollectionTree, withAuthorization } from "#backend/lib/policy";
 import { findJoinedSuggestion } from "./join";
 
 interface SuggestInput extends SuggestionPatch {
@@ -26,8 +27,10 @@ interface SuggestInput extends SuggestionPatch {
 
 const suggestChange = withAuthorization<SuggestInput, CommentEntryTarget, CommentThread>(
   {
-    actions: ({ resolved }) => ({
-      entries: [{ action: "comment:create", collectionID: resolved.collectionID }]
+    actions: ({ input, resolved }) => ({
+      entries: [
+        { action: "comment:create", collectionID: resolved.collectionID, entryID: input.entryID }
+      ]
     }),
     resolve: ({ database, input, workspaceID }) => {
       return resolveCommentEntry(database, workspaceID, input.entryID);
@@ -35,9 +38,10 @@ const suggestChange = withAuthorization<SuggestInput, CommentEntryTarget, Commen
     tree: true
   },
   async ({ auth, authorization, database, input, resolved, workspaceID }) => {
-    const memberID = getUserAuthorization(auth)?.memberID;
-    const authorID = memberID ? toUUID(memberID) : null;
-    const mentionIDs = await filterWorkspaceMembershipIDs(workspaceID, input.mentionIDs);
+    const author = getCommentAuthor(auth);
+    const mentionIDs = auth.visitor
+      ? []
+      : await filterWorkspaceMembershipIDs(workspaceID, input.mentionIDs);
     const entryID = toUUID(input.entryID);
     const target = { entryID, collectionID: resolved.collectionID };
     const threadID = generateUUID();
@@ -52,16 +56,17 @@ const suggestChange = withAuthorization<SuggestInput, CommentEntryTarget, Commen
     const suggestion = await prepareSuggestion(database, workspaceID, {
       entryID: toEntryID(entryID),
       schemaRevisionID: resolved.schemaRevisionID,
-      authorization,
+      // Visitors can't link to the collection's other entries.
+      authorization: auth.visitor ? createEmptyCollectionTree() : authorization,
       document,
       patch: input
     });
     const joined =
-      authorID &&
+      (author.authorID || author.visitorID) &&
       (await findJoinedSuggestion(database, {
         workspaceID,
         entryID,
-        authorID,
+        author,
         document: current,
         suggestion
       }));
@@ -131,12 +136,12 @@ const suggestChange = withAuthorization<SuggestInput, CommentEntryTarget, Commen
         entryID,
         blockID: suggestion.blockIDs[0] ?? suggestion.after,
         suggestion,
-        authorID
+        ...author
       });
 
       const [comment] = await transaction
         .insert(comments)
-        .values({ workspaceID, threadID, authorID, content: input.content, mentionIDs })
+        .values({ workspaceID, threadID, ...author, content: input.content, mentionIDs })
         .returning({ id: comments.id });
 
       return {

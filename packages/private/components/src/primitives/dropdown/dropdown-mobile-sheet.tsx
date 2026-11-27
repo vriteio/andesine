@@ -10,6 +10,8 @@ import { useDropdownContext } from "./dropdown-context";
 
 interface DropdownMobileSheetProps {
   host: boolean;
+  /** E.g. inside a dialog, for its focus trap and layer. */
+  mount?: Node;
 }
 
 interface DropdownMobileContentProps {
@@ -102,7 +104,7 @@ const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
 
   return (
     <Show when={props.host && opened()}>
-      <Portal>
+      <Portal mount={props.mount}>
         <Menu.Positioner class="!fixed !inset-0 !z-50 !w-auto !min-w-0 !max-w-none !transform-none flex select-none items-end pointer-events-none">
           <div
             {...drag.backdropGestureProps}

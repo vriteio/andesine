@@ -13,6 +13,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { entries } from "./entries";
 import { memberships } from "./memberships";
+import { visitors } from "./shares";
 import { timestamps } from "./shared";
 
 interface CommentSuggestionData {
@@ -37,6 +38,7 @@ const commentThreads = pgTable(
     suggestion: jsonb("suggestion").$type<CommentSuggestionData>(),
     appliedAt: timestamp("applied_at", { withTimezone: true }),
     authorID: uuid("author_id"),
+    visitorID: uuid("visitor_id").references(() => visitors.id, { onDelete: "set null" }),
     resolvedAt: timestamp("resolved_at", { withTimezone: true }),
     resolvedByID: uuid("resolved_by_id"),
     /** Resolved as its suggestion couldn't apply; it reopens once it applies again. */
@@ -60,7 +62,8 @@ const commentThreads = pgTable(
       columns: [table.resolvedByID],
       foreignColumns: [memberships.id]
     }).onDelete("set null"),
-    index("comment_threads_workspace_entry_idx").on(table.workspaceID, table.entryID)
+    index("comment_threads_workspace_entry_idx").on(table.workspaceID, table.entryID),
+    index("comment_threads_visitor_id_idx").on(table.visitorID)
   ]
 );
 const comments = pgTable(
@@ -70,6 +73,7 @@ const comments = pgTable(
     workspaceID: uuid("workspace_id").notNull(),
     threadID: uuid("thread_id").notNull(),
     authorID: uuid("author_id"),
+    visitorID: uuid("visitor_id").references(() => visitors.id, { onDelete: "set null" }),
     content: text("content").notNull(),
     mentionIDs: uuid("mention_ids").array().notNull().default([]),
     ...timestamps
@@ -85,7 +89,8 @@ const comments = pgTable(
       columns: [table.authorID],
       foreignColumns: [memberships.id]
     }).onDelete("set null"),
-    index("comments_workspace_thread_idx").on(table.workspaceID, table.threadID)
+    index("comments_workspace_thread_idx").on(table.workspaceID, table.threadID),
+    index("comments_visitor_id_idx").on(table.visitorID)
   ]
 );
 

@@ -37,12 +37,12 @@ const CreateVersionDialog: Component<CreateVersionDialogProps> = (props) => {
         <p class="text-sm leading-tight text-gray-400">Save the current document as a version.</p>
       </div>
       <label class="flex flex-col gap-1 text-xs">
-        <span>Version name</span>
         <Input
           value={name()}
           setValue={setName}
           maxLength={MAX_VERSION_NAME_LENGTH}
-          placeholder="Optional name"
+          placeholder="Version name (optional)"
+          aria-label="Version name"
           disabled={props.loading}
           onKeyDown={(event) => {
             if (event.key !== "Enter" || props.loading) return;

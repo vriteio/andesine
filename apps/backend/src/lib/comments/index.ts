@@ -9,7 +9,12 @@ import {
   isThreadOpen,
   isThreadUpdatedAt
 } from "@andesine/server/database";
-import { type Comment, type CommentAnchor, type CommentThread } from "@andesine/contracts/entities";
+import {
+  type Comment,
+  type CommentAnchor,
+  type CommentThread,
+  type Visitor
+} from "@andesine/contracts/entities";
 import {
   toCommentID,
   toCommentThreadID,
@@ -26,6 +31,7 @@ import {
   readOpenDocument
 } from "#backend/collaboration";
 import { type AnchorState, getAnchorStates } from "./anchors";
+import { loadVisitors } from "./authors";
 import { getStaleStatus, rebaseSuggestion } from "./suggestions";
 import { type CommentChange, writeCommentChange } from "./webhooks";
 
@@ -47,6 +53,7 @@ interface CommentThreadTarget extends CommentEntryTarget {
   threadID: string;
   entryID: string;
   threadAuthorID: string | null;
+  threadVisitorID: string | null;
   resolved: boolean;
   autoResolved: boolean;
   anchor: CommentAnchor | null;
@@ -61,6 +68,7 @@ interface ThreadState extends AnchorState {
 interface CommentTarget extends CommentThreadTarget {
   commentID: string;
   authorID: string | null;
+  visitorID: string | null;
 }
 
 type CommentRow = typeof comments.$inferSelect;
@@ -70,10 +78,14 @@ const toOptionalMembershipID = (id: string | null) => (id ? toMembershipID(id) :
 const toAnchor = (row: Pick<CommentThreadRow, "anchorStart" | "anchorEnd">) => {
   return row.anchorStart && row.anchorEnd ? { start: row.anchorStart, end: row.anchorEnd } : null;
 };
-const mapComment = (row: CommentRow): Comment => ({
+const getVisitor = (visitorsByID: Map<string, Visitor>, visitorID: string | null) => {
+  return visitorsByID.get(visitorID ?? "") ?? null;
+};
+const mapComment = (row: CommentRow, visitorsByID: Map<string, Visitor>): Comment => ({
   id: toCommentID(row.id),
   threadID: toCommentThreadID(row.threadID),
   authorID: toOptionalMembershipID(row.authorID),
+  visitor: getVisitor(visitorsByID, row.visitorID),
   content: row.content,
   mentionIDs: row.mentionIDs.map(toMembershipID),
   createdAt: row.createdAt.toISOString(),
@@ -82,7 +94,8 @@ const mapComment = (row: CommentRow): Comment => ({
 const mapCommentThread = (
   row: CommentThreadRow,
   threadComments: CommentRow[],
-  state: AnchorState
+  state: AnchorState,
+  visitorsByID: Map<string, Visitor>
 ): CommentThread => ({
   id: toCommentThreadID(row.id),
   entryID: toEntryID(row.entryID),
@@ -94,11 +107,12 @@ const mapCommentThread = (
   suggestion: row.suggestion,
   appliedAt: row.appliedAt?.toISOString() ?? null,
   authorID: toOptionalMembershipID(row.authorID),
+  visitor: getVisitor(visitorsByID, row.visitorID),
   resolvedAt: row.resolvedAt?.toISOString() ?? null,
   resolvedByID: toOptionalMembershipID(row.resolvedByID),
   autoResolved: row.autoResolved,
   createdAt: row.createdAt.toISOString(),
-  comments: threadComments.map(mapComment)
+  comments: threadComments.map((comment) => mapComment(comment, visitorsByID))
 });
 const withEntryDocument = async <T>(
   entryID: string,
@@ -271,6 +285,7 @@ const fetchCommentThreads = async (
     )
     .orderBy(asc(comments.createdAt), asc(comments.id));
   const commentsByThreadID = new Map<string, CommentRow[]>();
+  const visitorsByID = await loadVisitors(database, [...threadRows, ...commentRows]);
 
   for (const row of commentRows) {
     commentsByThreadID.set(row.threadID, [...(commentsByThreadID.get(row.threadID) || []), row]);
@@ -325,7 +340,8 @@ const fetchCommentThreads = async (
     const thread = mapCommentThread(
       { ...row, suggestion, ...resolution },
       commentsByThreadID.get(row.id) || [],
-      states[index]
+      states[index],
+      visitorsByID
     );
 
     if (isChanged) filter.onChange?.(thread);
@@ -380,6 +396,7 @@ const threadTargetColumns = {
   collectionID: entries.collectionID,
   schemaRevisionID: contents.schemaRevisionID,
   threadAuthorID: commentThreads.authorID,
+  threadVisitorID: commentThreads.visitorID,
   resolvedAt: commentThreads.resolvedAt,
   autoResolved: commentThreads.autoResolved,
   anchorStart: commentThreads.anchorStart,
@@ -421,7 +438,8 @@ const resolveCommentTarget = async (
     .select({
       ...threadTargetColumns,
       commentID: comments.id,
-      authorID: comments.authorID
+      authorID: comments.authorID,
+      visitorID: comments.visitorID
     })
     .from(comments)
     .innerJoin(commentThreads, eq(commentThreads.id, comments.threadID))
@@ -455,6 +473,7 @@ export {
   resolveCommentThreadTarget,
   withEntryDocument
 };
+export { getCommentAuthor, isCommentAuthor } from "./authors";
 export { filterWorkspaceMembershipIDs } from "./mentions";
 export { createAnchor } from "./anchors";
 export {
@@ -465,4 +484,5 @@ export {
 } from "./suggestions";
 export { writeCommentChange } from "./webhooks";
 export type { SuggestionPatch } from "./suggestions";
+export type { CommentAuthor } from "./authors";
 export type { CommentEntryTarget, CommentTarget, CommentThreadTarget };

@@ -43,15 +43,22 @@ const createCodeBlockViewport = (editor: Editor, dom: HTMLElement, code: EditorV
     const inset =
       rect.left + parseFloat(styles.paddingLeft) - containerRect.left - container.clientLeft;
     const gutters = code.scrollDOM.querySelector(".cm-gutters");
-    const scrollStart = Math.max(0, 24 - inset);
+    const contentSpace = Math.max(
+      0,
+      dom.clientWidth - padding - Math.ceil(gutters?.getBoundingClientRect().width || 0)
+    );
+    // Code that fits needs no scroll room, e.g. in a code group.
+    const fits = code.contentDOM.getBoundingClientRect().width <= contentSpace + 1;
+    const minSpace = fits ? 0 : 24;
+    const scrollStart = Math.max(0, minSpace - inset);
     const atStart =
       code.scrollDOM.scrollLeft <= Number(code.scrollDOM.dataset.codeScrollStart || 0) + 1;
     const width = `${container.clientWidth}px`;
     const margin = `${-inset}px`;
-    const leftSpace = `${Math.max(24, inset)}px`;
+    const leftSpace = `${Math.max(minSpace, inset)}px`;
     // At the scroll's end, the content ends at the column's edge, by the block controls.
-    const rightSpace = `${Math.max(24, Math.floor(container.clientWidth - inset - dom.clientWidth + padding))}px`;
-    const contentWidth = `${Math.max(0, dom.clientWidth - padding - Math.ceil(gutters?.getBoundingClientRect().width || 0))}px`;
+    const rightSpace = `${Math.max(minSpace, Math.floor(container.clientWidth - inset - dom.clientWidth + padding))}px`;
+    const contentWidth = `${contentSpace}px`;
     const changed =
       code.dom.style.width !== width ||
       code.dom.style.marginLeft !== margin ||

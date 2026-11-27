@@ -2,6 +2,7 @@ import { type CommentThread } from "@andesine/contracts/entities";
 import { emitCommentThreadEvent } from "#backend/events";
 import { trackEvent } from "#backend/lib/analytics";
 import { getUserAuthorization, type SessionData } from "#backend/lib/policy";
+import { enforceRateLimit, RATE_LIMITS } from "#backend/lib/security";
 import { authorized } from "#backend/lib/transport/middleware/authorized";
 import { Comments } from "#backend/services/comments";
 import { api } from "./implement";
@@ -18,6 +19,25 @@ const emitThreadUpdate = (auth: SessionData, thread: CommentThread): CommentThre
 const trackComment = (auth: SessionData, reply: boolean, suggestion: boolean) => {
   trackEvent("comment_created", auth, { reply, suggestion });
 };
+// Against spam through public links; per IP for the share, so one visitor can't block the others.
+const limitVisitorWrites = async (auth: SessionData, headers?: Headers) => {
+  if (!auth.visitor) return;
+
+  const message = "Too many comments. Try again later.";
+
+  await enforceRateLimit({
+    scope: "visitor-writes",
+    key: auth.visitor.visitorID,
+    limit: RATE_LIMITS.visitorWrites,
+    message
+  });
+  await enforceRateLimit({
+    scope: "visitor-writes-share",
+    key: `${auth.visitor.shareID}:${headers?.get("x-client-ip")}`,
+    limit: RATE_LIMITS.visitorWritesPerShare,
+    message
+  });
+};
 const handlers = api.comments;
 const authorizedHandlers = handlers.use(authorized);
 const commentsRouter = handlers.router({
@@ -27,6 +47,8 @@ const commentsRouter = handlers.router({
     return Comments.list({ ...input, auth: context.auth, onChange });
   }),
   createThread: authorizedHandlers.createThread.handler(async ({ context, input }) => {
+    await limitVisitorWrites(context.auth, context.reqHeaders);
+
     const thread = await Comments.createThread({ ...input, auth: context.auth });
 
     trackComment(context.auth, false, input.suggestion !== undefined);
@@ -34,6 +56,8 @@ const commentsRouter = handlers.router({
     return emitThreadUpdate(context.auth, thread);
   }),
   reply: authorizedHandlers.reply.handler(async ({ context, input }) => {
+    await limitVisitorWrites(context.auth, context.reqHeaders);
+
     const thread = await Comments.reply({ ...input, auth: context.auth });
 
     trackComment(context.auth, true, false);
@@ -41,6 +65,8 @@ const commentsRouter = handlers.router({
     return emitThreadUpdate(context.auth, thread);
   }),
   suggest: authorizedHandlers.suggest.handler(async ({ context, input }) => {
+    await limitVisitorWrites(context.auth, context.reqHeaders);
+
     const thread = await Comments.suggest({ ...input, auth: context.auth });
 
     trackComment(context.auth, false, true);
@@ -48,14 +74,20 @@ const commentsRouter = handlers.router({
     return emitThreadUpdate(context.auth, thread);
   }),
   updateSuggestion: authorizedHandlers.updateSuggestion.handler(async ({ context, input }) => {
+    await limitVisitorWrites(context.auth, context.reqHeaders);
+
     const thread = await Comments.updateSuggestion({ ...input, auth: context.auth });
 
     return emitThreadUpdate(context.auth, thread);
   }),
   update: authorizedHandlers.update.handler(async ({ context, input }) => {
+    await limitVisitorWrites(context.auth, context.reqHeaders);
+
     return emitThreadUpdate(context.auth, await Comments.update({ ...input, auth: context.auth }));
   }),
   delete: authorizedHandlers.delete.handler(async ({ context, input }) => {
+    await limitVisitorWrites(context.auth, context.reqHeaders);
+
     const { deleted, thread } = await Comments.delete({ id: input.id, auth: context.auth });
 
     if (thread) emitThreadUpdate(context.auth, thread);

@@ -1,24 +1,43 @@
 import type { Hocuspocus, WebSocketLike } from "@hocuspocus/server";
+import { ORPCError } from "@orpc/server";
 import { SESSION_CHECK_INTERVAL } from "#backend/lib/auth/session-check";
 import { Auth } from "#backend/services/auth";
 import type { CollaborationContext } from "./types";
 
-/** Closes connections whose cookie session was revoked or expired; each cookie is checked once. */
+/** An error other than a refusal counts as active, so an outage keeps connections open. */
+const isVisitorActive = (token: string): Promise<boolean> => {
+  return Auth.getSessionData({ headers: new Headers({ authorization: `Bearer ${token}` }) }).then(
+    () => true,
+    (error: unknown) => !(error instanceof ORPCError)
+  );
+};
+/**
+ * Closes connections whose cookie session was revoked or expired, or whose share was removed or
+ * expired; each credential is checked once.
+ */
 const closeEndedSessions = async (collab: Hocuspocus<CollaborationContext>): Promise<void> => {
-  const cookies = new Map<string, Set<WebSocketLike>>();
+  const credentials = new Map<string, Set<WebSocketLike>>();
 
   for (const document of collab.documents.values()) {
     for (const connection of document.getConnections()) {
-      const cookie = connection.context.sessionCookie;
+      const { visitorToken, sessionCookie } = connection.context;
+      const credential = visitorToken ?? (sessionCookie && `cookie:${sessionCookie}`);
 
-      if (!cookie) continue;
+      if (!credential) continue;
 
-      cookies.set(cookie, (cookies.get(cookie) ?? new Set()).add(connection.webSocket));
+      credentials.set(
+        credential,
+        (credentials.get(credential) ?? new Set()).add(connection.webSocket)
+      );
     }
   }
 
-  for (const [cookie, sockets] of cookies) {
-    if (await Auth.isSessionActive({ headers: new Headers({ cookie }) })) continue;
+  for (const [credential, sockets] of credentials) {
+    const isActive = credential.startsWith("cookie:")
+      ? await Auth.isSessionActive({ headers: new Headers({ cookie: credential.slice(7) }) })
+      : await isVisitorActive(credential);
+
+    if (isActive) continue;
 
     for (const socket of sockets) socket.close(4401, "Unauthorized");
   }

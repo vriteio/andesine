@@ -1,4 +1,4 @@
-import { memberships, roles, workspaces } from "@andesine/server/database";
+import { visitors, memberships, roles, workspaces } from "@andesine/server/database";
 import { auth, db } from "#backend/lib/adapters";
 import { toUUID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
@@ -52,6 +52,8 @@ const deleteUser = async (input: {
     }
 
     await tx.delete(memberships).where(eq(memberships.userID, userID));
+    // Visitors keep their comments, without the account's name or access.
+    await tx.update(visitors).set({ name: null, shareID: null }).where(eq(visitors.userID, userID));
   });
   input.onMembershipsRemoved();
   await internalAdapter.deleteUser(userID);

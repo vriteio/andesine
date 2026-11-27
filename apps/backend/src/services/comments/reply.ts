@@ -1,15 +1,16 @@
 import { comments, commentThreads } from "@andesine/server/database";
 import { type CommentThread } from "@andesine/contracts/entities";
-import { toCommentID, toCommentThreadID, toUUID } from "@andesine/contracts/primitives";
+import { toCommentID, toCommentThreadID } from "@andesine/contracts/primitives";
 import { eq } from "drizzle-orm";
 import {
   type CommentThreadTarget,
   fetchCommentThread,
   filterWorkspaceMembershipIDs,
+  getCommentAuthor,
   resolveCommentThreadTarget,
   writeCommentChange
 } from "#backend/lib/comments";
-import { getUserAuthorization, withAuthorization } from "#backend/lib/policy";
+import { withAuthorization } from "#backend/lib/policy";
 
 interface ReplyToCommentThreadInput {
   threadID: string;
@@ -24,16 +25,18 @@ const replyToCommentThread = withAuthorization<
 >(
   {
     actions: ({ resolved }) => ({
-      entries: [{ action: "comment:create", collectionID: resolved.collectionID }]
+      entries: [
+        { action: "comment:create", collectionID: resolved.collectionID, entryID: resolved.entryID }
+      ]
     }),
     resolve: ({ database, input, workspaceID }) => {
       return resolveCommentThreadTarget(database, workspaceID, input.threadID);
     }
   },
   async ({ auth, database, input, resolved, workspaceID }) => {
-    const memberID = getUserAuthorization(auth)?.memberID;
-    const authorID = memberID ? toUUID(memberID) : null;
-    const mentionIDs = await filterWorkspaceMembershipIDs(workspaceID, input.mentionIDs);
+    const mentionIDs = auth.visitor
+      ? []
+      : await filterWorkspaceMembershipIDs(workspaceID, input.mentionIDs);
 
     await writeCommentChange(database, workspaceID, resolved, async (transaction) => {
       const [comment] = await transaction
@@ -41,7 +44,7 @@ const replyToCommentThread = withAuthorization<
         .values({
           workspaceID,
           threadID: resolved.threadID,
-          authorID,
+          ...getCommentAuthor(auth),
           content: input.content,
           mentionIDs
         })

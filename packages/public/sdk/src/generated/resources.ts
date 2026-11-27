@@ -902,6 +902,101 @@ interface APIResources<Workspace extends WorkspaceTypeMap = WorkspaceTypeMap> {
      */
     askPublishedStream: Operation<"search.askPublishedStream", Workspace>;
   };
+  shares: {
+    /**
+     * List shares
+     *
+     * Lists the link and the email shares of an entry.
+     *
+     * Required API key permissions: read:entries, sharing. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.shares.list({
+     *   "entryID": "ent_example"
+     * });
+     */
+    list: Operation<"shares.list", Workspace>;
+    /**
+     * Share an entry by email
+     *
+     * Shares an entry with one person and sends them an email. They sign in with the email address to open it.
+     *
+     * Required API key permissions: read:entries, sharing. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.shares.invite({
+     *   "entryID": "ent_example",
+     *   "email": "jane@example.com",
+     *   "access": "comment"
+     * });
+     */
+    invite: Operation<"shares.invite", Workspace>;
+    /**
+     * List shared entries
+     *
+     * Lists the entries that you can share and that have shares, by name, with their shares. Use pagination.nextCursor to continue with the same filters.
+     *
+     * Required API key permissions: read:entries, sharing. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.shares.listEntries({
+     *   "kind": "link"
+     * });
+     */
+    listEntries: Operation<"shares.listEntries", Workspace>;
+    /**
+     * List identified visitors
+     *
+     * Lists the email addresses that the entries you can share are shared with, by address. Remove an address's shares with deleteMany to revoke its access.
+     *
+     * Required API key permissions: read:entries, sharing. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.shares.listVisitors({});
+     */
+    listVisitors: Operation<"shares.listVisitors", Workspace>;
+    /**
+     * Remove shares
+     *
+     * Removes shares, e.g. all of an entry's. Their visitors lose access at once.
+     *
+     * Required API key permissions: read:entries, sharing. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.shares.deleteMany({
+     *   "ids": [
+     *     "shr_example"
+     *   ]
+     * });
+     */
+    deleteMany: Operation<"shares.deleteMany", Workspace>;
+    /**
+     * Create or reset the share link
+     *
+     * Creates the link share of an entry. When it exists, it is replaced by a new share with a new ID and token: the old link and its visitors stop working.
+     *
+     * Required API key permissions: read:entries, sharing. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.shares.createLink({
+     *   "entryID": "ent_example",
+     *   "access": "comment"
+     * });
+     */
+    createLink: Operation<"shares.createLink", Workspace>;
+    /**
+     * Update a share
+     *
+     * Required API key permissions: read:entries, sharing. Write permissions also grant read access for the same resource.
+     *
+     * @example
+     * await client.shares.update({
+     *   "id": "shr_example",
+     *   "access": "view"
+     * });
+     */
+    update: Operation<"shares.update", Workspace>;
+  };
   schemas: {
     /**
      * Create a local collection schema
@@ -2407,6 +2502,78 @@ const createResources = <Workspace extends WorkspaceTypeMap = WorkspaceTypeMap>(
       method: "post",
       path: "/search/published/ask/stream",
       pathParams: [],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    })
+  },
+  shares: {
+    list: operation<"shares.list", Workspace>(request, {
+      method: "get",
+      path: "/entries/{entryID}/shares",
+      pathParams: ["entryID"],
+      queryParams: [],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    invite: operation<"shares.invite", Workspace>(request, {
+      method: "post",
+      path: "/entries/{entryID}/shares",
+      pathParams: ["entryID"],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    listEntries: operation<"shares.listEntries", Workspace>(request, {
+      method: "get",
+      path: "/shares",
+      pathParams: [],
+      queryParams: ["cursor", "limit", "kind", "search"],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    listVisitors: operation<"shares.listVisitors", Workspace>(request, {
+      method: "get",
+      path: "/shares/visitors",
+      pathParams: [],
+      queryParams: ["cursor", "limit"],
+      body: false,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    deleteMany: operation<"shares.deleteMany", Workspace>(request, {
+      method: "post",
+      path: "/shares/delete",
+      pathParams: [],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    createLink: operation<"shares.createLink", Workspace>(request, {
+      method: "post",
+      path: "/entries/{entryID}/shares/link",
+      pathParams: ["entryID"],
+      queryParams: [],
+      body: true,
+      multipart: false,
+      binary: false,
+      anonymous: false
+    }),
+    update: operation<"shares.update", Workspace>(request, {
+      method: "patch",
+      path: "/shares/{id}",
+      pathParams: ["id"],
       queryParams: [],
       body: true,
       multipart: false,

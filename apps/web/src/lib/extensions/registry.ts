@@ -1,5 +1,6 @@
 import {
   type ExtensionBlockAction,
+  type ExtensionConfigurationState,
   type ExtensionElementView,
   type ExtensionPage,
   type ExtensionPanel,
@@ -23,6 +24,8 @@ interface RunningExtensionOptions extends Omit<
   grant?: ExtensionPermission[];
   /** The manifest backend URL; the frontend can call it with a session token. */
   backend?: string;
+  /** For share visitors, who can't load it. */
+  configuration?: ExtensionConfigurationState["values"];
   displayName: string;
   icon?: string | null;
 }
@@ -91,6 +94,7 @@ const startExtension = async (options: RunningExtensionOptions): Promise<void> =
     pages = [],
     grant = [],
     backend,
+    configuration,
     displayName,
     icon = null,
     ...hostOptions
@@ -155,7 +159,8 @@ const startExtension = async (options: RunningExtensionOptions): Promise<void> =
         extensionID: options.extensionID,
         host,
         grant,
-        backend: backend ?? null
+        backend: backend ?? null,
+        configuration
       });
     },
     () => setStatus("failed")

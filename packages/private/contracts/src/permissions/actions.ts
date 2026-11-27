@@ -20,6 +20,7 @@ const entryActionType = z.enum([
   "entry:delete",
   "comment:create",
   "comment:resolve",
+  "entry:share",
   "version:read",
   "version:create",
   "version:update",

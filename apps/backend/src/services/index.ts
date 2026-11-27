@@ -14,3 +14,4 @@ export * from "./memberships";
 export * from "./publishing";
 export * from "./workspaces";
 export * from "./versions";
+export * from "./shares";

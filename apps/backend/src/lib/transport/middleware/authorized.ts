@@ -30,7 +30,7 @@ const aiRateLimits = {
 } as const;
 
 const countsAPICalls = (sessionData: SessionData, trackUsage?: false): boolean => {
-  const usesAPICredentials = sessionData.type !== "session";
+  const usesAPICredentials = sessionData.type !== "session" && sessionData.type !== "visitor";
 
   return config.BILLING_ENABLED && usesAPICredentials && trackUsage !== false;
 };

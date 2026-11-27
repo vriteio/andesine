@@ -65,10 +65,10 @@ interface CommentCardProps {
 }
 
 const THREAD_CARD_WIDTH = 288;
-// The header (h-7) and its gap.
+// The header (h-7) and its gap, shown on focused cards only.
 const THREAD_HEADER_SPACE = 28 + 2;
-// To the first author row's middle, which aligns with the commented line.
-const FIRST_COMMENT_CENTER = THREAD_HEADER_SPACE + 4 + 12;
+// To the first author row's middle, which aligns with the commented line; below a header.
+const FIRST_COMMENT_CENTER = 4 + 12;
 // Marks the menu, which is outside the card, as part of the thread.
 const MENU_CARD_PROPS = { "class": "min-w-48", "data-comment-menu": "" };
 
@@ -243,14 +243,19 @@ const ThreadCard: Component<ThreadCardProps> = (props) => {
   return (
     <div
       ref={props.ref}
-      class={clsx("flex flex-col gap-0.5 not-prose", props.class)}
+      class={clsx("flex flex-col not-prose", props.class)}
       style={{ ...props.style, width: props.fluid ? undefined : `${THREAD_CARD_WIDTH}px` }}
       data-comment-thread-card={props.thread.id}
       data-menu
     >
-      {/* Hidden, not removed, so threads don't move when focused. */}
+      {/* Collapsed while unfocused; the card moves up by its height, so comments stay put. */}
       <Show when={!props.hideHeader}>
-        <div class={clsx("flex items-center h-7", !props.focused && "invisible")}>
+        <div
+          class={clsx(
+            "flex items-center overflow-hidden",
+            props.focused ? "h-[30px] pb-0.5" : "invisible h-0"
+          )}
+        >
           {props.header ?? (
             <Show when={count()}>
               <span class="pl-2 text-sm text-gray-400">

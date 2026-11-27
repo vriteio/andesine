@@ -46,10 +46,13 @@ const routerPlugin: FastifyPluginAsync = async (app) => {
   const method = ["GET", "HEAD", "PUT", "POST", "DELETE", "PATCH"];
   const limitInviteAcceptance = async (req: FastifyRequest, reply: FastifyReply) => {
     const pathname = req.url.split("?")[0];
+    const isInvite =
+      pathname === "/memberships/accept" || pathname === "/rpc/memberships/acceptInvite";
 
-    if (pathname !== "/memberships/accept" && pathname !== "/rpc/memberships/acceptInvite") {
-      return;
-    }
+    // For the share join limit; on every path, as routing ignores a trailing slash.
+    req.headers["x-client-ip"] = getClientIP(req);
+
+    if (!isInvite) return;
 
     const limit = await consumeRateLimit({
       scope: "invite-acceptance",
@@ -133,6 +136,10 @@ const routerPlugin: FastifyPluginAsync = async (app) => {
 
     try {
       const auth = await Auth.getSessionData({ headers });
+
+      // Visitors can't upload, so they don't use up the workspace's limit.
+      if (auth.type === "visitor") throw new ORPCError("FORBIDDEN");
+
       const limit = await consumeRateLimit({
         scope: "asset-upload",
         key: auth.workspaceID,

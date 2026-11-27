@@ -5,6 +5,7 @@ const keyPermissionType = z.enum([
   "entries",
   "read:entries",
   "comments",
+  "sharing",
   "versions",
   "read:versions",
   "publishing",

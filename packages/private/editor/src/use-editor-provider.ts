@@ -4,6 +4,7 @@ import type { EditorCleanup, EditorProvider, EditorProviderSetup } from "./clien
 
 interface ProviderLifecycleInput {
   url: Accessor<string | undefined>;
+  token: Accessor<string | undefined>;
   doc: Accessor<string | undefined>;
   enabled: Accessor<boolean>;
   attempt: Accessor<number | undefined>;
@@ -29,7 +30,8 @@ const useEditorProvider = (input: ProviderLifecycleInput) => {
     const next = new HocuspocusProvider({
       websocketProvider: socket,
       name: doc,
-      url
+      url,
+      token: input.token() ?? null
     });
     void input.attempt();
     let disposed = false;

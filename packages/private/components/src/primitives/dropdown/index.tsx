@@ -45,6 +45,8 @@ interface DropdownProps extends JSX.HTMLAttributes<HTMLDivElement> {
   children: JSX.Element;
   opened?: boolean;
   portal?: boolean;
+  /** E.g. inside a dialog, whose focus trap would close the menu. */
+  portalMount?: Node;
   positioningStrategy?: "absolute" | "fixed";
   trigger?: Component<{ contextMenu: boolean; opened: boolean }>;
   title?: string;
@@ -368,7 +370,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
           when={md()}
           fallback={
             <>
-              <DropdownMobileSheet host={mobileDropdownHost()} />
+              <DropdownMobileSheet host={mobileDropdownHost()} mount={props.portalMount} />
               <DropdownMobileContent active={activeMobileDropdown()} opened={opened()}>
                 {props.children}
               </DropdownMobileContent>
@@ -379,6 +381,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
             cardProps={props.cardProps}
             opened={opened()}
             portal={desktopPortal()}
+            portalMount={props.portalMount}
           >
             {props.children}
           </DropdownDesktopMenu>

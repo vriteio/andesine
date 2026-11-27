@@ -11,6 +11,7 @@ import {
   decodeBlocksMDX,
   findBlockRange,
   findNestedBlock,
+  getLinkedEntryIDs,
   listBlocks,
   prepareEntryContent,
   resolveEntryLinks,
@@ -132,6 +133,8 @@ const prepareSuggestion = async (
   if (!range) throw suggestionError("The blocks aren't found, or aren't consecutive");
 
   const base = range.container.slice(range.start, range.start + range.count);
+  // Before the patch changes the document.
+  const linkedEntryIDs = getLinkedEntryIDs(document);
   // Empty MDX suggests deleting the blocks, not an empty paragraph.
   const mdx = patch.mdx?.trim();
   const decoded = patch.blocks ?? (mdx ? await decodeBlocksMDX(mdx, base) : []);
@@ -139,7 +142,9 @@ const prepareSuggestion = async (
     database,
     workspaceID,
     { type: "doc", content: decoded },
-    authorization
+    authorization,
+    undefined,
+    linkedEntryIDs
   );
 
   if (isDeepStrictEqual(base, blocks)) throw suggestionError("The suggestion changes nothing");
@@ -150,7 +155,8 @@ const prepareSuggestion = async (
     entryID: input.entryID,
     schemaRevisionID: input.schemaRevisionID,
     document,
-    authorization
+    authorization,
+    linkedEntryIDs
   });
 
   return {

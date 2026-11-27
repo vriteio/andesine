@@ -11,6 +11,7 @@ import type { SessionData } from "./session";
 const rolePermissionRequirements: Partial<Record<Permission, KeyPermission[]>> = {
   "content": ["entries", "collections", "versions", "publishing"],
   "comments": ["comments"],
+  "sharing": ["sharing"],
   "publishing": ["publishing"],
   "memberships": ["memberships"],
   "roles": ["roles"],

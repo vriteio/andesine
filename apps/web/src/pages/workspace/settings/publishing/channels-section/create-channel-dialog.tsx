@@ -26,12 +26,12 @@ const CreateChannelDialog: Component<CreateChannelDialogProps> = (props) => (
       </p>
     </div>
     <label class="flex flex-col gap-1 text-xs">
-      <span>Channel name</span>
       <Input
         value={props.name}
         setValue={props.setName}
         maxlength={50}
-        placeholder="Staging"
+        placeholder="Channel name, e.g. Staging"
+        aria-label="Channel name"
         disabled={props.loading}
         slotWrapperClass="w-full"
         slot={() => (

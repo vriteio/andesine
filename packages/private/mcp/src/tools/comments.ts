@@ -25,6 +25,7 @@ const mapThread = (thread: CommentThread) => ({
   comments: thread.comments.map((comment) => ({
     id: comment.id,
     authorID: comment.authorID,
+    visitor: comment.visitor ? (comment.visitor.name ?? "Anonymous") : undefined,
     content: comment.content,
     mentions: comment.mentionIDs.length ? comment.mentionIDs : undefined
   }))
@@ -59,7 +60,7 @@ const registerListComments = (server: McpServer, context: ToolContext) => {
     {
       title: "List comments",
       description:
-        "Lists the comment threads of an entry; list_members has the names of authors and mentions. status: active (the quote matches; a suggestion applies, moved onto edits made since), outdated (the quoted text changed, and currentText has it; or a suggestion conflicts with edits of the same words), or orphaned (the text or blocks are gone). Open suggestions that no longer apply are resolved. suggestion has the blocks it replaces (base) and the suggested blocks, as ProseMirror JSON, on top of the current content.",
+        "Lists the comment threads of an entry; list_members has the names of authors and mentions. Comments by people an entry is shared with have visitor (their name) instead of authorID. status: active (the quote matches; a suggestion applies, moved onto edits made since), outdated (the quoted text changed, and currentText has it; or a suggestion conflicts with edits of the same words), or orphaned (the text or blocks are gone). Open suggestions that no longer apply are resolved. suggestion has the blocks it replaces (base) and the suggested blocks, as ProseMirror JSON, on top of the current content.",
       inputSchema: {
         entry: entrySchema,
         resolved: z

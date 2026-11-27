@@ -7,11 +7,12 @@ import {
   createTextSuggestion,
   fetchCommentThread,
   filterWorkspaceMembershipIDs,
+  getCommentAuthor,
   readEntryDocument,
   resolveCommentEntry,
   writeCommentChange
 } from "#backend/lib/comments";
-import { getUserAuthorization, withAuthorization } from "#backend/lib/policy";
+import { withAuthorization } from "#backend/lib/policy";
 
 interface CreateCommentThreadInput {
   entryID: string;
@@ -29,17 +30,20 @@ const createCommentThread = withAuthorization<
   CommentThread
 >(
   {
-    actions: ({ resolved }) => ({
-      entries: [{ action: "comment:create", collectionID: resolved.collectionID }]
+    actions: ({ input, resolved }) => ({
+      entries: [
+        { action: "comment:create", collectionID: resolved.collectionID, entryID: input.entryID }
+      ]
     }),
     resolve: ({ database, input, workspaceID }) => {
       return resolveCommentEntry(database, workspaceID, input.entryID);
     }
   },
   async ({ auth, database, input, resolved, workspaceID }) => {
-    const memberID = getUserAuthorization(auth)?.memberID;
-    const authorID = memberID ? toUUID(memberID) : null;
-    const mentionIDs = await filterWorkspaceMembershipIDs(workspaceID, input.mentionIDs);
+    const author = getCommentAuthor(auth);
+    const mentionIDs = auth.visitor
+      ? []
+      : await filterWorkspaceMembershipIDs(workspaceID, input.mentionIDs);
     const entryID = toUUID(input.entryID);
     const threadID = generateUUID();
     const { anchor, blockID, suggestion } = await readEntryDocument(
@@ -78,7 +82,7 @@ const createCommentThread = withAuthorization<
           anchorEnd: anchor?.end ?? null,
           quote: input.quote ?? null,
           suggestion,
-          authorID
+          ...author
         });
 
         const [comment] = await transaction
@@ -86,7 +90,7 @@ const createCommentThread = withAuthorization<
           .values({
             workspaceID,
             threadID,
-            authorID,
+            ...author,
             content: input.content,
             mentionIDs
           })

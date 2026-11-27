@@ -1,15 +1,16 @@
 import { comments, commentThreads } from "@andesine/server/database";
 import { type CommentThread } from "@andesine/contracts/entities";
-import { toCommentID, toCommentThreadID, toEntryID, toUUID } from "@andesine/contracts/primitives";
+import { toCommentID, toCommentThreadID, toEntryID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, asc, eq, isNull, ne, or } from "drizzle-orm";
 import {
   type CommentTarget,
   fetchCommentThread,
+  isCommentAuthor,
   resolveCommentTarget,
   writeCommentChange
 } from "#backend/lib/comments";
-import { getUserAuthorization, withAuthorization } from "#backend/lib/policy";
+import { withAuthorization } from "#backend/lib/policy";
 
 interface DeleteCommentResult {
   deleted?: { id: string; entryID: string };
@@ -19,7 +20,9 @@ interface DeleteCommentResult {
 const deleteComment = withAuthorization<{ id: string }, CommentTarget, DeleteCommentResult>(
   {
     actions: ({ resolved }) => ({
-      entries: [{ action: "entry:read", collectionID: resolved.collectionID }]
+      entries: [
+        { action: "entry:read", collectionID: resolved.collectionID, entryID: resolved.entryID }
+      ]
     }),
     tree: true,
     resolve: ({ database, input, workspaceID }) => {
@@ -27,10 +30,9 @@ const deleteComment = withAuthorization<{ id: string }, CommentTarget, DeleteCom
     }
   },
   async ({ auth, authorization, database, resolved, workspaceID }) => {
-    const memberID = getUserAuthorization(auth)?.memberID;
-    const isAuthor = Boolean(memberID) && toUUID(memberID!) === resolved.authorID;
     const canDeleteOwn =
-      isAuthor && authorization.canEntry(resolved.collectionID, "comment:create");
+      isCommentAuthor(auth, resolved) &&
+      authorization.canEntry(resolved.collectionID, "comment:create");
     const canDeleteAny = authorization.canEntry(resolved.collectionID, "comment:resolve");
 
     if (!canDeleteOwn && !canDeleteAny) {
@@ -49,15 +51,13 @@ const deleteComment = withAuthorization<{ id: string }, CommentTarget, DeleteCom
     await writeCommentChange(database, workspaceID, resolved, async (transaction) => {
       // Others' replies need the resolve permission; checked under the lock that replies also take.
       if (isFirst && !canDeleteAny) {
+        const isOtherAuthor = resolved.visitorID
+          ? or(isNull(comments.visitorID), ne(comments.visitorID, resolved.visitorID))
+          : or(isNull(comments.authorID), ne(comments.authorID, resolved.authorID!));
         const [otherReply] = await transaction
           .select({ id: comments.id })
           .from(comments)
-          .where(
-            and(
-              eq(comments.threadID, resolved.threadID),
-              or(isNull(comments.authorID), ne(comments.authorID, resolved.authorID!))
-            )
-          )
+          .where(and(eq(comments.threadID, resolved.threadID), isOtherAuthor))
           .limit(1);
 
         if (otherReply) {

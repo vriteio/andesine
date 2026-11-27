@@ -26,6 +26,7 @@ import { startWebhookScheduler } from "./webhooks/scheduler";
 import { startWebhookConsumer } from "./webhooks/consumer";
 import { startWebhookMaintenance } from "./webhooks/maintenance";
 import { removeUnusedOAuthClients } from "./oauth/maintenance";
+import { removeUnusedVisitors } from "./shares/maintenance";
 import { createCurrentSearchJobHandlers } from "./search/current";
 import { createPublishedSearchJobHandlers } from "./search/published";
 import {
@@ -79,9 +80,13 @@ const jobHandlers = new Map([
 ]);
 const maintenanceHandlers = new Map([
   ["schema-migration-recovery", () => recoverAbandonedSchemaMigrations(searchIndexingQueue)],
-  ["oauth-client-cleanup", removeUnusedOAuthClients]
+  ["oauth-client-cleanup", removeUnusedOAuthClients],
+  ["share-visitor-cleanup", removeUnusedVisitors]
 ]);
-const maintenanceIntervals = new Map<string, number>([["oauth-client-cleanup", 60 * 60 * 1000]]);
+const maintenanceIntervals = new Map<string, number>([
+  ["oauth-client-cleanup", 60 * 60 * 1000],
+  ["share-visitor-cleanup", 60 * 60 * 1000]
+]);
 const reconciliations = new Set<Promise<void>>();
 
 if (isExtensionRegistryEnabled()) {

@@ -35,6 +35,8 @@ const getMissingAuthorizationPermissions = (
   auth: SessionData,
   required?: AuthorizationRequirements
 ): Array<KeyPermission | Permission> | null => {
+  // Only operations that allow visitors; services check the shared entry.
+  if (auth.type === "visitor") return required && required !== true && required.visitor ? [] : null;
   if (!required || required === true) return [];
 
   if (required.extension) {

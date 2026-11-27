@@ -1,5 +1,6 @@
 import { contentNodeType } from "@andesine/document";
 import { id } from "../primitives/id";
+import { visitorType } from "./shares";
 import * as z from "zod";
 
 const commentAnchorType = z.object({
@@ -34,6 +35,7 @@ const commentType = z.object({
   id: id().describe("ID of the comment"),
   threadID: id().describe("ID of the comment thread"),
   authorID: id().nullable().describe("Membership that wrote the comment, or null when removed"),
+  visitor: visitorType.nullable().describe("Visitor that wrote the comment, or null for members"),
   content: z.string().describe("Text of the comment"),
   mentionIDs: z.array(id()).describe("Memberships mentioned in the comment"),
   createdAt: z.iso.datetime().describe("Time when the comment was created"),
@@ -50,6 +52,7 @@ const commentThreadType = z.object({
   suggestion: commentSuggestionType.nullable().describe("Suggested change, or null for none"),
   appliedAt: z.iso.datetime().nullable().describe("Time when the suggestion was applied"),
   authorID: id().nullable().describe("Membership that created the thread, or null when removed"),
+  visitor: visitorType.nullable().describe("Visitor that created the thread, or null for members"),
   resolvedAt: z.iso.datetime().nullable().describe("Time when the thread was resolved"),
   resolvedByID: id().nullable().describe("Membership that resolved the thread"),
   autoResolved: z

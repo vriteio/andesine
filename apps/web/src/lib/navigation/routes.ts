@@ -18,6 +18,7 @@ import PersonalSettingsPage from "../../pages/workspace/settings/personal/page";
 import WorkspaceSettingsPage from "../../pages/workspace/settings/workspace/page";
 import PublishingSettingsPage from "../../pages/workspace/settings/publishing/page";
 import PeopleSettingsPage from "../../pages/workspace/settings/people/page";
+import SharingSettingsPage from "../../pages/workspace/settings/sharing/page";
 import InviteSettingsPage from "../../pages/workspace/settings/invite/page";
 import RoleSettingsPage from "../../pages/workspace/settings/role/page";
 import GroupSettingsPage from "../../pages/workspace/settings/group/page";
@@ -39,6 +40,7 @@ const EmailPage = lazy(() => import("../../pages/auth/email/page"));
 const SignInPage = lazy(() => import("../../pages/auth/sign-in/page"));
 const SignUpPage = lazy(() => import("../../pages/auth/sign-up/page"));
 const InvitePage = lazy(() => import("../../pages/invite/page"));
+const SharePage = lazy(() => import("../../pages/share/page"));
 const NewWorkspacePage = lazy(() => import("../../pages/new-workspace/page"));
 const WorkspaceLayout = lazy(() => import("../../pages/workspace/layout"));
 const EntryPage = lazy(() => import("../../pages/workspace/entry/page"));
@@ -80,6 +82,10 @@ const routesData: Record<
   "/:workspaceID/settings/people": () => ({
     title: "People",
     breadcrumbs: [{ label: "Settings" }, { label: "People", path: "/settings/people" }]
+  }),
+  "/:workspaceID/settings/sharing": () => ({
+    title: "Sharing",
+    breadcrumbs: [{ label: "Settings" }, { label: "Sharing", path: "/settings/sharing" }]
   }),
   "/:workspaceID/settings/invite": (_params, query) => ({
     title: query.type === "bulk" ? "Invite members" : "Invite member",
@@ -249,6 +255,7 @@ const routes: RouteDefinition[] = [
     ]
   },
   { path: "/invite", component: InvitePage },
+  { path: "/share/:code", component: SharePage },
   { path: "/new-workspace", component: NewWorkspacePage },
   {
     path: "/:workspaceID",
@@ -278,6 +285,10 @@ const routes: RouteDefinition[] = [
           {
             path: "/people",
             component: PeopleSettingsPage
+          },
+          {
+            path: "/sharing",
+            component: SharingSettingsPage
           },
           {
             path: "/invite",

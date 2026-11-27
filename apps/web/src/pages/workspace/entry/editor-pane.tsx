@@ -5,10 +5,8 @@ import type {
   EditorCommentsPanel,
   EditorCommentThread,
   EditorInstance,
-  EditorOwnSuggestion,
   EditorSchemaField,
-  EditorSuggesting,
-  EditorSuggestionPatch
+  EditorSuggesting
 } from "@andesine/editor";
 import {
   applySuggestion,
@@ -42,6 +40,7 @@ import {
 import { schemaDraftQuery } from "#web/lib/data/schema-versions";
 import { useComments } from "../comments/context";
 import { DeleteThreadDialog } from "../comments/delete-thread-dialog";
+import { getOwnSuggestions, mapThread, toSuggestionInput } from "../comments/mapping";
 import { CollaborativeEditorPane } from "../editor/collaborative-editor-pane";
 import type { DocumentLoadState } from "../editor/document-load-state";
 
@@ -60,10 +59,6 @@ const LIVE_STATUS_MAX_DELAY = 2000;
 // Failures in a row before a retried save shows its error.
 const SILENT_SAVE_FAILURES = 3;
 
-/** A title patch has no blocks, as the API takes one source. */
-const toSuggestionInput = ({ blockIDs, after, blocks, title }: EditorSuggestionPatch) => {
-  return title === undefined ? { blockIDs, after, blocks } : { blockIDs, after, title };
-};
 const EditorPane: Component = () => {
   const { currentWorkspace, currentSession, content, subscribeToUpdates } = useWorkspace();
   const notify = useNotify();
@@ -267,28 +262,14 @@ const EditorPane: Component = () => {
   let failedSaves = 0;
   let mappedThreads = new Map<string, MappedThread>();
 
-  const mapThread = (thread: CommentThread): EditorCommentThread => ({
-    id: thread.id,
-    anchor: thread.anchor,
-    blockID: thread.blockID,
-    resolved: thread.resolvedAt !== null,
-    autoResolved: thread.autoResolved,
-    quote: thread.quote,
-    status: thread.status,
-    suggestion: thread.suggestion && {
-      ...thread.suggestion,
-      applied: thread.appliedAt !== null
-    },
-    comments: thread.comments.map((comment) => ({
-      id: comment.id,
-      authorName: getAuthorName(comment.authorID),
-      authorImage: members().get(comment.authorID ?? "")?.profile.image ?? undefined,
-      content: comment.content,
-      createdAt: comment.createdAt,
-      editable: isOwnComment(comment.authorID),
-      deletable: isOwnComment(comment.authorID) || canResolve()
-    }))
-  });
+  const mapEditorThread = (thread: CommentThread) => {
+    return mapThread(thread, {
+      getMemberName: getAuthorName,
+      getMemberImage: (authorID) => members().get(authorID ?? "")?.profile.image ?? undefined,
+      isOwn: ({ authorID }) => isOwnComment(authorID),
+      canResolve: canResolve()
+    });
+  };
   // Unchanged threads keep their object, so they don't redraw.
   const mappingContext = createMemo(() => ({
     members: members(),
@@ -302,7 +283,7 @@ const EditorPane: Component = () => {
       const source = JSON.stringify(thread);
       const cached = mappedThreads.get(thread.id);
       const isUnchanged = cached?.source === source && cached.context === context;
-      const mapped = isUnchanged ? cached.thread : mapThread(thread);
+      const mapped = isUnchanged ? cached.thread : mapEditorThread(thread);
 
       next.set(thread.id, { source, context, thread: mapped });
 
@@ -376,28 +357,10 @@ const EditorPane: Component = () => {
     panel: commentsPanel.panelOpened() || commentsPanel.mobile() ? editorCommentsPanel : undefined,
     formatTime: formatRelativeTime
   }));
-  const ownSuggestions = createMemo((): EditorOwnSuggestion[] => {
+  const ownSuggestions = createMemo(() => {
     const memberID = ownMemberID();
-    const threads = [...commentThreads()].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
-    return threads.flatMap((thread) => {
-      const { suggestion, comments } = thread;
-      const isOwnOpen =
-        suggestion && !thread.resolvedAt && !thread.appliedAt && thread.authorID === memberID;
-
-      if (!isOwnOpen) return [];
-
-      return [
-        {
-          ...suggestion,
-          title: suggestion.title?.suggested,
-          titleBase: suggestion.title?.base,
-          threadID: thread.id,
-          status: thread.status,
-          discussed: comments.length > 1 || Boolean(comments[0]?.content.trim())
-        }
-      ];
-    });
+    return getOwnSuggestions(commentThreads(), ({ authorID }) => authorID === memberID);
   });
   const editorSuggesting = createMemo((): EditorSuggesting | undefined => {
     // Fixed, so late saves don't reach another entry.

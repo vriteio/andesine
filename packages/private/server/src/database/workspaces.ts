@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
+  boolean,
   integer,
   jsonb,
   pgTable,
@@ -54,6 +55,9 @@ const workspaces = pgTable(
     /** In cents. */
     spendingLimit: integer("spending_limit"),
     deletingAt: timestamp("deleting_at", { withTimezone: true }),
+    linkSharing: boolean("link_sharing").notNull().default(true),
+    emailSharing: boolean("email_sharing").notNull().default(true),
+    maxShareExpiryDays: integer("max_share_expiry_days"),
     exampleCollectionID: uuid("example_collection_id").references(
       (): AnyPgColumn => collections.id,
       { onDelete: "set null" }

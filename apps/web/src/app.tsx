@@ -41,6 +41,9 @@ const rootRedirectQuery = query(async () => {
   const offlineState = readOfflineState();
   const offlinePath = typeof window !== "undefined" ? window.location.pathname : "";
 
+  // The share page signs people in when needed.
+  if (pathname.startsWith("/share/")) return { success: true };
+
   if (isOffline() && offlineState && !isDeviceRoute && !isConnectRoute) {
     if (
       !offlineState.workspaces.some(

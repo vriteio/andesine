@@ -7,13 +7,13 @@ import {
 import { type ContentNode, rebaseBlocks, rebaseText } from "@andesine/document";
 import { and, asc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import { isDeepStrictEqual } from "node:util";
-import { rebaseSuggestion } from "#backend/lib/comments";
+import { type CommentAuthor, rebaseSuggestion } from "#backend/lib/comments";
 import { findBlockRange } from "#backend/lib/content";
 
 interface JoinedSuggestionTarget {
   workspaceID: string;
   entryID: string;
-  authorID: string;
+  author: CommentAuthor;
   /** Without the new suggestion. */
   document: ContentNode;
   suggestion: CommentSuggestionData;
@@ -112,7 +112,7 @@ const joinSuggestions = (
 /** The author's oldest open suggestion without a note or replies that the new one joins. */
 const findJoinedSuggestion = async (
   database: DatabaseClient,
-  { workspaceID, entryID, authorID, document, suggestion }: JoinedSuggestionTarget
+  { workspaceID, entryID, author, document, suggestion }: JoinedSuggestionTarget
 ): Promise<JoinedSuggestion | null> => {
   const threads = await database
     .select({
@@ -125,7 +125,9 @@ const findJoinedSuggestion = async (
       and(
         eq(commentThreads.workspaceID, workspaceID),
         eq(commentThreads.entryID, entryID),
-        eq(commentThreads.authorID, authorID),
+        author.visitorID
+          ? eq(commentThreads.visitorID, author.visitorID)
+          : eq(commentThreads.authorID, author.authorID!),
         isNotNull(commentThreads.suggestion),
         isNull(commentThreads.appliedAt),
         isNull(commentThreads.resolvedAt)

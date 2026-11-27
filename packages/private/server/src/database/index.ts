@@ -13,6 +13,7 @@ export * from "./keys";
 export * from "./memberships";
 export * from "./publishing";
 export * from "./roles";
+export * from "./shares";
 export * from "./schema";
 export * from "./usage";
 export * from "./users";

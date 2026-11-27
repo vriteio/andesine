@@ -201,6 +201,13 @@ const SettingsMenu: Component = () => {
                   ]
                 },
                 {
+                  icon: "i-tabler:world-share",
+                  label: "Sharing",
+                  href: `${settingsPath()}/sharing`,
+                  active: isRoute("/sharing"),
+                  visible: hasPermission("sharing") || hasPermission("workspace")
+                },
+                {
                   icon: "i-lucide:radio",
                   label: "Publishing",
                   href: `${settingsPath()}/publishing`,

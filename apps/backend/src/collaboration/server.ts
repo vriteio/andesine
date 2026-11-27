@@ -1,6 +1,6 @@
 import { Hocuspocus } from "@hocuspocus/server";
 import { collaborationActivity } from "./activity";
-import { authenticateCollaboration } from "./authentication";
+import { authenticateCollaboration, labelVisitorAwareness } from "./authentication";
 import { collaborationDatabase } from "./database";
 import { registerCollaborationEvents } from "./events";
 import { watchCollaborationSessions } from "./sessions";
@@ -9,6 +9,7 @@ import type { CollaborationContext } from "./types";
 
 const collab = new Hocuspocus<CollaborationContext>({
   onAuthenticate: authenticateCollaboration,
+  beforeHandleAwareness: labelVisitorAwareness,
   extensions: [collaborationActivity, collaborationRedis, collaborationDatabase]
 });
 

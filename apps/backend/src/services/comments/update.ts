@@ -1,16 +1,17 @@
 import { comments, commentThreads } from "@andesine/server/database";
 import { type CommentThread } from "@andesine/contracts/entities";
-import { toCommentID, toCommentThreadID, toUUID } from "@andesine/contracts/primitives";
+import { toCommentID, toCommentThreadID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";
 import {
   type CommentTarget,
   fetchCommentThread,
   filterWorkspaceMembershipIDs,
+  isCommentAuthor,
   resolveCommentTarget,
   writeCommentChange
 } from "#backend/lib/comments";
-import { getUserAuthorization, withAuthorization } from "#backend/lib/policy";
+import { withAuthorization } from "#backend/lib/policy";
 
 interface UpdateCommentInput {
   id: string;
@@ -21,20 +22,22 @@ interface UpdateCommentInput {
 const updateComment = withAuthorization<UpdateCommentInput, CommentTarget, CommentThread>(
   {
     actions: ({ resolved }) => ({
-      entries: [{ action: "comment:create", collectionID: resolved.collectionID }]
+      entries: [
+        { action: "comment:create", collectionID: resolved.collectionID, entryID: resolved.entryID }
+      ]
     }),
     resolve: ({ database, input, workspaceID }) => {
       return resolveCommentTarget(database, workspaceID, input.id);
     }
   },
   async ({ auth, database, input, resolved, workspaceID }) => {
-    const memberID = getUserAuthorization(auth)?.memberID;
-    const isAuthor = Boolean(memberID) && toUUID(memberID!) === resolved.authorID;
+    if (!isCommentAuthor(auth, resolved)) {
+      throw new ORPCError("FORBIDDEN", { message: "Only the author can edit" });
+    }
 
-    if (!isAuthor) throw new ORPCError("FORBIDDEN", { message: "Only the author can edit" });
-
-    const mentionIDs =
-      input.mentionIDs && (await filterWorkspaceMembershipIDs(workspaceID, input.mentionIDs));
+    const mentionIDs = auth.visitor
+      ? undefined
+      : input.mentionIDs && (await filterWorkspaceMembershipIDs(workspaceID, input.mentionIDs));
 
     await writeCommentChange(database, workspaceID, resolved, async (transaction) => {
       await transaction

@@ -233,6 +233,20 @@ const bindings: Record<
     client.search.current(input as OperationInput<"search.current">, options),
   "search.published": (client, input, options) =>
     client.search.published(input as OperationInput<"search.published">, options),
+  "shares.createLink": (client, input, options) =>
+    client.shares.createLink(input as OperationInput<"shares.createLink">, options),
+  "shares.deleteMany": (client, input, options) =>
+    client.shares.deleteMany(input as OperationInput<"shares.deleteMany">, options),
+  "shares.invite": (client, input, options) =>
+    client.shares.invite(input as OperationInput<"shares.invite">, options),
+  "shares.list": (client, input, options) =>
+    client.shares.list(input as OperationInput<"shares.list">, options),
+  "shares.listEntries": (client, input, options) =>
+    client.shares.listEntries(input as OperationInput<"shares.listEntries">, options),
+  "shares.listVisitors": (client, input, options) =>
+    client.shares.listVisitors(input as OperationInput<"shares.listVisitors">, options),
+  "shares.update": (client, input, options) =>
+    client.shares.update(input as OperationInput<"shares.update">, options),
   "typeMetadata.getCurrent": (client, input, options) =>
     client.typeMetadata.getCurrent(input as OperationInput<"typeMetadata.getCurrent">, options),
   "typeMetadata.getPublished": (client, input, options) =>

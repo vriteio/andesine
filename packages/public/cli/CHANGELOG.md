@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.17.0
+
+- `api shares` commands share one entry outside the workspace: `create-link`, `invite`, `list`
+  (one entry), `list-entries` (shared entries, by page), `list-visitors`
+  (email addresses entries are shared with), `update`, and `delete-many`. They need the new
+  `sharing` key permission with `read:entries`. Giving `comment` access also needs the permission
+  to comment on the entry.
+- A workspace's sharing settings can turn link or email sharing off, which pauses those shares,
+  and limit how long new or changed shares last; `create-link` and `invite` fail with `FORBIDDEN`
+  for a kind that is turned off, and expiries are shortened to the limit.
+- `api comments` output has `visitor` for comments by people an entry is shared with.
+- Requires `@andesine/sdk` 0.15.0.
+
 ## 0.16.0
 
 - `api comments` commands, except `list`, `resolve`, `apply`, and `set-applied`, need the new

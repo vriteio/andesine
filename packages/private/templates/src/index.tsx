@@ -1,6 +1,7 @@
 /** @jsxImportSource react */
 
 import { render } from "@react-email/render";
+import { EntryShare, type EntryShareProps } from "../emails/entry-share";
 import { VerificationOTP, type VerificationOTPProps } from "../emails/verification-otp";
 import { WorkspaceInvite, type WorkspaceInviteProps } from "../emails/workspace-invite";
 import { SessionVerification, type SessionVerificationProps } from "../emails/session-verification";
@@ -11,6 +12,7 @@ type EmailTemplateProps = {
   "verification-otp": VerificationOTPProps;
   "session-verification": SessionVerificationProps;
   "workspace-invite": WorkspaceInviteProps;
+  "entry-share": EntryShareProps;
   "spending-alert": SpendingAlertProps;
 };
 type EmailTemplates = {
@@ -38,6 +40,11 @@ const emails: EmailTemplates = {
   "workspace-invite": {
     component: WorkspaceInvite,
     subject: () => "You've been invited to a workspace | Andesine"
+  },
+  "entry-share": {
+    component: EntryShare,
+    subject: (props) =>
+      `${props.sharerName ?? "Someone"} shared ${props.entryName} with you | Andesine`
   },
   "spending-alert": {
     component: SpendingAlert,

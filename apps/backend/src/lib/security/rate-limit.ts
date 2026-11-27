@@ -25,6 +25,11 @@ const RATE_LIMITS = {
   oauthToken: { max: 600, window: 60 },
   oauthRegistration: { max: 60, window: 60 },
   inviteAcceptance: { max: 20, window: 60 },
+  shareJoin: { max: 300, window: 3600 },
+  shareJoinNotFound: { max: 30, window: 3600 },
+  shareJoinPerShare: { max: 1000, window: 3600 },
+  visitorWrites: { max: 60, window: 60 },
+  visitorWritesPerShare: { max: 1000, window: 3600 },
   invitations: { max: 100, window: 3600 },
   collaboration: { max: 30, window: 60 }
 } as const;

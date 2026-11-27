@@ -42,6 +42,8 @@ interface CollectionActionRequirement {
 interface EntryActionRequirement {
   action: EntryAction;
   collectionID?: string | null;
+  /** Required for visitors, who can act on the shared entry only. */
+  entryID?: string;
 }
 
 interface ServiceAuthorizationActions {
@@ -124,6 +126,18 @@ type TransactionMode = "atomic" | "locked-workspace" | "snapshot";
 
 const activeAuthorizationScopes = new WeakSet<AuthorizationScope>();
 
+/** Every requirement of a visitor must name the shared entry, and none a collection. */
+const assertVisitorScope = (auth: SessionData, actions?: ServiceAuthorizationActions): void => {
+  const visitorEntryID = auth.visitor && toUUID(auth.visitor.entryID);
+  const isSharedEntry = (entryID?: string) =>
+    Boolean(entryID) && toUUID(entryID!) === visitorEntryID;
+  const isOutsideScope =
+    !actions?.entries?.length ||
+    Boolean(actions.collections?.length) ||
+    !actions.entries.every(({ entryID }) => isSharedEntry(entryID));
+
+  if (visitorEntryID && isOutsideScope) throw new ORPCError("NOT_FOUND");
+};
 const assertPlan = <Input>(
   auth: SessionData,
   input: Input,
@@ -211,8 +225,14 @@ function withAuthorization<Input, Resolved = undefined, Result = void>(
       });
     }
 
-    if (!skipsAuthorization) {
+    // Checked by the operation; assertVisitorScope limits visitors to their entry.
+    const isVisitorWithoutRequirements = Boolean(auth.visitor) && !permissions;
+
+    if (!skipsAuthorization && !isVisitorWithoutRequirements) {
       assertAuthorizationRequirements(auth, permissions);
+    }
+
+    if (!skipsAuthorization) {
       assertPlan(auth, input, options.plan);
     }
 
@@ -225,6 +245,8 @@ function withAuthorization<Input, Resolved = undefined, Result = void>(
         ? await options.resolve({ auth, database, input, workspaceID })
         : (undefined as Resolved);
       const actions = skipsAuthorization ? undefined : options.actions?.({ input, resolved });
+
+      if (!skipsAuthorization) assertVisitorScope(auth, actions);
       const needsTree = options.tree || actions !== undefined;
       const authorization = needsTree
         ? await loadAuthorizedCollectionTree({

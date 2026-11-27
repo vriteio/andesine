@@ -93,8 +93,8 @@ const ActionConfirmationContent: Component<ActionConfirmationContentProps> = (pr
   return (
     <>
       <div class="flex flex-col gap-0.5">
-        <h3 class="text-lg font-semibold leading-tight">{props.title}</h3>
-        <div class="text-sm leading-tight text-gray-400">{props.description}</div>
+        <h3 class="break-words text-lg font-semibold leading-tight">{props.title}</h3>
+        <div class="break-words text-sm leading-tight text-gray-400">{props.description}</div>
       </div>
       <Show when={props.affected.length > 0}>
         <Card
@@ -103,7 +103,7 @@ const ActionConfirmationContent: Component<ActionConfirmationContentProps> = (pr
         >
           <ScrollShadow color="contrast" scrollableContainerRef={scrollableContainerRef} />
           <div
-            class="flex flex-col max-h-48 w-full overflow-y-auto p-2 scrollbar-contrast"
+            class="flex flex-col max-h-[50vh] w-full overflow-y-auto p-2 scrollbar-contrast"
             ref={setScrollableContainerRef}
           >
             <For each={props.affected}>

@@ -20,6 +20,8 @@ interface ExtensionHostOptions extends Omit<ExtensionSandboxOptions, "onMessage"
   styles?: string;
   /** The verified manifest icon CSS of the version, for icons in host UI. */
   iconStyles?: string;
+  /** For share visitors: no API or storage requests. */
+  visitor?: boolean;
   getActions?(): ExtensionHostActions | null;
   getAPIContext?(): APIFetchContext;
   onError?(message: string, viewID?: string): void;
@@ -64,6 +66,7 @@ const createExtensionHost = async (options: ExtensionHostOptions): Promise<Exten
     displayName,
     styles,
     iconStyles,
+    visitor,
     getActions,
     getAPIContext,
     onError,
@@ -76,6 +79,7 @@ const createExtensionHost = async (options: ExtensionHostOptions): Promise<Exten
     name,
     displayName,
     sources: options.connectSources,
+    visitor,
     getActions: () => getActions?.() ?? null,
     getViewTarget: (viewID) => viewTargets.get(viewID),
     getAPIContext: () => {

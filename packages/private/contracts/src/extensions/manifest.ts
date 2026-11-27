@@ -23,8 +23,11 @@ const MAX_EXTENSION_BACKEND_KEYS = 3;
 const RESTRICTED_CONTENT_PERMISSION = "read:restricted_collections";
 /** Approving it requires managing API keys. */
 const PUBLISHABLE_KEYS_PERMISSION = "publishable-keys";
-// Key permissions include RESTRICTED_CONTENT_PERMISSION.
-const extensionPermissionType = z.enum([...keyPermissionType.options, PUBLISHABLE_KEYS_PERMISSION]);
+// Key permissions include RESTRICTED_CONTENT_PERMISSION; sharing stays with members and keys.
+const extensionPermissionType = z.enum([
+  ...keyPermissionType.exclude(["sharing"]).options,
+  PUBLISHABLE_KEYS_PERMISSION
+]);
 const extensionNameType = z
   .string()
   .regex(/^[a-z\d][a-z\d-]{0,38}\/[a-z\d][a-z\d-]{0,62}$/, "Use scope/name, e.g. acme/publish");

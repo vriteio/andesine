@@ -13,6 +13,7 @@ import {
 } from "#web/lib/data";
 import { PublishingMenu } from "./publishing-menu";
 import { EditingModeMenu } from "./editing-mode-menu";
+import { ShareButton } from "./share-dialog";
 import { SchemaApplication } from "./schema-application";
 import clsx from "clsx";
 import { usePublishing } from "#web/context/publishing";
@@ -61,6 +62,9 @@ const EditorToolbar: Component = () => {
     return Boolean(entry()) && content.canEntry(entry()?.collectionID ?? null, "comment:create");
   };
   const canUpdate = () => content.canEntry(entry()?.collectionID ?? null, "entry:update");
+  const canShare = () => {
+    return Boolean(entry()) && content.canEntry(entry()?.collectionID ?? null, "entry:share");
+  };
   const suggesting = () => comments.suggesting() ?? !canUpdate();
   const hasSuggestions = () => (comments.comments()?.threads ?? []).some(isOpenSuggestion);
   const deletedEntry = createMemo(() => {
@@ -316,6 +320,9 @@ const EditorToolbar: Component = () => {
             collectionName={schemaCollection()!.name}
             hasUnappliedChanges={schema()!.hasUnappliedChanges}
           />
+        </Show>
+        <Show when={!versionID() && !content.offline() && canShare()}>
+          <ShareButton entryID={entry()!.id} entryName={entry()!.name} />
         </Show>
         <RightSidePanelToggle />
         <MobileRightSidePanelMenu

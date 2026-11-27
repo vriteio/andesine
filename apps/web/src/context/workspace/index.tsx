@@ -390,5 +390,5 @@ const WorkspaceProvider: ParentComponent = (props) => {
 
 const useWorkspace = () => useContext(WorkspaceContext)!;
 
-export { WorkspaceProvider, useWorkspace };
+export { listSessionsQuery, listWorkspacesQuery, WorkspaceProvider, useWorkspace };
 export type { WorkspaceInfo, SessionInfo };

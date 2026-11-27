@@ -40,6 +40,7 @@ interface MenuItemsProps<O extends MenuItem> {
   onClose(): void;
   cardProps?: Partial<ComponentProps<typeof Card>>;
   portal?: boolean;
+  portalMount?: Node;
 }
 
 /** Custom content, e.g. a form; the pointer or the focus in it clears the items' highlight. */
@@ -127,7 +128,7 @@ const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
                 <div class="h-4 w-4 i-lucide-chevron-right text-gray-400" />
               </div>
             </Menu.TriggerItem>
-            <PresencePortal portal={props.portal}>
+            <PresencePortal portal={props.portal} mount={props.portalMount}>
               <Menu.Positioner>
                 <Menu.Content
                   asChild={(contentProps) => (
@@ -151,6 +152,7 @@ const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
                             onClose={props.onClose}
                             cardProps={props.cardProps}
                             portal={props.portal}
+                            portalMount={props.portalMount}
                           />
                         </div>
                       </div>
@@ -277,6 +279,7 @@ const DropdownMenu = <O extends MenuItem>(props: DropdownMenuProps<O>) => {
     "placement",
     "cardProps",
     "portal",
+    "portalMount",
     "title"
   ]);
   const [opened, setOpened] = createSignal(localProps.opened || false);
@@ -304,6 +307,7 @@ const DropdownMenu = <O extends MenuItem>(props: DropdownMenuProps<O>) => {
       }}
       opened={opened()}
       portal={localProps.portal}
+      portalMount={localProps.portalMount}
       title={localProps.title}
       mobileNavigationBackAvailable={mobileNavigation()?.backAvailable}
       mobileNavigationTitle={mobileNavigation()?.destinationTitle}
@@ -319,6 +323,7 @@ const DropdownMenu = <O extends MenuItem>(props: DropdownMenuProps<O>) => {
               onClose={() => setOpened(false)}
               cardProps={localProps.cardProps}
               portal={localProps.portal}
+              portalMount={localProps.portalMount}
             />
           </div>
         }

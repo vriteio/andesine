@@ -1,4 +1,4 @@
-import { getElementPropDefaults } from "@andesine/contracts/extensions";
+import { type ExtensionActiveView, getElementPropDefaults } from "@andesine/contracts/extensions";
 import {
   type ElementViewMount,
   type ElementViewRenderer,
@@ -16,6 +16,7 @@ import {
 } from "#web/lib/extensions";
 import { createAsync, revalidate } from "@solidjs/router";
 import {
+  type Accessor,
   createEffect,
   createMemo,
   createRoot,
@@ -247,15 +248,11 @@ const mountView = (
   }, owner);
 };
 /** Element views of running extensions; create it in a component to keep the app's context. */
-const createElementViews = (): HostElementViews => {
+const createActiveElementViews = (
+  activeViews: Accessor<ExtensionActiveView[] | undefined>
+): HostElementViews => {
   const owner = getOwner();
-  const { workspaceID, subscribeToUpdates } = useWorkspace();
   const [unrendered, setUnrendered] = createSignal(0);
-  const activeViews = createAsync(async () => {
-    const id = workspaceID();
-
-    return id ? extensionActiveViewsQuery(id) : [];
-  });
   const scopes = createViewScopes();
   const parking = createViewParking();
   const renderers = new WeakMap<RunningExtension, Map<string, ElementViewRenderer>>();
@@ -283,11 +280,6 @@ const createElementViews = (): HostElementViews => {
 
     return renderer;
   };
-  onCleanup(
-    subscribeToUpdates((event) => {
-      if (isExtensionChange(event.action)) void revalidate(extensionActiveViewsQuery.key);
-    })
-  );
   const getSources = () => {
     return runningExtensions()
       .filter((extension) => extension.status() === "ready")
@@ -370,4 +362,21 @@ const createElementViews = (): HostElementViews => {
   };
 };
 
-export { createElementViews };
+const createElementViews = (): HostElementViews => {
+  const { workspaceID, subscribeToUpdates } = useWorkspace();
+  const activeViews = createAsync(async () => {
+    const id = workspaceID();
+
+    return id ? extensionActiveViewsQuery(id) : [];
+  });
+
+  onCleanup(
+    subscribeToUpdates((event) => {
+      if (isExtensionChange(event.action)) void revalidate(extensionActiveViewsQuery.key);
+    })
+  );
+
+  return createActiveElementViews(activeViews);
+};
+
+export { createActiveElementViews, createElementViews };

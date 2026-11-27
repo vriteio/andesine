@@ -5,6 +5,8 @@ import { Fragment } from "./fragment";
 
 interface PresencePortalProps {
   portal?: boolean;
+  /** The body by default. */
+  mount?: Node;
 }
 
 const PresencePortal: ParentComponent<PresencePortalProps> = (props) => {
@@ -12,7 +14,9 @@ const PresencePortal: ParentComponent<PresencePortalProps> = (props) => {
 
   return (
     <Show when={!presence().unmounted}>
-      <Dynamic component={props.portal === false ? Fragment : Portal}>{props.children}</Dynamic>
+      <Dynamic component={props.portal === false ? Fragment : Portal} mount={props.mount}>
+        {props.children}
+      </Dynamic>
     </Show>
   );
 };

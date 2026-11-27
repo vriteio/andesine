@@ -5,6 +5,7 @@ const keyPermissionRequirements: Record<KeyPermission, Permission[]> = {
   "entries": ["content"],
   "read:entries": [],
   "comments": ["comments"],
+  "sharing": ["sharing"],
   "collections": ["content"],
   "read:collections": [],
   "versions": ["content"],

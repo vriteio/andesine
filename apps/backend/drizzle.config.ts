@@ -21,6 +21,7 @@ export default defineConfig({
     "../../packages/private/server/src/database/memberships.ts",
     "../../packages/private/server/src/database/publishing.ts",
     "../../packages/private/server/src/database/roles.ts",
+    "../../packages/private/server/src/database/shares.ts",
     "../../packages/private/server/src/database/usage.ts",
     "../../packages/private/server/src/database/users.ts",
     "../../packages/private/server/src/database/versions.ts",

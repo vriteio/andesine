@@ -6,6 +6,8 @@ interface CollaborationContext {
   auth?: SessionData;
   /** The cookie the connection signed in with, to close it when the session ends. */
   sessionCookie?: string;
+  /** To close the connection when the share ends. */
+  visitorToken?: string;
   collectionID?: string;
   contributorID?: string;
   entryID?: string;

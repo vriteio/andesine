@@ -16,6 +16,7 @@ interface PrepareEntryContentInput {
   /** The caller's access, for the entries that links point to. */
   authorization: AuthorizedCollectionTree;
   paths?: ContentPaths;
+  linkedEntryIDs?: Set<string>;
 }
 
 const findReservedElement = (
@@ -55,7 +56,8 @@ const prepareEntryContent = async (
     workspaceID,
     input.document,
     input.authorization,
-    input.paths
+    input.paths,
+    input.linkedEntryIDs
   );
   const reservedElement = findReservedElement(document);
 

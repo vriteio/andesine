@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.15.0
+
+- `shares` methods share one entry outside the workspace: `createLink` (a link anyone can open,
+  or a new one in its place), `invite` (one person by email), `list` (an entry's shares, with their
+  `visitors` count), `listEntries` (the entries you can share that have shares, by page, with
+  `kind` and `search` filters), `listVisitors` (the email addresses entries are shared with, by
+  page, with their share IDs), `update`, and `deleteMany`. A share gives `view` or
+  `comment` access (comment includes suggestions) and can expire (`expiresAt`). They need the new
+  `sharing` key permission with `read:entries`; `entries` doesn't include it. Giving `comment`
+  access also needs the permission to comment on the entry.
+- A workspace's sharing settings can turn link or email sharing off, which pauses those shares,
+  and limit how long new or changed shares last; `createLink` and `invite` fail with `FORBIDDEN`
+  for a kind that is turned off, and expiries are shortened to the limit.
+- Comments and threads have `visitor` (`{ id, name }`, `name` null for anonymous visitors) when a
+  person an entry is shared with wrote them; `authorID` is null then.
+
 ## 0.14.0
 
 - New `comments` key permission: comment, reply, and suggest edits without editing entries,

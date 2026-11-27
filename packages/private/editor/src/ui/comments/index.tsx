@@ -85,6 +85,10 @@ const CommentCards: Component<CommentCardsProps> = (props) => {
     return placeThreads(shownLayout(), heights(), closedHeights(), focusedThread());
   });
   const cardTops = () => placement().tops;
+  // An unanimated margin, so the header doesn't move the comments; the top still slides.
+  const getHeaderOffset = (threadID: string) => {
+    return focusedThread() === threadID ? THREAD_HEADER_SPACE : 0;
+  };
   const groups = () => placement().buttons;
   // Keyed, so a button isn't replaced between a press and its click.
   const groupKeys = createMemo(() => groups().map(({ key }) => key));
@@ -375,7 +379,7 @@ const CommentCards: Component<CommentCardsProps> = (props) => {
         class="absolute right-3 scroll-my-4 p-1 overflow-hidden bg-white pointer-events-auto"
         style={{
           "z-index": EDITOR_MENU_Z_INDEX.blockMenu + 2,
-          "top": `${group().center - FIRST_COMMENT_CENTER + (hasPopoverHeader(group()) ? 0 : THREAD_HEADER_SPACE) - POPOVER_INSET}px`
+          "top": `${group().center - FIRST_COMMENT_CENTER - (hasPopoverHeader(group()) ? THREAD_HEADER_SPACE : 0) - POPOVER_INSET}px`
         }}
         shade
         data-comment-popover
@@ -468,8 +472,9 @@ const CommentCards: Component<CommentCardsProps> = (props) => {
                         focusedThread() && focusedThread() !== threadID && "opacity-60"
                       )}
                       style={{
-                        left: `${current().controlsLeft + BLOCK_CONTROL_SIZE + GUTTER_SPACE - INLINE_INSET}px`,
-                        top: `${(cardTops()[threadID] ?? 0) - INLINE_INSET}px`
+                        "left": `${current().controlsLeft + BLOCK_CONTROL_SIZE + GUTTER_SPACE - INLINE_INSET}px`,
+                        "top": `${(cardTops()[threadID] ?? 0) + getHeaderOffset(threadID) - INLINE_INSET}px`,
+                        "margin-top": `${-getHeaderOffset(threadID)}px`
                       }}
                       thread={thread()}
                       comments={props.comments}

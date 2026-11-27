@@ -11,8 +11,9 @@
 
 /* Content */
 .content {
+  /* Not kept after it ends: a transform would place fixed menu sheets inside the dialog. */
   &[data-state="open"] {
-    animation: overlay-content-in 300ms ease-out both;
+    animation: overlay-content-in 300ms ease-out backwards;
   }
 
   &[data-state="closed"] {

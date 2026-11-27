@@ -1,4 +1,7 @@
-import { type ExtensionRuntime } from "@andesine/contracts/extensions";
+import {
+  type ExtensionConfigurationState,
+  type ExtensionRuntime
+} from "@andesine/contracts/extensions";
 import { useWorkspace } from "#web/context/workspace";
 import { extensionRuntimeQuery } from "#web/lib/data";
 import {
@@ -10,21 +13,20 @@ import {
   stopExtension
 } from "#web/lib/extensions";
 import { createAsync, revalidate } from "@solidjs/router";
-import { type Component, createEffect, onCleanup } from "solid-js";
+import { type Accessor, type Component, createEffect, onCleanup } from "solid-js";
+
+type Configurations = Record<string, ExtensionConfigurationState["values"]>;
 
 // A new version, generation, or grant restarts the frontend; configuration updates do not.
 const getRuntimeKey = (extension: ExtensionRuntime): string => {
   return JSON.stringify([extension.version, extension.generation, extension.grant]);
 };
 
-/** Runs active extension frontends from verified registry artifacts. */
-const ExtensionLoader: Component = () => {
-  const { workspaceID, subscribeToUpdates, content } = useWorkspace();
-  const runtime = createAsync(async () => {
-    const id = workspaceID();
-
-    return id ? extensionRuntimeQuery(id) : [];
-  });
+/** Visitors pass the configuration values, and get no API or storage. */
+const runExtensions = (
+  runtime: Accessor<ExtensionRuntime[] | undefined>,
+  visitorConfigurations?: Accessor<Configurations | undefined>
+) => {
   // Runtime key by extension ID.
   const started = new Map<string, string>();
   // Each extension's latest load; loads of one extension run in order, so starts never overlap.
@@ -54,12 +56,17 @@ const ExtensionLoader: Component = () => {
       styles: styleSheet,
       iconStyles,
       connectSources: extension.grant.requests,
+      visitor: Boolean(visitorConfigurations),
+      configuration: visitorConfigurations?.()?.[extension.id],
       backend: extension.grant.backendURL ?? undefined,
       grant: extension.grant.permissions,
       elementViews: extension.elementViews,
-      blockActions: extension.blockActions,
-      panels: extension.panels,
-      pages: extension.pages
+      // Visitors get views only; page conditions read storage, which they can't.
+      ...(!visitorConfigurations && {
+        blockActions: extension.blockActions,
+        panels: extension.panels,
+        pages: extension.pages
+      })
     });
 
     // Removed while it was starting.
@@ -104,6 +111,22 @@ const ExtensionLoader: Component = () => {
 
     setExtensionsLoading(loads.size > 0);
   });
+  onCleanup(() => {
+    for (const id of started.keys()) stopExtension(id);
+
+    started.clear();
+  });
+};
+/** Runs the workspace's active extension frontends. */
+const ExtensionLoader: Component = () => {
+  const { workspaceID, subscribeToUpdates, content } = useWorkspace();
+  const runtime = createAsync(async () => {
+    const id = workspaceID();
+
+    return id ? extensionRuntimeQuery(id) : [];
+  });
+
+  runExtensions(runtime);
   onCleanup(
     subscribeToUpdates((event) => {
       if (isExtensionChange(event.action)) void revalidate(extensionRuntimeQuery.key);
@@ -124,13 +147,8 @@ const ExtensionLoader: Component = () => {
       };
     })
   );
-  onCleanup(() => {
-    for (const id of started.keys()) stopExtension(id);
-
-    started.clear();
-  });
 
   return null;
 };
 
-export { ExtensionLoader };
+export { ExtensionLoader, runExtensions };

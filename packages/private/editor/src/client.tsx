@@ -112,6 +112,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
   const suggestingMode = createMemo(() => Boolean(props.suggesting));
   const provider = useEditorProvider({
     url: () => props.url,
+    token: () => props.token,
     doc: () => props.doc,
     enabled: collaborative,
     attempt: () => props.providerAttempt,

@@ -9,7 +9,9 @@ import {
 import { db } from "#backend/lib/adapters";
 import { loadAuthorizedCollectionTree, type SessionData } from "#backend/lib/policy";
 import { toCollectionID, toEntryID, toUUID, toWorkspaceID } from "@andesine/contracts/primitives";
+import { isVisitorToken } from "#backend/lib/shares";
 import { Auth } from "#backend/services/auth";
+import type { beforeHandleAwarenessPayload } from "@hocuspocus/server";
 import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { CollaborationContext } from "./types";
 
@@ -19,13 +21,50 @@ const permissionError = (reason: "Unauthorized" | "Forbidden") => {
     reason
   });
 };
+/** Read-only; visitors suggest through the comments API. */
+const authenticateVisitorCollaboration = async (input: {
+  documentName: string;
+  token: string;
+  connectionConfig: { readOnly: boolean };
+}): Promise<CollaborationContext> => {
+  let auth: SessionData;
+
+  try {
+    auth = await Auth.getSessionData({
+      headers: new Headers({ authorization: `Bearer ${input.token}` })
+    });
+  } catch {
+    throw permissionError("Unauthorized");
+  }
+
+  const visitor = auth.visitor;
+
+  if (!visitor || input.documentName !== visitor.entryID) throw permissionError("Forbidden");
+
+  input.connectionConfig.readOnly = true;
+
+  return {
+    auth,
+    visitorToken: input.token,
+    collectionID: visitor.collectionID ?? undefined,
+    schemaMigrationReadOnly: false,
+    resource: "entry",
+    entryID: visitor.entryID,
+    workspaceID: auth.workspaceID
+  };
+};
 const authenticateCollaboration = async (input: {
   documentName: string;
   requestHeaders: Headers;
+  token?: string;
   connectionConfig: {
     readOnly: boolean;
   };
 }): Promise<CollaborationContext> => {
+  if (input.token && isVisitorToken(input.token)) {
+    return authenticateVisitorCollaboration({ ...input, token: input.token });
+  }
+
   const requestHeaders = new Headers(input.requestHeaders);
   let unaffiliatedSession: SessionData;
 
@@ -153,4 +192,24 @@ const authenticateCollaboration = async (input: {
   };
 };
 
-export { authenticateCollaboration };
+/** Visitors always show with "(visitor)", so they can't pose as members. */
+const labelVisitorAwareness = async ({
+  context,
+  states
+}: beforeHandleAwarenessPayload<CollaborationContext>) => {
+  if (!context?.auth?.visitor) return;
+
+  for (const state of states.values()) {
+    // The decoding awareness's own empty state is sent along; it shows no one.
+    if (!Object.keys(state).length) continue;
+
+    // The client's name, so a rename shows without reconnecting.
+    const name = `${String(state.user?.name || "Anonymous").slice(0, 50)} (visitor)`;
+
+    state.user = { ...state.user, name };
+
+    if (state.elementEditing) state.elementEditing = { ...state.elementEditing, name };
+  }
+};
+
+export { authenticateCollaboration, labelVisitorAwareness };

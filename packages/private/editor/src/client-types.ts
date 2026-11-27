@@ -389,6 +389,8 @@ interface EditorProps {
   class?: string;
   content?: JSONContent;
   url?: string;
+  /** E.g. a visitor token; cookies authenticate members. */
+  token?: string;
   doc?: string;
   editable?: boolean;
   mode?: EditorMode;

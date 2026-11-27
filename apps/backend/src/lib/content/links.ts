@@ -87,6 +87,13 @@ const getEntryLinks = (node: ContentNode): EntryLink[] => {
 
   return [...links, ...(node.content || []).flatMap(getEntryLinks)];
 };
+const getLinkedEntryIDs = (document: ContentNode): Set<string> => {
+  return new Set(
+    getEntryLinks(document)
+      .map(({ target }) => target)
+      .filter(isEntryID)
+  );
+};
 const contentLinkInvalidError = (href: string) => {
   return new ORPCError("CONTENT_LINK_INVALID", {
     status: 409,
@@ -110,7 +117,9 @@ const resolveEntryLinks = async (
   workspaceID: string,
   document: ContentNode,
   authorization: AuthorizedCollectionTree,
-  loadedPaths?: ContentPaths
+  loadedPaths?: ContentPaths,
+  /** Links the content already has, which stay valid for callers who can't read them. */
+  linkedEntryIDs?: Set<string>
 ): Promise<ContentNode> => {
   const links = getEntryLinks(document);
 
@@ -175,7 +184,12 @@ const resolveEntryLinks = async (
   // Unreadable entries fail like missing ones, so a link doesn't show that a path exists.
   const existing = new Set(
     rows
-      .filter(({ collectionID }) => authorization.canEntry(collectionID, "entry:read"))
+      .filter(({ id, collectionID }) => {
+        return (
+          authorization.canEntry(collectionID, "entry:read") ||
+          Boolean(linkedEntryIDs?.has(toEntryID(id)))
+        );
+      })
       .map(({ id }) => toEntryID(id))
   );
 
@@ -281,6 +295,7 @@ const resolvePublishedLinks = (document: ContentNode, paths: Map<string, string>
 };
 
 export {
+  getLinkedEntryIDs,
   loadEntryReferences,
   loadPublishedEntryPaths,
   resolveEntryLinks,

@@ -5,7 +5,9 @@ import { resolveUserAuthorization } from "#backend/lib/auth/user-authorization";
 import { getEffectivePlan } from "#backend/lib/billing";
 import { ORPCError } from "@orpc/server";
 import { getExtensionSessionData, isExtensionToken } from "./get-extension-session-data";
+import { getVisitorSessionData } from "./get-visitor-session-data";
 import { getKeySessionData } from "./get-key-session-data";
+import { isVisitorToken } from "#backend/lib/shares";
 import { OAuth } from "./oauth";
 
 interface GetSessionDataInput {
@@ -24,6 +26,8 @@ const getSessionData = async (input: GetSessionDataInput): Promise<SessionData> 
 
     if (token.startsWith("and_at_")) {
       data = await OAuth.getSessionData({ ...input, token });
+    } else if (isVisitorToken(token)) {
+      data = await getVisitorSessionData(token);
     } else if (isExtensionToken(token)) {
       data = await getExtensionSessionData(token);
     } else {

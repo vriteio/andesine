@@ -19,8 +19,10 @@ const listCommentThreads = withAuthorization<
   Page<CommentThread>
 >(
   {
-    actions: ({ resolved }) => ({
-      entries: [{ action: "entry:read", collectionID: resolved.collectionID }]
+    actions: ({ input, resolved }) => ({
+      entries: [
+        { action: "entry:read", collectionID: resolved.collectionID, entryID: input.entryID }
+      ]
     }),
     resolve: ({ database, input, workspaceID }) => {
       return resolveCommentEntry(database, workspaceID, input.entryID);

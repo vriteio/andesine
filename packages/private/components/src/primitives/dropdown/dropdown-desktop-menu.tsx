@@ -9,10 +9,11 @@ interface DropdownDesktopMenuProps {
   children: JSX.Element;
   opened: boolean;
   portal?: boolean;
+  portalMount?: Node;
 }
 
 const DropdownDesktopMenu: Component<DropdownDesktopMenuProps> = (props) => (
-  <PresencePortal portal={props.portal}>
+  <PresencePortal portal={props.portal} mount={props.portalMount}>
     <Menu.Positioner class="select-none">
       <Menu.Content
         asChild={(contentProps) => (

@@ -1,10 +1,4 @@
-import {
-  Dialog,
-  DropdownArea,
-  DropdownMenu,
-  type MenuItem,
-  Spinner
-} from "@andesine/components";
+import { Dialog, DropdownArea, DropdownMenu, type MenuItem, Spinner } from "@andesine/components";
 import clsx from "clsx";
 import { createSignal, For, type JSX, onCleanup, Show } from "solid-js";
 import { Portal } from "solid-js/web";

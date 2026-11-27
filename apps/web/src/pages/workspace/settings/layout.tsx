@@ -63,6 +63,8 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
 
     if (route === "publishing") return true;
 
+    if (route === "sharing") return hasPermission("sharing") || hasPermission("workspace");
+
     if (route === "billing") return hasPermission("read:billing");
 
     if (route === "api") return hasPermission("read:api_keys") || hasPermission("read:webhooks");
@@ -244,7 +246,7 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
                           when={canAccessRoute()}
                           fallback={
                             <Card
-                              class="flex h-16 items-center justify-center gap-1 rounded-lg bg-gray-50 px-2 text-sm text-gray-400"
+                              class="flex h-16 items-center justify-center gap-1 rounded-lg bg-white px-2 text-sm text-gray-400"
                               shade
                             >
                               <div class="i-lucide:lock h-5.5 w-5.5 text-gray-300" />

@@ -1,12 +1,13 @@
 import { retainSuggestionAssets } from "@andesine/server/assets";
 import { comments, commentThreads, isThreadOpen } from "@andesine/server/database";
 import { type CommentThread } from "@andesine/contracts/entities";
-import { toCommentID, toCommentThreadID, toEntryID, toUUID } from "@andesine/contracts/primitives";
+import { toCommentID, toCommentThreadID, toEntryID } from "@andesine/contracts/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { getContentSnapshot } from "#backend/collaboration";
 import {
   fetchCommentThread,
+  isCommentAuthor,
   prepareSuggestion,
   readEntryDocument,
   resolveCommentThreadTarget,
@@ -14,7 +15,7 @@ import {
   type CommentThreadTarget,
   type SuggestionPatch
 } from "#backend/lib/comments";
-import { getUserAuthorization, withAuthorization } from "#backend/lib/policy";
+import { createEmptyCollectionTree, withAuthorization } from "#backend/lib/policy";
 
 interface UpdateSuggestionInput extends SuggestionPatch {
   id: string;
@@ -30,7 +31,9 @@ const updateSuggestion = withAuthorization<
 >(
   {
     actions: ({ resolved }) => ({
-      entries: [{ action: "comment:create", collectionID: resolved.collectionID }]
+      entries: [
+        { action: "comment:create", collectionID: resolved.collectionID, entryID: resolved.entryID }
+      ]
     }),
     resolve: ({ database, input, workspaceID }) => {
       return resolveCommentThreadTarget(database, workspaceID, input.id);
@@ -38,8 +41,10 @@ const updateSuggestion = withAuthorization<
     tree: true
   },
   async ({ auth, authorization, database, input, resolved, workspaceID }) => {
-    const memberID = getUserAuthorization(auth)?.memberID;
-    const isAuthor = Boolean(memberID) && toUUID(memberID!) === resolved.threadAuthorID;
+    const isAuthor = isCommentAuthor(auth, {
+      authorID: resolved.threadAuthorID,
+      visitorID: resolved.threadVisitorID
+    });
     // Auto-resolved too; the update reopens it.
     const isOpen =
       resolved.suggestion && !resolved.appliedAt && (!resolved.resolved || resolved.autoResolved);
@@ -57,7 +62,8 @@ const updateSuggestion = withAuthorization<
     const suggestion = await prepareSuggestion(database, workspaceID, {
       entryID: toEntryID(resolved.entryID),
       schemaRevisionID: resolved.schemaRevisionID,
-      authorization,
+      // Visitors can't link to the collection's other entries.
+      authorization: auth.visitor ? createEmptyCollectionTree() : authorization,
       document,
       patch: input
     });

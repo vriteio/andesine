@@ -393,6 +393,13 @@
       "when": 1795526551647,
       "tag": "0055_add-comments-key-permission",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1795803560330,
+      "tag": "0056_add-entry-sharing",
+      "breakpoints": true
     }
   ]
 }

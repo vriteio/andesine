@@ -355,4 +355,4 @@ const CollaborativeEditorPane: Component<CollaborativeEditorPaneProps> = (props)
   );
 };
 
-export { CollaborativeEditorPane };
+export { CollaborativeEditorPane, ELEMENT_VIEWS_SETTLE_TIME, ELEMENT_VIEWS_TIMEOUT };

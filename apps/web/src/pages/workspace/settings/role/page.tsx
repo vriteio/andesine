@@ -23,6 +23,7 @@ type Resource =
   | "api_keys"
   | "billing"
   | "content"
+  | "sharing"
   | "publishing"
   | "restricted_collections"
   | "memberships"
@@ -45,6 +46,11 @@ const resources: Array<{
     description: "Comment on entries, or create, edit, and delete entries and collections",
     defaultView: true,
     readLabel: "Comment"
+  },
+  {
+    id: "sharing",
+    label: "Sharing",
+    description: "Share entries with people outside the workspace, by link or email"
   },
   {
     id: "publishing",
@@ -109,6 +115,7 @@ const { accessToPermissions, emptyAccess, permissionsToAccess } = createPermissi
     { id: "billing", read: "read:billing", write: "billing" },
     { id: "webhooks", read: "read:webhooks", write: "webhooks" },
     { id: "content", read: "comments", write: "content" },
+    { id: "sharing", write: "sharing" },
     { id: "publishing", write: "publishing" },
     {
       id: "restricted_collections",

@@ -12,3 +12,4 @@ export * from "./versions";
 export * from "./webhooks";
 export * from "./extensions";
 export * from "./comments";
+export * from "./shares";

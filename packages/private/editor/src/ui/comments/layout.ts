@@ -5,7 +5,7 @@ import { DRAFT_THREAD_ID, getCommentThreadPositions } from "#editor/extensions/c
 import { getEditorScrollContainer } from "#editor/ui/block-control-targeting";
 import { getBlockReach, getBlockScrollers } from "#editor/ui/block-scroll";
 import { BLOCK_CONTROL_SIZE } from "#editor/ui/constants";
-import { FIRST_COMMENT_CENTER, THREAD_CARD_WIDTH } from "./thread-card";
+import { FIRST_COMMENT_CENTER, THREAD_CARD_WIDTH, THREAD_HEADER_SPACE } from "./thread-card";
 
 interface ThreadAnchor {
   thread: EditorCommentThread;
@@ -215,7 +215,11 @@ const placeThreads = (
     const offset = group.threads.slice(0, Math.max(index, 0)).reduce((sum, { id }) => {
       return sum + (heights[id] ?? 0) + CARD_GAP;
     }, 0);
-    const first = index < 0 ? Math.max(getRestingTop(group), bottom + CARD_GAP) : natural - offset;
+    // The active card's header is above its first comment, which keeps its place.
+    const first =
+      index < 0
+        ? Math.max(getRestingTop(group), bottom + CARD_GAP)
+        : natural - offset - THREAD_HEADER_SPACE;
     const placedBottom = place(group, first);
 
     if (placedBottom === null) continue;

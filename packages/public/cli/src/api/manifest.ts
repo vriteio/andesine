@@ -7740,6 +7740,522 @@ const commands: APICommand[] = [
     response: "json"
   },
   {
+    id: "shares.createLink",
+    group: "shares",
+    command: "create-link",
+    method: "post",
+    path: "/entries/{entryID}/shares/link",
+    summary: "Create or reset the share link",
+    description:
+      "Creates the link share of an entry. When it exists, it is replaced by a new share with a new ID and token: the old link and its visitors stop working.\n\nRequired API key permissions: read:entries, sharing. Write permissions also grant read access for the same resource.",
+    example: {
+      entryID: "ent_example",
+      access: "comment"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "entryID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the entry"
+        },
+        flag: "entry-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "access",
+        location: "body",
+        required: true,
+        schema: {
+          enum: ["view", "comment"],
+          type: "string",
+          description: "view: read the entry; comment: also comment and suggest changes"
+        },
+        flag: "access",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expiresAt",
+        location: "body",
+        required: false,
+        schema: {
+          anyOf: [
+            {
+              type: "string"
+            },
+            {
+              type: "null"
+            }
+          ],
+          description: "When the share expires, or null for never",
+          default: null
+        },
+        flag: "expires-at",
+        kind: "string",
+        nullable: true
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "shares.deleteMany",
+    group: "shares",
+    command: "delete-many",
+    method: "post",
+    path: "/shares/delete",
+    summary: "Remove shares",
+    description:
+      "Removes shares, e.g. all of an entry's. Their visitors lose access at once.\n\nRequired API key permissions: read:entries, sharing. Write permissions also grant read access for the same resource.",
+    example: {
+      ids: ["shr_example"]
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "ids",
+        location: "body",
+        required: true,
+        schema: {
+          type: "array",
+          items: {
+            type: "string"
+          },
+          description: "IDs of the shares"
+        },
+        flag: "ids",
+        kind: "json",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "empty"
+  },
+  {
+    id: "shares.invite",
+    group: "shares",
+    command: "invite",
+    method: "post",
+    path: "/entries/{entryID}/shares",
+    summary: "Share an entry by email",
+    description:
+      "Shares an entry with one person and sends them an email. They sign in with the email address to open it.\n\nRequired API key permissions: read:entries, sharing. Write permissions also grant read access for the same resource.",
+    example: {
+      entryID: "ent_example",
+      email: "jane@example.com",
+      access: "comment"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "entryID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the entry"
+        },
+        flag: "entry-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "email",
+        location: "body",
+        required: true,
+        schema: {
+          type: "string",
+          description: "Email address of the person"
+        },
+        flag: "email",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "access",
+        location: "body",
+        required: true,
+        schema: {
+          enum: ["view", "comment"],
+          type: "string",
+          description: "view: read the entry; comment: also comment and suggest changes"
+        },
+        flag: "access",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expiresAt",
+        location: "body",
+        required: false,
+        schema: {
+          anyOf: [
+            {
+              type: "string"
+            },
+            {
+              type: "null"
+            }
+          ],
+          description: "When the share expires, or null for never",
+          default: null
+        },
+        flag: "expires-at",
+        kind: "string",
+        nullable: true
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "shares.list",
+    group: "shares",
+    command: "list",
+    method: "get",
+    path: "/entries/{entryID}/shares",
+    summary: "List shares",
+    description:
+      "Lists the link and the email shares of an entry.\n\nRequired API key permissions: read:entries, sharing. Write permissions also grant read access for the same resource.",
+    example: {
+      entryID: "ent_example"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "entryID",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the entry"
+        },
+        flag: "entry-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
+    id: "shares.listEntries",
+    group: "shares",
+    command: "list-entries",
+    method: "get",
+    path: "/shares",
+    summary: "List shared entries",
+    description:
+      "Lists the entries that you can share and that have shares, by name, with their shares. Use pagination.nextCursor to continue with the same filters.\n\nRequired API key permissions: read:entries, sharing. Write permissions also grant read access for the same resource.",
+    example: {
+      kind: "link"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "cursor",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Cursor from the previous page; keep the same filters"
+        },
+        flag: "cursor",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "query",
+        required: false,
+        schema: {
+          type: "number",
+          default: 50
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "kind",
+        location: "query",
+        required: false,
+        schema: {
+          enum: ["link", "email"],
+          type: "string",
+          description: "Only entries with shares of this kind"
+        },
+        flag: "kind",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "search",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Part of the entry name or of a shared email address"
+        },
+        flag: "search",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json",
+    pagination: "cursor"
+  },
+  {
+    id: "shares.listVisitors",
+    group: "shares",
+    command: "list-visitors",
+    method: "get",
+    path: "/shares/visitors",
+    summary: "List identified visitors",
+    description:
+      "Lists the email addresses that the entries you can share are shared with, by address. Remove an address's shares with deleteMany to revoke its access.\n\nRequired API key permissions: read:entries, sharing. Write permissions also grant read access for the same resource.",
+    example: {},
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "cursor",
+        location: "query",
+        required: false,
+        schema: {
+          type: "string",
+          description: "Cursor from the previous page"
+        },
+        flag: "cursor",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "limit",
+        location: "query",
+        required: false,
+        schema: {
+          type: "number",
+          default: 50
+        },
+        flag: "limit",
+        kind: "number",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      }
+    ],
+    conditional: false,
+    response: "json",
+    pagination: "cursor"
+  },
+  {
+    id: "shares.update",
+    group: "shares",
+    command: "update",
+    method: "patch",
+    path: "/shares/{id}",
+    summary: "Update a share",
+    description:
+      "Required API key permissions: read:entries, sharing. Write permissions also grant read access for the same resource.",
+    example: {
+      id: "shr_example",
+      access: "view"
+    },
+    security: [
+      {
+        apiKey: []
+      },
+      {
+        oauth: []
+      }
+    ],
+    fields: [
+      {
+        name: "id",
+        location: "path",
+        required: true,
+        schema: {
+          type: "string",
+          description: "ID of the share"
+        },
+        flag: "id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "x-workspace-id",
+        location: "header",
+        required: false,
+        schema: {
+          type: "string",
+          description:
+            "Required for OAuth: ID of the workspace to access. API keys use their own workspace."
+        },
+        flag: "x-workspace-id",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "access",
+        location: "body",
+        required: false,
+        schema: {
+          enum: ["view", "comment"],
+          type: "string",
+          description: "view: read the entry; comment: also comment and suggest changes"
+        },
+        flag: "access",
+        kind: "string",
+        nullable: false
+      },
+      {
+        name: "expiresAt",
+        location: "body",
+        required: false,
+        schema: {
+          anyOf: [
+            {
+              type: "string"
+            },
+            {
+              type: "null"
+            }
+          ],
+          description: "When the share expires, or null for never"
+        },
+        flag: "expires-at",
+        kind: "string",
+        nullable: true
+      }
+    ],
+    conditional: false,
+    response: "json"
+  },
+  {
     id: "typeMetadata.getCurrent",
     group: "type-metadata",
     command: "get-current",
@@ -9830,6 +10346,7 @@ const schemas: Record<string, JSONSchema> = {
     enum: [
       "content",
       "comments",
+      "sharing",
       "publishing",
       "api_keys",
       "read:api_keys",

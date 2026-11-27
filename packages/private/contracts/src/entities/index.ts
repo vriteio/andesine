@@ -39,3 +39,5 @@ export type {
   CommentSuggestion,
   CommentThread
 } from "./comments";
+export { visitorNameType, visitorType, shareAccessType, shareKindType, shareType } from "./shares";
+export type { Visitor, Share, ShareAccess, ShareKind, SharingPolicy } from "./shares";

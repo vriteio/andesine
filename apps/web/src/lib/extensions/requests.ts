@@ -41,6 +41,8 @@ interface ExtensionRequestHandlerOptions {
   name: string;
   displayName: string;
   sources: string[];
+  /** For share visitors: no API or storage. */
+  visitor?: boolean;
   getActions(): ExtensionHostActions | null;
   getViewTarget(viewID: string): ExtensionViewTarget | undefined;
   getAPIContext(): APIFetchContext;
@@ -167,7 +169,9 @@ const createRequestHandler = (options: ExtensionRequestHandlerOptions): Extensio
     async handle(request) {
       const params = extensionRequestParams[request.method].safeParse(request.params);
       const actions = options.getActions();
-      const isUnavailable = request.method.startsWith("host.") && !actions;
+      const isWorkspaceRequest = /^(api|storage)\./.test(request.method);
+      const isUnavailable =
+        (request.method.startsWith("host.") && !actions) || (options.visitor && isWorkspaceRequest);
 
       if (!params.success) {
         options.respond(request.id, {

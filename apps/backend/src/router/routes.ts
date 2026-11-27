@@ -16,6 +16,7 @@ import { schemaMigrationsRouter } from "./schema-migrations";
 import { schemaVersionsRouter } from "./schema-versions";
 import { schemasRouter } from "./schemas";
 import { searchRouter } from "./search";
+import { sharesRouter } from "./shares";
 import { syncRouter } from "./sync";
 import { versionsRouter } from "./versions";
 import { commentsRouter } from "./comments";
@@ -45,6 +46,7 @@ const router = api.router({
   workspaces: workspacesRouter,
   versions: versionsRouter,
   comments: commentsRouter,
+  shares: sharesRouter,
   typeMetadata: typeMetadataRouter,
   sync: syncRouter
 });

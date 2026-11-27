@@ -17,6 +17,7 @@ import { schemaMigrationsContract } from "./schema-migrations";
 import { schemaVersionsContract } from "./schema-versions";
 import { schemasContract } from "./schemas";
 import { searchContract } from "./search";
+import { sharesContract } from "./shares";
 import { syncContract } from "./sync";
 import { versionsContract } from "./versions";
 import { typeMetadataContract } from "./type-metadata";
@@ -42,6 +43,7 @@ const createAPIContract = (options: APIContractOptions = {}) => ({
   webhooks: webhooksContract,
   roles: rolesContract,
   search: searchContract,
+  shares: sharesContract,
   schemas: schemasContract,
   schemaMigrations: schemaMigrationsContract,
   schemaVersions: schemaVersionsContract,

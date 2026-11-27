@@ -46,7 +46,7 @@ const commentsContract = baseContract.router({
       path: "/entries/{entryID}/comment-threads"
     })
     .meta({ example: { entryID: "ent_example" } })
-    .meta({ required: { session: true, key: ["read:entries"] } })
+    .meta({ required: { session: true, key: ["read:entries"], visitor: true } })
     .input(
       pageInputType.extend({
         entryID: id().describe("ID of the entry"),
@@ -64,7 +64,7 @@ const commentsContract = baseContract.router({
       path: "/entries/{entryID}/comment-threads"
     })
     .meta({ example: { entryID: "ent_example", quote: "teh", content: "Typo", suggestion: "the" } })
-    .meta({ required: { session: true, key: ["read:entries", "comments"] } })
+    .meta({ required: { session: true, key: ["read:entries", "comments"], visitor: true } })
     .input(
       commentBodyType
         .extend({
@@ -97,7 +97,7 @@ const commentsContract = baseContract.router({
       path: "/comment-threads/{threadID}/comments"
     })
     .meta({ example: { threadID: "cth_example", content: "Done." } })
-    .meta({ required: { session: true, key: ["read:entries", "comments"] } })
+    .meta({ required: { session: true, key: ["read:entries", "comments"], visitor: true } })
     .input(commentBodyType.extend({ threadID: id().describe("ID of the comment thread") }))
     .output(commentThreadType),
   update: authenticatedContract
@@ -109,7 +109,7 @@ const commentsContract = baseContract.router({
       path: "/comments/{id}"
     })
     .meta({ example: { id: "cmt_example", content: "Please check this again." } })
-    .meta({ required: { session: true, key: ["read:entries", "comments"] } })
+    .meta({ required: { session: true, key: ["read:entries", "comments"], visitor: true } })
     .input(
       commentBodyType.extend({
         id: id().describe("ID of the comment"),
@@ -131,7 +131,7 @@ const commentsContract = baseContract.router({
       path: "/comments/{id}"
     })
     .meta({ example: { id: "cmt_example" } })
-    .meta({ required: { session: true, key: ["read:entries", "comments"] } })
+    .meta({ required: { session: true, key: ["read:entries", "comments"], visitor: true } })
     .input(z.object({ id: id().describe("ID of the comment") }))
     .output(z.void()),
   resolve: authenticatedContract
@@ -164,7 +164,7 @@ const commentsContract = baseContract.router({
     .meta({
       example: { entryID: "ent_example", blockIDs: ["blk_example"], mdx: "New paragraph text." }
     })
-    .meta({ required: { session: true, key: ["read:entries", "comments"] } })
+    .meta({ required: { session: true, key: ["read:entries", "comments"], visitor: true } })
     .input(
       suggestionPatchType
         .extend({
@@ -185,7 +185,7 @@ const commentsContract = baseContract.router({
       path: "/comment-threads/{id}/suggestion"
     })
     .meta({ example: { id: "cth_example", blockIDs: ["blk_example"], mdx: "Other text." } })
-    .meta({ required: { session: true, key: ["read:entries", "comments"] } })
+    .meta({ required: { session: true, key: ["read:entries", "comments"], visitor: true } })
     .input(
       suggestionPatchType
         .extend({ id: id().describe("ID of the comment thread") })

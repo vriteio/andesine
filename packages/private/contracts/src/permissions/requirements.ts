@@ -7,6 +7,8 @@ interface TypedAuthorizationRequirements {
   oauth?: Permission[] | true;
   /** Operations of the extension API: only the extension principal (extension JWT). */
   extension?: true;
+  /** Share visitors; services still check the shared entry. */
+  visitor?: true;
 }
 interface ParsedPermission {
   access: string;

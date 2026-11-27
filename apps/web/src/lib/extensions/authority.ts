@@ -18,6 +18,8 @@ interface ExtensionContextInput {
   host: ExtensionHost;
   grant: ExtensionPermission[];
   backend: string | null;
+  /** For share visitors, who have no member to load them. */
+  configuration?: ExtensionConfigurationState["values"];
 }
 
 type MemberSource = () => ExtensionMember | null;
@@ -51,7 +53,7 @@ const getEffectivePermissions = (grant: ExtensionPermission[]): ExtensionPermiss
 const startExtensionContext = (input: ExtensionContextInput): (() => void) => {
   return createRoot((dispose) => {
     const [configuration, setConfiguration] = createSignal<ExtensionConfigurationState["values"]>(
-      {}
+      input.configuration ?? {}
     );
     const updates = createMemo((count: number) => {
       return updatedExtension() === input.extensionID ? count + 1 : count;

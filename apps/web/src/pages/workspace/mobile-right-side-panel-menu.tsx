@@ -47,7 +47,8 @@ const MobileRightSidePanelMenu: Component<MobileRightSidePanelMenuProps> = (prop
         opened={!opened() && sheetOpened()}
         setOpened={(current) => !opened() && setSheetOpened(current)}
         mobileSheetDragFromContent={false}
-        class="md:hidden"
+        // No trigger, so out of the toolbar's layout and its gaps.
+        class="absolute md:hidden"
       >
         <Show when={!opened() && sheetOpened()}>
           <div class="flex min-h-[50dvh] w-full min-w-0 flex-1 flex-col overflow-hidden px-1">

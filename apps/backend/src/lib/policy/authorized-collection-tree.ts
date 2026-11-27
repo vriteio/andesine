@@ -20,7 +20,7 @@ import {
 } from "@andesine/contracts/permissions";
 import type { EntryAuthorizationSource } from "./authorized-entry-sources";
 import { hasAuthPermission, isAdminAuthorization } from "./permissions";
-import { getUserAuthorization, type SessionData } from "./session";
+import { getUserAuthorization, type VisitorAuthorization, type SessionData } from "./session";
 
 interface AuthorizedCollectionNode {
   collectionActions: CollectionAction[];
@@ -138,6 +138,10 @@ const getUserActions = (auth: SessionData, permissions: Permission[]): Collectio
     entryActions.push("comment:create");
   }
 
+  if (isAdminAuthorization(auth) || hasGrantedPermission(permissions, "sharing")) {
+    entryActions.push("entry:share");
+  }
+
   if (canManagePublishing) {
     collectionActions.push("collection:set-publishing");
   }
@@ -172,6 +176,10 @@ const getKeyActions = (auth: SessionData): CollectionAccess => {
 
   if (hasGrantedPermission(permissions, "comments")) {
     entryActions.push("comment:create");
+  }
+
+  if (hasGrantedPermission(permissions, "sharing")) {
+    entryActions.push("entry:share");
   }
 
   if (hasGrantedPermission(permissions, "entries")) {
@@ -407,9 +415,29 @@ const loadAssignedBoundaryPermissions = async (
 
   return permissionsByBoundaryID;
 };
+/** For visitors' entry links, as the visitor tree covers its whole collection. */
+const createEmptyCollectionTree = (): AuthorizedCollectionTree => {
+  return new AuthorizedCollectionTree([], new Set(), new Map(), new Set(), "");
+};
+/** Only the shared entry's collection; services also check that requirements name the entry. */
+const createVisitorCollectionTree = (visitor: VisitorAuthorization): AuthorizedCollectionTree => {
+  const entryActions: EntryAction[] =
+    visitor.access === "comment" ? ["entry:read", "comment:create"] : ["entry:read"];
+  const node = { collectionActions: [], entryActions, restrictedBoundaryIDs: [] };
+
+  return new AuthorizedCollectionTree(
+    [],
+    new Set(),
+    new Map([[visitor.collectionID ?? "", node]]),
+    new Set(),
+    ""
+  );
+};
 const loadAuthorizedCollectionTree = async (
   input: LoadAuthorizedCollectionTreeInput
 ): Promise<AuthorizedCollectionTree> => {
+  if (input.auth.visitor) return createVisitorCollectionTree(input.auth.visitor);
+
   const database = input.database || db;
   const [tree, permissionsByBoundaryID] = await Promise.all([
     loadCollectionTree(input.auth.workspaceID, input.includeDeleted, database),
@@ -584,4 +612,4 @@ class AuthorizedCollectionTree {
   }
 }
 
-export { AuthorizedCollectionTree, loadAuthorizedCollectionTree };
+export { AuthorizedCollectionTree, createEmptyCollectionTree, loadAuthorizedCollectionTree };

@@ -5,6 +5,7 @@ import {
   type KeyPermission,
   type Permission
 } from "@andesine/contracts/entities";
+import { type ShareAccess } from "@andesine/contracts/entities";
 import { type WorkspaceEvent } from "@andesine/contracts/events";
 import {
   type ExtensionPermission,
@@ -39,9 +40,18 @@ interface ExtensionAuthorization {
   uninstalled: boolean;
 }
 
+interface VisitorAuthorization {
+  visitorID: string;
+  shareID: string;
+  entryID: string;
+  collectionID: string | null;
+  access: ShareAccess;
+  name: string | null;
+}
+
 interface SessionData {
   id: string;
-  type: "key" | "session" | "oauth" | "extension";
+  type: "key" | "session" | "oauth" | "extension" | "visitor";
   workspaceID: string;
   subscriptionPlan: string;
   customerID?: string;
@@ -62,6 +72,7 @@ interface SessionData {
     restrictedCollectionIDs?: string[];
   };
   extension?: ExtensionAuthorization;
+  visitor?: VisitorAuthorization;
   /** Extension frontend requests without read:restricted_collections see no restricted content. */
   hideRestricted?: boolean;
 }
@@ -168,4 +179,10 @@ export {
   parseSessionData,
   sessionDataType
 };
-export type { ExtensionAuthorization, PublishableKeyScope, SessionData, UserAuthorization };
+export type {
+  ExtensionAuthorization,
+  VisitorAuthorization,
+  PublishableKeyScope,
+  SessionData,
+  UserAuthorization
+};
